@@ -39,18 +39,19 @@ graph TB
 | Element | Responsibility |
 |---|---|
 | `Provider` trait | Defines `chat_completions()` (streaming) and `chat_completions_blocking()` |
-| `OpenAICompatible` | Concrete implementation: builds HTTP request, parses SSE chunks |
+| `OpenAICompatible` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body), parses SSE chunks (extracts both `content` and `reasoning` from delta) |
 | `ProviderRegistry` | Maps provider names (from config) to `Box<dyn Provider>` instances |
 
 ### Config
 
-**Responsibility:** Load, merge, and expose configuration values.
+**Responsibility:** Load, merge, expose configuration values, and bootstrap the config file on first run.
 
 | Element | Responsibility |
 |---|---|
 | `ConfigLoader` | Ordered chain: defaults → system config → user config → env → CLI overrides |
 | `EnvReader` | Read `WATN_*` environment variables |
 | `Config` struct | Serde-deserializable root config with `providers`, `tiers`, `pricing`, `litellm` |
+| `AutoInit` | On first run (no config file exists), writes a commented-out template to the standard XDG path before proceeding |
 
 ### Models
 

@@ -12,3 +12,5 @@ options, the decision outcome, and consequences.
 | ADR-0004 | Model tier dispatch | [docs/adr/0004-model-tier-dispatch.md](../adr/0004-model-tier-dispatch.md) |
 | ADR-0005 | Execution mode with confirmation | [docs/adr/0005-execution-with-confirmation.md](../adr/0005-execution-with-confirmation.md) |
 | ADR-0006 | LiteLLM-powered model discovery | [docs/adr/0006-litellm-model-discovery.md](../adr/0006-litellm-model-discovery.md) |
+| ADR-0007 | Reasoning support via reasoning_effort parameter | [docs/adr/0007-reasoning-support.md](../adr/0007-reasoning-support.md) |
+| ADR-0008 | Template config generated from code | [docs/adr/0008-template-generated-from-code.md](../adr/0008-template-generated-from-code.md) |
