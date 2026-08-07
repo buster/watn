@@ -16,6 +16,7 @@ pub struct RequestOptions {
     pub temperature: Option<f32>,
     pub max_tokens: Option<u32>,
     pub reasoning_effort: Option<String>,
+    #[allow(dead_code)]
     pub verbose: bool,
 }
 
