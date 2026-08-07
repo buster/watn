@@ -16,7 +16,7 @@ Feature: Model explorer
     And  running `watn "hello"` should use "gpt-4o-mini"
 
   @givn.modified @e2e
-  Scenario: Model explorer without provider configured
+  Scenario: Model explorer without LiteLLM endpoint configured
     Given  no provider is configured
     When  I run `watn models`
     Then  the exit status should be 0
