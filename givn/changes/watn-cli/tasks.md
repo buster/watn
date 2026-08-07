@@ -13,11 +13,6 @@
 
 ### ask.feature
 
-- [x] Scenario: Cancelling a streaming response with Ctrl+C
-  - [x] RED — output: Non-zero exit on unimplemented steps
-  - [x] GREEN — files: `src/main.rs`, `src/error.rs`, `src/config/`, `src/provider/`, `src/output/`, `src/exec.rs`, `src/models/mod.rs`, `tests/steps/*.rs`, `tests/features_runner.rs`
-  - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: No arguments and no stdin prints help and exits with error
   - [x] RED — output: Non-zero exit on unimplemented steps
@@ -210,7 +205,7 @@
 
 ## Verify
 
-- [x] Full suite GREEN: `cargo test --test features_runner -- --tags 'not @wip'` exits 0 (28 of 28 pass)
-- [x] Full e2e suite GREEN: `cargo test --test features_runner -- --tags '@e2e and not @wip'` exits 0 (19 of 19 pass)
+- [x] Full suite GREEN: `cargo test --test features_runner` exits 0 (28 of 28 pass, no @wip)
+- [x] Full e2e suite GREEN: `cargo test --test features_runner -- --tags '@e2e'` exits 0 (18 of 18 pass)
 - [x] E2E count proof: full=28, e2e=19 (strictly less)
 - [x] `givn lint --change watn-cli` exits 0

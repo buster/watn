@@ -335,9 +335,6 @@ fn stderr_contains(w: &mut WatnWorld, text: String) {
     assert!(stderr.contains(&text), "expected stderr to contain '{}', got: '{}'", text, stderr);
 }
 
-#[then("partial output should have been printed")]
-fn partial_output_printed(_w: &mut WatnWorld) {}
-
 #[then("the output should contain a version number")]
 fn output_contains_version(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");

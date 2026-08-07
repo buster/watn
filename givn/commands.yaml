@@ -1,7 +1,7 @@
 verify:
-  command: "cargo test --test features_runner -- --tags 'not @wip'"
-  e2e_command: "cargo test --test features_runner -- --tags '@e2e and not @wip'"
+  command: "cargo test --test features_runner"
+  e2e_command: "cargo test --test features_runner -- --tags '@e2e'"
 
 coverage:
-  non_e2e_command: "cargo llvm-cov test --test features_runner -- --tags 'not @wip'"
-  e2e_command: "cargo llvm-cov test --test features_runner -- --tags '@e2e and not @wip'"
+  non_e2e_command: "cargo llvm-cov test --test features_runner"
+  e2e_command: "cargo llvm-cov test --test features_runner -- --tags '@e2e'"

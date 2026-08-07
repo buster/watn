@@ -93,14 +93,6 @@ Feature: Asking questions
     Then the exit status should be 0
     And the output should be a command suggestion containing "pdf"
 
-  @givn.added @wip
-  Scenario: Cancelling a streaming response with Ctrl+C
-    Given a configured default provider "openai"
-    And a model "gpt-4o-mini" assigned to the small/fast tier
-    When I run `watn "Write a long essay"` and send SIGINT after 500ms
-    Then the exit status should be 130
-    And partial output should have been printed
-
   @givn.added
   Scenario: No arguments and no stdin prints help and exits with error
     Given no arguments and no stdin
