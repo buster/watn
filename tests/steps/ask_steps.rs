@@ -196,7 +196,17 @@ fn endpoint_returns_models(w: &mut WatnWorld, models_str: String) {
 fn configured_provider_with_models(w: &mut WatnWorld, provider: String) {
     let server = httpmock::MockServer::start();
     let base_url = format!("http://127.0.0.1:{}", server.port());
+    let server_ref = &server;
+    server_ref.mock(move |when, then| {
+        when.method(httpmock::Method::POST).path("/chat/completions");
+        then.status(200)
+            .header("Content-Type", "text/event-stream")
+            .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"some output\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":5,\"total_tokens\":15}}\ndata: [DONE]\n");
+    });
     w.mock_server = MockServerWrap(Some(server), None);
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(true);
     w.raw_config = Some(format!(
         "[defaults]\nprovider = \"{}\"\n\n[providers.{}]\nendpoint = \"{}\"\napi_key = \"test-key\"\n",
         provider, provider, base_url
@@ -423,6 +433,12 @@ fn run_watn_model_gpt4o(w: &mut WatnWorld, question: String) {
 #[then(expr = "the exit status should be {int}")]
 fn exit_status_n(w: &mut WatnWorld, status: i32) {
     assert_eq!(w.exit_status, Some(status), "expected exit status {}, got {:?}. stderr: {}", status, w.exit_status, w.stderr_output.as_deref().unwrap_or(""));
+}
+
+#[then("the exit status should be non-zero")]
+fn exit_status_nonzero(w: &mut WatnWorld) {
+    assert!(w.exit_status != Some(0), "expected non-zero exit status, got {:?}. stderr: {}", w.exit_status, w.stderr_output.as_deref().unwrap_or(""));
+    assert!(w.exit_status.is_some(), "expected exit status to be set, got None");
 }
 
 #[then(expr = "the output should contain {string}")]

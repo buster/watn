@@ -69,6 +69,61 @@ pub(crate) fn build_config(
     lines.join("\n")
 }
 
+fn setup_chat_completion_mock(
+    server_ref: &httpmock::MockServer,
+    output: &str,
+    include_usage: bool,
+    delay_ms: u64,
+    reasoning: &Option<String>,
+) -> usize {
+    let mc = output.to_string();
+    let include_usage_val = include_usage;
+    let reasoning_clone = reasoning.clone();
+    let mock = server_ref.mock(move |when, then| {
+        when.method(Method::POST).path("/chat/completions");
+        if delay_ms > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+        }
+        let reasoning_delta = reasoning_clone.as_ref().map(|r| format!(",\"reasoning\":\"{}\"", r.replace('"', "\\\""))).unwrap_or_default();
+        then.status(200)
+            .header("Content-Type", "text/event-stream")
+            .body(format!(
+                "data: {{\"id\":\"1\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":\"{}\"{}}},\"finish_reason\":\"stop\"}}]{}}}\ndata: [DONE]\n",
+                mc.replace('"', "\\\""),
+                reasoning_delta,
+                if include_usage_val { ",\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":20,\"total_tokens\":30}" } else { "" }
+            ));
+    });
+    mock.id
+}
+
+fn setup_models_mock(server_ref: &httpmock::MockServer, models: &[String], fail: bool) {
+    if fail {
+        server_ref.mock(move |when, then| {
+            when.method(Method::GET).path("/models");
+            then.status(500).body(r#"{"error":"server error"}"#);
+        });
+    } else {
+        let models_clone = models.to_vec();
+        server_ref.mock(move |when, then| {
+            when.method(Method::GET).path("/models");
+            let data: Vec<serde_json::Value> = models_clone.iter().map(|id| {
+                serde_json::json!({"id": id})
+            }).collect();
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(serde_json::json!({"data": data}).to_string());
+        });
+    }
+}
+
+fn setup_auth_fail_mock(server_ref: &httpmock::MockServer) {
+    server_ref.mock(move |when, then| {
+        when.method(Method::POST).path("/chat/completions");
+        then.status(401).body(r#"{"error":"unauthorized"}"#);
+    });
+}
+
 pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
     let mut config_content = String::new();
     let mut has_config = false;
@@ -80,17 +135,21 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
         let auth_fail = world.pending_mock_auth_fail;
         let no_config = world.pending_mock_no_config_file;
 
-        let server = MockServer::start();
-        let base_url = format!("http://127.0.0.1:{}", server.port());
-        world.mock_server = MockServerWrap(Some(server), None);
+        let reuse_existing_server = world.mock_server.0.is_some();
+        let server: &httpmock::MockServer;
 
-        let server_ref = world.mock_server.0.as_ref().unwrap();
+        if reuse_existing_server {
+            server = world.mock_server.0.as_ref().unwrap();
+        } else {
+            let new_server = MockServer::start();
+            world.mock_server = MockServerWrap(Some(new_server), None);
+            server = world.mock_server.0.as_ref().unwrap();
+        }
+
+        let base_url = format!("http://127.0.0.1:{}", server.port());
 
         if auth_fail {
-            server_ref.mock(move |when, then| {
-                when.method(Method::POST).path("/chat/completions");
-                then.status(401).body(r#"{"error":"unauthorized"}"#);
-            });
+            setup_auth_fail_mock(server);
             config_content = build_config(
                 "test",
                 None,
@@ -99,78 +158,77 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             );
             has_config = true;
         } else {
-            let mc = output.clone();
-            let include_usage_val = include_usage;
-            let delay_ms = world.pending_mock_delay_ms.unwrap_or(0);
-            let reasoning = world.pending_mock_reasoning.clone();
-            let mock = server_ref.mock(move |when, then| {
-                when.method(Method::POST).path("/chat/completions");
-                if delay_ms > 0 {
-                    std::thread::sleep(std::time::Duration::from_millis(delay_ms));
-                }
-                let reasoning_delta = reasoning.as_ref().map(|r| format!(",\"reasoning\":\"{}\"", r.replace('"', "\\\""))).unwrap_or_default();
-                then.status(200)
-                    .header("Content-Type", "text/event-stream")
-                    .body(format!(
-                        "data: {{\"id\":\"1\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":\"{}\"{}}},\"finish_reason\":\"stop\"}}]{}}}\ndata: [DONE]\n",
-                        mc.replace('"', "\\\""),
-                        reasoning_delta,
-                        if include_usage_val { ",\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":20,\"total_tokens\":30}" } else { "" }
-                    ));
-            });
-            world.mock_server.1 = Some(mock.id);
-
-            // Set up /models mock if models are configured
-            if !world.pending_mock_returned_models.is_empty() {
-                let models = world.pending_mock_returned_models.clone();
-                if world.pending_mock_models_fail {
-                    server_ref.mock(move |when, then| {
-                        when.method(Method::GET).path("/models");
-                        then.status(500).body(r#"{"error":"server error"}"#);
-                    });
-                } else {
-                    server_ref.mock(move |when, then| {
-                        when.method(Method::GET).path("/models");
-                        let data: Vec<serde_json::Value> = models.iter().map(|id| {
-                            serde_json::json!({"id": id})
-                        }).collect();
-                        then.status(200)
-                            .header("Content-Type", "application/json")
-                            .body(serde_json::json!({"data": data}).to_string());
-                    });
-                }
-            }
-
-            let raw = world.raw_config.clone().unwrap_or_default();
-            let mut lines: Vec<&str> = raw.lines().collect();
-            if let Some(defaults_idx) = lines.iter().position(|l| l.trim() == "[defaults]") {
-                let mut end = defaults_idx + 1;
-                while end < lines.len() && !lines[end].starts_with('[') && !lines[end].trim().is_empty() {
-                    end += 1;
-                }
-                lines.drain(defaults_idx..end);
-            }
-            let non_default = lines.join("\n").trim().to_string();
-
-            let mock_cfg = build_config(
-                "test",
-                None,
-                Some(vec![("test", &base_url, "test-key", &model)]),
-                None,
-                None,
-                None,
+            let mock_id = setup_chat_completion_mock(
+                server, &output, include_usage,
+                world.pending_mock_delay_ms.unwrap_or(0),
+                &world.pending_mock_reasoning,
             );
+            world.mock_server.1 = Some(mock_id);
 
-            if !non_default.is_empty() {
-                config_content = format!("{}\n\n{}", mock_cfg, non_default);
-            } else {
-                config_content = mock_cfg;
+            if !world.pending_mock_returned_models.is_empty() {
+                setup_models_mock(
+                    server,
+                    &world.pending_mock_returned_models,
+                    world.pending_mock_models_fail,
+                );
             }
-            has_config = !no_config;
+
+            if reuse_existing_server {
+                config_content = world.raw_config.clone().unwrap_or_default();
+                has_config = !no_config;
+            } else {
+                let raw = world.raw_config.clone().unwrap_or_default();
+                let mut lines: Vec<&str> = raw.lines().collect();
+                if let Some(defaults_idx) = lines.iter().position(|l| l.trim() == "[defaults]") {
+                    let mut end = defaults_idx + 1;
+                    while end < lines.len() && !lines[end].starts_with('[') && !lines[end].trim().is_empty() {
+                        end += 1;
+                    }
+                    lines.drain(defaults_idx..end);
+                }
+                let non_default = lines.join("\n").trim().to_string();
+
+                let mock_cfg = build_config(
+                    "test",
+                    None,
+                    Some(vec![("test", &base_url, "test-key", &model)]),
+                    None,
+                    None,
+                    None,
+                );
+
+                if !non_default.is_empty() {
+                    config_content = format!("{}\n\n{}", mock_cfg, non_default);
+                } else {
+                    config_content = mock_cfg;
+                }
+                has_config = !no_config;
+            }
         }
     } else if let Some(ref raw) = world.raw_config {
         config_content = raw.clone();
         has_config = true;
+
+        if let Some(ref server) = world.mock_server.0 {
+            if !world.pending_mock_returned_models.is_empty() {
+                setup_models_mock(
+                    server,
+                    &world.pending_mock_returned_models,
+                    world.pending_mock_models_fail,
+                );
+            }
+            if world.pending_mock_model.is_some() || world.pending_mock_output.is_some() {
+                let _model = world.pending_mock_model.as_deref().unwrap_or("test-model");
+                let output = world.pending_mock_output.as_deref().unwrap_or("output");
+                let include_usage = world.pending_mock_usage.unwrap_or(false);
+                let mock_id = setup_chat_completion_mock(
+                    server, output, include_usage,
+                    world.pending_mock_delay_ms.unwrap_or(0),
+                    &world.pending_mock_reasoning,
+                );
+                world.mock_server.1 = Some(mock_id);
+            }
+        }
     }
 
     if !has_config && world.mock_server.0.is_none() {

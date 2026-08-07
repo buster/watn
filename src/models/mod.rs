@@ -5,6 +5,7 @@ use dialoguer::Select;
 use crate::config::{resolve_provider, save_config};
 use crate::config::types::ModelTiers;
 use list::fetch_models;
+use std::io::IsTerminal;
 
 pub fn run_models(
     set_small: Option<String>,
@@ -122,15 +123,39 @@ fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> &'a list::Mod
 
     let prompt = format!("Select a model for the {} tier:", tier);
 
-    let selection = Select::new()
-        .with_prompt(&prompt)
-        .items(&selections)
-        .default(0)
-        .interact()
-        .unwrap_or_else(|_| {
-            eprintln!("error: failed to read selection");
-            std::process::exit(1);
-        });
+    let selection = if std::io::stdin().is_terminal() {
+        Select::new()
+            .with_prompt(&prompt)
+            .items(&selections)
+            .default(0)
+            .interact()
+            .unwrap_or_else(|_| {
+                eprintln!("error: failed to read selection");
+                std::process::exit(1);
+            })
+    } else {
+        select_model_non_interactive(&selections, tier)
+    };
 
     &models[selection]
+}
+
+fn select_model_non_interactive(selections: &[String], tier: &str) -> usize {
+    eprintln!("{}", selections.join("\n"));
+    eprintln!();
+    eprint!("Enter index for {} tier: ", tier);
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap_or_else(|_| {
+        eprintln!("error: failed to read input");
+        std::process::exit(1);
+    });
+    let index: usize = input.trim().parse().unwrap_or_else(|_| {
+        eprintln!("error: invalid index");
+        std::process::exit(1);
+    });
+    if index >= selections.len() {
+        eprintln!("error: index out of range");
+        std::process::exit(1);
+    }
+    index
 }

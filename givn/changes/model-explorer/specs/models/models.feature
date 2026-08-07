@@ -15,38 +15,35 @@ Feature: Model explorer
     Then  the config file should contain the selected tier assignments
     And  running `watn "hello"` should use "gpt-4o-mini"
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Model explorer without provider configured
     Given  no provider is configured
     When  I run `watn models`
     Then  the exit status should be 0
     And  the output should contain instructions for configuring providers manually
 
-  @givn.added @wip
+  @givn.added
   Scenario: Model explorer with openrouter default and env var set
     Given  environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
-    And  a user config file with content:
-      """
-      [defaults]
-      provider = "openrouter"
-      """
+    And  a configured provider "test" with models endpoint
+    And  the endpoint returns models ["~deepseek/deepseek-v4-flash-latest", "deepseek/deepseek-v4-pro", "z-ai/glm-5.2"]
     When  I run `watn models` and select "~deepseek/deepseek-v4-flash-latest" for small, "deepseek/deepseek-v4-pro" for normal, and "z-ai/glm-5.2" for thinking
     Then  the config file should contain the selected tier assignments
 
-  @givn.added @wip
+  @givn.added
   Scenario: Model explorer api call fails
     Given  a configured provider "test" with failing models endpoint
     When  I run `watn models`
     Then  the exit status should be non-zero
     And  the output should contain an error message
 
-  @givn.added @wip
+  @givn.added
   Scenario: Model picker shows metadata when available
     Given  a configured provider "test" with models endpoint returning rich metadata
     When  I run `watn models` and select "model-a" for small, "model-a" for normal, and "model-a" for thinking
     Then  the output should contain model metadata
 
-  @givn.added @wip
+  @givn.added
   Scenario: Model picker shows model IDs when no metadata available
     Given  a configured provider "test" with models endpoint returning bare model IDs
     When  I run `watn models` and select "model-a" for small, "model-a" for normal, and "model-a" for thinking
