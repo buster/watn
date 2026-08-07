@@ -2,7 +2,7 @@ use cucumber::{given, then, when};
 use regex::Regex;
 
 use crate::WatnWorld;
-use super::{build_config, run_binary_with_state};
+use super::{build_config, find_binary, run_binary_with_state};
 
 // ===== GIVEN =====
 
@@ -281,7 +281,7 @@ fn run_watn_models_select(w: &mut WatnWorld, small: String, normal: String, thin
         w.pending_mock_output = Some("some output".to_string());
         w.pending_mock_usage = Some(false);
     }
-    run_binary_with_state(w, &["models", "--set-small", &small, "--set-normal", &normal, "--set-thinking", &thinking], None);
+    run_binary_with_state(w, &["--set-small", &small, "--set-normal", &normal, "--set-thinking", &thinking, "models"], None);
 }
 
 #[when(regex = r#"^I run `watn --model gpt-4o "([^"]*)"`$"#)]
@@ -371,9 +371,6 @@ fn output_contains_cost_estimate(w: &mut WatnWorld) {
     assert!(stderr.contains("cost:"), "expected stderr to contain 'cost:', got: '{}'", stderr);
 }
 
-#[then(expr = "running {string} should use {string}")]
-fn running_should_use(_w: &mut WatnWorld, _command: String, _model: String) {}
-
 #[then(expr = "the request should use model {string}")]
 fn request_should_use_model(w: &mut WatnWorld, model: String) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
@@ -393,10 +390,28 @@ fn should_query_models_at(_w: &mut WatnWorld, _url: String) {}
 fn request_has_auth_header(_w: &mut WatnWorld, _key: String) {}
 
 #[then("the config file should contain the selected tier assignments")]
-fn config_contains_tier_assignments(_w: &mut WatnWorld) {}
+fn config_contains_tier_assignments(w: &mut WatnWorld) {
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path)
+        .expect("config file should exist");
+    assert!(content.contains("[tiers]"), "config should have [tiers] section, got: {}", content);
+    assert!(content.contains("small = \"gpt-4o-mini\""), "config should have small tier, got: {}", content);
+    assert!(content.contains("normal = \"gpt-4o\""), "config should have normal tier, got: {}", content);
+    assert!(content.contains("thinking = \"o3-mini\""), "config should have thinking tier, got: {}", content);
+}
 
-#[then(expr = r"running {string} should use {string}")]
-fn running_should_use(_w: &mut WatnWorld, _command: String, _model: String) {}
+#[then(regex = r#"^running `watn "([^"]*)"` should use "([^"]*)"$"#)]
+fn running_should_use(w: &mut WatnWorld, command: String, model: String) {
+    let binary = find_binary();
+    let mut cmd = std::process::Command::new(&binary);
+    cmd.args([&command]);
+    super::apply_env(w, &mut cmd);
+
+    let output = cmd.output().expect("run binary");
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    assert!(stderr.contains(&model), "expected stderr to contain model '{}', got: '{}'", model, stderr);
+}
 
 #[then("the output should contain instructions for configuring providers manually")]
 fn output_contains_instructions(w: &mut WatnWorld) {

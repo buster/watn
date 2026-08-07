@@ -1,6 +1,6 @@
 verify:
-  command: "cargo test --test features_runner"
-  e2e_command: "givn missing-e2e-runner"
+  command: "cargo test --test features_runner -- --tags 'not @wip'"
+  e2e_command: "cargo test --test features_runner -- --tags '@e2e and not @wip'"
 
 coverage:
   non_e2e_command: "givn missing-coverage"

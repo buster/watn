@@ -15,7 +15,7 @@
 Feature: Configuration management
   The tool reads configuration from multiple layered sources.
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Configure model tiers in config file
     Given a user config file at "~/.config/watn/config.toml" with content:
       """
@@ -32,20 +32,20 @@ Feature: Configuration management
     When I run `watn -3 "design a paxos implementation"`
     Then the request should use model "o3-mini"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Environment variable overrides config file
     Given a user config file with provider "openai"
     And environment variable WATN_PROVIDER is set to "custom"
     When I run `watn "hello"`
     Then the request should be sent to provider "custom"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: CLI flag overrides environment variable
     Given environment variable WATN_MODEL is set to "gpt-4"
     When I run `watn --model gpt-4o "hello"`
     Then the request should use model "gpt-4o"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Model pricing configured for cost display
     Given a user config file with per-model pricing:
       """
@@ -56,13 +56,13 @@ Feature: Configuration management
     When I run `watn "hello"`
     Then the output should contain a cost estimate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Missing config file does not error
     Given no config file exists
     When I run `watn "hello"`
     Then the exit status should be 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Config file with syntax error produces diagnostic
     Given a user config file with invalid TOML content
     When I run `watn "hello"`

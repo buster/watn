@@ -10,7 +10,7 @@ Feature: Model explorer
   A user can optionally discover available models from a LiteLLM endpoint
   and interactively assign them to the three tiers.
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Discover models and select tiers interactively
     Given a LiteLLM endpoint at "http://localhost:4000"
     And the endpoint returns models ["gpt-4o-mini", "gpt-4o", "o3-mini", "claude-3-haiku", "claude-3-sonnet"]
@@ -18,7 +18,7 @@ Feature: Model explorer
     Then the config file should contain the selected tier assignments
     And running `watn "hello"` should use "gpt-4o-mini"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Model explorer without LiteLLM endpoint configured
     Given no LiteLLM endpoint is configured
     When I run `watn models`

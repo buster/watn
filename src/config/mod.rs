@@ -126,6 +126,18 @@ fn resolve_default_model(config: &Config) -> Result<String, Error> {
     }
 }
 
+pub fn save_config(config: &Config) -> Result<(), Error> {
+    let config_path = xdg_config_path();
+    let content = toml::to_string_pretty(config)
+        .map_err(|e| Error::ConfigError(format!("serialize error: {}", e)))?;
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
+    }
+    std::fs::write(&config_path, content)
+        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))
+}
+
 pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfig) -> Result<String, Error> {
     if let Some(key) = &provider_config.api_key {
         return Ok(key.clone());
