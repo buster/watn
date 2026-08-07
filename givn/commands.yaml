@@ -1,48 +1,7 @@
-# ============================================================================
-#  givn commands  —  test runner and coverage configuration
-#
-#  This file is the SINGLE source of truth for configurable commands.
-#  `givn check`, `givn archive`, and the harness evaluator all read from here.
-#  `givn/config.yaml` stores project structure config; test commands live HERE.
-#
-#  The shipped defaults are sentinels that print setup guidance and exit
-#  non-zero — nothing ever falsely reports GREEN until you configure real
-#  runners.
-# ============================================================================
-
-# --- Test runner -------------------------------------------------------------
-# The command givn invokes to run your test suite. This is the ONLY value
-# you MUST set for a working project.
-#
-# RECOMMENDED — coverage-instrumented runners (the review gate requires
-# coverage data to measure gaps):
-#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
-#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js)
-#   coverage run -m behave givn/specs && coverage report  (Python)
-#   mvn verify                                            (Java)
-#
-# Fallback — bare test runners (no coverage; prototyping only):
-#   cargo test --test features_runner
-#   behave
-#   pytest
-#   npx cucumber-js "givn/specs/**/*.feature"
-#
-# See arc42 ch.8.10 for details.
 verify:
-  command: "givn missing-testrunner"   # <-- replace with your test runner
-
-  # Command to run @e2e-tagged scenarios. If unconfigured, the review gate and
-  # archive gate will reject any change whose specs include @e2e scenarios.
+  command: "cargo test --test features_runner"
   e2e_command: "givn missing-e2e-runner"
 
-# --- Coverage gate (requires addons.coverage: true) ---------------------------
-# Commands that produce Cobertura XML coverage data. givn merges both into a
-# unified summary written to README.md.
-#
-# E2e coverage typically requires running the app server with instrumentation.
-#
-# The archive gate validates that both reports come from distinct
-# instrumentation runs — do not copy the non-e2e XML to the e2e path.
 coverage:
-  non_e2e_command: "givn missing-coverage"   # <-- replace with your non-e2e coverage command
-  e2e_command: "givn missing-coverage"   # <-- replace with your e2e coverage command
+  non_e2e_command: "givn missing-coverage"
+  e2e_command: "givn missing-coverage"

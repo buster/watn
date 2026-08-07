@@ -115,13 +115,13 @@ givn_config_version: "0.2.0"
 # `givn init` enables ALL addons by default (opt-out via `givn init --no-addons`).
 # This project's actual settings are below, written by `givn init`/`givn addons`:
 #
-addons:
-  arc42: true
-  absolute_mode: true
+# addons:
+#   arc42: true             # set to false to disable the arc42 documentation artifact
+#   absolute_mode: true     # set to false to disable the Absolute Mode communication
 #                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
 #                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
-  readme: true
-  coverage: true
+#   readme: true            # set to false to disable the readme scaffolding addon
+#   coverage: true          # set to false to disable the coverage lifecycle artifact
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 
@@ -153,25 +153,37 @@ addons:
 # before design. Generates the givn-domain-modeling skill file on
 # `givn skills sync`. Toggle with: givn addons enable|disable domain_modeling.
 #
-  domain_modeling: true
+# domain_modeling: false   # set to true to enable
 
 # --- Addon: dev_principles ----------------------------------------------------
 # Skill — apply the team's engineering principles during implementation.
 # Generates the givn-dev-principles skill file on `givn skills sync`.
 # Toggle with: givn addons enable|disable dev_principles.
 #
-  dev_principles: true
+# dev_principles: false   # set to true to enable
 
 # --- Addon: grill_me ----------------------------------------------------------
 # Command — Socratically grill the current plan/design, one question at a time.
 # Generates the /grill-me opencode command on `givn skills sync`.
 # Toggle with: givn addons enable|disable grill_me.
 #
-  grill_me: true
+# grill_me: false   # set to true to enable
 
 # --- Addon: grill_with_docs ---------------------------------------------------
 # Command — grill the plan/design, citing a source in the project's own docs
 # for every challenge. Generates the /grill-with-docs opencode command on
 # `givn skills sync`. Toggle with: givn addons enable|disable grill_with_docs.
 #
+# grill_with_docs: false   # set to true to enable
+
+# --- User overrides preserved from previous version ---
+addons:
+  arc42: true
+  absolute_mode: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  grill_me: true
   grill_with_docs: true
+# ---
