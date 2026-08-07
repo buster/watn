@@ -78,6 +78,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
         let output = world.pending_mock_output.clone().unwrap_or_else(|| "output".to_string());
         let include_usage = world.pending_mock_usage.unwrap_or(false);
         let auth_fail = world.pending_mock_auth_fail;
+        let no_config = world.pending_mock_no_config_file;
 
         let server = MockServer::start();
         let base_url = format!("http://127.0.0.1:{}", server.port());
@@ -144,7 +145,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             } else {
                 config_content = mock_cfg;
             }
-            has_config = true;
+            has_config = !no_config;
         }
     } else if let Some(ref raw) = world.raw_config {
         config_content = raw.clone();

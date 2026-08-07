@@ -47,6 +47,7 @@ pub struct WatnWorld {
     pub pending_mock_delay_ms: Option<u64>,
     pub pending_mock_reasoning: Option<String>,
     pub last_request_body: Option<serde_json::Value>,
+    pub pending_mock_no_config_file: bool,
 }
 
 fn collect_features(dir: &Path) -> Vec<PathBuf> {

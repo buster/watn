@@ -1,7 +1,7 @@
 use cucumber::{given, then, when};
 use regex::Regex;
 
-use crate::WatnWorld;
+use crate::{MockServerWrap, WatnWorld};
 use super::{build_config, find_binary, run_binary_with_state};
 
 // ===== GIVEN =====
@@ -91,7 +91,18 @@ fn pricing_configured_given(w: &mut WatnWorld) {
 }
 
 #[given("no config file exists")]
-fn no_config_file(_w: &mut WatnWorld) {}
+fn no_config_file(w: &mut WatnWorld) {
+    w.pending_mock_no_config_file = true;
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+    let dir = tempfile::tempdir().expect("create temp dir for no config test");
+    w.env_vars.insert(
+        "XDG_CONFIG_HOME".to_string(),
+        dir.path().to_string_lossy().to_string(),
+    );
+    w.temp_dir = Some(dir);
+}
 
 #[given(regex = r#"^a user config file at "([^"]+)" with content:$"#)]
 async fn user_config_file_with_content(w: &mut WatnWorld, step: &cucumber::gherkin::Step) {
@@ -465,4 +476,62 @@ fn output_contains_instructions(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     assert!(out.contains("No provider endpoint") || stderr.contains("No provider endpoint"),
         "expected output to mention provider configuration, got stdout: '{}' stderr: '{}'", out, stderr);
+}
+
+// ===== auto-init-config steps =====
+
+#[then("a config file exists at the standard XDG path")]
+fn config_file_exists_at_xdg(w: &mut WatnWorld) {
+    let dir = w.temp_dir.as_ref().expect("no temp dir set up by ensure_test_env");
+    let config_path = dir.path().join("watn").join("config.toml");
+    assert!(config_path.exists(), "expected config file at {:?} to exist", config_path);
+}
+
+#[then(regex = r#"^the config file contains a commented-out "([^"]+)" section$"#)]
+fn config_file_contains_commented_section(w: &mut WatnWorld, section: String) {
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path)
+        .expect("config file should exist");
+    assert!(content.contains(&format!("# [{}]", section)), "expected config file to contain commented-out '[{}]' section, got:\n{}", section, content);
+}
+
+#[then("the command succeeds as if the file already existed")]
+fn command_succeeds(w: &mut WatnWorld) {
+    assert_eq!(w.exit_status, Some(0), "expected exit status 0, got {:?}", w.exit_status);
+}
+
+#[given(regex = r#"^an existing config file with provider "([^"]+)"$"#)]
+fn existing_config_with_provider(w: &mut WatnWorld, provider: String) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    w.mock_server = MockServerWrap(Some(server), None);
+    let server_ref = w.mock_server.0.as_ref().unwrap();
+    let mock = server_ref.mock(|when, then| {
+        when.method(httpmock::Method::POST).path("/chat/completions");
+        then.status(200)
+            .header("Content-Type", "text/event-stream")
+            .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"some output\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":5,\"total_tokens\":15}}\ndata: [DONE]\n");
+    });
+    w.mock_server.1 = Some(mock.id);
+    let config = format!(
+        "[defaults]\n\
+         provider = \"{}\"\n\
+         \n\
+         [providers.{}]\n\
+         endpoint = \"{}\"\n\
+         api_key = \"test-key\"\n\
+         default_model = \"test-model\"\n",
+        provider, provider, base_url
+    );
+    w.raw_config = Some(config);
+}
+
+#[then(regex = r#"^the config file still contains provider "([^"]+)"$"#)]
+fn config_file_still_contains_provider(w: &mut WatnWorld, provider: String) {
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path)
+        .expect("config file should exist");
+    assert!(content.contains(&format!("provider = \"{}\"", provider)), "expected config file to contain 'provider = \"{}\"', got:\n{}", provider, content);
 }
