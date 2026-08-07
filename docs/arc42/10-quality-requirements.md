@@ -11,10 +11,11 @@
   - QS-005: Model discovery via LiteLLM
 - **Portability** — Single binary, no runtime deps
   - QS-006: Standalone binary across Linux/macOS
-- **Observability** — Model, speed, cost in output
+- **Observability** — Model, speed, cost, reasoning in output
   - QS-007: Tokens/second displayed after response
   - QS-008: Cost displayed when pricing configured
-  - QS-009: Exit code categories for scripting
+  - QS-009: Reasoning content displayed on stderr when verbose flag is set
+  - QS-010: Exit code categories for scripting
 
 ## Quality scenarios
 
@@ -28,4 +29,5 @@
 | QS-006 | Portability | User downloads single binary on clean machine | Binary runs without runtime installation |
 | QS-007 | Observability | Response completes | Output contains "tokens/s" with a numeric value |
 | QS-008 | Observability | Pricing configured in config | Output contains "cost:" with a monetary value |
-| QS-009 | Observability | API returns HTTP 429 | Exit code 2; stderr contains "rate limit" |
+| QS-009 | Observability | User runs `watn -3 -v "..."` and API returns reasoning | Reasoning content printed to stderr on its own line |
+| QS-010 | Observability | API returns HTTP 429 | Exit code 2; stderr contains "rate limit" |

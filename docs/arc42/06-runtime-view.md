@@ -73,6 +73,47 @@ sequenceDiagram
 5. Empty line or `y`/`Y`: executes via `sh -c <cmd>` with inherited stdio
 6. `n`/`N`: exits 0 without executing
 
+## Scenario: Ask with thinking tier and verbose flag
+
+**Trigger:** User runs `watn -3 -v "design a distributed queue"`.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant CLI as watn CLI
+    participant Config as Config
+    participant Prov as Provider
+    participant API as LLM API
+
+    User->>CLI: watn -3 -v "design a distributed queue"
+    CLI->>Config: load config (layered merge)
+    Config-->>CLI: resolved Config (tier: thinking -> o3-mini)
+    CLI->>CLI: reasoning_effort = "high", verbose = true
+    CLI->>Prov: chat_completions(messages, options{model, reasoning_effort: "high"})
+    Prov->>API: POST /v1/chat/completions (body includes reasoning_effort: "high")
+    API-->>Prov: SSE stream of chunks with content + reasoning fields
+    loop Each chunk
+        Prov-->>CLI: extract content + reasoning from delta
+    end
+    API-->>Prov: final chunk with usage
+    Prov-->>CLI: StreamingResponse { full_content, reasoning_content, usage }
+    CLI->>CLI: compute tokens/sec, cost
+    CLI-->>User: command suggestion (stdout)
+    CLI-->>User: metadata (model, tok/s, cost) + reasoning (stderr)
+    CLI-->>User: exit 0
+```
+
+**Steps:**
+1. CLI parses args, detects tier `-3` (thinking) and flag `-v` (verbose)
+2. Config resolves thinking tier to model name
+3. CLI sets `reasoning_effort = "high"` on `RequestOptions` and `verbose = true`
+4. Provider builds POST body with `reasoning_effort: "high"` in addition to standard fields
+5. Provider reads SSE chunks, extracting both `delta["content"]` and `delta["reasoning"]`
+6. Content is accumulated into `full_content` as before
+7. Reasoning is accumulated into `reasoning_content`
+8. After stream ends, compute tok/s from elapsed time and usage
+9. Command output printed to stdout; metadata + reasoning content printed to stderr
+
 ## Scenario: Model exploration
 
 **Trigger:** User runs `watn models`.

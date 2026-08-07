@@ -19,6 +19,7 @@ httpmock = "0.7"
 regex = "1"
 tempfile = "3"
 nix = { version = "0.29", features = ["signal", "process"] }
+futures = "0.3.33"
 
 [[test]]
 name = "features_runner"

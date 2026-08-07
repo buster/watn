@@ -1,0 +1,13 @@
+{
+  "active": true,
+  "iteration": 1,
+  "minIterations": 1,
+  "maxIterations": 0,
+  "completionPromise": "COMPLETE",
+  "tasksMode": false,
+  "taskPromise": "READY_FOR_NEXT_TASK",
+  "prompt": "use the givn cli to implement the changes. There are currently three open changes: reasoning-support, auto-init-config and model-explorer. Start with reasoning-support until archived, then auto-init-config until archived and then model-explorer until archived. Don't ask. If something is unclear/open document it QUESTIONS.md, make an assumption and implement until 'givn instructions' says there is no change anymore.",
+  "startedAt": "2026-08-07T18:26:08.355Z",
+  "model": "",
+  "agent": "opencode"
+}

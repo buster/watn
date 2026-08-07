@@ -1,3 +1,11 @@
+pub mod list;
+
+use dialoguer::Select;
+
+use crate::config::{resolve_provider, save_config};
+use crate::config::types::ModelTiers;
+use list::fetch_models;
+
 pub fn run_models(
     set_small: Option<String>,
     set_normal: Option<String>,
@@ -12,7 +20,7 @@ pub fn run_models(
         updated.tiers.small = Some(small.clone());
         updated.tiers.normal = Some(normal.clone());
         updated.tiers.thinking = Some(thinking.clone());
-        if let Err(e) = crate::config::save_config(&updated) {
+        if let Err(e) = save_config(&updated) {
             eprintln!("error: failed to save config: {}", e);
             std::process::exit(1);
         }
@@ -23,13 +31,106 @@ pub fn run_models(
         return;
     }
 
-    if let Some(litellm) = &config.litellm {
-        println!("Available models (from {})", litellm.endpoint);
-        println!("1. gpt-4o-mini\n2. gpt-4o\n3. o3-mini");
-        println!("Use --set-small/--set-normal/--set-thinking flags for non-interactive mode");
-    } else {
-        println!("No provider endpoint configured.");
-        println!("To configure providers manually, edit ~/.config/watn/config.toml");
-        println!("See the configuration guide for details.");
+    let provider_name = config
+        .defaults
+        .provider
+        .as_deref()
+        .unwrap_or("openrouter");
+
+    let provider_config = match resolve_provider(&config, provider_name) {
+        Ok(p) => p,
+        Err(_) => {
+            println!("No provider endpoint configured.");
+            println!("To configure providers manually, edit ~/.config/watn/config.toml");
+            println!("See the configuration guide for details.");
+            return;
+        }
+    };
+
+    let endpoint = provider_config.endpoint.clone();
+    let api_key = match crate::config::get_provider_api_key(provider_name, &provider_config) {
+        Ok(k) => Some(k),
+        Err(_) => None,
+    };
+
+    let models = match fetch_models(&endpoint, api_key.as_deref()) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("error: failed to fetch models: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if models.is_empty() {
+        eprintln!("error: no models returned from endpoint");
+        std::process::exit(1);
     }
+
+    let small = select_model(&models, "small");
+    let normal = select_model(&models, "normal");
+    let thinking = select_model(&models, "thinking");
+
+    let mut updated = config.clone();
+    updated.tiers = ModelTiers {
+        small: Some(small.id.clone()),
+        normal: Some(normal.id.clone()),
+        thinking: Some(thinking.id.clone()),
+    };
+
+    if let Err(e) = save_config(&updated) {
+        eprintln!("error: failed to save config: {}", e);
+        std::process::exit(1);
+    }
+
+    println!(
+        "Tiers configured: small={}, normal={}, thinking={}",
+        small.id, normal.id, thinking.id
+    );
+}
+
+fn format_model_entry(entry: &list::ModelEntry, _index: usize) -> String {
+    let mut parts = vec![format!("{}", entry.id)];
+
+    if let Some(ref name) = entry.name {
+        parts.push(format!("({})", name));
+    }
+    if let Some(ctx) = entry.context_length {
+        parts.push(format!("{}K ctx", ctx / 1000));
+    }
+    if let Some(ref pricing) = entry.pricing {
+        parts.push(format!(
+            "${:.2}/{}K in, ${:.2}/{}K out",
+            pricing.input,
+            1,
+            pricing.output,
+            1
+        ));
+    }
+    if !entry.supported_features.is_empty() {
+        parts.push(format!("[{}]", entry.supported_features.join(", ")));
+    }
+
+    parts.join(" ")
+}
+
+fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> &'a list::ModelEntry {
+    let selections: Vec<String> = models
+        .iter()
+        .enumerate()
+        .map(|(i, m)| format_model_entry(m, i))
+        .collect();
+
+    let prompt = format!("Select a model for the {} tier:", tier);
+
+    let selection = Select::new()
+        .with_prompt(&prompt)
+        .items(&selections)
+        .default(0)
+        .interact()
+        .unwrap_or_else(|_| {
+            eprintln!("error: failed to read selection");
+            std::process::exit(1);
+        });
+
+    &models[selection]
 }

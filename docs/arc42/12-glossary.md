@@ -12,3 +12,4 @@
 | TTY detection | Runtime check of whether stdout is a terminal (interactive) or a pipe (scripting) |
 | Tokens/second | Completion tokens divided by wall-clock seconds from first to last SSE chunk |
 | Pricing | Per-model cost configuration ($/1M input tokens, $/1M output tokens) stored in config |
+| Reasoning | Chain-of-thought or step-by-step explanation produced by the LLM alongside the final answer. Exposed via the API's `reasoning` field in the streaming delta. Displayed on stderr when `-v`/`--verbose` is set. |

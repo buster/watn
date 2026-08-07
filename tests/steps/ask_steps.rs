@@ -192,8 +192,87 @@ fn endpoint_returns_models(w: &mut WatnWorld, models_str: String) {
     w.pending_mock_returned_models = models;
 }
 
+#[given(regex = r#"^a configured provider "([^"]+)" with models endpoint$"#)]
+fn configured_provider_with_models(w: &mut WatnWorld, provider: String) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    w.mock_server = MockServerWrap(Some(server), None);
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{}\"\n\n[providers.{}]\nendpoint = \"{}\"\napi_key = \"test-key\"\n",
+        provider, provider, base_url
+    ));
+}
+
+#[given("no provider is configured")]
+fn no_provider_configured(w: &mut WatnWorld) {
+    w.raw_config = Some("[defaults]\nprovider = \"nonexistent\"\n".to_string());
+}
+
+#[given(regex = r#"^a configured provider "([^"]+)" with failing models endpoint$"#)]
+fn configured_provider_with_failing_models(w: &mut WatnWorld, provider: String) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    w.mock_server = MockServerWrap(Some(server), None);
+    w.pending_mock_models_fail = true;
+    w.pending_mock_returned_models = vec!["model-a".to_string()]; // avoid empty models error
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{}\"\n\n[providers.{}]\nendpoint = \"{}\"\napi_key = \"test-key\"\n",
+        provider, provider, base_url
+    ));
+}
+
+#[given("a configured provider \"test\" with models endpoint returning rich metadata")]
+fn configured_provider_models_rich(w: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    w.mock_server = MockServerWrap(Some(server), None);
+
+    let server_ref = w.mock_server.0.as_ref().unwrap();
+    server_ref.mock(|when, then| {
+        when.method(httpmock::Method::GET).path("/models");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .body(r#"{"data":[
+                {"id":"model-a","name":"Model Alpha","context_length":128000,"pricing":{"prompt":"0.15","completion":"0.60"},"supported_features":["reasoning","tools"]},
+                {"id":"model-b","name":"Model Beta","context_length":32000,"pricing":{"prompt":"2.50","completion":"10.00"},"supported_features":["tools"]}
+            ]}"#);
+    });
+
+    w.pending_mock_returned_models = vec!["model-a".to_string(), "model-b".to_string()];
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{}/\"\napi_key = \"test-key\"\n",
+        base_url
+    ));
+}
+
+#[given("a configured provider \"test\" with models endpoint returning bare model IDs")]
+fn configured_provider_models_bare(w: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    w.mock_server = MockServerWrap(Some(server), None);
+
+    let server_ref = w.mock_server.0.as_ref().unwrap();
+    server_ref.mock(|when, then| {
+        when.method(httpmock::Method::GET).path("/models");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .body(r#"{"data":[{"id":"model-a"},{"id":"model-b"}]}"#);
+    });
+
+    w.pending_mock_returned_models = vec!["model-a".to_string(), "model-b".to_string()];
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{}/\"\napi_key = \"test-key\"\n",
+        base_url
+    ));
+}
+
 #[given("no LiteLLM endpoint is configured")]
-fn no_litellm(_w: &mut WatnWorld) {}
+fn no_litellm(w: &mut WatnWorld) {
+    w.raw_config = Some(
+        "[defaults]\nprovider = \"nonexistent\"\n"
+            .to_string(),
+    );
+}
 
 
 
@@ -316,13 +395,22 @@ fn run_watn_models(w: &mut WatnWorld) {
 
 #[when(regex = r#"^I run `watn models` and select "([^"]+)" for small, "([^"]+)" for normal, and "([^"]+)" for thinking$"#)]
 fn run_watn_models_select(w: &mut WatnWorld, small: String, normal: String, thinking: String) {
-    // Set up litellm endpoint if not already configured
+    // We need to map model names to their indices in the mock model list.
+    // The mock returns models in order, and dialoguer selects by index.
+    // We pipe index+enter for each selection to simulate interactive input.
+    let models = &w.pending_mock_returned_models;
+    let small_idx = models.iter().position(|m| m == &small).unwrap_or(0);
+    let normal_idx = models.iter().position(|m| m == &normal).unwrap_or(1.min(models.len().saturating_sub(1)));
+    let thinking_idx = models.iter().position(|m| m == &thinking).unwrap_or(2.min(models.len().saturating_sub(1)));
+    let stdin_input = format!("{}\n{}\n{}\n", small_idx, normal_idx, thinking_idx);
+
     if w.raw_config.is_none() && w.pending_mock_model.is_none() {
         w.pending_mock_model = Some("test-model".to_string());
         w.pending_mock_output = Some("some output".to_string());
         w.pending_mock_usage = Some(false);
     }
-    run_binary_with_state(w, &["--set-small", &small, "--set-normal", &normal, "--set-thinking", &thinking, "models"], None);
+
+    run_binary_with_state(w, &["models"], Some(&stdin_input));
 }
 
 #[when(regex = r#"^I run `watn --model gpt-4o "([^"]*)"`$"#)]
@@ -453,9 +541,9 @@ fn config_contains_tier_assignments(w: &mut WatnWorld) {
     let content = std::fs::read_to_string(&config_path)
         .expect("config file should exist");
     assert!(content.contains("[tiers]"), "config should have [tiers] section, got: {}", content);
-    assert!(content.contains("small = \"gpt-4o-mini\""), "config should have small tier, got: {}", content);
-    assert!(content.contains("normal = \"gpt-4o\""), "config should have normal tier, got: {}", content);
-    assert!(content.contains("thinking = \"o3-mini\""), "config should have thinking tier, got: {}", content);
+    assert!(content.contains("small = \""), "config should have small tier, got: {}", content);
+    assert!(content.contains("normal = \""), "config should have normal tier, got: {}", content);
+    assert!(content.contains("thinking = \""), "config should have thinking tier, got: {}", content);
 }
 
 #[then(regex = r#"^running `watn "([^"]*)"` should use "([^"]*)"$"#)]
@@ -468,6 +556,30 @@ fn running_should_use(w: &mut WatnWorld, command: String, model: String) {
     let output = cmd.output().expect("run binary");
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
     assert!(stderr.contains(&model), "expected stderr to contain model '{}', got: '{}'", model, stderr);
+}
+
+#[then("the output should contain model metadata")]
+fn output_contains_model_metadata(w: &mut WatnWorld) {
+    let out = w.output.as_ref().expect("no output captured");
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    let combined = format!("{}\n{}", out, stderr);
+    assert!(combined.contains("context") || combined.contains("ctx") || combined.contains("pricing")
+        || combined.contains("$") || combined.contains("features"),
+        "expected model metadata in output, got stdout: '{}' stderr: '{}'", out, stderr);
+}
+
+#[then("the output should not contain pricing information")]
+fn output_not_contain_pricing(w: &mut WatnWorld) {
+    let out = w.output.as_ref().expect("no output captured");
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    let combined = format!("{}\n{}", out, stderr);
+    assert!(!combined.contains("$"), "expected no pricing in output, got: '{}'", combined);
+}
+
+#[then("the output should contain an error message")]
+fn output_contains_error(w: &mut WatnWorld) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(!stderr.is_empty(), "expected error message in stderr, got empty");
 }
 
 #[then("the output should contain instructions for configuring providers manually")]

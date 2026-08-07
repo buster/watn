@@ -34,12 +34,12 @@ impl Config {
         let example = Config {
             defaults: ProviderDefaults {
                 provider: Some("openrouter".to_string()),
-                model: Some("openai/gpt-4o-mini".to_string()),
+                model: Some("~deepseek/deepseek-v4-flash-latest".to_string()),
             },
             tiers: ModelTiers {
-                small: Some("openai/gpt-4o-mini".to_string()),
-                normal: Some("openai/gpt-4o".to_string()),
-                thinking: Some("openai/o3-mini".to_string()),
+                small: Some("~deepseek/deepseek-v4-flash-latest".to_string()),
+                normal: Some("deepseek/deepseek-v4-pro".to_string()),
+                thinking: Some("z-ai/glm-5.2".to_string()),
             },
             providers: {
                 let mut m = HashMap::new();
@@ -52,9 +52,9 @@ impl Config {
             },
             pricing: {
                 let mut m = HashMap::new();
-                m.insert("openai/gpt-4o-mini".to_string(), ModelPricing { input: 0.15, output: 0.60 });
-                m.insert("openai/gpt-4o".to_string(), ModelPricing { input: 2.50, output: 10.00 });
-                m.insert("openai/o3-mini".to_string(), ModelPricing { input: 1.10, output: 4.40 });
+                m.insert("~deepseek/deepseek-v4-flash-latest".to_string(), ModelPricing { input: 0.15, output: 0.60 });
+                m.insert("deepseek/deepseek-v4-pro".to_string(), ModelPricing { input: 2.50, output: 10.00 });
+                m.insert("z-ai/glm-5.2".to_string(), ModelPricing { input: 1.10, output: 4.40 });
                 m
             },
             litellm: None,

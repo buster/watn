@@ -140,7 +140,7 @@ fn resolve_default_model(config: &Config) -> Result<String, Error> {
     if provider == "openai" {
         Ok("gpt-4o-mini".to_string())
     } else if provider == "openrouter" {
-        Ok("openai/gpt-4o-mini".to_string())
+        Ok("~deepseek/deepseek-v4-flash-latest".to_string())
     } else if let Some(pc) = config.providers.get(provider) {
         pc.default_model
             .clone()

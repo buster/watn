@@ -2850,6 +2850,7 @@ dependencies = [
  "clap",
  "cucumber",
  "dialoguer",
+ "futures",
  "httpmock",
  "nix",
  "regex",

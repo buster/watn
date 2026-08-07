@@ -120,6 +120,27 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             });
             world.mock_server.1 = Some(mock.id);
 
+            // Set up /models mock if models are configured
+            if !world.pending_mock_returned_models.is_empty() {
+                let models = world.pending_mock_returned_models.clone();
+                if world.pending_mock_models_fail {
+                    server_ref.mock(move |when, then| {
+                        when.method(Method::GET).path("/models");
+                        then.status(500).body(r#"{"error":"server error"}"#);
+                    });
+                } else {
+                    server_ref.mock(move |when, then| {
+                        when.method(Method::GET).path("/models");
+                        let data: Vec<serde_json::Value> = models.iter().map(|id| {
+                            serde_json::json!({"id": id})
+                        }).collect();
+                        then.status(200)
+                            .header("Content-Type", "application/json")
+                            .body(serde_json::json!({"data": data}).to_string());
+                    });
+                }
+            }
+
             let raw = world.raw_config.clone().unwrap_or_default();
             let mut lines: Vec<&str> = raw.lines().collect();
             if let Some(defaults_idx) = lines.iter().position(|l| l.trim() == "[defaults]") {
@@ -165,13 +186,15 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
         });
         world.mock_server.1 = Some(mock.id);
 
-        config_content = build_config(
-            "test",
-            None,
-            Some(vec![("test", &base_url, "test-key", "test-model")]),
-            None, None, None,
-        );
-        has_config = true;
+        if !world.pending_mock_no_config_file {
+            config_content = build_config(
+                "test",
+                None,
+                Some(vec![("test", &base_url, "test-key", "test-model")]),
+                None, None, None,
+            );
+            has_config = true;
+        }
     }
 
     if has_config {
