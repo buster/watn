@@ -10,7 +10,7 @@ use httpmock::{Method, MockServer};
 use crate::MockServerWrap;
 use std::io::Write;
 
-fn find_binary() -> PathBuf {
+pub(crate) fn find_binary() -> PathBuf {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest_dir.join("target").join("debug").join("watn")
 }
@@ -69,13 +69,7 @@ pub(crate) fn build_config(
     lines.join("\n")
 }
 
-pub(crate) fn run_binary_with_state(
-    world: &mut crate::WatnWorld,
-    args: &[&str],
-    stdin_text: Option<&str>,
-) {
-    let binary = find_binary();
-
+pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
     let mut config_content = String::new();
     let mut has_config = false;
 
@@ -106,8 +100,12 @@ pub(crate) fn run_binary_with_state(
         } else {
             let mc = output.clone();
             let include_usage_val = include_usage;
+            let delay_ms = world.pending_mock_delay_ms.unwrap_or(0);
             server_ref.mock(move |when, then| {
                 when.method(Method::POST).path("/chat/completions");
+                if delay_ms > 0 {
+                    std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+                }
                 then.status(200)
                     .header("Content-Type", "text/event-stream")
                     .body(format!(
@@ -117,11 +115,8 @@ pub(crate) fn run_binary_with_state(
                     ));
             });
 
-            // Merge raw_config with mock provider config
             let raw = world.raw_config.clone().unwrap_or_default();
-            // Keep everything from raw except its [defaults] section
             let mut lines: Vec<&str> = raw.lines().collect();
-            // Remove [defaults] section from raw (mock provides its own)
             if let Some(defaults_idx) = lines.iter().position(|l| l.trim() == "[defaults]") {
                 let mut end = defaults_idx + 1;
                 while end < lines.len() && !lines[end].starts_with('[') && !lines[end].trim().is_empty() {
@@ -152,7 +147,6 @@ pub(crate) fn run_binary_with_state(
         has_config = true;
     }
 
-    // If no config at all, create a default mock so the binary has something to talk to
     if !has_config && world.mock_server.0.is_none() {
         let server = MockServer::start();
         let base_url = format!("http://127.0.0.1:{}", server.port());
@@ -186,19 +180,28 @@ pub(crate) fn run_binary_with_state(
         );
         world.temp_dir = Some(dir);
     }
+}
 
-    // Run binary
-    let mut cmd = std::process::Command::new(&binary);
-    cmd.args(args);
-
-    // Clear environment variables that could interfere with tests
+pub(crate) fn apply_env(world: &crate::WatnWorld, cmd: &mut std::process::Command) {
     cmd.env_remove("WATN_OPENAI_API_KEY");
     cmd.env_remove("WATN_PROVIDER");
     cmd.env_remove("WATN_MODEL");
-
     for (key, value) in &world.env_vars {
         cmd.env(key, value);
     }
+}
+
+pub(crate) fn run_binary_with_state(
+    world: &mut crate::WatnWorld,
+    args: &[&str],
+    stdin_text: Option<&str>,
+) {
+    let binary = find_binary();
+    ensure_test_env(world);
+
+    let mut cmd = std::process::Command::new(&binary);
+    cmd.args(args);
+    apply_env(world, &mut cmd);
 
     let result = if let Some(input) = stdin_text {
         let mut child = cmd

@@ -37,6 +37,7 @@ pub struct WatnWorld {
     pub pending_mock_auth_fail: bool,
     pub pending_mock_returned_models: Vec<String>,
     pub stdin_input: Option<String>,
+    pub pending_mock_delay_ms: Option<u64>,
 }
 
 #[tokio::main]

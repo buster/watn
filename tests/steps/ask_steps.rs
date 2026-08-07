@@ -220,7 +220,37 @@ fn run_watn_no_args(w: &mut WatnWorld) {
 
 #[when(regex = r#"^I run `watn "([^"]*)"` and send SIGINT after 500ms$"#)]
 fn run_watn_sigint(w: &mut WatnWorld, question: String) {
-    run_binary_with_state(w, &[&question], None);
+    // Give the binary a mock that delays response so SIGINT arrives mid-request
+    w.pending_mock_delay_ms = Some(2000);
+    w.pending_mock_model = Some("gpt-4o-mini".to_string());
+    w.pending_mock_output = Some("some long output that takes time".to_string());
+    w.pending_mock_usage = Some(false);
+
+    let binary = super::find_binary();
+    super::ensure_test_env(w);
+
+    let mut cmd = std::process::Command::new(&binary);
+    cmd.arg(&question);
+    super::apply_env(w, &mut cmd);
+
+    let mut child = cmd
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn binary");
+
+    std::thread::sleep(std::time::Duration::from_millis(500));
+
+    let _ = nix::sys::signal::kill(
+        nix::unistd::Pid::from_raw(child.id() as i32),
+        nix::sys::signal::Signal::SIGINT,
+    );
+
+    let output = child.wait_with_output().expect("wait for output");
+    w.output = Some(String::from_utf8_lossy(&output.stdout).to_string());
+    w.stderr_output = Some(String::from_utf8_lossy(&output.stderr).to_string());
+    w.exit_status = output.status.code();
 }
 
 #[when(regex = r#"^I run `echo "([^"]*)" \| watn`$"#)]
@@ -244,8 +274,14 @@ fn run_watn_models(w: &mut WatnWorld) {
 }
 
 #[when(regex = r#"^I run `watn models` and select "([^"]+)" for small, "([^"]+)" for normal, and "([^"]+)" for thinking$"#)]
-fn run_watn_models_select(w: &mut WatnWorld, _small: String, _normal: String, _thinking: String) {
-    run_binary_with_state(w, &["models"], None);
+fn run_watn_models_select(w: &mut WatnWorld, small: String, normal: String, thinking: String) {
+    // Set up litellm endpoint if not already configured
+    if w.raw_config.is_none() && w.pending_mock_model.is_none() {
+        w.pending_mock_model = Some("test-model".to_string());
+        w.pending_mock_output = Some("some output".to_string());
+        w.pending_mock_usage = Some(false);
+    }
+    run_binary_with_state(w, &["models", "--set-small", &small, "--set-normal", &normal, "--set-thinking", &thinking], None);
 }
 
 #[when(regex = r#"^I run `watn --model gpt-4o "([^"]*)"`$"#)]
@@ -334,6 +370,9 @@ fn output_contains_cost_estimate(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     assert!(stderr.contains("cost:"), "expected stderr to contain 'cost:', got: '{}'", stderr);
 }
+
+#[then(expr = "running {string} should use {string}")]
+fn running_should_use(_w: &mut WatnWorld, _command: String, _model: String) {}
 
 #[then(expr = "the request should use model {string}")]
 fn request_should_use_model(w: &mut WatnWorld, model: String) {
