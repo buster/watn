@@ -1,6 +1,20 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+fn comment_toml(input: &str) -> String {
+    input
+        .lines()
+        .map(|line| {
+            if line.is_empty() {
+                String::new()
+            } else {
+                format!("# {}", line)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Config {
     #[serde(default)]
@@ -15,6 +29,47 @@ pub struct Config {
     pub litellm: Option<LiteLLMConfig>,
 }
 
+impl Config {
+    pub fn template_content() -> String {
+        let example = Config {
+            defaults: ProviderDefaults {
+                provider: Some("openrouter".to_string()),
+                model: Some("openai/gpt-4o-mini".to_string()),
+            },
+            tiers: ModelTiers {
+                small: Some("openai/gpt-4o-mini".to_string()),
+                normal: Some("openai/gpt-4o".to_string()),
+                thinking: Some("openai/o3-mini".to_string()),
+            },
+            providers: {
+                let mut m = HashMap::new();
+                m.insert("custom".to_string(), ProviderConfig {
+                    endpoint: "https://api.example.com/v1".to_string(),
+                    api_key: Some("sk-...".to_string()),
+                    default_model: Some("custom-model".to_string()),
+                });
+                m
+            },
+            pricing: {
+                let mut m = HashMap::new();
+                m.insert("openai/gpt-4o-mini".to_string(), ModelPricing { input: 0.15, output: 0.60 });
+                m.insert("openai/gpt-4o".to_string(), ModelPricing { input: 2.50, output: 10.00 });
+                m.insert("openai/o3-mini".to_string(), ModelPricing { input: 1.10, output: 4.40 });
+                m
+            },
+            litellm: None,
+        };
+        let raw = toml::to_string_pretty(&example).unwrap_or_default();
+        format!(
+            "# watn configuration file\n\
+             # Uncomment and edit settings to override the defaults below.\n\
+             \n\
+             {}",
+            comment_toml(&raw)
+        )
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ProviderDefaults {
     pub provider: Option<String>,
@@ -24,7 +79,7 @@ pub struct ProviderDefaults {
 impl Default for ProviderDefaults {
     fn default() -> Self {
         Self {
-            provider: Some("openai".to_string()),
+            provider: Some("openrouter".to_string()),
             model: None,
         }
     }
@@ -67,6 +122,7 @@ pub struct LiteLLMConfig {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ResolvedConfig {
     pub provider: String,
     pub model: String,

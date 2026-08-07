@@ -1,7 +1,6 @@
 pub mod env;
 pub mod types;
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::config::types::*;
@@ -18,16 +17,31 @@ pub fn xdg_config_path() -> PathBuf {
     base.join("watn").join("config.toml")
 }
 
+fn write_template_config() -> Result<(), Error> {
+    let config_path = xdg_config_path();
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
+    }
+    std::fs::write(&config_path, Config::template_content())
+        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))
+}
+
 pub fn load_config() -> Result<Config, Error> {
     let config_path = xdg_config_path();
 
-    let mut config = if config_path.exists() {
-        let content = std::fs::read_to_string(&config_path)
-            .map_err(|e| Error::ConfigError(format!("cannot read config: {}", e)))?;
+    if !config_path.exists() {
+        write_template_config()?;
+    }
+
+    let content = std::fs::read_to_string(&config_path)
+        .map_err(|e| Error::ConfigError(format!("cannot read config: {}", e)))?;
+
+    let mut config = if content.trim().is_empty() {
+        Config::default()
+    } else {
         toml::from_str(&content)
             .map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
-    } else {
-        Config::default()
     };
 
     let env_overrides = env::read_env_overrides();
@@ -54,6 +68,14 @@ pub fn resolve_provider(
         });
     }
 
+    if provider_name == "openrouter" {
+        return Ok(ProviderConfig {
+            endpoint: "https://openrouter.ai/api/v1".to_string(),
+            api_key: std::env::var("OPENROUTER_API_KEY").ok(),
+            default_model: None,
+        });
+    }
+
     config
         .providers
         .get(provider_name)
@@ -62,7 +84,7 @@ pub fn resolve_provider(
 }
 
 pub fn resolve_endpoint(
-    provider_name: &str,
+    _provider_name: &str,
     provider_config: &ProviderConfig,
 ) -> String {
     provider_config.endpoint.clone()
@@ -114,9 +136,11 @@ fn resolve_default_model(config: &Config) -> Result<String, Error> {
         .defaults
         .provider
         .as_deref()
-        .unwrap_or("openai");
+        .unwrap_or("openrouter");
     if provider == "openai" {
         Ok("gpt-4o-mini".to_string())
+    } else if provider == "openrouter" {
+        Ok("openai/gpt-4o-mini".to_string())
     } else if let Some(pc) = config.providers.get(provider) {
         pc.default_model
             .clone()
@@ -141,6 +165,12 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
 pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfig) -> Result<String, Error> {
     if let Some(key) = &provider_config.api_key {
         return Ok(key.clone());
+    }
+
+    if provider_name == "openrouter" {
+        if let Ok(key) = std::env::var("OPENROUTER_API_KEY") {
+            return Ok(key);
+        }
     }
 
     let env_var = format!("WATN_{}_API_KEY", provider_name.to_uppercase());

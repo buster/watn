@@ -36,6 +36,9 @@ struct Cli {
     #[arg(short = 'x', long = "execute")]
     execute: bool,
 
+    #[arg(short = 'v', long = "verbose")]
+    verbose: bool,
+
     #[arg(long = "provider")]
     provider: Option<String>,
 
@@ -109,7 +112,7 @@ fn main() {
     };
 
     let provider_name = cli.provider.as_deref().unwrap_or(
-        config.defaults.provider.as_deref().unwrap_or("openai"),
+        config.defaults.provider.as_deref().unwrap_or("openrouter"),
     );
 
     let tier = cli.tier();
@@ -149,12 +152,22 @@ fn main() {
         content: question,
     }];
 
-    match proc.chat_completions_streaming(&messages, &RequestOptions {
+    let reasoning_effort = if cli.tier_thinking {
+        Some("high".to_string())
+    } else {
+        None
+    };
+
+    let options = RequestOptions {
         model: model.clone(),
         streaming: true,
         temperature: None,
         max_tokens: None,
-    }) {
+        reasoning_effort,
+        verbose: cli.verbose,
+    };
+
+    match proc.chat_completions_streaming(&messages, &options) {
         Ok(response) => {
             let cost = config.pricing.get(&model).map(|p| {
                 let input_cost = p.input * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64 / 1_000_000.0;
@@ -170,6 +183,14 @@ fn main() {
             };
 
             let command_text = response.full_content.trim().to_string();
+
+            if cli.verbose {
+                if let Some(ref reasoning) = response.reasoning_content {
+                    if !reasoning.trim().is_empty() {
+                        eprintln!("reasoning: {}", reasoning.trim());
+                    }
+                }
+            }
 
             render::print_response(&command_text, &response.model, tok_s, cost);
 

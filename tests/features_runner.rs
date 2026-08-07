@@ -1,11 +1,18 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
-use cucumber::World;
+use cucumber::gherkin::{Feature, GherkinEnv};
+use cucumber::parser::{self, Parser};
+use cucumber::runner;
+use cucumber::writer;
+use cucumber::{Cucumber, World, WriterExt};
+use futures::stream;
 
 pub mod steps;
 
-pub struct MockServerWrap(pub Option<httpmock::MockServer>);
+pub struct MockServerWrap(pub Option<httpmock::MockServer>, pub Option<usize>);
 
 impl fmt::Debug for MockServerWrap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -15,7 +22,7 @@ impl fmt::Debug for MockServerWrap {
 
 impl Default for MockServerWrap {
     fn default() -> Self {
-        Self(None)
+        Self(None, None)
     }
 }
 
@@ -38,17 +45,90 @@ pub struct WatnWorld {
     pub pending_mock_returned_models: Vec<String>,
     pub stdin_input: Option<String>,
     pub pending_mock_delay_ms: Option<u64>,
+    pub pending_mock_reasoning: Option<String>,
+    pub last_request_body: Option<serde_json::Value>,
+}
+
+fn collect_features(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    if !dir.exists() {
+        return files;
+    }
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(path) = stack.pop() {
+        if path.is_dir() {
+            if path.file_name().and_then(|n| n.to_str()) == Some("archive") {
+                continue;
+            }
+            if let Ok(entries) = std::fs::read_dir(&path) {
+                for entry in entries.flatten() {
+                    stack.push(entry.path());
+                }
+            }
+        } else if path.extension().map_or(false, |e| e == "feature") {
+            files.push(path);
+        }
+    }
+    files
+}
+
+#[derive(Clone, Debug)]
+struct VecParser;
+
+#[derive(Clone, Debug, Default, clap::Args)]
+#[group(skip)]
+struct VecParserCli;
+
+impl Parser<Vec<PathBuf>> for VecParser {
+    type Cli = VecParserCli;
+
+    type Output =
+        stream::Iter<std::vec::IntoIter<Result<Feature, parser::Error>>>;
+
+    fn parse(self, mut input: Vec<PathBuf>, _cli: Self::Cli) -> Self::Output {
+        input.sort();
+        let features: Vec<_> = input
+            .into_iter()
+            .filter_map(|path| {
+                let env = GherkinEnv::default();
+                match Feature::parse_path(&path, env) {
+                    Ok(feature) => Some(Ok(feature)),
+                    Err(e) => Some(Err(parser::Error::Parsing(Arc::new(e)))),
+                }
+            })
+            .collect();
+        stream::iter(features)
+    }
 }
 
 #[tokio::main]
 async fn main() {
-    let spec_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("givn")
-        .join("specs");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("givn");
+    let mut feature_files: Vec<PathBuf> = Vec::new();
 
-    WatnWorld::cucumber()
-        .fail_on_skipped()
-        .max_concurrent_scenarios(1)
-        .run_and_exit(spec_dir)
-        .await;
+    feature_files.extend(collect_features(&root.join("specs")));
+
+    let changes_dir = root.join("changes");
+    if changes_dir.exists() {
+        for entry in std::fs::read_dir(&changes_dir).unwrap() {
+            let change_dir = entry.unwrap().path();
+            feature_files.extend(collect_features(&change_dir.join("specs")));
+        }
+    }
+
+    feature_files.sort();
+
+    let cucumber_runner = runner::Basic::<WatnWorld>::default();
+    let writer = writer::Basic::stdout().normalized().summarized();
+
+    Cucumber::<WatnWorld, VecParser, Vec<PathBuf>, _, _, cucumber::cli::Empty>::custom(
+        VecParser,
+        cucumber_runner,
+        writer,
+    )
+    .steps(WatnWorld::collection())
+    .fail_on_skipped()
+    .max_concurrent_scenarios(1)
+    .run_and_exit(feature_files)
+    .await;
 }

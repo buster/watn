@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub fn logo() -> String {
     if std::env::var("TERM").as_deref() == Ok("linux") || !atty::is(atty::Stream::Stdout) {
         ascii_logo().to_string()
@@ -6,6 +7,7 @@ pub fn logo() -> String {
     }
 }
 
+#[allow(dead_code)]
 pub fn ascii_logo() -> &'static str {
     r#"__      __ __ _ | |_  _ __   ___
 \ \ /\ / // _` || __|| '_ \ |__ \

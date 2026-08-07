@@ -49,6 +49,11 @@ fn mock_returns_command(w: &mut WatnWorld, command: String) {
     w.pending_mock_usage = Some(false);
 }
 
+#[given(regex = r#"^the mock returns reasoning "([^"]*)"$"#)]
+fn mock_returns_reasoning(w: &mut WatnWorld, reasoning: String) {
+    w.pending_mock_reasoning = Some(reasoning);
+}
+
 #[given(regex = r#"^a configured provider "([^"]+)" with api-key "([^"]+)"$"#)]
 fn configured_provider_with_key(w: &mut WatnWorld, provider: String, key: String) {
     let config = build_config(
@@ -203,6 +208,31 @@ fn run_watn_tier3(w: &mut WatnWorld, question: String) {
     run_binary_with_state(w, &["-3", &question], None);
 }
 
+#[when(regex = r#"^I run `watn -3 -v "([^"]*)"`$"#)]
+fn run_watn_tier3_verbose(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["-3", "-v", &question], None);
+}
+
+#[when(regex = r#"^I run `watn -1 -v "([^"]*)"`$"#)]
+fn run_watn_tier1_verbose(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["-1", "-v", &question], None);
+}
+
+#[when(regex = r#"^I run `watn -v "([^"]*)"`$"#)]
+fn run_watn_verbose(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["-v", &question], None);
+}
+
+#[when(regex = r#"^I run `watn -3 -v -x "([^"]*)"` and answer with "([^"]*)"$"#)]
+fn run_watn_tier3_verbose_execute(w: &mut WatnWorld, question: String, answer: String) {
+    run_binary_with_state(w, &["-3", "-v", "-x", &question], Some(&answer));
+}
+
+#[when("I run `watn --help`")]
+fn run_watn_help(w: &mut WatnWorld) {
+    run_binary_with_state(w, &["--help"], None);
+}
+
 #[when(regex = r#"^I run `watn --model "([^"]+)" "([^"]*)"`$"#)]
 fn run_watn_with_model(w: &mut WatnWorld, model: String, question: String) {
     run_binary_with_state(w, &["--model", &model, &question], None);
@@ -233,7 +263,7 @@ fn run_watn_sigint(w: &mut WatnWorld, question: String) {
     cmd.arg(&question);
     super::apply_env(w, &mut cmd);
 
-    let mut child = cmd
+    let child = cmd
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -335,6 +365,20 @@ fn stderr_contains(w: &mut WatnWorld, text: String) {
     assert!(stderr.contains(&text), "expected stderr to contain '{}', got: '{}'", text, stderr);
 }
 
+#[then(expr = "stderr should not contain {string}")]
+fn stderr_not_contain(w: &mut WatnWorld, text: String) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(!stderr.contains(&text), "expected stderr to not contain '{}', got: '{}'", text, stderr);
+}
+
+#[then(expr = "the API request should include reasoning with effort {string}")]
+fn api_request_includes_reasoning(w: &mut WatnWorld, effort: String) {
+    let mock_id = w.mock_server.1.expect("no mock id stored");
+    let server = w.mock_server.0.as_ref().expect("no mock server");
+    let mock = httpmock::Mock::new(mock_id, server);
+    assert!(mock.hits() > 0, "expected mock to be hit (reasoning effort {})", effort);
+}
+
 #[then("the output should contain a version number")]
 fn output_contains_version(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
@@ -419,6 +463,6 @@ fn running_should_use(w: &mut WatnWorld, command: String, model: String) {
 fn output_contains_instructions(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(out.contains("No LiteLLM endpoint") || stderr.contains("No LiteLLM endpoint"),
-        "expected output to mention LiteLLM, got stdout: '{}' stderr: '{}'", out, stderr);
+    assert!(out.contains("No provider endpoint") || stderr.contains("No provider endpoint"),
+        "expected output to mention provider configuration, got stdout: '{}' stderr: '{}'", out, stderr);
 }

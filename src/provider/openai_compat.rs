@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::error::Error;
 use crate::provider::{
-    CompleteResponse, Message, Provider, RequestOptions, StreamChunk, StreamingResponse,
+    CompleteResponse, Message, Provider, RequestOptions, StreamingResponse,
     TokenUsage,
 };
 
@@ -36,7 +36,7 @@ impl Provider for OpenAICompatProvider {
         let start = Instant::now();
         let url = format!("{}/chat/completions", self.endpoint.trim_end_matches('/'));
 
-        let body = serde_json::json!({
+        let mut body = serde_json::json!({
             "model": options.model,
             "messages": messages.iter().map(|m| serde_json::json!({
                 "role": m.role,
@@ -46,6 +46,10 @@ impl Provider for OpenAICompatProvider {
             "temperature": options.temperature.unwrap_or(0.7),
             "max_tokens": options.max_tokens.unwrap_or(1024),
         });
+
+        if let Some(effort) = &options.reasoning_effort {
+            body["reasoning_effort"] = serde_json::json!(effort);
+        }
 
         let response = self
             .client
@@ -85,6 +89,7 @@ impl Provider for OpenAICompatProvider {
         }
 
         let mut full_content = String::new();
+        let mut reasoning_content = String::new();
         let mut final_usage = None;
         let mut response_model = options.model.clone();
 
@@ -114,6 +119,10 @@ impl Provider for OpenAICompatProvider {
                             full_content.push_str(content);
                         }
 
+                        if let Some(reasoning) = delta["reasoning"].as_str() {
+                            reasoning_content.push_str(reasoning);
+                        }
+
                         if let Some(model) = chunk["model"].as_str() {
                             response_model = model.to_string();
                         }
@@ -141,6 +150,7 @@ impl Provider for OpenAICompatProvider {
             model: response_model,
             full_content,
             elapsed_secs,
+            reasoning_content: if reasoning_content.is_empty() { None } else { Some(reasoning_content) },
         })
     }
 
@@ -151,7 +161,7 @@ impl Provider for OpenAICompatProvider {
     ) -> Result<CompleteResponse, Error> {
         let url = format!("{}/chat/completions", self.endpoint.trim_end_matches('/'));
 
-        let body = serde_json::json!({
+        let mut body = serde_json::json!({
             "model": options.model,
             "messages": messages.iter().map(|m| serde_json::json!({
                 "role": m.role,
@@ -161,6 +171,10 @@ impl Provider for OpenAICompatProvider {
             "temperature": options.temperature.unwrap_or(0.7),
             "max_tokens": options.max_tokens.unwrap_or(1024),
         });
+
+        if let Some(effort) = &options.reasoning_effort {
+            body["reasoning_effort"] = serde_json::json!(effort);
+        }
 
         let response = self
             .client

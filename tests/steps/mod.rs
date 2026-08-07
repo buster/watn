@@ -81,7 +81,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
         let server = MockServer::start();
         let base_url = format!("http://127.0.0.1:{}", server.port());
-        world.mock_server = MockServerWrap(Some(server));
+        world.mock_server = MockServerWrap(Some(server), None);
 
         let server_ref = world.mock_server.0.as_ref().unwrap();
 
@@ -101,19 +101,23 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             let mc = output.clone();
             let include_usage_val = include_usage;
             let delay_ms = world.pending_mock_delay_ms.unwrap_or(0);
-            server_ref.mock(move |when, then| {
+            let reasoning = world.pending_mock_reasoning.clone();
+            let mock = server_ref.mock(move |when, then| {
                 when.method(Method::POST).path("/chat/completions");
                 if delay_ms > 0 {
                     std::thread::sleep(std::time::Duration::from_millis(delay_ms));
                 }
+                let reasoning_delta = reasoning.as_ref().map(|r| format!(",\"reasoning\":\"{}\"", r.replace('"', "\\\""))).unwrap_or_default();
                 then.status(200)
                     .header("Content-Type", "text/event-stream")
                     .body(format!(
-                        "data: {{\"id\":\"1\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":\"{}\"}},\"finish_reason\":\"stop\"}}]{}}}\ndata: [DONE]\n",
+                        "data: {{\"id\":\"1\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":\"{}\"{}}},\"finish_reason\":\"stop\"}}]{}}}\ndata: [DONE]\n",
                         mc.replace('"', "\\\""),
+                        reasoning_delta,
                         if include_usage_val { ",\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":20,\"total_tokens\":30}" } else { "" }
                     ));
             });
+            world.mock_server.1 = Some(mock.id);
 
             let raw = world.raw_config.clone().unwrap_or_default();
             let mut lines: Vec<&str> = raw.lines().collect();
@@ -150,14 +154,15 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
     if !has_config && world.mock_server.0.is_none() {
         let server = MockServer::start();
         let base_url = format!("http://127.0.0.1:{}", server.port());
-        world.mock_server = MockServerWrap(Some(server));
+        world.mock_server = MockServerWrap(Some(server), None);
         let server_ref = world.mock_server.0.as_ref().unwrap();
-        server_ref.mock(move |when, then| {
+        let mock = server_ref.mock(move |when, then| {
             when.method(Method::POST).path("/chat/completions");
             then.status(200)
                 .header("Content-Type", "text/event-stream")
                 .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"output\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":5,\"total_tokens\":15}}\ndata: [DONE]\n");
         });
+        world.mock_server.1 = Some(mock.id);
 
         config_content = build_config(
             "test",
