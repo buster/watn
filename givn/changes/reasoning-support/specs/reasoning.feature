@@ -29,7 +29,7 @@ Feature: Reasoning Support
     And the API request should include reasoning with effort "high"
     And stderr should not contain "reasoning:"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Thinking tier with verbose flag prints reasoning to stderr
     Given a configured default provider "openai"
     And a model "o3-mini" assigned to the thinking tier
@@ -39,7 +39,7 @@ Feature: Reasoning Support
     And stderr should contain "reasoning:"
     And stderr should contain "We need a distributed commit log"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Verbose flag with small tier prints reasoning if present
     Given a configured default provider "openai"
     And a model "gpt-4o-mini" assigned to the small/fast tier
@@ -49,7 +49,7 @@ Feature: Reasoning Support
     And stderr should contain "reasoning:"
     And stderr should contain "This is a simple command"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Small tier without verbose flag does not print reasoning
     Given a configured default provider "openai"
     And a model "gpt-4o-mini" assigned to the small/fast tier
@@ -58,7 +58,7 @@ Feature: Reasoning Support
     Then the exit status should be 0
     And stderr should not contain "reasoning:"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Verbose flag with default tier does not alter existing model behavior
     Given a configured default provider "openai"
     And a model "gpt-4o-mini" assigned to the small/fast tier
@@ -66,13 +66,13 @@ Feature: Reasoning Support
     Then the exit status should be 0
     And the output should contain a model name
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Help output includes verbose flag
     When I run `watn --help`
     Then the exit status should be 0
     And the output should contain "--verbose"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Thinking tier with verbose and execute flags
     Given a configured default provider "openai"
     And a model "o3-mini" assigned to the thinking tier
