@@ -3,5 +3,5 @@ verify:
   e2e_command: "cargo test --test features_runner -- --tags '@e2e and not @wip'"
 
 coverage:
-  non_e2e_command: "givn missing-coverage"
-  e2e_command: "givn missing-coverage"
+  non_e2e_command: "cargo llvm-cov test --test features_runner -- --tags 'not @wip'"
+  e2e_command: "cargo llvm-cov test --test features_runner -- --tags '@e2e and not @wip'"

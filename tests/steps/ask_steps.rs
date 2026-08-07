@@ -357,7 +357,12 @@ fn output_contains_command_suggestion(w: &mut WatnWorld, text: String) {
 }
 
 #[then("the command should not have been executed")]
-fn command_not_executed(_w: &mut WatnWorld) {}
+fn command_not_executed(w: &mut WatnWorld) {
+    let out = w.output.as_ref().expect("no output captured");
+    let lines: Vec<&str> = out.lines().collect();
+    assert!(lines.len() == 1, "expected single line (suggestion only), got {} lines: '{}'", lines.len(), out);
+    assert_eq!(lines[0], "echo hello", "expected command suggestion");
+}
 
 #[then(expr = r"{string} should have been printed to stdout")]
 fn string_printed_to_stdout(w: &mut WatnWorld, text: String) {

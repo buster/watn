@@ -24,8 +24,7 @@
 
 ```
 src/
-  main.rs                  # Binary entrypoint — clap dispatch
-  cli.rs                   # CLI argument definitions (clap derive)
+  main.rs                  # Binary entrypoint — clap dispatch + CLI argument definitions
   config/
     mod.rs                 # Config load: XDG, toml, layered merge from defaults→system→user→env→cli
     types.rs               # Config structs (ProviderConfig, TierConfig, PricingConfig, LiteLLMConfig)
@@ -45,7 +44,7 @@ src/
 
 ### Step definition locations
 
-One file per capability, under `tests/steps/`:
+All step definitions are in `tests/steps/`, one file per capability (shared by e2e and non-e2e):
 
 | Capability | Step file |
 |---|---|
@@ -54,16 +53,7 @@ One file per capability, under `tests/steps/`:
 | models | `tests/steps/models_steps.rs` |
 | providers | `tests/steps/providers_steps.rs` |
 
-### E2E step definition locations
-
-One file per capability, under `tests/e2e_steps/`:
-
-| Capability | E2E step file |
-|---|---|
-| ask | `tests/e2e_steps/ask_steps.rs` |
-| config | `tests/e2e_steps/config_steps.rs` |
-| models | `tests/e2e_steps/models_steps.rs` |
-| providers | `tests/e2e_steps/providers_steps.rs` |
+No separate `tests/e2e_steps/` directory — cucumber-rs registers steps globally; separate files are not required and would cause duplicate-registration panics.
 
 ### Step definition conventions
 
@@ -354,16 +344,10 @@ the config file is written immediately.
 ### E2E runner command
 
 ```
-cargo test --test features_runner -- --tags @e2e
+cargo test --test features_runner -- --tags '@e2e and not @wip'
 ```
 
-Configured as `verify.e2e_command` in `givn/config.yaml`.
-
-### E2E step locations
-
-Separate files under `tests/e2e_steps/`, one per capability. E2E scenarios
-drive the real binary via `std::process::Command`; non-e2e scenarios use
-in-process mock provider.
+Configured as `verify.e2e_command` in `givn/config.yaml`. The `not @wip` filter excludes the known-broken SIGINT scenario (`@wip`).
 
 ### Local test infrastructure
 

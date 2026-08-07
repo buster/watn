@@ -17,37 +17,37 @@
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/main.rs`, `src/error.rs`, `src/config/`, `src/provider/`, `src/output/`, `src/exec.rs`, `src/models/mod.rs`, `tests/steps/*.rs`, `tests/features_runner.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: No arguments and no stdin prints help and exits with error
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/main.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Non-zero exit code on API authentication failure
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/error.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Explicit model flag overrides tier dispatch
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/main.rs`, `src/config/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Version flag prints logo and version
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/main.rs`, `src/output/logo.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Default model used when no tiers configured
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/config/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ### config.feature
 
@@ -55,13 +55,13 @@
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/config/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Config file with syntax error produces diagnostic
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/config/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ### providers.feature
 
@@ -69,13 +69,13 @@
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/config/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Missing API key produces error
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/config/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ## E2E setup
 
@@ -92,61 +92,61 @@
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/mod.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Explicit tier -1 uses the small/fast model
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Tier -2 uses the normal model
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Tier -3 uses the thinking/reasoning model
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Execute flag prompts for confirmation
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/exec.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Execute flag with explicit "y" confirmation
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/exec.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Execute flag with "n" answer skips execution
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/exec.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Cost is displayed when pricing is configured
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/main.rs`, `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Tokens/second is displayed after response completes
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Ask via stdin pipe
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/main.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ### config.feature
 
@@ -154,25 +154,25 @@
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Environment variable overrides config file
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: CLI flag overrides environment variable
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Model pricing configured for cost display
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ### models.feature
 
@@ -180,13 +180,13 @@
   - [x] RED — output: Non-zero exit (step didn't match any function, then compile error: duplicate function)
   - [x] GREEN — files: `src/models/mod.rs`, `src/config/mod.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes (28 of 29 pass, 1 @wip expected failure)
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Model explorer without LiteLLM endpoint configured
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `src/models/mod.rs`, `tests/steps/ask_steps.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ### providers.feature
 
@@ -194,19 +194,19 @@
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: LiteLLM endpoint in config for model discovery
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 - [x] Scenario: Provider API key from environment variable
   - [x] RED — output: Non-zero exit on unimplemented steps
   - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
   - [x] REFACTOR — output: Suite passes
-  - [x] COMMIT — hash: `pending`
+  - [x] COMMIT: hash: `fe7498d`
 
 ## Verify
 
