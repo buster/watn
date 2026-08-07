@@ -194,6 +194,6 @@ All scenarios in `specs/reasoning.feature` are tagged `@e2e`. There are no non-@
 
 ## Final verification
 
-- [ ] Run `cargo test --test features_runner` — all existing (28) + new scenarios pass
-- [ ] Run `verify.e2e_command` (`cargo test --test features_runner -- --tags '@e2e'`) — all @e2e scenarios pass; count is strictly > 0
-- [ ] `cargo build` — 0 warnings
+- [x] Run `cargo test --test features_runner` — all existing (28) + new scenarios pass
+- [x] Run `verify.e2e_command` (`cargo test --test features_runner -- --tags '@e2e'`) — all @e2e scenarios pass; count is strictly > 0
+- [x] `cargo build` — 0 warnings
