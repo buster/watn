@@ -44,8 +44,6 @@ pub struct WatnWorld {
 async fn main() {
     let spec_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("givn")
-        .join("changes")
-        .join("watn-cli")
         .join("specs");
 
     WatnWorld::cucumber()
