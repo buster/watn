@@ -1,0 +1,777 @@
+<?xml version="1.0" ?>
+<!DOCTYPE coverage SYSTEM "https://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage branch-rate="0" branches-covered="0" branches-valid="0" complexity="0" line-rate="0" lines-covered="0" lines-valid="488" timestamp="1786122847" version="2.0.3">
+    <sources>
+        <source>/home/buster/projects/watn</source>
+    </sources>
+    <packages>
+        <package line-rate="0" branch-rate="0" name="src.config" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="src/config/types.rs" line-rate="0" name="src.config.types.rs">
+                    <methods>
+                        <method name="&lt;watn::config::types::ProviderDefaults as core::default::Default&gt;::default" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="25" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::config::types::ModelTiers as core::default::Default&gt;::default" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="48" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="0" number="26"/>
+                        <line branch="false" hits="0" number="27"/>
+                        <line branch="false" hits="0" number="28"/>
+                        <line branch="false" hits="0" number="29"/>
+                        <line branch="false" hits="0" number="30"/>
+                        <line branch="false" hits="0" number="48"/>
+                        <line branch="false" hits="0" number="49"/>
+                        <line branch="false" hits="0" number="50"/>
+                        <line branch="false" hits="0" number="51"/>
+                        <line branch="false" hits="0" number="52"/>
+                        <line branch="false" hits="0" number="53"/>
+                        <line branch="false" hits="0" number="54"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="src/config/env.rs" line-rate="0" name="src.config.env.rs">
+                    <methods>
+                        <method name="watn::config::env::read_env_overrides" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="3" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="3"/>
+                        <line branch="false" hits="0" number="4"/>
+                        <line branch="false" hits="0" number="6"/>
+                        <line branch="false" hits="0" number="7"/>
+                        <line branch="false" hits="0" number="8"/>
+                        <line branch="false" hits="0" number="9"/>
+                        <line branch="false" hits="0" number="10"/>
+                        <line branch="false" hits="0" number="11"/>
+                        <line branch="false" hits="0" number="12"/>
+                        <line branch="false" hits="0" number="13"/>
+                        <line branch="false" hits="0" number="14"/>
+                        <line branch="false" hits="0" number="15"/>
+                        <line branch="false" hits="0" number="17"/>
+                        <line branch="false" hits="0" number="18"/>
+                        <line branch="false" hits="0" number="19"/>
+                        <line branch="false" hits="0" number="22"/>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="0" number="26"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="src/config/mod.rs" line-rate="0" name="src.config.mod.rs">
+                    <methods>
+                        <method name="watn::config::load_config::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="26" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::load_config::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="28" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::save_config::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="132" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::save_config::{closure#2}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="138" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::save_config::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="135" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::resolve_provider::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="61" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::resolve_default_model::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="123" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::load_config" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="21" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::save_config" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="129" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::resolve_model" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="71" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::xdg_config_path" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="10" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::resolve_endpoint" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="64" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::resolve_provider" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="45" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::get_provider_api_key" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="141" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::config::resolve_default_model" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="112" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="10"/>
+                        <line branch="false" hits="0" number="11"/>
+                        <line branch="false" hits="0" number="12"/>
+                        <line branch="false" hits="0" number="13"/>
+                        <line branch="false" hits="0" number="14"/>
+                        <line branch="false" hits="0" number="16"/>
+                        <line branch="false" hits="0" number="18"/>
+                        <line branch="false" hits="0" number="19"/>
+                        <line branch="false" hits="0" number="21"/>
+                        <line branch="false" hits="0" number="22"/>
+                        <line branch="false" hits="0" number="24"/>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="0" number="26"/>
+                        <line branch="false" hits="0" number="27"/>
+                        <line branch="false" hits="0" number="28"/>
+                        <line branch="false" hits="0" number="30"/>
+                        <line branch="false" hits="0" number="33"/>
+                        <line branch="false" hits="0" number="35"/>
+                        <line branch="false" hits="0" number="36"/>
+                        <line branch="false" hits="0" number="37"/>
+                        <line branch="false" hits="0" number="38"/>
+                        <line branch="false" hits="0" number="39"/>
+                        <line branch="false" hits="0" number="40"/>
+                        <line branch="false" hits="0" number="42"/>
+                        <line branch="false" hits="0" number="43"/>
+                        <line branch="false" hits="0" number="45"/>
+                        <line branch="false" hits="0" number="46"/>
+                        <line branch="false" hits="0" number="47"/>
+                        <line branch="false" hits="0" number="48"/>
+                        <line branch="false" hits="0" number="49"/>
+                        <line branch="false" hits="0" number="50"/>
+                        <line branch="false" hits="0" number="51"/>
+                        <line branch="false" hits="0" number="52"/>
+                        <line branch="false" hits="0" number="53"/>
+                        <line branch="false" hits="0" number="54"/>
+                        <line branch="false" hits="0" number="55"/>
+                        <line branch="false" hits="0" number="57"/>
+                        <line branch="false" hits="0" number="58"/>
+                        <line branch="false" hits="0" number="59"/>
+                        <line branch="false" hits="0" number="60"/>
+                        <line branch="false" hits="0" number="61"/>
+                        <line branch="false" hits="0" number="62"/>
+                        <line branch="false" hits="0" number="64"/>
+                        <line branch="false" hits="0" number="65"/>
+                        <line branch="false" hits="0" number="66"/>
+                        <line branch="false" hits="0" number="67"/>
+                        <line branch="false" hits="0" number="68"/>
+                        <line branch="false" hits="0" number="69"/>
+                        <line branch="false" hits="0" number="71"/>
+                        <line branch="false" hits="0" number="72"/>
+                        <line branch="false" hits="0" number="73"/>
+                        <line branch="false" hits="0" number="74"/>
+                        <line branch="false" hits="0" number="75"/>
+                        <line branch="false" hits="0" number="76"/>
+                        <line branch="false" hits="0" number="77"/>
+                        <line branch="false" hits="0" number="78"/>
+                        <line branch="false" hits="0" number="80"/>
+                        <line branch="false" hits="0" number="81"/>
+                        <line branch="false" hits="0" number="82"/>
+                        <line branch="false" hits="0" number="83"/>
+                        <line branch="false" hits="0" number="84"/>
+                        <line branch="false" hits="0" number="85"/>
+                        <line branch="false" hits="0" number="87"/>
+                        <line branch="false" hits="0" number="90"/>
+                        <line branch="false" hits="0" number="91"/>
+                        <line branch="false" hits="0" number="92"/>
+                        <line branch="false" hits="0" number="93"/>
+                        <line branch="false" hits="0" number="94"/>
+                        <line branch="false" hits="0" number="96"/>
+                        <line branch="false" hits="0" number="99"/>
+                        <line branch="false" hits="0" number="100"/>
+                        <line branch="false" hits="0" number="101"/>
+                        <line branch="false" hits="0" number="102"/>
+                        <line branch="false" hits="0" number="103"/>
+                        <line branch="false" hits="0" number="105"/>
+                        <line branch="false" hits="0" number="108"/>
+                        <line branch="false" hits="0" number="110"/>
+                        <line branch="false" hits="0" number="112"/>
+                        <line branch="false" hits="0" number="113"/>
+                        <line branch="false" hits="0" number="114"/>
+                        <line branch="false" hits="0" number="115"/>
+                        <line branch="false" hits="0" number="116"/>
+                        <line branch="false" hits="0" number="117"/>
+                        <line branch="false" hits="0" number="118"/>
+                        <line branch="false" hits="0" number="119"/>
+                        <line branch="false" hits="0" number="120"/>
+                        <line branch="false" hits="0" number="121"/>
+                        <line branch="false" hits="0" number="122"/>
+                        <line branch="false" hits="0" number="123"/>
+                        <line branch="false" hits="0" number="125"/>
+                        <line branch="false" hits="0" number="127"/>
+                        <line branch="false" hits="0" number="129"/>
+                        <line branch="false" hits="0" number="130"/>
+                        <line branch="false" hits="0" number="131"/>
+                        <line branch="false" hits="0" number="132"/>
+                        <line branch="false" hits="0" number="133"/>
+                        <line branch="false" hits="0" number="134"/>
+                        <line branch="false" hits="0" number="135"/>
+                        <line branch="false" hits="0" number="136"/>
+                        <line branch="false" hits="0" number="137"/>
+                        <line branch="false" hits="0" number="138"/>
+                        <line branch="false" hits="0" number="139"/>
+                        <line branch="false" hits="0" number="141"/>
+                        <line branch="false" hits="0" number="142"/>
+                        <line branch="false" hits="0" number="143"/>
+                        <line branch="false" hits="0" number="144"/>
+                        <line branch="false" hits="0" number="146"/>
+                        <line branch="false" hits="0" number="147"/>
+                        <line branch="false" hits="0" number="148"/>
+                        <line branch="false" hits="0" number="149"/>
+                        <line branch="false" hits="0" number="151"/>
+                        <line branch="false" hits="0" number="152"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+        <package line-rate="0" branch-rate="0" name="src.models" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="src/models/mod.rs" line-rate="0" name="src.models.mod.rs">
+                    <methods>
+                        <method name="watn::models::run_models" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="1" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="1"/>
+                        <line branch="false" hits="0" number="2"/>
+                        <line branch="false" hits="0" number="3"/>
+                        <line branch="false" hits="0" number="4"/>
+                        <line branch="false" hits="0" number="5"/>
+                        <line branch="false" hits="0" number="6"/>
+                        <line branch="false" hits="0" number="7"/>
+                        <line branch="false" hits="0" number="8"/>
+                        <line branch="false" hits="0" number="9"/>
+                        <line branch="false" hits="0" number="11"/>
+                        <line branch="false" hits="0" number="12"/>
+                        <line branch="false" hits="0" number="13"/>
+                        <line branch="false" hits="0" number="14"/>
+                        <line branch="false" hits="0" number="15"/>
+                        <line branch="false" hits="0" number="16"/>
+                        <line branch="false" hits="0" number="17"/>
+                        <line branch="false" hits="0" number="18"/>
+                        <line branch="false" hits="0" number="19"/>
+                        <line branch="false" hits="0" number="23"/>
+                        <line branch="false" hits="0" number="24"/>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="0" number="26"/>
+                        <line branch="false" hits="0" number="27"/>
+                        <line branch="false" hits="0" number="28"/>
+                        <line branch="false" hits="0" number="29"/>
+                        <line branch="false" hits="0" number="30"/>
+                        <line branch="false" hits="0" number="31"/>
+                        <line branch="false" hits="0" number="32"/>
+                        <line branch="false" hits="0" number="33"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+        <package line-rate="0" branch-rate="0" name="src.output" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="src/output/logo.rs" line-rate="0" name="src.output.logo.rs">
+                    <methods>
+                        <method name="watn::output::logo::ascii_logo" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="9" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::output::logo::logo" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="1" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="1"/>
+                        <line branch="false" hits="0" number="2"/>
+                        <line branch="false" hits="0" number="3"/>
+                        <line branch="false" hits="0" number="5"/>
+                        <line branch="false" hits="0" number="7"/>
+                        <line branch="false" hits="0" number="9"/>
+                        <line branch="false" hits="0" number="10"/>
+                        <line branch="false" hits="0" number="11"/>
+                        <line branch="false" hits="0" number="12"/>
+                        <line branch="false" hits="0" number="13"/>
+                        <line branch="false" hits="0" number="14"/>
+                        <line branch="false" hits="0" number="15"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="src/output/render.rs" line-rate="0" name="src.output.render.rs">
+                    <methods>
+                        <method name="watn::output::render::print_response" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="1" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="1"/>
+                        <line branch="false" hits="0" number="2"/>
+                        <line branch="false" hits="0" number="3"/>
+                        <line branch="false" hits="0" number="4"/>
+                        <line branch="false" hits="0" number="5"/>
+                        <line branch="false" hits="0" number="6"/>
+                        <line branch="false" hits="0" number="7"/>
+                        <line branch="false" hits="0" number="8"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+        <package line-rate="0" branch-rate="0" name="src" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="src/main.rs" line-rate="0" name="src.main.rs">
+                    <methods>
+                        <method name="watn::main::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="159" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::main::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="167" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="watn::main" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="74" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::Cli&gt;::tier" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="61" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="61"/>
+                        <line branch="false" hits="0" number="62"/>
+                        <line branch="false" hits="0" number="63"/>
+                        <line branch="false" hits="0" number="64"/>
+                        <line branch="false" hits="0" number="65"/>
+                        <line branch="false" hits="0" number="66"/>
+                        <line branch="false" hits="0" number="67"/>
+                        <line branch="false" hits="0" number="69"/>
+                        <line branch="false" hits="0" number="71"/>
+                        <line branch="false" hits="0" number="74"/>
+                        <line branch="false" hits="0" number="75"/>
+                        <line branch="false" hits="0" number="77"/>
+                        <line branch="false" hits="0" number="78"/>
+                        <line branch="false" hits="0" number="79"/>
+                        <line branch="false" hits="0" number="80"/>
+                        <line branch="false" hits="0" number="82"/>
+                        <line branch="false" hits="0" number="83"/>
+                        <line branch="false" hits="0" number="85"/>
+                        <line branch="false" hits="0" number="86"/>
+                        <line branch="false" hits="0" number="87"/>
+                        <line branch="false" hits="0" number="88"/>
+                        <line branch="false" hits="0" number="89"/>
+                        <line branch="false" hits="0" number="90"/>
+                        <line branch="false" hits="0" number="91"/>
+                        <line branch="false" hits="0" number="92"/>
+                        <line branch="false" hits="0" number="93"/>
+                        <line branch="false" hits="0" number="95"/>
+                        <line branch="false" hits="0" number="96"/>
+                        <line branch="false" hits="0" number="97"/>
+                        <line branch="false" hits="0" number="102"/>
+                        <line branch="false" hits="0" number="103"/>
+                        <line branch="false" hits="0" number="104"/>
+                        <line branch="false" hits="0" number="105"/>
+                        <line branch="false" hits="0" number="106"/>
+                        <line branch="false" hits="0" number="107"/>
+                        <line branch="false" hits="0" number="111"/>
+                        <line branch="false" hits="0" number="112"/>
+                        <line branch="false" hits="0" number="115"/>
+                        <line branch="false" hits="0" number="116"/>
+                        <line branch="false" hits="0" number="117"/>
+                        <line branch="false" hits="0" number="118"/>
+                        <line branch="false" hits="0" number="119"/>
+                        <line branch="false" hits="0" number="120"/>
+                        <line branch="false" hits="0" number="121"/>
+                        <line branch="false" hits="0" number="125"/>
+                        <line branch="false" hits="0" number="126"/>
+                        <line branch="false" hits="0" number="127"/>
+                        <line branch="false" hits="0" number="128"/>
+                        <line branch="false" hits="0" number="129"/>
+                        <line branch="false" hits="0" number="130"/>
+                        <line branch="false" hits="0" number="134"/>
+                        <line branch="false" hits="0" number="136"/>
+                        <line branch="false" hits="0" number="137"/>
+                        <line branch="false" hits="0" number="138"/>
+                        <line branch="false" hits="0" number="139"/>
+                        <line branch="false" hits="0" number="140"/>
+                        <line branch="false" hits="0" number="141"/>
+                        <line branch="false" hits="0" number="145"/>
+                        <line branch="false" hits="0" number="147"/>
+                        <line branch="false" hits="0" number="148"/>
+                        <line branch="false" hits="0" number="149"/>
+                        <line branch="false" hits="0" number="150"/>
+                        <line branch="false" hits="0" number="152"/>
+                        <line branch="false" hits="0" number="153"/>
+                        <line branch="false" hits="0" number="154"/>
+                        <line branch="false" hits="0" number="155"/>
+                        <line branch="false" hits="0" number="156"/>
+                        <line branch="false" hits="0" number="157"/>
+                        <line branch="false" hits="0" number="158"/>
+                        <line branch="false" hits="0" number="159"/>
+                        <line branch="false" hits="0" number="160"/>
+                        <line branch="false" hits="0" number="161"/>
+                        <line branch="false" hits="0" number="162"/>
+                        <line branch="false" hits="0" number="163"/>
+                        <line branch="false" hits="0" number="165"/>
+                        <line branch="false" hits="0" number="166"/>
+                        <line branch="false" hits="0" number="167"/>
+                        <line branch="false" hits="0" number="169"/>
+                        <line branch="false" hits="0" number="172"/>
+                        <line branch="false" hits="0" number="174"/>
+                        <line branch="false" hits="0" number="176"/>
+                        <line branch="false" hits="0" number="177"/>
+                        <line branch="false" hits="0" number="178"/>
+                        <line branch="false" hits="0" number="180"/>
+                        <line branch="false" hits="0" number="181"/>
+                        <line branch="false" hits="0" number="182"/>
+                        <line branch="false" hits="0" number="183"/>
+                        <line branch="false" hits="0" number="186"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="src/exec.rs" line-rate="0" name="src.exec.rs">
+                    <methods>
+                        <method name="watn::exec::prompt_and_execute" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="3" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="3"/>
+                        <line branch="false" hits="0" number="4"/>
+                        <line branch="false" hits="0" number="5"/>
+                        <line branch="false" hits="0" number="6"/>
+                        <line branch="false" hits="0" number="7"/>
+                        <line branch="false" hits="0" number="8"/>
+                        <line branch="false" hits="0" number="9"/>
+                        <line branch="false" hits="0" number="10"/>
+                        <line branch="false" hits="0" number="11"/>
+                        <line branch="false" hits="0" number="12"/>
+                        <line branch="false" hits="0" number="13"/>
+                        <line branch="false" hits="0" number="14"/>
+                        <line branch="false" hits="0" number="15"/>
+                        <line branch="false" hits="0" number="16"/>
+                        <line branch="false" hits="0" number="17"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="src/error.rs" line-rate="0" name="src.error.rs">
+                    <methods>
+                        <method name="watn::error::exit_code" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="36" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::error::Error as core::fmt::Display&gt;::fmt" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="14" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::error::Error as core::convert::From&lt;std::io::error::Error&gt;&gt;::from" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="31" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="14"/>
+                        <line branch="false" hits="0" number="15"/>
+                        <line branch="false" hits="0" number="16"/>
+                        <line branch="false" hits="0" number="17"/>
+                        <line branch="false" hits="0" number="18"/>
+                        <line branch="false" hits="0" number="19"/>
+                        <line branch="false" hits="0" number="20"/>
+                        <line branch="false" hits="0" number="22"/>
+                        <line branch="false" hits="0" number="23"/>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="0" number="31"/>
+                        <line branch="false" hits="0" number="32"/>
+                        <line branch="false" hits="0" number="33"/>
+                        <line branch="false" hits="0" number="36"/>
+                        <line branch="false" hits="0" number="37"/>
+                        <line branch="false" hits="0" number="38"/>
+                        <line branch="false" hits="0" number="39"/>
+                        <line branch="false" hits="0" number="40"/>
+                        <line branch="false" hits="0" number="41"/>
+                        <line branch="false" hits="0" number="43"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+        <package line-rate="0" branch-rate="0" name="src.provider" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="src/provider/openai_compat.rs" line-rate="0" name="src.provider.openai_compat.rs">
+                    <methods>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_blocking::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="172" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_blocking::{closure#2}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="156" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_blocking::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="206" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_streaming::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="57" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_streaming::{closure#2}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="97" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_streaming::{closure#3}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="41" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_streaming::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="94" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider&gt;::new" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="17" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_blocking" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="147" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;watn::provider::openai_compat::OpenAICompatProvider as watn::provider::Provider&gt;::chat_completions_streaming" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="31" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="17"/>
+                        <line branch="false" hits="0" number="18"/>
+                        <line branch="false" hits="0" number="19"/>
+                        <line branch="false" hits="0" number="20"/>
+                        <line branch="false" hits="0" number="21"/>
+                        <line branch="false" hits="0" number="22"/>
+                        <line branch="false" hits="0" number="23"/>
+                        <line branch="false" hits="0" number="24"/>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="0" number="26"/>
+                        <line branch="false" hits="0" number="27"/>
+                        <line branch="false" hits="0" number="31"/>
+                        <line branch="false" hits="0" number="32"/>
+                        <line branch="false" hits="0" number="33"/>
+                        <line branch="false" hits="0" number="34"/>
+                        <line branch="false" hits="0" number="35"/>
+                        <line branch="false" hits="0" number="36"/>
+                        <line branch="false" hits="0" number="37"/>
+                        <line branch="false" hits="0" number="39"/>
+                        <line branch="false" hits="0" number="40"/>
+                        <line branch="false" hits="0" number="41"/>
+                        <line branch="false" hits="0" number="42"/>
+                        <line branch="false" hits="0" number="43"/>
+                        <line branch="false" hits="0" number="44"/>
+                        <line branch="false" hits="0" number="45"/>
+                        <line branch="false" hits="0" number="46"/>
+                        <line branch="false" hits="0" number="47"/>
+                        <line branch="false" hits="0" number="50"/>
+                        <line branch="false" hits="0" number="51"/>
+                        <line branch="false" hits="0" number="52"/>
+                        <line branch="false" hits="0" number="53"/>
+                        <line branch="false" hits="0" number="54"/>
+                        <line branch="false" hits="0" number="55"/>
+                        <line branch="false" hits="0" number="56"/>
+                        <line branch="false" hits="0" number="57"/>
+                        <line branch="false" hits="0" number="58"/>
+                        <line branch="false" hits="0" number="59"/>
+                        <line branch="false" hits="0" number="60"/>
+                        <line branch="false" hits="0" number="61"/>
+                        <line branch="false" hits="0" number="62"/>
+                        <line branch="false" hits="0" number="64"/>
+                        <line branch="false" hits="0" number="65"/>
+                        <line branch="false" hits="0" number="66"/>
+                        <line branch="false" hits="0" number="67"/>
+                        <line branch="false" hits="0" number="70"/>
+                        <line branch="false" hits="0" number="72"/>
+                        <line branch="false" hits="0" number="74"/>
+                        <line branch="false" hits="0" number="75"/>
+                        <line branch="false" hits="0" number="76"/>
+                        <line branch="false" hits="0" number="77"/>
+                        <line branch="false" hits="0" number="78"/>
+                        <line branch="false" hits="0" number="80"/>
+                        <line branch="false" hits="0" number="81"/>
+                        <line branch="false" hits="0" number="82"/>
+                        <line branch="false" hits="0" number="83"/>
+                        <line branch="false" hits="0" number="85"/>
+                        <line branch="false" hits="0" number="87"/>
+                        <line branch="false" hits="0" number="88"/>
+                        <line branch="false" hits="0" number="89"/>
+                        <line branch="false" hits="0" number="91"/>
+                        <line branch="false" hits="0" number="92"/>
+                        <line branch="false" hits="0" number="93"/>
+                        <line branch="false" hits="0" number="94"/>
+                        <line branch="false" hits="0" number="95"/>
+                        <line branch="false" hits="0" number="96"/>
+                        <line branch="false" hits="0" number="97"/>
+                        <line branch="false" hits="0" number="99"/>
+                        <line branch="false" hits="0" number="100"/>
+                        <line branch="false" hits="0" number="101"/>
+                        <line branch="false" hits="0" number="102"/>
+                        <line branch="false" hits="0" number="103"/>
+                        <line branch="false" hits="0" number="104"/>
+                        <line branch="false" hits="0" number="105"/>
+                        <line branch="false" hits="0" number="106"/>
+                        <line branch="false" hits="0" number="107"/>
+                        <line branch="false" hits="0" number="108"/>
+                        <line branch="false" hits="0" number="109"/>
+                        <line branch="false" hits="0" number="110"/>
+                        <line branch="false" hits="0" number="111"/>
+                        <line branch="false" hits="0" number="112"/>
+                        <line branch="false" hits="0" number="113"/>
+                        <line branch="false" hits="0" number="114"/>
+                        <line branch="false" hits="0" number="115"/>
+                        <line branch="false" hits="0" number="117"/>
+                        <line branch="false" hits="0" number="118"/>
+                        <line branch="false" hits="0" number="119"/>
+                        <line branch="false" hits="0" number="121"/>
+                        <line branch="false" hits="0" number="122"/>
+                        <line branch="false" hits="0" number="123"/>
+                        <line branch="false" hits="0" number="124"/>
+                        <line branch="false" hits="0" number="125"/>
+                        <line branch="false" hits="0" number="126"/>
+                        <line branch="false" hits="0" number="127"/>
+                        <line branch="false" hits="0" number="128"/>
+                        <line branch="false" hits="0" number="129"/>
+                        <line branch="false" hits="0" number="130"/>
+                        <line branch="false" hits="0" number="132"/>
+                        <line branch="false" hits="0" number="133"/>
+                        <line branch="false" hits="0" number="136"/>
+                        <line branch="false" hits="0" number="138"/>
+                        <line branch="false" hits="0" number="139"/>
+                        <line branch="false" hits="0" number="140"/>
+                        <line branch="false" hits="0" number="141"/>
+                        <line branch="false" hits="0" number="142"/>
+                        <line branch="false" hits="0" number="143"/>
+                        <line branch="false" hits="0" number="144"/>
+                        <line branch="false" hits="0" number="145"/>
+                        <line branch="false" hits="0" number="147"/>
+                        <line branch="false" hits="0" number="148"/>
+                        <line branch="false" hits="0" number="149"/>
+                        <line branch="false" hits="0" number="150"/>
+                        <line branch="false" hits="0" number="151"/>
+                        <line branch="false" hits="0" number="152"/>
+                        <line branch="false" hits="0" number="154"/>
+                        <line branch="false" hits="0" number="155"/>
+                        <line branch="false" hits="0" number="156"/>
+                        <line branch="false" hits="0" number="157"/>
+                        <line branch="false" hits="0" number="158"/>
+                        <line branch="false" hits="0" number="159"/>
+                        <line branch="false" hits="0" number="160"/>
+                        <line branch="false" hits="0" number="161"/>
+                        <line branch="false" hits="0" number="162"/>
+                        <line branch="false" hits="0" number="165"/>
+                        <line branch="false" hits="0" number="166"/>
+                        <line branch="false" hits="0" number="167"/>
+                        <line branch="false" hits="0" number="168"/>
+                        <line branch="false" hits="0" number="169"/>
+                        <line branch="false" hits="0" number="170"/>
+                        <line branch="false" hits="0" number="171"/>
+                        <line branch="false" hits="0" number="172"/>
+                        <line branch="false" hits="0" number="173"/>
+                        <line branch="false" hits="0" number="174"/>
+                        <line branch="false" hits="0" number="175"/>
+                        <line branch="false" hits="0" number="176"/>
+                        <line branch="false" hits="0" number="177"/>
+                        <line branch="false" hits="0" number="179"/>
+                        <line branch="false" hits="0" number="180"/>
+                        <line branch="false" hits="0" number="181"/>
+                        <line branch="false" hits="0" number="182"/>
+                        <line branch="false" hits="0" number="185"/>
+                        <line branch="false" hits="0" number="187"/>
+                        <line branch="false" hits="0" number="189"/>
+                        <line branch="false" hits="0" number="190"/>
+                        <line branch="false" hits="0" number="191"/>
+                        <line branch="false" hits="0" number="192"/>
+                        <line branch="false" hits="0" number="193"/>
+                        <line branch="false" hits="0" number="195"/>
+                        <line branch="false" hits="0" number="196"/>
+                        <line branch="false" hits="0" number="197"/>
+                        <line branch="false" hits="0" number="198"/>
+                        <line branch="false" hits="0" number="200"/>
+                        <line branch="false" hits="0" number="202"/>
+                        <line branch="false" hits="0" number="203"/>
+                        <line branch="false" hits="0" number="204"/>
+                        <line branch="false" hits="0" number="206"/>
+                        <line branch="false" hits="0" number="207"/>
+                        <line branch="false" hits="0" number="209"/>
+                        <line branch="false" hits="0" number="210"/>
+                        <line branch="false" hits="0" number="211"/>
+                        <line branch="false" hits="0" number="212"/>
+                        <line branch="false" hits="0" number="213"/>
+                        <line branch="false" hits="0" number="214"/>
+                        <line branch="false" hits="0" number="215"/>
+                        <line branch="false" hits="0" number="216"/>
+                        <line branch="false" hits="0" number="217"/>
+                        <line branch="false" hits="0" number="218"/>
+                        <line branch="false" hits="0" number="219"/>
+                        <line branch="false" hits="0" number="221"/>
+                        <line branch="false" hits="0" number="222"/>
+                        <line branch="false" hits="0" number="223"/>
+                        <line branch="false" hits="0" number="224"/>
+                        <line branch="false" hits="0" number="225"/>
+                        <line branch="false" hits="0" number="226"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>
