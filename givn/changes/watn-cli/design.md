@@ -7,7 +7,7 @@
 | Language | Rust (latest stable) | Greenfield; single-binary distribution; zero-cost streaming |
 | Build system | cargo | Standard for Rust. |
 | CLI argument parsing | clap v4 | Derive macros; flags `-1/-2/-3` as model tier selector, `-x` as execute flag, `--version` for version output |
-| HTTP client | reqwest (blocking) | Blocking, streaming SSE chunks, TLS via native-tls; no tokio dependency |
+| HTTP client | reqwest (blocking) | Blocking fetch thread pipes SSE chunks through `std::sync::mpsc::channel` to main thread for progressive rendering; TLS via native-tls; no tokio dependency |
 | Serialization | serde + serde_json | OpenAI API request/response bodies; config file |
 | Config file parsing | toml (serde) | XDG convention; idiomatic for Rust |
 | Terminal interaction | dialoguer | Interactive model selection via `watn models` (select from list) |
@@ -64,6 +64,19 @@ One file per capability, under `tests/e2e_steps/`:
 | config | `tests/e2e_steps/config_steps.rs` |
 | models | `tests/e2e_steps/models_steps.rs` |
 | providers | `tests/e2e_steps/providers_steps.rs` |
+
+### Step definition conventions
+
+Scenarios that assert on specific mock responses use a `Given` step to configure
+the mock before the `When` step. For `-x` scenarios:
+
+```gherkin
+Given the mock returns command "echo hello"
+When I run `watn -x "echo hello"` and answer with "Enter"
+```
+
+This ensures the scenario can fail in RED: without the Given step the mock
+returns nothing and the assertion is vacuously true.
 
 ### Test runner
 
@@ -284,8 +297,18 @@ gpt-4o-mini · 142 tok/s · $0.0003 · 0.6s ¯\_(ツ)_/¯
 
 ## Output format
 
-Tokens stream to stdout in real time. After the stream completes, metadata is
-written to stderr so pipes get clean command text only:
+### Threaded streaming architecture
+
+A blocking reqwest thread performs the HTTP SSE request in a spawned thread and
+writes incoming SSE chunks to a `std::sync::mpsc::Sender<StreamChunk>`. The main
+thread reads from the corresponding `Receiver` and renders each chunk to stdout
+as it arrives. After the stream completes (sender drops), the main thread writes
+metadata to stderr and exits.
+
+### Metadata output
+
+After the stream completes, metadata is written to stderr so pipes get clean
+command text only:
 
 stdout:
 ```text
