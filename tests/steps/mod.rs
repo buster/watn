@@ -256,16 +256,23 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
     }
 
     if has_config {
-        let dir = tempfile::tempdir().expect("create temp dir");
-        let config_dir = dir.path().join("watn");
-        std::fs::create_dir_all(&config_dir).expect("create config subdir");
-        let config_path = config_dir.join("config.toml");
-        std::fs::write(&config_path, &config_content).expect("write config");
-        world.env_vars.insert(
-            "XDG_CONFIG_HOME".to_string(),
-            dir.path().to_string_lossy().to_string(),
-        );
-        world.temp_dir = Some(dir);
+        let (dir, should_write) = if let Some(ref existing_dir) = world.temp_dir {
+            (existing_dir.path().to_path_buf(), false)
+        } else {
+            let new_dir = tempfile::tempdir().expect("create temp dir");
+            let path = new_dir.path().to_path_buf();
+            world.temp_dir = Some(new_dir);
+            (path, true)
+        };
+        if should_write {
+            let config_dir = dir.join("watn");
+            std::fs::create_dir_all(&config_dir).expect("create config subdir");
+            let config_path = config_dir.join("config.toml");
+            std::fs::write(&config_path, &config_content).expect("write config");
+        }
+        world.env_vars.entry("XDG_CONFIG_HOME".to_string()).or_insert_with(|| {
+            dir.to_string_lossy().to_string()
+        });
     }
 }
 
