@@ -38,6 +38,7 @@ pub struct StreamingResponse {
     pub final_usage: Option<TokenUsage>,
     pub model: String,
     pub full_content: String,
+    pub elapsed_secs: f64,
 }
 
 #[derive(Debug, Clone)]

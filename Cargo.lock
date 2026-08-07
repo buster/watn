@@ -2833,9 +2833,11 @@ dependencies = [
  "cucumber",
  "dialoguer",
  "httpmock",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "toml",
 ]

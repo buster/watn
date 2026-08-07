@@ -33,6 +33,7 @@ impl Provider for OpenAICompatProvider {
         messages: &[Message],
         options: &RequestOptions,
     ) -> Result<StreamingResponse, Error> {
+        let start = Instant::now();
         let url = format!("{}/chat/completions", self.endpoint.trim_end_matches('/'));
 
         let body = serde_json::json!({
@@ -83,13 +84,15 @@ impl Provider for OpenAICompatProvider {
             };
         }
 
-        let mut stream = response.bytes();
         let mut full_content = String::new();
         let mut final_usage = None;
         let mut response_model = options.model.clone();
 
         let mut buf = Vec::new();
-        stream
+        response
+            .bytes()
+            .map_err(|e| Error::NetworkError(e.to_string()))?
+            .as_ref()
             .read_to_end(&mut buf)
             .map_err(|e| Error::NetworkError(e.to_string()))?;
 
@@ -130,11 +133,14 @@ impl Provider for OpenAICompatProvider {
             }
         }
 
+        let elapsed_secs = start.elapsed().as_secs_f64();
+
         Ok(StreamingResponse {
             chunks: Vec::new(),
             final_usage,
             model: response_model,
             full_content,
+            elapsed_secs,
         })
     }
 

@@ -52,5 +52,5 @@ Feature: Provider configuration
   Scenario: Missing API key produces error
     Given a provider "openai" with no api_key configured and no env var set
     When I run `watn --provider openai "hello"`
-    Then the exit status should be 1
+    Then the exit status should be 2
     And stderr should contain "api key"

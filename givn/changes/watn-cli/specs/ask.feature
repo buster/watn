@@ -36,7 +36,7 @@ Feature: Asking questions
     And a model "gpt-4o-mini" assigned to the small/fast tier
     When I run `watn -1 "list go files"`
     Then the exit status should be 0
-    And the output should match /gpt-4o-mini/
+    And the output should match regex "gpt-4o-mini"
 
   @givn.added @e2e @wip
   Scenario: Tier -2 uses the normal model
@@ -44,7 +44,7 @@ Feature: Asking questions
     And a model "gpt-4o" assigned to the normal tier
     When I run `watn -2 "write a docker-compose for postgres and redis"`
     Then the exit status should be 0
-    And the output should match /gpt-4o/
+    And the output should match regex "gpt-4o"
 
   @givn.added @e2e @wip
   Scenario: Tier -3 uses the thinking/reasoning model
@@ -52,7 +52,7 @@ Feature: Asking questions
     And a model "o3-mini" assigned to the thinking tier
     When I run `watn -3 "design a fault-tolerant message queue architecture"`
     Then the exit status should be 0
-    And the output should match /o3-mini/
+    And the output should match regex "o3-mini"
 
   @givn.added @e2e @wip
   Scenario: Execute flag prompts for confirmation
@@ -84,7 +84,7 @@ Feature: Asking questions
   @givn.added @e2e @wip
   Scenario: Tokens/second is displayed after response completes
     When I run `watn "echo hello"`
-    Then the output should match /\d+\.?\d*\s*tokens\/s/
+    Then the output should match regex "tokens/s:\s+\d+\.?\d*"
 
   @givn.added @e2e @wip
   Scenario: Ask via stdin pipe
@@ -121,7 +121,7 @@ Feature: Asking questions
     And a model "gpt-4o" assigned to the normal tier
     When I run `watn --model "gpt-4o-mini" "list go files"`
     Then the exit status should be 0
-    And the output should match /gpt-4o-mini/
+    And the output should match regex "gpt-4o-mini"
 
   @givn.added @wip
   Scenario: Version flag prints logo and version
@@ -135,4 +135,4 @@ Feature: Asking questions
     Given a configured default provider "openai" with default model "gpt-4o-mini"
     When I run `watn "find all modified files"`
     Then the exit status should be 0
-    And the output should match /gpt-4o-mini/
+    And the output should match regex "gpt-4o-mini"

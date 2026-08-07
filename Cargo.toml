@@ -16,6 +16,8 @@ atty = "0.2"
 cucumber = "0.23"
 tokio = { version = "1", features = ["full"] }
 httpmock = "0.7"
+regex = "1"
+tempfile = "3"
 
 [[test]]
 name = "features_runner"

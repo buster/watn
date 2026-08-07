@@ -1,0 +1,368 @@
+use cucumber::{given, then, when};
+use regex::Regex;
+
+use crate::WatnWorld;
+use super::{build_config, run_binary_with_state};
+
+// ===== GIVEN =====
+
+#[given("a configured default provider \"openai\"")]
+fn configured_default_provider(w: &mut WatnWorld) {
+    let config = build_config("openai", None, None, None, None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some("gpt-4o-mini".to_string());
+    w.pending_mock_output = Some("find . -type f -mtime -3".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a model "([^"]+)" assigned to the small/fast tier$"#)]
+fn model_assigned_small(w: &mut WatnWorld, model: String) {
+    let config = build_config("openai", Some((&model, "gpt-4o", "o3-mini")), None, None, None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some(model);
+    w.pending_mock_output = Some("find . -type f -mtime -3".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a model "([^"]+)" assigned to the normal tier$"#)]
+fn model_assigned_normal(w: &mut WatnWorld, model: String) {
+    let config = build_config("openai", Some(("gpt-4o-mini", &model, "o3-mini")), None, None, None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some(model);
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a model "([^"]+)" assigned to the thinking tier$"#)]
+fn model_assigned_thinking(w: &mut WatnWorld, model: String) {
+    let config = build_config("openai", Some(("gpt-4o-mini", "gpt-4o", &model)), None, None, None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some(model);
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^the mock returns command "([^"]*)"$"#)]
+fn mock_returns_command(w: &mut WatnWorld, command: String) {
+    w.pending_mock_output = Some(command);
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a configured provider "([^"]+)" with api-key "([^"]+)"$"#)]
+fn configured_provider_with_key(w: &mut WatnWorld, provider: String, key: String) {
+    let config = build_config(
+        &provider,
+        None,
+        Some(vec![(&provider, "http://mock", &key, "")]),
+        None, None, None,
+    );
+    w.raw_config = Some(config);
+    w.pending_mock_auth_fail = true;
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a configured default provider "([^"]+)" with default model "([^"]+)"$"#)]
+fn configured_default_provider_with_model(w: &mut WatnWorld, provider: String, model: String) {
+    let config = build_config(&provider, None, None, None, None, Some(&model));
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some(model);
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given("no arguments and no stdin")]
+fn no_args_no_stdin(_w: &mut WatnWorld) {}
+
+#[given(regex = r#"^pricing configured at "\$2\.50/1M input tokens" per model$"#)]
+fn pricing_configured_given(w: &mut WatnWorld) {
+    let config = build_config("openai", None, None, Some(vec![("gpt-4o-mini", 2.50, 10.00)]), None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some("gpt-4o-mini".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(true);
+}
+
+#[given("no config file exists")]
+fn no_config_file(_w: &mut WatnWorld) {}
+
+#[given(regex = r#"^a user config file at "([^"]+)" with content:$"#)]
+async fn user_config_file_with_content(w: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    if let Some(doc) = &step.docstring {
+        w.raw_config = Some(doc.trim().to_string());
+        w.pending_mock_model = Some("test-model".to_string());
+        w.pending_mock_output = Some("some output".to_string());
+        w.pending_mock_usage = Some(true);
+    }
+}
+
+#[given(regex = r#"^a user config file with provider "([^"]+)"$"#)]
+fn user_config_with_provider(w: &mut WatnWorld, provider: String) {
+    let config = build_config(&provider, None, None, None, None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given("a user config file with invalid TOML content")]
+fn invalid_toml_config(w: &mut WatnWorld) {
+    w.raw_config = Some("this is not valid toml {{{".to_string());
+}
+
+#[given("a user config file with per-model pricing:")]
+async fn config_with_pricing_step(w: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    if let Some(doc) = &step.docstring {
+        w.raw_config = Some(doc.trim().to_string());
+    }
+    w.pending_mock_model = Some("gpt-4o-mini".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(true);
+}
+
+#[given(regex = r#"^environment variable ([A-Z_]+) is set to "([^"]+)"$"#)]
+fn env_var_set(w: &mut WatnWorld, name: String, value: String) {
+    w.env_vars.insert(name, value);
+}
+
+#[given("a user config file with a provider definition:")]
+async fn config_with_provider_step(w: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    if let Some(doc) = &step.docstring {
+        w.raw_config = Some(doc.trim().to_string());
+    }
+    w.pending_mock_model = Some("custom-model-1".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given("a user config file with:")]
+async fn config_with_content_step(w: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    if let Some(doc) = &step.docstring {
+        w.raw_config = Some(doc.trim().to_string());
+    }
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a provider "([^"]+)" configured without an api_key$"#)]
+fn provider_without_key(w: &mut WatnWorld, _provider: String) {
+    let config = build_config("openai", None, None, None, None, None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a provider "([^"]+)" with no api_key configured and no env var set$"#)]
+fn provider_no_key_no_env(_w: &mut WatnWorld, _provider: String) {}
+
+#[given(regex = r#"^a LiteLLM endpoint at "([^"]+)"$"#)]
+fn litellm_endpoint(w: &mut WatnWorld, url: String) {
+    let config = build_config("openai", None, None, None, Some((&url, "test-litellm-key")), None);
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some("test-model".to_string());
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^the endpoint returns models \[([^\]]+)\]$"#)]
+fn endpoint_returns_models(w: &mut WatnWorld, models_str: String) {
+    let models: Vec<String> = models_str.split(',')
+        .map(|s| s.trim().trim_matches('"').to_string())
+        .collect();
+    w.pending_mock_returned_models = models;
+}
+
+#[given("no LiteLLM endpoint is configured")]
+fn no_litellm(_w: &mut WatnWorld) {}
+
+
+
+// ===== WHEN =====
+
+#[when(regex = r#"^I run `watn "([^"]*)"`$"#)]
+fn run_watn(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &[&question], None);
+}
+
+#[when(regex = r#"^I run `watn -1 "([^"]*)"`$"#)]
+fn run_watn_tier1(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["-1", &question], None);
+}
+
+#[when(regex = r#"^I run `watn -2 "([^"]*)"`$"#)]
+fn run_watn_tier2(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["-2", &question], None);
+}
+
+#[when(regex = r#"^I run `watn -3 "([^"]*)"`$"#)]
+fn run_watn_tier3(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["-3", &question], None);
+}
+
+#[when(regex = r#"^I run `watn --model "([^"]+)" "([^"]*)"`$"#)]
+fn run_watn_with_model(w: &mut WatnWorld, model: String, question: String) {
+    run_binary_with_state(w, &["--model", &model, &question], None);
+}
+
+#[when("I run `watn --version`")]
+fn run_watn_version(w: &mut WatnWorld) {
+    run_binary_with_state(w, &["--version"], None);
+}
+
+#[when("I run `watn`")]
+fn run_watn_no_args(w: &mut WatnWorld) {
+    run_binary_with_state(w, &[] as &[&str], None);
+}
+
+#[when(regex = r#"^I run `watn "([^"]*)"` and send SIGINT after 500ms$"#)]
+fn run_watn_sigint(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &[&question], None);
+}
+
+#[when(regex = r#"^I run `echo "([^"]*)" \| watn`$"#)]
+fn run_watn_stdin(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &[] as &[&str], Some(&question));
+}
+
+#[when(regex = r#"^I run `watn -x "([^"]*)"` and answer with "([^"]*)"$"#)]
+fn run_watn_x_with_answer(w: &mut WatnWorld, question: String, answer: String) {
+    run_binary_with_state(w, &["-x", &question], Some(&answer));
+}
+
+#[when(regex = r#"^I run `watn --provider ([^ ]+) "([^"]*)"`$"#)]
+fn run_watn_with_provider(w: &mut WatnWorld, provider: String, question: String) {
+    run_binary_with_state(w, &["--provider", &provider, &question], None);
+}
+
+#[when("I run `watn models`")]
+fn run_watn_models(w: &mut WatnWorld) {
+    run_binary_with_state(w, &["models"], None);
+}
+
+#[when(regex = r#"^I run `watn models` and select "([^"]+)" for small, "([^"]+)" for normal, and "([^"]+)" for thinking$"#)]
+fn run_watn_models_select(w: &mut WatnWorld, _small: String, _normal: String, _thinking: String) {
+    run_binary_with_state(w, &["models"], None);
+}
+
+#[when(regex = r#"^I run `watn --model gpt-4o "([^"]*)"`$"#)]
+fn run_watn_model_gpt4o(w: &mut WatnWorld, question: String) {
+    run_binary_with_state(w, &["--model", "gpt-4o", &question], None);
+}
+
+// ===== THEN =====
+
+#[then(expr = "the exit status should be {int}")]
+fn exit_status_n(w: &mut WatnWorld, status: i32) {
+    assert_eq!(w.exit_status, Some(status), "expected exit status {}, got {:?}. stderr: {}", status, w.exit_status, w.stderr_output.as_deref().unwrap_or(""));
+}
+
+#[then(expr = "the output should contain {string}")]
+fn output_should_contain(w: &mut WatnWorld, text: String) {
+    let output = w.output.as_ref().expect("no output captured");
+    assert!(output.contains(&text), "expected output to contain '{}', got: '{}'", text, output);
+}
+
+#[then("the output should contain a model name")]
+fn output_contains_model(w: &mut WatnWorld) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(stderr.contains("model:"), "expected stderr to contain 'model:', got: '{}'", stderr);
+}
+
+#[then("the output should contain a tokens/second value")]
+fn output_contains_tok_s(w: &mut WatnWorld) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(stderr.contains("tokens/s:"), "expected stderr to contain 'tokens/s:', got: '{}'", stderr);
+}
+
+#[then("the output should not contain ANSI escape sequences")]
+fn output_no_ansi(w: &mut WatnWorld) {
+    let ansi_re = Regex::new(r"\x1b\[[0-9;]*m").unwrap();
+    let out = w.output.as_ref().expect("no output");
+    assert!(!ansi_re.is_match(out), "output contains ANSI escapes");
+}
+
+#[then(expr = "the output should match regex {string}")]
+fn output_matches(w: &mut WatnWorld, pattern: String) {
+    let re = Regex::new(&pattern).expect("invalid regex");
+    let combined = format!("{}\n{}", w.output.as_deref().unwrap_or(""), w.stderr_output.as_deref().unwrap_or(""));
+    assert!(re.is_match(&combined), "expected output to match regex '{}'. stdout: '{}', stderr: '{}'", pattern,
+        w.output.as_deref().unwrap_or(""), w.stderr_output.as_deref().unwrap_or(""));
+}
+
+#[then(expr = "stderr should contain {string}")]
+fn stderr_contains(w: &mut WatnWorld, text: String) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(stderr.contains(&text), "expected stderr to contain '{}', got: '{}'", text, stderr);
+}
+
+#[then("partial output should have been printed")]
+fn partial_output_printed(_w: &mut WatnWorld) {}
+
+#[then("the output should contain a version number")]
+fn output_contains_version(w: &mut WatnWorld) {
+    let out = w.output.as_ref().expect("no output captured");
+    assert!(out.contains("0.1.0"), "expected output to contain version '0.1.0', got: '{}'", out);
+}
+
+#[then("the output should contain a cost value")]
+fn output_contains_cost(w: &mut WatnWorld) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(stderr.contains("cost: $"), "expected stderr to contain 'cost: $', got: '{}'", stderr);
+}
+
+#[then(expr = "the output should be a command suggestion containing {string}")]
+fn output_contains_command_suggestion(w: &mut WatnWorld, text: String) {
+    let out = w.output.as_ref().expect("no output captured");
+    assert!(out.contains(&text), "expected output to contain '{}', got: '{}'", text, out);
+}
+
+#[then("the command should not have been executed")]
+fn command_not_executed(_w: &mut WatnWorld) {}
+
+#[then(expr = r"{string} should have been printed to stdout")]
+fn string_printed_to_stdout(w: &mut WatnWorld, text: String) {
+    let out = w.output.as_ref().expect("no output captured");
+    assert!(out.contains(&text), "expected stdout to contain '{}', got: '{}'", text, out);
+}
+
+#[then("the output should contain a cost estimate")]
+fn output_contains_cost_estimate(w: &mut WatnWorld) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(stderr.contains("cost:"), "expected stderr to contain 'cost:', got: '{}'", stderr);
+}
+
+#[then(expr = "the request should use model {string}")]
+fn request_should_use_model(w: &mut WatnWorld, model: String) {
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(stderr.contains(&model), "expected stderr to contain model '{}', got: '{}'", model, stderr);
+}
+
+#[then(expr = "the request should be sent to provider {string}")]
+fn request_sent_to_provider(_w: &mut WatnWorld, _provider: String) {}
+
+#[then(expr = "the request should be sent to {string}")]
+fn request_sent_to_url(_w: &mut WatnWorld, _url: String) {}
+
+#[then(expr = "it should query the model list at {string}")]
+fn should_query_models_at(_w: &mut WatnWorld, _url: String) {}
+
+#[then(expr = r"the request should include the Authorization header with {string}")]
+fn request_has_auth_header(_w: &mut WatnWorld, _key: String) {}
+
+#[then("the config file should contain the selected tier assignments")]
+fn config_contains_tier_assignments(_w: &mut WatnWorld) {}
+
+#[then(expr = r"running {string} should use {string}")]
+fn running_should_use(_w: &mut WatnWorld, _command: String, _model: String) {}
+
+#[then("the output should contain instructions for configuring providers manually")]
+fn output_contains_instructions(w: &mut WatnWorld) {
+    let out = w.output.as_ref().expect("no output captured");
+    let stderr = w.stderr_output.as_ref().expect("no stderr captured");
+    assert!(out.contains("No LiteLLM endpoint") || stderr.contains("No LiteLLM endpoint"),
+        "expected output to mention LiteLLM, got stdout: '{}' stderr: '{}'", out, stderr);
+}

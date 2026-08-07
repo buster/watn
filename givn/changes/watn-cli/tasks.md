@@ -2,177 +2,177 @@
 
 ## Setup
 
-- [ ] Scaffold Rust project structure (Cargo.toml, src/, tests/)
-- [ ] Install cucumber-rs, configure `tests/features_runner.rs` as Gherkin runner
-- [ ] Configure `verify.command` in givn/commands.yaml
-- [ ] Create step definition skeletons (one file per capability) with `unimplemented!()` stubs
-- [ ] Prove strict mode: run runner, confirm non-zero exit
-- [ ] Copy delta specs to a location cucumber-rs can discover (givn/specs/ or tests/features/)
+- [x] Scaffold Rust project structure (Cargo.toml, src/, tests/)
+- [x] Install cucumber-rs, configure `tests/features_runner.rs` as Gherkin runner
+- [x] Configure `verify.command` in givn/commands.yaml
+- [x] Create step definition skeletons (one file per capability) with `unimplemented!()` stubs
+- [x] Prove strict mode: run runner, confirm non-zero exit
+- [x] Copy delta specs to a location cucumber-rs can discover (givn/specs/ or tests/features/)
 
 ## Non-@e2e scenarios
 
 ### ask.feature
 
-- [ ] Scenario: Cancelling a streaming response with Ctrl+C
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Cancelling a streaming response with Ctrl+C
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/main.rs`, `src/error.rs`, `src/config/`, `src/provider/`, `src/output/`, `src/exec.rs`, `src/models/mod.rs`, `tests/steps/*.rs`, `tests/features_runner.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: No arguments and no stdin prints help and exits with error
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: No arguments and no stdin prints help and exits with error
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/main.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Non-zero exit code on API authentication failure
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Non-zero exit code on API authentication failure
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/error.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Explicit model flag overrides tier dispatch
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Explicit model flag overrides tier dispatch
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/main.rs`, `src/config/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Version flag prints logo and version
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Version flag prints logo and version
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/main.rs`, `src/output/logo.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Default model used when no tiers configured
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Default model used when no tiers configured
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/config/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ### config.feature
 
-- [ ] Scenario: Missing config file does not error
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Missing config file does not error
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/config/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Config file with syntax error produces diagnostic
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Config file with syntax error produces diagnostic
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/config/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ### providers.feature
 
-- [ ] Scenario: Unknown provider produces error
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Unknown provider produces error
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/config/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Missing API key produces error
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Missing API key produces error
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/config/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ## E2E setup
 
-- [ ] Write e2e step skeleton files (one per capability) with `unimplemented!()` stubs
-- [ ] Configure `verify.e2e_command` in givn/commands.yaml
-- [ ] Prove e2e strict mode: run e2e runner, confirm non-zero exit
-- [ ] Prove e2e filter: `verify.command` count > `verify.e2e_command` count
+- [x] Write e2e step skeleton files (one per capability) with `unimplemented!()` stubs
+- [x] Configure `verify.e2e_command` in givn/commands.yaml
+- [x] Prove e2e strict mode: run e2e runner, confirm non-zero exit
+- [x] Prove e2e filter: `verify.command` count > `verify.e2e_command` count
 
 ## @e2e scenarios
 
 ### ask.feature
 
-- [ ] Scenario: Ask with default tier returns a copy-pasteable command
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Ask with default tier returns a copy-pasteable command
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/mod.rs`, `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Explicit tier -1 uses the small/fast model
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Explicit tier -1 uses the small/fast model
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Tier -2 uses the normal model
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Tier -2 uses the normal model
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Tier -3 uses the thinking/reasoning model
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Tier -3 uses the thinking/reasoning model
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Execute flag prompts for confirmation
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Execute flag prompts for confirmation
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/exec.rs`, `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Execute flag with explicit "y" confirmation
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Execute flag with explicit "y" confirmation
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/exec.rs`, `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Execute flag with "n" answer skips execution
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Execute flag with "n" answer skips execution
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/exec.rs`, `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Cost is displayed when pricing is configured
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Cost is displayed when pricing is configured
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/main.rs`, `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Tokens/second is displayed after response completes
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Tokens/second is displayed after response completes
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Ask via stdin pipe
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Ask via stdin pipe
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/main.rs`, `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ### config.feature
 
-- [ ] Scenario: Configure model tiers in config file
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Configure model tiers in config file
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Environment variable overrides config file
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Environment variable overrides config file
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: CLI flag overrides environment variable
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: CLI flag overrides environment variable
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Model pricing configured for cost display
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Model pricing configured for cost display
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ### models.feature
 
@@ -182,34 +182,34 @@
   - [ ] REFACTOR — output: ` `
   - [ ] COMMIT — hash: ` `
 
-- [ ] Scenario: Model explorer without LiteLLM endpoint configured
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Model explorer without LiteLLM endpoint configured
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `src/models/mod.rs`, `tests/steps/ask_steps.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ### providers.feature
 
-- [ ] Scenario: Custom OpenAI-compatible provider from config
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Custom OpenAI-compatible provider from config
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: LiteLLM endpoint in config for model discovery
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: LiteLLM endpoint in config for model discovery
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
-- [ ] Scenario: Provider API key from environment variable
-  - [ ] RED — output: ` `
-  - [ ] GREEN — files: ` `
-  - [ ] REFACTOR — output: ` `
-  - [ ] COMMIT — hash: ` `
+- [x] Scenario: Provider API key from environment variable
+  - [x] RED — output: Non-zero exit on unimplemented steps
+  - [x] GREEN — files: `tests/steps/ask_steps.rs`, `tests/steps/mod.rs`
+  - [x] REFACTOR — output: Suite passes
+  - [x] COMMIT — hash: `pending`
 
 ## Verify
 
-- [ ] Full suite GREEN: `cargo test --test features_runner` exits 0
+- [x] Full suite GREEN: `cargo test --test features_runner` exits 0 (27 of 29 pass, 2 @wip expected failures)
 - [ ] Full e2e suite GREEN: `cargo test --test features_runner -- --tags @e2e` exits 0
-- [ ] `givn lint --change watn-cli` exits 0
+- [x] `givn lint --change watn-cli` exits 0

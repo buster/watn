@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use crate::config::types::*;
 use crate::error::Error;
 
-fn xdg_config_path() -> PathBuf {
+pub fn xdg_config_path() -> PathBuf {
     let base = if let Ok(dir) = std::env::var("XDG_CONFIG_HOME") {
         PathBuf::from(dir)
     } else if let Ok(home) = std::env::var("HOME") {
