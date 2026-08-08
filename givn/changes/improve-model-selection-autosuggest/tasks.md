@@ -224,17 +224,17 @@
   Full suite count: 47 scenarios (not @wip)
   E2E count: 26 scenarios (@e2e and not @wip)
   ```
-- [ ] Create PTY-based test helper `run_binary_pty` in `tests/steps/mod.rs`.
-- [ ] Add `portable-pty` dev-dependency to `Cargo.toml`.
+- [x] Create PTY-based test helper `run_binary_pty` in `tests/steps/mod.rs`.
+- [x] Add `portable-pty` dev-dependency to `Cargo.toml`.
 
 ## @e2e scenarios (after all non-@e2e are GREEN)
 
 ### 7. Find a model outside the initial page while assigning tiers
 
 **RED**
-- [ ] Remove `@wip` from scenario `Find a model outside the initial page while assigning tiers`.
-- [ ] Write unimplemented step definitions for:
-  - `a provider with a paginated model catalog` (Given)
+- [x] Remove `@wip` from scenario `Find a model outside the initial page while assigning tiers`.
+- [x] Write unimplemented step definitions for:
+  - `a provider with a paginated model catalog` (Given — reuse)
   - `the initial suggestions include "..." and "..."` (Given)
   - `a later catalog page includes "..."` (Given)
   - `I run \`watn models\`, type "..." into the small tier picker, and choose "..."` (When)
@@ -242,33 +242,36 @@
   - `choose "..." for the thinking tier` (When)
   - `the picker displays "..." as a matching suggestion` (Then)
   - `the completed setup reports small="...", normal="...", thinking="..."` (Then)
-- [ ] Run e2e runner targeting this scenario → non-zero exit.
+- [x] Run e2e runner targeting this scenario → non-zero exit.
   ```
-  captured output:
+  captured output: scenario was @wip with unimplemented steps; no interactive search picker wired into `watn models`
   ```
 
 **GREEN**
-- [ ] Set up mock infrastructure (httpmock for paginated `GET /models?page=...`).
-- [ ] Implement e2e step definitions using `run_binary_pty` helper.
-- [ ] Files created/modified:
-  - `tests/steps/mod.rs` — `run_binary_pty` helper
-  - `tests/steps/ask_steps.rs` — e2e step definitions
+- [x] Set up mock infrastructure (httpmock for paginated `GET /models?page=...`).
+- [x] Implement e2e step definitions using `run_binary_pty` / persistent PTY session.
+- [x] Files created/modified:
+  - `tests/steps/mod.rs` — `run_binary_pty`, `start_pty_session`, `pty_write`, `finish_pty_session`, `PtySession`
+  - `tests/steps/ask_steps.rs` — e2e step definitions + paginated catalog config wiring
   - `Cargo.toml` — `portable-pty` dev-dep
-- [ ] Run e2e runner targeting this scenario → zero exit.
+  - `src/models/picker.rs` — interactive `ModelPicker::run` (raw-mode, search-as-you-type)
+  - `src/models/mod.rs` — wire `ModelPicker` into `run_models` TTY path
+- [x] Run e2e runner targeting this scenario → zero exit.
   ```
-  captured output:
+  captured output: PASSED (1 scenario, 8 steps)
   ```
+  New code covered: picker search path exercised through the real binary via PTY; config file written by the binary reports small/normal/thinking=o3-pro.
 
 **REFACTOR**
-- [ ] Clean up e2e code, no behaviour change.
-- [ ] Run e2e runner targeting this scenario → zero exit.
+- [x] Clean up e2e code, no behaviour change.
+- [x] Run e2e runner targeting this scenario → zero exit.
   ```
-  captured output:
+  captured output: PASSED
   ```
 
 **COMMIT**
-- [ ] `test(e2e): Find a model outside the initial page while assigning tiers`
-- [ ] Commit hash: TBD
+- [x] `test(e2e): Find a model outside the initial page while assigning tiers`
+- [x] Commit hash: 24118e2
 
 ---
 
@@ -276,13 +279,13 @@
 
 - [ ] Run `verify.command` (full non-wip) → zero exit.
   ```
-  captured output:
+  captured output: 9 FAILED — "Ask with default tier"(model name), "Execute flag with n"(command not executed), "Cost is displayed"(cost value), "Tokens/second"(regex), "Environment variable overrides"(request sent), "Model pricing"(cost estimate), "syntax error"(exit 1), "Model explorer without LiteLLM"(exit 0), "Verbose default tier"(model name). All are pre-existing failures in unrelated archived features (see QUESTIONS.md). Not zero, so left unchecked.
   ```
 - [ ] Run `verify.e2e_command` (full non-wip e2e) → zero exit.
   ```
-  captured output:
+  captured output: 8 FAILED — same pre-existing set minus "syntax error" (which is non-@e2e). The new @e2e scenario "Find a model outside the initial page while assigning tiers" PASSES. Not zero, so left unchecked (see QUESTIONS.md).
   ```
-- [ ] Run `givn lint --change improve-model-selection-autosuggest` → all WIP findings resolved (zero).
+- [x] Run `givn lint --change improve-model-selection-autosuggest` → all WIP findings resolved (zero).
   ```
-  captured output:
+  captured output: givn lint: 1 file(s) checked — clean
   ```
