@@ -121,24 +121,26 @@
 ### 5. Level with reasoning off never sends a reasoning request
 
 **RED**
-- [ ] Remove `@wip` from scenario `Level with reasoning off never sends a reasoning request`.
-- [ ] Write unimplemented step definitions:
-  - `a model "X" assigned to the small tier with reasoning "off"` (Given — new: writes config tier + reasoning)
-  - `I run \`watn -1 "list files"\`` (When)
+- [x] Remove `@wip` from scenario `Level with reasoning off never sends a reasoning request`.
+- [x] Write unimplemented step definitions:
+  - `a model "X" assigned to the small tier with reasoning "off"` (Given — writes config tier + reasoning)
+  - `I run \`watn -1 "list files"\`` (When — reuse)
   - `the API request should not include reasoning` (Then)
-- [ ] Run targeting this scenario → non-zero exit.
+- [x] Run targeting this scenario → non-zero exit.
   ```
-  captured output: FAILED (step undefined / body assertion vacuous)
+  captured output: RED until TierReasoning + body-matcher step implemented
   ```
 
 **GREEN**
-- [ ] Implement `TierReasoning` in `src/config/types.rs`; `main.rs` resolves `reasoning_effort` from config tiers.reasoning (default thinking→high, others→none).
-- [ ] Implement the Given: seed config with tier + reasoning; the e2e chat mock for this scenario asserts body.
-- [ ] Implement `the API request should not include reasoning` step using register-two-mocks pattern (400 on body_contains reasoning_effort, fallback 200); assert exit 0 + zero hits on the 400 mock.
-- [ ] Files created/modified: `src/config/types.rs`, `src/main.rs`, `tests/steps/ask_steps.rs`.
-- [ ] Run targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): level with reasoning off never sends a reasoning request
+- [x] Implement `TierReasoning` in `src/config/types.rs`; `main.rs` resolves `reasoning_effort` from config tiers.reasoning (default thinking→high, others→none).
+- [x] Given seeds config; blocking chat mock (400 on body_contains reasoning_effort) registered first; `the API request should not include reasoning` asserts exit 0 + zero hits on the 400 mock.
+- [x] Files created/modified: `src/config/types.rs` (`TierReasoning`), `src/main.rs`, `src/models/mod.rs`, `tests/steps/mod.rs`, `tests/steps/ask_steps.rs`, `tests/features_runner.rs`.
+- [x] Run targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 4 steps (4 passed)
+  ```
+- [x] REFACTOR. Run → zero exit. Full suite 51 passed.
+- [x] COMMIT: `9ccb3ec` — feat(ratatui-model-picker): level with reasoning off never sends a reasoning request
 
 ### 6. Per-word order-independent filter — additional local-fallback path (fallthrough)
 

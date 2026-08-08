@@ -44,7 +44,7 @@ Feature: Keyboard-driven model picker
     And  configure "gpt-4o-mini" with reasoning "low" for normal and "claude" with reasoning "high" for thinking
     Then  the completed setup reports small="o3-pro", normal="gpt-4o-mini", thinking="claude-3.7-sonnet"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Configured per-level reasoning takes effect on a request
     Given  a configured default provider "openai"
     And  a model "gpt-4o" assigned to the normal tier with reasoning "low"
