@@ -225,8 +225,7 @@ fn endpoint_returns_models(w: &mut WatnWorld, models_str: String) {
 }
 
 #[given(regex = r#"^a configured provider "([^"]+)" with models endpoint$"#)]
-fn configured_provider_with_models(w: &mut WatnWorld, provider: String) {
-    let server = httpmock::MockServer::start();
+fn configured_provider_with_models(w: &mut WatnWorld, provider: String) {    let server = httpmock::MockServer::start();
     let base_url = format!("http://127.0.0.1:{}", server.port());
     let server_ref = &server;
     server_ref.mock(move |when, then| {
@@ -1094,9 +1093,24 @@ fn paginated_model_catalog(w: &mut WatnWorld) {
         w.search_mock_ids.push(mock2.id);
     }
 
-    // Search mock for "o3"
+    // Search mock for "o3" (kept for the small-tier typed search)
     let search_models = vec!["o3-pro".to_string()];
     mock_search_response(w, "o3", &search_models, 0);
+
+    // Catch-all search mock: any other query returns o3-pro so the
+    // parameterized `choose "<model>" for the ... tier` steps (which type the
+    // model id as the filter) find the target.
+    let server = w.mock_server.0.as_ref().unwrap();
+    let catch_all = server.mock(move |when, then| {
+        when.method(httpmock::Method::GET)
+            .path("/models")
+            .query_param_exists("search");
+        let data = serde_json::json!([{"id": "o3-pro"}]);
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .body(serde_json::json!({"data": data}).to_string());
+    });
+    w.search_mock_ids.push(catch_all.id);
 
     w.picker_endpoint = Some(endpoint);
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
@@ -1131,21 +1145,21 @@ fn run_models_small_choose(w: &mut WatnWorld, query: String, selected: String) {
 }
 
 #[when(regex = r#"^choose "([^"]+)" for the normal tier$"#)]
-fn choose_normal_tier(w: &mut WatnWorld, _selected: String) {
-    // Search for the target model by its distinctive prefix, then select it.
+fn choose_normal_tier(w: &mut WatnWorld, selected: String) {
+    // Type the chosen model id (or unique prefix) then select it.
     let mut session = w.pty_session.take().expect("pty session must be active");
     std::thread::sleep(std::time::Duration::from_millis(300));
-    pty_write(&mut session, "o3");
+    pty_write(&mut session, &selected);
     std::thread::sleep(std::time::Duration::from_millis(400));
     pty_write(&mut session, "\r");
     w.pty_session = Some(session);
 }
 
 #[when(regex = r#"^choose "([^"]+)" for the thinking tier$"#)]
-fn choose_thinking_tier(w: &mut WatnWorld, _selected: String) {
+fn choose_thinking_tier(w: &mut WatnWorld, selected: String) {
     let mut session = w.pty_session.take().expect("pty session must be active");
     std::thread::sleep(std::time::Duration::from_millis(300));
-    pty_write(&mut session, "o3");
+    pty_write(&mut session, &selected);
     std::thread::sleep(std::time::Duration::from_millis(400));
     pty_write(&mut session, "\r");
     finish_pty_session(w, session);
@@ -1286,6 +1300,38 @@ fn configure_remaining_tiers(w: &mut WatnWorld, f2: String, r2: String, f3: Stri
     finish_pty_session(w, session);
 }
 
+#[given(expr = "a configured provider {string} with a long model list")]
+fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
+    let models: Vec<String> = (1..=40).map(|i| format!("model-{:02}", i)).collect();
+    let endpoint = setup_search_mock(w);
+    let base_url;
+    {
+        // The provider's /models endpoint returns the 40 pinned models, and the
+        // search endpoint returns them too (uncorrelated, secondary-filtered).
+        let server = w.mock_server.0.as_ref().unwrap();
+        base_url = format!("http://127.0.0.1:{}/", server.port());
+        let models_clone = models.clone();
+        let mock = server.mock(move |when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            let data: Vec<serde_json::Value> = models_clone.iter().map(|id| serde_json::json!({"id": id})).collect();
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(serde_json::json!({"data": data}).to_string());
+        });
+        w.search_mock_ids.push(mock.id);
+    }
+    w.picker_endpoint = Some(endpoint);
+    w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
+    w.picker_local_models = Some(models.iter().map(|id| ModelEntry {
+        id: id.clone(), name: None, context_length: None, pricing: None, supported_features: vec![],
+    }).collect());
+
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{}\"\n\n[providers.{}]\nendpoint = \"{}\"\napi_key = \"test-key\"\n",
+        provider, provider, base_url
+    ));
+}
+
 #[then("the config file should contain the selected tier assignments with their reasoning strengths")]
 fn config_contains_tiers_and_reasoning(w: &mut WatnWorld) {
     let output = w.output.as_ref().expect("pty output captured");
@@ -1302,4 +1348,45 @@ fn config_contains_tiers_and_reasoning(w: &mut WatnWorld) {
     assert!(content.contains("small = \"off\""), "config should have small reasoning off, got:\n{}", content);
     assert!(content.contains("normal = \"low\""), "config should have normal reasoning low, got:\n{}", content);
     assert!(content.contains("thinking = \"high\""), "config should have thinking reasoning high, got:\n{}", content);
+}
+
+#[when(regex = r#"^I run `watn models` and use the down arrow to move the selection to the second model$"#)]
+fn run_models_down_arrow(w: &mut WatnWorld) {
+    let mut session = start_pty_session(w, &["models"]);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(&mut session, "\x1b[B");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    w.pty_session = Some(session);
+}
+
+#[when("use the page down key to move the selection by a full page")]
+fn use_page_down(w: &mut WatnWorld) {
+    let mut session = w.pty_session.take().expect("pty session must be active");
+    pty_write(&mut session, "\x1b[6~");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    // Confirm all three levels: small (=navigated), normal and thinking
+    // accept the top suggestion model-01.
+    pty_write(&mut session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    pty_write(&mut session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    pty_write(&mut session, "\r");
+    finish_pty_session(w, session);
+}
+
+#[then("the dialog highlights the selected model")]
+fn dialog_highlights_selected(w: &mut WatnWorld) {
+    let output = w.output.clone().unwrap_or_default();
+    assert!(output.contains("> model-12"), "expected dialog to highlight 'model-12', got: {:?}", output);
+}
+
+#[then(expr = "the completed setup reports small={string}")]
+fn completed_setup_small(w: &mut WatnWorld, small: String) {
+    let s = small.trim_matches('"').to_string();
+    let output = w.output.as_ref().expect("pty output captured");
+    assert!(output.contains(&format!("small={}", s)), "expected report small={}, got: {:?}", s, output);
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    assert!(content.contains(&format!("small = \"{}\"", s)), "config small tier missing, got:\n{}", content);
 }

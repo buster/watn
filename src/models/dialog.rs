@@ -333,7 +333,13 @@ impl SettingsDialog {
         if suggestions.is_empty() {
             lines.push(Line::from("(no models found)"));
         } else {
-            for (i, entry) in suggestions.iter().enumerate() {
+            // Render a viewport window around the selection so the highlighted
+            // row is always on screen (list may be much longer than the area).
+            const WINDOW: usize = 8;
+            let start = selection.saturating_sub(WINDOW / 2);
+            let end = (start + WINDOW).min(suggestions.len());
+            for i in start..end {
+                let entry = &suggestions[i];
                 let is_empty_notice = entry.id == EMPTY_QUERY_NOTICE;
                 let selected = i == selection;
                 let display = if is_empty_notice {

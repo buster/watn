@@ -16,7 +16,7 @@ Feature: Keyboard-driven model picker
     When  I run `watn models` and configure "gpt-4o" with reasoning "off" for small, "o3" with reasoning "low" for normal, and "claude" with reasoning "high" for thinking
     Then  the config file should contain the selected tier assignments with their reasoning strengths
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Browse the model list with arrow keys and page keys
     Given  a configured provider "test" with a long model list
     When  I run `watn models` and use the down arrow to move the selection to the second model

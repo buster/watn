@@ -188,21 +188,24 @@ round trip). The reasoning-off request-body negation is proven in scenario 5.
 ### 9. Configure model and reasoning for all three levels in the dialog
 
 **RED**
-- [ ] Remove `@wip` from scenario `Configure model and reasoning for all three levels in the dialog`.
-- [ ] Write unimplemented step definitions for the guided-dialog composite step (spawn PTY, per-level type + Enter + Tab-reasoning + Enter).
-- [ ] Run e2e targeting → non-zero exit.
+- [x] Remove `@wip` from scenario `Configure model and reasoning for all three levels in the dialog`.
+- [x] Write unimplemented step definitions for the guided-dialog composite step (spawn PTY, per-level type + Enter + Tab-reasoning + Enter).
+- [x] Run e2e targeting → non-zero exit.
   ```
-  captured output: FAILED (no ratatui dialog wired into watn models)
+  captured output: RED (no ratatui dialog; undefined composite step; initial-thinking-reasoning bug showed thinking=medium)
   ```
 
 **GREEN**
-- [ ] Implement `src/models/dialog.rs` (`SettingsDialog`, ratatui+crossterm event loop with the key contract).
-- [ ] Wire `run_models` TTY path to `SettingsDialog` in `src/models/mod.rs`; persist tiers + reasoning.
-- [ ] Implement the e2e composite When step and the `the config file should contain the selected tier assignments with their reasoning strengths` Then step.
-- [ ] Files created/modified: `src/models/dialog.rs`, `src/models/mod.rs`, `src/models/picker.rs`, `tests/steps/ask_steps.rs`.
-- [ ] Run e2e targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): configure model and reasoning for all three levels in the dialog
+- [x] Implement `src/models/dialog.rs` (`SettingsDialog`, ratatui+crossterm event loop with the key contract).
+- [x] Wire `run_models` TTY path to `SettingsDialog` in `src/models/mod.rs`; persist tiers + reasoning.
+- [x] Implement the e2e composite When step and the `the config file should contain the selected tier assignments with their reasoning strengths` Then step.
+- [x] Files created/modified: `src/models/dialog.rs`, `src/models/mod.rs`, `src/models/picker.rs` (via execute_search reuse), `tests/steps/ask_steps.rs`.
+- [x] Run e2e targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 4 steps (4 passed)
+  ```
+- [x] REFACTOR. Run → zero exit. Full suite 53 passed.
+- [x] COMMIT: `a098672` — feat(ratatui-model-picker): configure model and reasoning for all three levels in the dialog
 
 ### 10. Browse the model list with arrow keys and page keys
 
