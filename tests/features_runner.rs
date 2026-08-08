@@ -111,11 +111,15 @@ async fn main() {
 
     feature_files.extend(collect_features(&root.join("specs")));
 
-    let changes_dir = root.join("changes");
-    if changes_dir.exists() {
-        for entry in std::fs::read_dir(&changes_dir).unwrap() {
-            let change_dir = entry.unwrap().path();
-            feature_files.extend(collect_features(&change_dir.join("specs")));
+    // Skip change-spec files during givn archive verify to avoid duplicate
+    // scenarios when delta specs have been merged into the permanent specs.
+    if std::env::var("GIVN_ARCHIVE_ONLY").is_err() {
+        let changes_dir = root.join("changes");
+        if changes_dir.exists() {
+            for entry in std::fs::read_dir(&changes_dir).unwrap() {
+                let change_dir = entry.unwrap().path();
+                feature_files.extend(collect_features(&change_dir.join("specs")));
+            }
         }
     }
 
