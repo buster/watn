@@ -283,3 +283,4 @@ round trip). The reasoning-off request-body negation is proven in scenario 5.
   ```
   captured output: givn lint: 1 file(s) checked — clean
   ```
+- [x] Review refactor: remove superseded console `ModelPicker` struct + unused `console` dep; `commit 403f232`. All 56 scenarios still pass; lib unit tests (8) pass.
