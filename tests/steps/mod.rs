@@ -6,6 +6,7 @@ pub mod providers_steps;
 use std::path::PathBuf;
 
 use httpmock::{Method, MockServer};
+use regex::Regex;
 
 use crate::MockServerWrap;
 use std::io::Write;
@@ -132,6 +133,35 @@ fn setup_auth_fail_mock(server_ref: &httpmock::MockServer) {
     });
 }
 
+/// Rewrites `endpoint = "..."` inside `[providers.*]` sections to use the mock base URL.
+fn rewrite_provider_endpoints(content: &str, base_url: &str) -> String {
+    let provider_header = Regex::new(r"^\[providers\.\w+\]$").unwrap();
+    let endpoint_re = Regex::new(r#"^(endpoint\s*=\s*)"(?:[^"]*)"\s*$"#).unwrap();
+    let mut in_provider = false;
+    let mut result = String::new();
+    for line in content.lines() {
+        if provider_header.is_match(line.trim()) {
+            in_provider = true;
+            result.push_str(line);
+            result.push('\n');
+            continue;
+        }
+        if in_provider {
+            if line.starts_with('[') && !line.trim().starts_with('[') {
+                // New section — leave provider block
+                in_provider = false;
+            } else if endpoint_re.is_match(line) {
+                result.push_str(&format!("{}endpoint = \"{}\"", line.split_once('=').unwrap().0.trim_start(), base_url));
+                result.push('\n');
+                continue;
+            }
+        }
+        result.push_str(line);
+        result.push('\n');
+    }
+    result
+}
+
 pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
     let mut config_content = String::new();
     let mut has_config = false;
@@ -182,7 +212,8 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             }
 
             if reuse_existing_server {
-                config_content = world.raw_config.clone().unwrap_or_default();
+                let raw = world.raw_config.clone().unwrap_or_default();
+                config_content = rewrite_provider_endpoints(&raw, &base_url);
                 has_config = !no_config;
             } else {
                 let raw = world.raw_config.clone().unwrap_or_default();
@@ -206,7 +237,8 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 );
 
                 if !non_default.is_empty() {
-                    config_content = format!("{}\n\n{}", mock_cfg, non_default);
+                    let rewritten = rewrite_provider_endpoints(&non_default, &base_url);
+                    config_content = format!("{}\n\n{}", mock_cfg, rewritten);
                 } else {
                     config_content = mock_cfg;
                 }
@@ -214,10 +246,12 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             }
         }
     } else if let Some(ref raw) = world.raw_config {
-        config_content = raw.clone();
         has_config = true;
 
         if let Some(ref server) = world.mock_server.0 {
+            let base_url = format!("http://127.0.0.1:{}", server.port());
+            config_content = rewrite_provider_endpoints(raw, &base_url);
+
             if !world.pending_mock_returned_models.is_empty() {
                 setup_models_mock(
                     server,
@@ -260,6 +294,21 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 None, None, None,
             );
             has_config = true;
+        }
+    }
+
+    // If the default provider is "openai" and there is no explicit
+    // [providers.openai] section, inject one so the mock server is used.
+    if let Some(ref server) = world.mock_server.0 {
+        let base_url = format!("http://127.0.0.1:{}", server.port());
+        if has_config
+            && !config_content.contains("[providers.openai]")
+            && config_content.contains(r#"provider = "openai""#)
+        {
+            config_content.push_str(&format!(
+                "\n[providers.openai]\nendpoint = \"{}\"\n",
+                base_url
+            ));
         }
     }
 

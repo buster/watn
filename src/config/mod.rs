@@ -61,6 +61,13 @@ pub fn resolve_provider(
     provider_name: &str,
 ) -> Result<ProviderConfig, Error> {
     if provider_name == "openai" {
+        if let Some(pc) = config.providers.get("openai") {
+            let mut pc = pc.clone();
+            if pc.api_key.is_none() {
+                pc.api_key = std::env::var("WATN_OPENAI_API_KEY").ok();
+            }
+            return Ok(pc);
+        }
         return Ok(ProviderConfig {
             endpoint: "https://api.openai.com/v1".to_string(),
             api_key: std::env::var("WATN_OPENAI_API_KEY").ok(),
