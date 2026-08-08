@@ -67,7 +67,7 @@ Feature: Keyboard-driven model picker
     Then  the suggestions include "~deepseek/deepseek-v4-flash-latest"
     And  the suggestions do not include "z-ai/glm-5.2"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Empty filter result produces a clear empty state
     Given  a provider with models "gpt-4o-mini" and "gpt-4o"
     When  I type "does-not-exist" into the active tier picker

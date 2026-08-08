@@ -878,6 +878,18 @@ fn picker_says_no_models(w: &mut WatnWorld) {
     assert!(w.picker_no_results, "expected picker to report no models found");
 }
 
+#[then(expr = "the dialog shows the filter text {string}")]
+fn dialog_shows_filter_text(w: &mut WatnWorld, text: String) {
+    // Non-e2e: assert the stored picker query. (The e2e PTY variant asserts
+    // on rendered PTY output via the picker/session output.)
+    if let Some(q) = &w.picker_query {
+        assert_eq!(q, &text, "expected dialog filter text '{}', got '{}'", text, q);
+        return;
+    }
+    let output = w.output.as_ref().expect("no output captured");
+    assert!(output.contains(&text), "expected dialog filter text '{}' in output, got: '{}'", text, output);
+}
+
 #[given(regex = r#"^a provider returns the results for "([^"]+)" more slowly than the results for "([^"]+)"$"#)]
 fn slow_provider_results(w: &mut WatnWorld, slow_query: String, fast_query: String) {
     let models: Vec<String> = vec![format!("model-{}", fast_query), format!("model-{}", slow_query)];

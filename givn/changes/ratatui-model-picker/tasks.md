@@ -44,23 +44,29 @@
 ### 2. Remote search failure falls back to local matching
 
 **RED**
-- [ ] Remove `@wip` from scenario `Remote search failure falls back to local matching`.
-- [ ] Write unimplemented step definitions for:
+- [x] Remove `@wip` from scenario `Remote search failure falls back to local matching`.
+- [x] Write unimplemented step definitions for:
   - `a provider that does not support searching its model catalog with models "X" and "Y"` (Given — new: load local models into world + 501 search mock)
   - `I type "gpt" into the active tier picker` (When — reuse, but must pass the world's local models as `all_models`)
   - `the suggestions include "gpt-4o"` (Then — reuse 1-arg)
   - `the picker reports that model search is unavailable` (Then — reuse)
-- [ ] Run targeting this scenario → non-zero exit.
+- [x] Run targeting this scenario → non-zero exit.
   ```
-  captured output: FAILED (empty all_models → no local match)
+  captured output: RED via undefined Given/When until steps written
   ```
 
 **GREEN**
-- [ ] Update the `I type ... into the active tier picker` / `I replace ...` When steps to pass `all_models` loaded from the world (default empty).
-- [ ] Files created/modified: `tests/steps/ask_steps.rs` (Given loads local models; When passes them), `src/models/picker.rs` (`execute_search` uses world models).
-- [ ] Run targeting this scenario → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): remote search failure falls back to local matching
+- [x] Update the `I type ... into the active tier picker` / `I replace ...` When steps to pass `all_models` loaded from the world (default empty).
+- [x] Files created/modified: `tests/steps/ask_steps.rs` (Given loads local models; When passes them), `tests/features_runner.rs` (`picker_local_models` field).
+- [x] Run targeting this scenario → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 4 steps (4 passed)
+  ```
+- [x] REFACTOR. Run → zero exit.
+  ```
+  captured output: 1 scenario (1 passed)
+  ```
+- [x] COMMIT: `62b96d9` — feat(ratatui-model-picker): remote search failure falls back to local matching
 
 ### 3. Empty filter result produces a clear empty state
 
