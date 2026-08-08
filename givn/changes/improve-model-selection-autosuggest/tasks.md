@@ -46,8 +46,7 @@
   ```
 
 **COMMIT**
-- [x] `feat(model-autosuggest): Suggestions update as the search text changes`
-- [x] Commit hash: 7e0c21f
+- [x] COMMIT: `7e0c21f` — feat(model-autosuggest): Suggestions update as the search text changes
 
 ### 2. No matching model produces a clear empty state
 
@@ -80,8 +79,7 @@
   ```
 
 **COMMIT**
-- [x] `feat(model-autosuggest): No matching model produces a clear empty state`
-- [x] Commit hash: 7e0c21f
+- [x] COMMIT: `7e0c21f` — feat(model-autosuggest): No matching model produces a clear empty state
 
 ### 3. Clearing the search restores available suggestions
 
@@ -138,8 +136,7 @@
   ```
 
 **COMMIT**
-- [x] `feat(model-autosuggest): The newest search result stays visible when an older result arrives later`
-- [x] Commit hash: 7e0c21f
+- [x] COMMIT: `7e0c21f` — feat(model-autosuggest): The newest search result stays visible when an older result arrives later
 
 ### 5. An endpoint without search support reports a usable error
 
@@ -171,8 +168,7 @@
   ```
 
 **COMMIT**
-- [x] `feat(model-autosuggest): An endpoint without search support reports a usable error`
-- [x] Commit hash: 7e0c21f
+- [x] COMMIT: `7e0c21f` — feat(model-autosuggest): An endpoint without search support reports a usable error
 
 ### 6. Selecting a suggestion advances to the next tier
 
@@ -254,8 +250,8 @@
   ```
 
 **COMMIT**
-- [x] `test(e2e): Find a model outside the initial page while assigning tiers`
-- [x] Commit hash: 24118e2
+- [x] COMMIT: `24118e2` — test(e2e): Find a model outside the initial page while assigning tiers
+- [x] COMMIT: `ab20fb1` — fix(models): unblock archive gate — repair pre-existing suite failures and complete coverage review (also covers removed scenarios 3 & 6)
 
 ---
 
