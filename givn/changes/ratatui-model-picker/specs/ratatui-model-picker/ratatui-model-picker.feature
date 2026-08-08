@@ -34,7 +34,7 @@ Feature: Keyboard-driven model picker
     Then  the picker displays "~deepseek/deepseek-v4-flash-latest" as a matching suggestion
     And  the dialog shows the filter text "dee flash"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Return to a previous level and change its selection before confirming
     Given  a configured provider "test" with models endpoint
     And  the endpoint returns models ["gpt-4o-mini", "o3-pro", "claude-3.7-sonnet"]
