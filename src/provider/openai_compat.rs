@@ -3,17 +3,17 @@ use std::time::{Duration, Instant};
 
 use crate::error::Error;
 use crate::provider::{
-    CompleteResponse, Message, Provider, RequestOptions, StreamingResponse,
+    Message, Provider, RequestOptions, StreamingResponse,
     TokenUsage,
 };
 
-pub struct OpenAICompatProvider {
+pub struct OpenAICompatibleProvider {
     pub endpoint: String,
     pub api_key: String,
     client: reqwest::blocking::Client,
 }
 
-impl OpenAICompatProvider {
+impl OpenAICompatibleProvider {
     pub fn new(endpoint: String, api_key: String) -> Self {
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(120))
@@ -27,7 +27,7 @@ impl OpenAICompatProvider {
     }
 }
 
-impl Provider for OpenAICompatProvider {
+impl Provider for OpenAICompatibleProvider {
     fn chat_completions_streaming(
         &self,
         messages: &[Message],
@@ -151,91 +151,6 @@ impl Provider for OpenAICompatProvider {
             full_content,
             elapsed_secs,
             reasoning_content: if reasoning_content.is_empty() { None } else { Some(reasoning_content) },
-        })
-    }
-
-    fn chat_completions_blocking(
-        &self,
-        messages: &[Message],
-        options: &RequestOptions,
-    ) -> Result<CompleteResponse, Error> {
-        let url = format!("{}/chat/completions", self.endpoint.trim_end_matches('/'));
-
-        let mut body = serde_json::json!({
-            "model": options.model,
-            "messages": messages.iter().map(|m| serde_json::json!({
-                "role": m.role,
-                "content": m.content,
-            })).collect::<Vec<_>>(),
-            "stream": false,
-            "temperature": options.temperature.unwrap_or(0.7),
-            "max_tokens": options.max_tokens.unwrap_or(1024),
-        });
-
-        if let Some(effort) = &options.reasoning_effort {
-            body["reasoning_effort"] = serde_json::json!(effort);
-        }
-
-        let response = self
-            .client
-            .post(&url)
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .header("Content-Type", "application/json")
-            .json(&body)
-            .send()
-            .map_err(|e| {
-                if e.is_timeout() || e.is_connect() {
-                    Error::NetworkError(e.to_string())
-                } else if let Some(status) = e.status() {
-                    if status.as_u16() == 401 {
-                        Error::AuthError("authentication failed".to_string())
-                    } else {
-                        Error::ApiError {
-                            status: status.as_u16(),
-                            message: e.to_string(),
-                        }
-                    }
-                } else {
-                    Error::NetworkError(e.to_string())
-                }
-            })?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let body_text = response.text().unwrap_or_default();
-            return if status.as_u16() == 401 {
-                Err(Error::AuthError("authentication failed".to_string()))
-            } else {
-                Err(Error::ApiError {
-                    status: status.as_u16(),
-                    message: body_text,
-                })
-            };
-        }
-
-        let data: serde_json::Value = response
-            .json()
-            .map_err(|e| Error::ApiError {
-                status: 0,
-                message: e.to_string(),
-            })?;
-
-        let content = data["choices"][0]["message"]["content"]
-            .as_str()
-            .unwrap_or("")
-            .to_string();
-        let model = data["model"].as_str().unwrap_or("").to_string();
-        let usage_data = &data["usage"];
-        let usage = TokenUsage {
-            prompt_tokens: usage_data["prompt_tokens"].as_u64().unwrap_or(0) as u32,
-            completion_tokens: usage_data["completion_tokens"].as_u64().unwrap_or(0) as u32,
-            total_tokens: usage_data["total_tokens"].as_u64().unwrap_or(0) as u32,
-        };
-
-        Ok(CompleteResponse {
-            content,
-            model,
-            usage,
         })
     }
 }

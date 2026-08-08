@@ -4,8 +4,8 @@
 
 - OpenAPI-compatible wire protocol as the single provider integration point
 - Three-tier model dispatch with user-configurable model assignment
-- Streaming-first: always request SSE, render tokens progressively; non-streaming as config toggle
-- Layered XDG configuration with clear precedence (CLI > env > user config > system > defaults)
+- Streaming-first: always request SSE, render tokens progressively
+- Layered XDG configuration with clear precedence (CLI > env > user config > defaults)
 - Optionally query LiteLLM endpoint for model discovery and interactive tier selection
 
 ## Technology choices

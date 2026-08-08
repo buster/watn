@@ -21,10 +21,9 @@ Error messages are human-readable and include context.
 Config is merged in order (later overrides earlier):
 
 1. **Built-in defaults** — hardcoded in the binary
-2. **System config** — `/etc/watn/config.toml`
-3. **User config** — `$XDG_CONFIG_HOME/watn/config.toml`
-4. **Environment variables** — `WATN_*` (e.g. `WATN_PROVIDER`, `WATN_MODEL`)
-5. **CLI flags** — `-1`/`-2`/`-3`, `--model`, `--provider` (highest priority)
+2. **User config** — `$XDG_CONFIG_HOME/watn/config.toml`
+3. **Environment variables** — `WATN_*` (e.g. `WATN_PROVIDER`, `WATN_MODEL`)
+4. **CLI flags** — `-1`/`-2`/`-3`, `--model`, `--provider` (highest priority)
 
 ## Auto-init (first-run template)
 
@@ -88,8 +87,9 @@ The verbose flag is independent of the thinking tier. Any tier with `-v` will pr
 
 ## Pipe detection
 
-The binary detects whether stdout is a TTY using `std::io::stdout().is_terminal()`.
-When stdout is not a TTY: no ANSI escape codes. Metadata is still included as plain text.
+The binary detects whether stdin is a TTY using `std::io::stdin().is_terminal()`.
+When stdin is not a TTY, the question is read from the pipe. Command output goes
+to stdout; metadata goes to stderr as plain text (suitable for scripting).
 
 ## Exit code convention
 

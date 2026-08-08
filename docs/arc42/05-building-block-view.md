@@ -24,7 +24,7 @@ graph TB
 | Building block | Responsibility |
 |---|---|
 | CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
-| Config | Load and merge from built-in defaults, system file, user file, env, CLI |
+| Config | Load and merge from built-in defaults, user config file, env, CLI |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait |
 | Output | Format response with metadata header (model, tok/s, cost) + command body |
 | Models | Query LiteLLM `/models` endpoint; interactive tier selection via dialoguer; persist to config |
@@ -38,8 +38,8 @@ graph TB
 
 | Element | Responsibility |
 |---|---|
-| `Provider` trait | Defines `chat_completions()` (streaming) and `chat_completions_blocking()` |
-| `OpenAICompatible` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body), parses SSE chunks (extracts both `content` and `reasoning` from delta) |
+| `Provider` trait | Defines `chat_completions_streaming()` (SSE streaming) |
+| `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses SSE chunks (extracts both `content` and `reasoning` from delta) |
 | `ProviderRegistry` | Maps provider names (from config) to `Box<dyn Provider>` instances |
 
 ### Config
@@ -48,7 +48,7 @@ graph TB
 
 | Element | Responsibility |
 |---|---|
-| `ConfigLoader` | Ordered chain: defaults → system config → user config → env → CLI overrides |
+| `ConfigLoader` | Ordered chain: defaults → user config → env → CLI overrides |
 | `EnvReader` | Read `WATN_*` environment variables |
 | `Config` struct | Serde-deserializable root config with `providers`, `tiers`, `pricing`, `litellm` |
 | `AutoInit` | On first run (no config file exists), writes a commented-out template to the standard XDG path before proceeding |

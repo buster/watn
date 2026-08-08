@@ -1,18 +1,14 @@
 use clap::Parser;
 
-use config::{load_config, resolve_endpoint, resolve_model, resolve_provider};
-use error::exit_code;
-use output::render;
+use watn::config::{self, load_config, resolve_model, resolve_provider};
+use watn::error::exit_code;
+use watn::output::render;
 use std::io::IsTerminal;
-use provider::openai_compat::OpenAICompatProvider;
-use provider::{Message, Provider, RequestOptions};
-
-mod config;
-mod error;
-mod exec;
-mod models;
-mod output;
-mod provider;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use watn::provider::openai_compat::OpenAICompatibleProvider;
+use watn::provider::registry::ProviderRegistry;
+use watn::provider::{Message, RequestOptions};
 
 #[derive(clap::Parser)]
 #[command(name = "watn", version = "0.1.0")]
@@ -80,7 +76,7 @@ fn main() {
     let cli = Cli::parse();
 
     if let Some(_) = &cli.command {
-        models::run_models(cli.set_small, cli.set_normal, cli.set_thinking);
+        watn::models::run_models(cli.set_small, cli.set_normal, cli.set_thinking);
         return;
     }
 
@@ -136,8 +132,6 @@ fn main() {
         }
     };
 
-    let endpoint = resolve_endpoint(provider_name, &provider_config);
-
     let api_key = match config::get_provider_api_key(provider_name, &provider_config) {
         Ok(k) => k,
         Err(e) => {
@@ -147,7 +141,10 @@ fn main() {
         }
     };
 
-    let proc = OpenAICompatProvider::new(endpoint, api_key);
+    let mut registry = ProviderRegistry::new();
+    build_registry(&mut registry, &config, provider_name, &provider_config.endpoint, &api_key);
+
+    let provider = registry.get(provider_name).unwrap();
 
     let system_prompt = format!(
         "You are a direct answer engine. Output ONLY the requested information.\n\
@@ -188,14 +185,18 @@ fn main() {
 
     let options = RequestOptions {
         model: model.clone(),
-        streaming: true,
         temperature: None,
         max_tokens: None,
         reasoning_effort,
-        verbose: cli.verbose,
     };
 
-    match proc.chat_completions_streaming(&messages, &options) {
+    let interrupted = Arc::new(AtomicBool::new(false));
+    let int_flag = interrupted.clone();
+    ctrlc::set_handler(move || {
+        int_flag.store(true, Ordering::SeqCst);
+    }).expect("install SIGINT handler");
+
+    match provider.chat_completions_streaming(&messages, &options) {
         Ok(response) => {
             let cost = config.pricing.get(&model).map(|p| {
                 let input_cost = p.input * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64 / 1_000_000.0;
@@ -223,7 +224,7 @@ fn main() {
             render::print_response(&command_text, &response.model, tok_s, cost, elapsed);
 
             if cli.execute && !command_text.is_empty() {
-                exec::prompt_and_execute(&command_text);
+                watn::exec::prompt_and_execute(&command_text);
             }
         }
         Err(e) => {
@@ -232,4 +233,21 @@ fn main() {
             std::process::exit(code);
         }
     }
+
+    if interrupted.load(Ordering::SeqCst) {
+        std::process::exit(130);
+    }
+}
+
+fn build_registry(
+    registry: &mut ProviderRegistry,
+    _config: &watn::config::types::Config,
+    active_provider: &str,
+    endpoint: &str,
+    api_key: &str,
+) {
+    registry.register(
+        active_provider.to_string(),
+        Box::new(OpenAICompatibleProvider::new(endpoint.to_string(), api_key.to_string())),
+    );
 }

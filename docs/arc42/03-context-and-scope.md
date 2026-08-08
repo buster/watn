@@ -44,7 +44,7 @@ graph TB
 |---|---|---|
 | LLM provider | HTTPS + SSE (OpenAI chat-completions) | Outbound |
 | LiteLLM | HTTPS + JSON | Outbound (optional) |
-| Config file | TOML | Read (system + user paths) |
+| Config file | TOML | Read (user path) |
 | Environment | `WATN_*` variables | Read |
 | Stdout | Raw text or ANSI-rendered | Write |
 | Confirmation prompt | stdin line read | Read

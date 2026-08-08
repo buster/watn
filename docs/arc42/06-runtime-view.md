@@ -188,15 +188,11 @@ sequenceDiagram
 sequenceDiagram
     participant CLI as watn CLI
     participant Def as Built-in defaults
-    participant Sys as /etc/watn/config.toml
     participant Usr as ~/.config/watn/config.toml
     participant Env as Environment
     participant Cmd as CLI args
 
     CLI->>Def: start with defaults
-    alt system config exists
-        CLI->>Sys: read and merge
-    end
     alt user config exists
         CLI->>Usr: read and merge
     end

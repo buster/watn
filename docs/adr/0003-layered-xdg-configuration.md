@@ -18,19 +18,18 @@ flags), and settable in CI/CD pipelines (env vars).
 
 ## Considered Options
 
-- **Layered merge with TOML** — CLI flags > env vars > user config > system config > built-in defaults
+- **Layered merge with TOML** — CLI flags > env vars > user config > built-in defaults
 - **Single config file only** — no env var or CLI override path
 - **JSON config** — more verbose, less Rust-ecosystem-idiomatic
 
 ## Decision Outcome
 
 Chosen: **Layered merge with TOML**. Precedence: CLI flags > env vars > user
-config > system config > built-in defaults.
+config > built-in defaults.
 
 ## Consequences
 
 - Good: works in CI without config files (env vars only)
-- Good: system administrators can set defaults via `/etc/watn/config.toml`
 - Bad: merge logic is more complex than a single file
 
 ## Confirmation

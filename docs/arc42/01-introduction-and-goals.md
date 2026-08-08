@@ -13,7 +13,7 @@ Top 8 requirements:
 4. A `-v`/`--verbose` flag prints the model's reasoning content to stderr
 5. Optional execution with user confirmation (`-x` prompts "Execute now? [Y/n]")
 6. Model discovery via optional LiteLLM endpoint (`watn models` interactive)
-7. Layered configuration: CLI flags > env vars > user config > system config > built-in defaults
+7. Layered configuration: CLI flags > env vars > user config > built-in defaults
 8. Auto-init template: first run writes a commented-out config file to the standard XDG path
 
 See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.

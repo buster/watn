@@ -36,4 +36,4 @@ result to config. If not configured, prints manual setup instructions.
 
 ## Confirmation
 
-E2E scenario: mock LiteLLM endpoint, assign tiers via `--set-*` flags, verify config file written.
+E2E scenario: mock LiteLLM endpoint, assign tiers via `--set-small`/`--set-normal`/`--set-thinking` flags, verify config file written.

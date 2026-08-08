@@ -1,4 +1,5 @@
 pub mod openai_compat;
+pub mod registry;
 
 use crate::error::Error;
 
@@ -11,13 +12,9 @@ pub struct Message {
 #[derive(Debug, Clone)]
 pub struct RequestOptions {
     pub model: String,
-    #[allow(dead_code)]
-    pub streaming: bool,
     pub temperature: Option<f32>,
     pub max_tokens: Option<u32>,
     pub reasoning_effort: Option<String>,
-    #[allow(dead_code)]
-    pub verbose: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -49,25 +46,10 @@ pub struct StreamingResponse {
     pub reasoning_content: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct CompleteResponse {
-    pub content: String,
-    pub model: String,
-    pub usage: TokenUsage,
-}
-
 pub trait Provider: Send + Sync {
     fn chat_completions_streaming(
         &self,
         messages: &[Message],
         options: &RequestOptions,
     ) -> Result<StreamingResponse, Error>;
-
-    #[allow(dead_code)]
-    fn chat_completions_blocking(
-        &self,
-        messages: &[Message],
-        options: &RequestOptions,
-    ) -> Result<CompleteResponse, Error>;
 }

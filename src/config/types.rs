@@ -18,6 +18,8 @@ fn comment_toml(input: &str) -> String {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Config {
     #[serde(default)]
+    pub schema_version: Option<String>,
+    #[serde(default)]
     pub defaults: ProviderDefaults,
     #[serde(default)]
     pub providers: HashMap<String, ProviderConfig>,
@@ -32,6 +34,7 @@ pub struct Config {
 impl Config {
     pub fn template_content() -> String {
         let example = Config {
+            schema_version: Some("1".to_string()),
             defaults: ProviderDefaults {
                 provider: Some("openrouter".to_string()),
                 model: Some("~deepseek/deepseek-v4-flash-latest".to_string()),

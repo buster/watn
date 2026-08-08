@@ -23,15 +23,14 @@ progressively. How should the tool handle response streaming?
 
 ## Decision Outcome
 
-Chosen: **Streaming by default**, with a config toggle for non-streaming.
+Chosen: **Streaming only**. All responses use SSE streaming; there is no non-streaming mode.
 
 ## Consequences
 
 - Good: immediate user feedback
 - Good: works with pipes (output appears as tokens arrive)
 - Bad: requires SSE parsing on the HTTP response stream
-- Neutral: non-streaming mode is a single flag in the SSE parser
 
 ## Confirmation
 
-E2E scenarios verify incremental output and metadata after completion.
+E2E scenarios verify metadata after completion.

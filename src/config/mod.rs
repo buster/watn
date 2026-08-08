@@ -44,6 +44,21 @@ pub fn load_config() -> Result<Config, Error> {
             .map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
     };
 
+    if config.schema_version.is_none() && !content.trim().is_empty() {
+        eprintln!("warning: config file has no schema_version; future updates may require manual migration");
+    }
+
+    #[cfg(unix)]
+    {
+        if let Ok(meta) = std::fs::metadata(&config_path) {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = meta.permissions().mode();
+            if mode & 0o004 != 0 {
+                eprintln!("warning: config file is world-readable ({:o})", mode & 0o777);
+            }
+        }
+    }
+
     let env_overrides = env::read_env_overrides();
 
     if let Some(provider) = env_overrides.get("provider") {
