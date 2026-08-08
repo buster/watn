@@ -10,7 +10,7 @@ documentation = "https://github.com/buster/watn"
 readme = "README.md"
 keywords = ["cli", "shell", "command", "ai", "llm"]
 categories = ["command-line-utilities"]
-exclude = ["coverage/", "givn/", "docs/"]
+exclude = ["coverage/", "givn/", "docs/", ".agents/", ".claude/", ".opencode/", ".ralph/"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
