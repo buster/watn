@@ -120,14 +120,25 @@ globally — documented constraint from prior changes).
 - `a provider that does not support searching its model catalog` — mock
   returns 501 for any `/models?search=...` request.
 
-**When steps:**
-- `I type "X" into the active tier picker` — PTY-driven: writes keystrokes to
-  the subprocess pty.
-- `I replace the search text with "X"` — clears previous input, types new text.
-- `I clear the search text` — sends Escape or backspace sequence.
-- `I choose "X"` — sends Enter.
+**When steps (non-@e2e logic scenarios):**
+- `I type "X" into the active tier picker` / `I replace the search text with "X"`
+  — call `picker::execute_search` against the httpmock search endpoint and
+  store the resulting suggestions/error/empty-state in `WatnWorld`. These
+  non-@e2e scenarios test the **search and suggestion logic** (filtering,
+  empty state, stale-generation guard, unsupported-search error) through the
+  real `execute_search` function and mock, not the raw-mode key loop.
 - `I run \`watn models\`, type "X" into the small tier picker, and choose "Y"`
-  — composite e2e step: spawn, type, select, wait for next tier.
+  — composite e2e step: spawn the real binary in a PTY, type, select, wait
+  for next tier. This (and the raw-mode `ModelPicker` interaction loop) is
+  exercised by the single @e2e scenario.
+
+> Coverage-review note: the raw-TTY interaction loop (key handling, backspace,
+> escape/clear, tier advance, rendering) is covered by the one @e2e scenario
+> per the interaction matrix. Two non-@e2e scenarios whose placeholder steps
+> duplicated that interaction ("Clearing the search restores available
+> suggestions", "Selecting a suggestion advances to the next tier") were
+> removed at review because they could not test the raw-mode loop and added no
+> real coverage.
 
 **Then steps:**
 - `the suggestions include "X" and "Y"` — asserts picker output contains

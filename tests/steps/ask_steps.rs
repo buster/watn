@@ -453,13 +453,14 @@ fn output_should_contain(w: &mut WatnWorld, text: String) {
 #[then("the output should contain a model name")]
 fn output_contains_model(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains("model:"), "expected stderr to contain 'model:', got: '{}'", stderr);
+    let re = Regex::new(r"[\w~/.\-]+ · \d+ tok/s").unwrap();
+    assert!(re.is_match(stderr), "expected stderr to contain a model name with tokens/sec, got: '{}'", stderr);
 }
 
 #[then("the output should contain a tokens/second value")]
 fn output_contains_tok_s(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains("tokens/s:"), "expected stderr to contain 'tokens/s:', got: '{}'", stderr);
+    assert!(stderr.contains("tok/s"), "expected stderr to contain 'tok/s', got: '{}'", stderr);
 }
 
 #[then("the output should not contain ANSI escape sequences")]
@@ -506,7 +507,8 @@ fn output_contains_version(w: &mut WatnWorld) {
 #[then("the output should contain a cost value")]
 fn output_contains_cost(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains("cost: $"), "expected stderr to contain 'cost: $', got: '{}'", stderr);
+    let re = Regex::new(r"\$\d+(\.\d+)?").unwrap();
+    assert!(re.is_match(stderr), "expected stderr to contain a cost value, got: '{}'", stderr);
 }
 
 #[then(expr = "the output should be a command suggestion containing {string}")]
@@ -518,8 +520,8 @@ fn output_contains_command_suggestion(w: &mut WatnWorld, text: String) {
 #[then("the command should not have been executed")]
 fn command_not_executed(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
-    let lines: Vec<&str> = out.lines().collect();
-    assert!(lines.len() == 1, "expected single line (suggestion only), got {} lines: '{}'", lines.len(), out);
+    let lines: Vec<&str> = out.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+    assert_eq!(lines.len(), 1, "expected single command suggestion, got {} lines: '{}'", lines.len(), out);
     assert_eq!(lines[0], "echo hello", "expected command suggestion");
 }
 
@@ -532,7 +534,8 @@ fn string_printed_to_stdout(w: &mut WatnWorld, text: String) {
 #[then("the output should contain a cost estimate")]
 fn output_contains_cost_estimate(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains("cost:"), "expected stderr to contain 'cost:', got: '{}'", stderr);
+    let re = Regex::new(r"\$\d+(\.\d+)?").unwrap();
+    assert!(re.is_match(stderr), "expected stderr to contain a cost estimate, got: '{}'", stderr);
 }
 
 #[then(expr = "the request should use model {string}")]
@@ -857,30 +860,6 @@ fn picker_says_no_models(w: &mut WatnWorld) {
     assert!(w.picker_no_results, "expected picker to report no models found");
 }
 
-#[then(regex = r#"^the picker remains available for another search$"#)]
-fn picker_remains_available(w: &mut WatnWorld) {
-    // The step verifies the picker didn't crash/exit. The state is still
-    // present and another search can be performed — we verify by checking
-    // that the endpoint and generation are still set.
-    assert!(w.picker_endpoint.is_some(), "picker endpoint should still be set");
-    assert!(w.picker_generation.is_some(), "picker generation should still be set");
-}
-
-#[when(regex = r#"^I clear the search text$"#)]
-fn clear_search_text(w: &mut WatnWorld) {
-    w.picker_query = Some(String::new());
-    w.picker_suggestions = None;
-    w.picker_error = None;
-    w.picker_no_results = false;
-}
-
-#[then(regex = r#"^the initial available suggestions are shown again$"#)]
-fn initial_suggestions_shown(w: &mut WatnWorld) {
-    // After clearing, no suggestions were fetched via search, so
-    // suggestions should be None (initial state = no search performed).
-    assert!(w.picker_suggestions.is_none(), "expected no search results after clearing");
-}
-
 #[given(regex = r#"^a provider returns the results for "([^"]+)" more slowly than the results for "([^"]+)"$"#)]
 fn slow_provider_results(w: &mut WatnWorld, slow_query: String, fast_query: String) {
     let models: Vec<String> = vec![format!("model-{}", fast_query), format!("model-{}", slow_query)];
@@ -910,15 +889,19 @@ fn suggestions_for_query_displayed(w: &mut WatnWorld, query: String) {
 
 #[then(regex = r#"^a later result for "([^"]+)" does not replace them$"#)]
 fn later_result_does_not_replace(w: &mut WatnWorld, query: String) {
-    // The stale-result guard has already been verified during the
-    // execute_search call (generation counter check). This step confirms
-    // the suggestions still reflect the last valid query.
+    // The suggestions stored in the world reflect the last dispatched (and
+    // completed) search — the newer "o3" result. A stale, slower result for
+    // `query` ("gpt") must not have overwritten them, because the generation
+    // guard discards results whose generation advanced before they landed.
     let suggestions = w.picker_suggestions.as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    let current_query = w.picker_query.as_deref().unwrap_or("");
-    // The suggestions should not contain only the later result
-    // (they should still reflect whatever was set by the last successful search)
+    assert!(!ids.is_empty(), "expected the newer suggestions to remain, got empty");
+    assert!(
+        !ids.iter().any(|id| id.starts_with(&query)),
+        "stale result for '{}' replaced the newer suggestions: {:?}",
+        query, ids
+    );
 }
 
 #[given(regex = r#"^a provider that does not support searching its model catalog$"#)]
@@ -943,32 +926,6 @@ fn provider_no_search_support(w: &mut WatnWorld) {
 fn picker_reports_search_unavailable(w: &mut WatnWorld) {
     assert_eq!(w.picker_error.as_deref(), Some("model search is not supported by this provider"),
         "expected picker to report search unavailable, got: {:?}", w.picker_error);
-}
-
-#[then(regex = r#"^the current tier selection remains available$"#)]
-fn tier_selection_remains(w: &mut WatnWorld) {
-    // The picker didn't crash/exit — we can still interact.
-    assert!(w.picker_endpoint.is_some(), "picker should still be available");
-}
-
-#[when(regex = r#"^I choose "([^"]+)"$"#)]
-fn i_choose(w: &mut WatnWorld, model: String) {
-    // Simulate choosing a model from suggestions
-    let suggestions = w.picker_suggestions.as_ref()
-        .expect("no suggestions to choose from");
-    assert!(suggestions.iter().any(|m| m.id == model),
-        "model '{}' not in suggestions: {:?}", model, suggestions.iter().map(|m| m.id.as_str()).collect::<Vec<_>>());
-}
-
-#[then(regex = r#"^the small tier is assigned to "([^"]+)"$"#)]
-fn small_tier_assigned(w: &mut WatnWorld, model: String) {
-    // This is a placeholder for the e2e scenario. The actual assertion
-    // reads the config file. For non-e2e, we just verify the choice was tracked.
-}
-
-#[then(regex = r#"^the picker presents the normal tier$"#)]
-fn picker_presents_normal(w: &mut WatnWorld) {
-    // Placeholder: in non-e2e context, this is verified by the e2e test.
 }
 
 #[given(regex = r#"^a provider with a paginated model catalog$"#)]

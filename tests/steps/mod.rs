@@ -294,6 +294,8 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 );
                 world.mock_server.1 = Some(mock_id);
             }
+        } else {
+            config_content = raw.clone();
         }
     }
 
@@ -337,6 +339,21 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 "\n[providers.openai]\nendpoint = \"{}\"\n",
                 base_url
             ));
+        }
+    }
+
+    // When WATN_PROVIDER selects a provider, ensure that provider resolves to
+    // the mock server so the env-var override scenario can actually reach it.
+    if let Some(provider_name) = world.env_vars.get("WATN_PROVIDER").cloned() {
+        if let Some(ref server) = world.mock_server.0 {
+            let base_url = format!("http://127.0.0.1:{}", server.port());
+            let section = format!("[providers.{}]", provider_name);
+            if has_config && !config_content.contains(&section) {
+                config_content.push_str(&format!(
+                    "\n{}\nendpoint = \"{}\"\napi_key = \"test-key\"\ndefault_model = \"test-model\"\n",
+                    section, base_url
+                ));
+            }
         }
     }
 

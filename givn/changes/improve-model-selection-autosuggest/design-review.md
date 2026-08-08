@@ -48,3 +48,18 @@ No hardening changes required. No findings that require spec edits, design edits
 ## Sign-off
 
 DESIGN-REVIEW: PASS
+
+## Review delta (coverage-review remediation)
+
+The coverage review surfaced two non-@e2e scenarios whose step definitions
+were no-op placeholders ("Clearing the search restores available
+suggestions", "Selecting a suggestion advances to the next tier"). They
+duplicated the single distinct interaction covered by the @e2e scenario
+(per the interaction coverage matrix: one @e2e per user-facing action) and
+could not test the raw-mode key loop. Both were removed, and `design.md`
+was corrected to state that the remaining non-@e2e scenarios drive
+`picker::execute_search` directly (search/suggestion logic) while the raw
+interaction loop is covered by the one @e2e scenario. This is a scoping
+correction consistent with the already-reviewed interaction matrix; no new
+technology decisions or architecture impact. Re-assessed and accepted.
+

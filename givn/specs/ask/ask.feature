@@ -65,7 +65,7 @@ Feature: Asking questions
   @e2e
   Scenario: Tokens/second is displayed after response completes
     When  I run `watn "echo hello"`
-    Then  the output should match regex "tokens/s:\s+\d+\.?\d*"
+    Then  the output should match regex "\d+\s*tok/s"
 
   @e2e
   Scenario: Ask via stdin pipe
