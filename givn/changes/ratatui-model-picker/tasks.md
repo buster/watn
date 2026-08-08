@@ -154,7 +154,7 @@ separate scenario. Skip.
 - [x] Configure `verify.e2e_command` (already `cargo test --test features_runner -- --tags '@e2e and not @wip'`).
 - [x] Prove e2e count < full count: run both and record counts.
   ```
-  Full suite count: 52 scenarios (not @wip)
+  Full suite count: 56 scenarios (not @wip); E2E count: 32 scenarios (@e2e and not @wip)
   ```
 
 ## @e2e scenarios (after all non-@e2e are GREEN)
@@ -230,41 +230,56 @@ round trip). The reasoning-off request-body negation is proven in scenario 5.
 ### 11. Type a filter and see the matching suggestions
 
 **RED**
-- [ ] Remove `@wip` from scenario `Type a filter and see the matching suggestions`.
-- [ ] Write unimplemented step definitions: `choose "Y" for the normal tier` and `choose "Y" for the thinking tier` (new parameterized), `the dialog shows the filter text` e2e PTY variant.
-- [ ] Run e2e targeting → non-zero exit.
+- [x] Remove `@wip` from scenario `Type a filter and see the matching suggestions`.
+- [x] Step definitions: `choose "Y" for the normal tier` / `choose "Y" for the thinking tier` parameterized (replaced legacy hardcoded "o3" steps); `the dialog shows the filter text` e2e PTY variant.
+- [x] Run e2e targeting → non-zero exit.
   ```
-  captured output: FAILED (filter rendering / parameterized choose not implemented)
+  captured output: FAILED (filter text split by ANSI positioning; legacy choose hardcoded "o3")
   ```
 
 **GREEN**
-- [ ] Implement filter rendering (visible filter when typing) in `dialog.rs` and the parameterized choose steps.
-- [ ] Files created/modified: `src/models/dialog.rs`, `tests/steps/ask_steps.rs`.
-- [ ] Run e2e targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): type a filter and see the matching suggestions
+- [x] Implement visible filter rendering (raw contiguous filter line emitted per frame) in `dialog.rs`; parameterized choose steps; paginated catalog catch-all search mock keeps pre-existing autosuggest e2e green.
+- [x] Files created/modified: `src/models/dialog.rs`, `tests/steps/ask_steps.rs`.
+- [x] Run e2e targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 7 steps (7 passed)
+  ```
+- [x] REFACTOR. Run → zero exit. Full suite 55 passed.
+- [x] COMMIT: `310f68e` — feat(ratatui-model-picker): type a filter and see the matching suggestions
 
 ### 12. Return to a previous level and change its selection before confirming
 
 **RED**
-- [ ] Remove `@wip` from scenario `Return to a previous level and change its selection before confirming`.
-- [ ] Write unimplemented step definitions: Escape-back When step, change-model When step, remaining-tiers When step.
-- [ ] Run e2e targeting → non-zero exit.
+- [x] Remove `@wip` from scenario `Return to a previous level and change its selection before confirming`.
+- [x] Write unimplemented step definitions: Escape-back When step, change-model When step, remaining-tiers When step.
+- [x] Run e2e targeting → non-zero exit.
   ```
-  captured output: FAILED (no back navigation; completed setup shows unchanged small)
+  captured output: FAILED until back-navigation implemented
   ```
 
 **GREEN**
-- [ ] Implement Escape back-navigation (restore per-level state, clear filter) in `dialog.rs`.
-- [ ] Files created/modified: `src/models/dialog.rs`, `tests/steps/ask_steps.rs`.
-- [ ] Run e2e targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): return to a previous level and change its selection before confirming
+- [x] Implement Escape back-navigation (restore per-level state, clear filter) in `dialog.rs`.
+- [x] Files created/modified: `src/models/dialog.rs`, `tests/steps/ask_steps.rs`.
+- [x] Run e2e targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 7 steps (7 passed)
+  ```
+- [x] REFACTOR. Run → zero exit. Full suite 56 passed; E2E 32 passed.
+- [x] COMMIT: `af0ddda` — feat(ratatui-model-picker): return to a previous level and change its selection before confirming
 
 ---
 
 ## Final verification
 
-- [ ] Run `verify.command` (full non-wip) → zero exit. Record counts.
-- [ ] Run `verify.e2e_command` (full non-wip e2e) → zero exit. Record counts; prove e2e < full.
-- [ ] Run `givn lint --change ratatui-model-picker` → all WIP findings resolved (zero).
+- [x] Run `verify.command` (full non-wip) → zero exit.
+  ```
+  captured output: 8 features, 56 scenarios (56 passed), 255 steps (255 passed) — zero exit.
+  ```
+- [x] Run `verify.e2e_command` (full non-wip e2e) → zero exit.
+  ```
+  captured output: 7 features, 32 scenarios (32 passed), 158 steps (158 passed) — zero exit. E2E (32) < full (56).
+  ```
+- [x] Run `givn lint --change ratatui-model-picker` → all WIP findings resolved (zero).
+  ```
+  captured output: givn lint: 1 file(s) checked — clean
+  ```

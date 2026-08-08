@@ -105,7 +105,7 @@ impl SettingsDialog {
         result
     }
 
-    fn run_inner(mut self, mut terminal: DefaultTerminal) -> Result<[LevelChoice; 3], Error> {
+    fn run_inner(self, mut terminal: DefaultTerminal) -> Result<[LevelChoice; 3], Error> {
         let mut level = 0usize;
         // Per-level: filter text, selection index, reasoning strength,
         // and the confirmed model once Enter has accepted this level.
