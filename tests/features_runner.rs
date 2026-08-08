@@ -58,6 +58,7 @@ pub struct WatnWorld {
     pub models_mock_id: Option<usize>,
     pub picker_query: Option<String>,
     pub picker_suggestions: Option<Vec<ModelEntry>>,
+    pub picker_local_models: Option<Vec<ModelEntry>>,
     pub picker_error: Option<String>,
     pub picker_no_results: bool,
     pub picker_endpoint: Option<String>,

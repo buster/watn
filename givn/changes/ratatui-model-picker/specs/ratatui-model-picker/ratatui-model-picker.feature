@@ -81,7 +81,7 @@ Feature: Keyboard-driven model picker
     Then  the entry for "model-a" shows a price
     And  the entry for "model-b" shows no price
 
-  @givn.added @wip
+  @givn.added
   Scenario: Remote search failure falls back to local matching
     Given  a provider that does not support searching its model catalog with models "gpt-4o-mini" and "gpt-4o"
     When  I type "gpt" into the active tier picker

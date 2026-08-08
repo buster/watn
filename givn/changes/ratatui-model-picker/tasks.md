@@ -4,8 +4,8 @@
 
 - [x] Gherkin runner exists at `tests/features_runner.rs` with strict mode (`.fail_on_skipped()`).
 - [x] `verify.command` and `verify.e2e_command` configured in `givn/commands.yaml`.
-- [ ] Add `ratatui` (latest stable, 0.30.x resolved via `cargo add ratatui`) to `Cargo.toml`; step definitions go in `tests/steps/ask_steps.rs` (cucumber-rs global registry constraint).
-- [ ] Proof-of-strictness: run full non-wip suite → baseline green (46 scenarios); `.fail_on_skipped()` already hard-fails undefined steps (the 10 new spec scenarios fail RED from undefined steps — recorded below in RED phases).
+- [x] Add `ratatui` (latest stable, 0.30.x resolved via `cargo add ratatui`) to `Cargo.toml`; step definitions go in `tests/steps/ask_steps.rs` (cucumber-rs global registry constraint).
+- [x] Proof-of-strictness: run full non-wip suite → baseline green (46 scenarios); `.fail_on_skipped()` already hard-fails undefined steps (the 10 new spec scenarios fail RED from undefined steps — recorded below in RED phases).
 
 ---
 
@@ -14,26 +14,32 @@
 ### 1. Per-word order-independent filter matches any identifier word
 
 **RED**
-- [ ] Remove `@wip` from scenario `Per-word order-independent filter matches any identifier word`.
-- [ ] Write unimplemented step definitions for:
+- [x] Remove `@wip` from scenario `Per-word order-independent filter matches any identifier word`.
+- [x] Write unimplemented step definitions for:
   - `a provider with models "..."` (Given — reuse existing)
   - `I type "..." into the active tier picker` (When — reuse)
   - `the suggestions include "..."` (Then — new 1-arg variant; existing step takes 2 models)
   - `the suggestions do not include "..."` (Then — reuse existing 2-arg step with one repeated)
-- [ ] Run: `cargo test --test features_runner -- --name 'Per-word order-independent filter matches any identifier word'` → non-zero exit.
+- [x] Run: `cargo test --test features_runner -- --name 'Per-word order-independent filter matches any identifier word'` → non-zero exit.
   ```
-  captured output: FAILED (out-of-order whole-word match: "dee flash" produced no match vs flash-latest)
+  captured output: RED via undefined 1-arg suggestion steps before word_matches existed
   ```
 
 **GREEN**
-- [ ] Implement `word_matches(id, query)` in `src/models/picker.rs` and apply it in `search_models` (secondary filter) and `local_filter`.
-- [ ] Files created/modified:
-  - `src/models/picker.rs` — `word_matches`, updated `local_filter`
-  - `src/models/list.rs` — `search_models` uses `word_matches`
+- [x] Implement `word_matches(id, query)` in `src/models/picker.rs` and apply it in `search_models` (secondary filter) and `local_filter`.
+- [x] Files created/modified:
+  - `src/models/picker.rs` — `local_filter` uses `word_matches`
+  - `src/models/list.rs` — `word_matches` + `search_models` uses it
   - `tests/steps/ask_steps.rs` — 1-model `suggestions include`/`do not include` steps
-- [ ] Run targeting this scenario → zero exit. Evidence.
-- [ ] REFACTOR: clean up. Run targeting → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): per-word order-independent filter matches any identifier word
+- [x] Run targeting this scenario → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 4 steps (4 passed)
+  ```
+- [x] REFACTOR: clean up. Run targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed)
+  ```
+- [x] COMMIT: `b101951` — feat(ratatui-model-picker): per-word order-independent filter matches any identifier word
 
 ### 2. Remote search failure falls back to local matching
 

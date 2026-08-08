@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use crate::{MockServerWrap, WatnWorld};
 use super::{build_config, find_binary, finish_pty_session, pty_write, run_binary_with_state, start_pty_session};
+use watn::models::list::ModelEntry;
 use watn::models::picker;
 
 // ===== GIVEN =====
@@ -780,10 +781,10 @@ async fn type_into_picker(w: &mut WatnWorld, query: String) {
     let endpoint = w.picker_endpoint.clone().expect("no endpoint set up");
     let generation = Arc::clone(w.picker_generation.as_ref().expect("no generation counter"));
     let q = query.clone();
+    let all_models = w.picker_local_models.clone().unwrap_or_default();
 
     let result = tokio::task::spawn_blocking(move || {
         let current_gen = generation.fetch_add(1, Ordering::SeqCst) + 1;
-        let all_models = vec![];
         picker::execute_search(&endpoint, None, &q, &all_models, &generation, current_gen)
     }).await.expect("blocking task failed");
 
@@ -846,9 +847,10 @@ async fn replace_search_text(w: &mut WatnWorld, query: String) {
     w.picker_error = None;
     w.picker_no_results = false;
 
+    let all_models = w.picker_local_models.clone().unwrap_or_default();
+
     let result = tokio::task::spawn_blocking(move || {
         let current_gen = generation.fetch_add(1, Ordering::SeqCst) + 1;
-        let all_models = vec![];
         picker::execute_search(&endpoint, None, &q, &all_models, &generation, current_gen)
     }).await.expect("blocking task failed");
 
@@ -938,6 +940,29 @@ fn provider_no_search_support(w: &mut WatnWorld) {
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
 }
 
+#[given(expr = "a provider that does not support searching its model catalog with models {string} and {string}")]
+fn provider_no_search_support_with_models(w: &mut WatnWorld, m1: String, m2: String) {
+    let endpoint = setup_search_mock(w);
+    let m1c = m1.trim_matches('"').to_string();
+    let m2c = m2.trim_matches('"').to_string();
+    // Register a mock that returns 501 for any search query
+    let server = w.mock_server.0.as_ref().unwrap().clone();
+    let mock = server.mock(move |when, then| {
+        when.method(httpmock::Method::GET)
+            .path("/models")
+            .query_param_exists("search");
+        then.status(501)
+            .header("Content-Type", "application/json")
+            .body(r#"{"error":"search not supported"}"#);
+    });
+    w.search_mock_ids.push(mock.id);
+    w.picker_endpoint = Some(endpoint);
+    w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
+    w.picker_local_models = Some(vec![
+        ModelEntry { id: m1c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+        ModelEntry { id: m2c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+    ]);
+}
 #[then(regex = r#"^the picker reports that model search is unavailable$"#)]
 fn picker_reports_search_unavailable(w: &mut WatnWorld) {
     assert_eq!(w.picker_error.as_deref(), Some("model search is not supported by this provider"),
