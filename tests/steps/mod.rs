@@ -11,6 +11,14 @@ use crate::MockServerWrap;
 use std::io::Write;
 
 pub(crate) fn find_binary() -> PathBuf {
+    if let Some(binary) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent()?.parent().map(|dir| dir.join("watn")))
+        .filter(|path| path.is_file())
+    {
+        return binary;
+    }
+
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest_dir.join("target").join("debug").join("watn")
 }

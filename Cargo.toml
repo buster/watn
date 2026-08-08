@@ -2,7 +2,15 @@
 name = "watn"
 version = "0.1.0"
 edition = "2021"
+description = "Ask in plain language. Get one command."
 license = "GPL-3.0-or-later"
+repository = "https://github.com/buster/watn"
+homepage = "https://github.com/buster/watn"
+documentation = "https://github.com/buster/watn"
+readme = "README.md"
+keywords = ["cli", "shell", "command", "ai", "llm"]
+categories = ["command-line-utilities"]
+exclude = ["coverage/", "givn/", "docs/"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

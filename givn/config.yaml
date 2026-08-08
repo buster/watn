@@ -181,7 +181,7 @@ addons:
   arc42: true
   absolute_mode: true
   readme: true
-  coverage: false
+  coverage: true
   domain_modeling: true
   dev_principles: true
   grill_me: true
