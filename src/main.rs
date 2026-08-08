@@ -18,8 +18,8 @@ mod provider;
 #[command(name = "watn", version = "0.1.0")]
 #[command(about = "Ask in plain language. Get one command.")]
 struct Cli {
-    #[arg(group = "input")]
-    question: Option<String>,
+    #[arg(group = "input", num_args = 1..)]
+    question: Vec<String>,
 
     #[arg(short = '1', long = "small")]
     tier_small: bool,
@@ -62,7 +62,9 @@ enum Commands {
 
 impl Cli {
     fn tier(&self) -> Option<&str> {
-        if self.tier_small || (self.question.is_some() && !self.tier_normal && !self.tier_thinking) {
+        if self.tier_small
+            || (!self.question.is_empty() && !self.tier_normal && !self.tier_thinking)
+        {
             Some("1")
         } else if self.tier_normal {
             Some("2")
@@ -83,7 +85,7 @@ fn main() {
     }
 
     let question = match &cli.question {
-        Some(q) if !q.is_empty() => q.clone(),
+        q if !q.is_empty() => q.join(" "),
         _ => {
             if !std::io::stdin().is_terminal() {
                 let mut buf = String::new();
@@ -147,10 +149,36 @@ fn main() {
 
     let proc = OpenAICompatProvider::new(endpoint, api_key);
 
-    let messages = vec![Message {
-        role: "user".to_string(),
-        content: question,
-    }];
+    let system_prompt = format!(
+        "You are a direct answer engine. Output ONLY the requested information.\n\
+         Operating System: {} ({}). Shell: {}.\n\
+         \n\
+         For commands: Output executable syntax only. No explanations, no comments.\n\
+         For questions: Output the answer only. No context, no elaboration.\n\
+         \n\
+         Rules:\n\
+         - If asked for a command, provide ONLY the command\n\
+         - If asked a question, provide ONLY the answer\n\
+         - Never include markdown formatting or code blocks\n\
+         - Never add explanatory text before or after\n\
+         - Assume output will be piped or executed directly\n\
+         - For multi-step commands, use && or ; to chain them\n\
+         - Make commands robust and handle edge cases silently",
+        std::env::consts::OS,
+        std::env::consts::ARCH,
+        std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string()),
+    );
+
+    let messages = vec![
+        Message {
+            role: "system".to_string(),
+            content: system_prompt,
+        },
+        Message {
+            role: "user".to_string(),
+            content: question,
+        },
+    ];
 
     let reasoning_effort = if cli.tier_thinking {
         Some("high".to_string())
@@ -192,7 +220,7 @@ fn main() {
                 }
             }
 
-            render::print_response(&command_text, &response.model, tok_s, cost);
+            render::print_response(&command_text, &response.model, tok_s, cost, elapsed);
 
             if cli.execute && !command_text.is_empty() {
                 exec::prompt_and_execute(&command_text);

@@ -1,8 +1,17 @@
-pub fn print_response(command: &str, model: &str, tok_s: f64, cost: Option<f64>) {
-    println!("{}", command);
-    eprintln!("model: {}", model);
-    eprintln!("tokens/s: {:.1}", tok_s);
+pub fn print_response(
+    command: &str,
+    model: &str,
+    tok_s: f64,
+    cost: Option<f64>,
+    elapsed_secs: f64,
+) {
+    let mut meta = format!("{} · {:.0} tok/s", model, tok_s);
     if let Some(c) = cost {
-        eprintln!("cost: ${:.4}", c);
+        meta.push_str(&format!(" · ${:.4}", c));
     }
+    meta.push_str(&format!(" · {:.1}s · ¯\\_(ツ)_/¯", elapsed_secs));
+    println!();
+    println!("{}", command);
+    println!();
+    eprintln!("{}", meta);
 }
