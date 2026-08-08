@@ -1,4 +1,5 @@
 pub mod list;
+pub mod picker;
 
 use dialoguer::Select;
 

@@ -2,6 +2,10 @@ use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
+
+use watn::models::list::ModelEntry;
+use watn::models::picker;
 
 use cucumber::gherkin::{Feature, GherkinEnv};
 use cucumber::parser::{self, Parser};
@@ -50,6 +54,14 @@ pub struct WatnWorld {
     pub pending_mock_no_config_file: bool,
     pub pending_mock_models_fail: bool,
     pub models_mock_id: Option<usize>,
+    pub picker_query: Option<String>,
+    pub picker_suggestions: Option<Vec<ModelEntry>>,
+    pub picker_error: Option<String>,
+    pub picker_no_results: bool,
+    pub picker_endpoint: Option<String>,
+    pub picker_generation: Option<Arc<AtomicU64>>,
+    pub search_mock_ids: Vec<usize>,
+    pub search_query_delays: HashMap<String, u64>,
 }
 
 fn collect_features(dir: &Path) -> Vec<PathBuf> {
