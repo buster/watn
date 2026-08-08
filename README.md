@@ -63,6 +63,21 @@ variables → CLI flags. Config file is TOML.
 cargo test --test features_runner
 ```
 
+## Coverage
+
+[![Coverage: 77.8%](https://img.shields.io/badge/coverage-77.8%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+
+Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `583/749` lines (`77.8%`); the E2E subset covers `465/749` lines (`62.1%`).
+
+```sh
+mkdir -p coverage
+cargo llvm-cov clean --workspace
+cargo llvm-cov run --bin watn --no-report -- --version
+cargo llvm-cov test --no-clean --test features_runner \
+  --cobertura --output-path coverage/non-e2e-cobertura.xml \
+  -- --tags 'not @wip'
+```
+
 ## License
 
-TBD
+GPL-3.0-or-later
