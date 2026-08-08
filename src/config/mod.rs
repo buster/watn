@@ -24,7 +24,14 @@ fn write_template_config() -> Result<(), Error> {
             .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
     }
     std::fs::write(&config_path, Config::template_content())
-        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))
+        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
+            .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
+    }
+    Ok(())
 }
 
 pub fn load_config() -> Result<Config, Error> {
@@ -37,6 +44,11 @@ pub fn load_config() -> Result<Config, Error> {
     let content = std::fs::read_to_string(&config_path)
         .map_err(|e| Error::ConfigError(format!("cannot read config: {}", e)))?;
 
+    let has_real_content = content.lines().any(|line| {
+        let line = line.trim();
+        !line.is_empty() && !line.starts_with('#')
+    });
+
     let mut config = if content.trim().is_empty() {
         Config::default()
     } else {
@@ -44,12 +56,12 @@ pub fn load_config() -> Result<Config, Error> {
             .map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
     };
 
-    if config.schema_version.is_none() && !content.trim().is_empty() {
+    if has_real_content && config.schema_version.is_none() {
         eprintln!("warning: config file has no schema_version; future updates may require manual migration");
     }
 
     #[cfg(unix)]
-    {
+    if has_real_content {
         if let Ok(meta) = std::fs::metadata(&config_path) {
             use std::os::unix::fs::PermissionsExt;
             let mode = meta.permissions().mode();
