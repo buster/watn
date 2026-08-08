@@ -103,6 +103,18 @@ pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEn
     Ok(models)
 }
 
+/// Per-word, order-independent match against a model id: split the query on
+/// whitespace and require every word to be contained (case-insensitive)
+/// anywhere in the id, in any order. "dee flash" matches "DeepSeek V4 Flash"
+/// because each word is matched separately anywhere in the identifier.
+pub fn word_matches(id: &str, query: &str) -> bool {
+    let id_lower = id.to_lowercase();
+    query
+        .to_lowercase()
+        .split_whitespace()
+        .all(|word| id_lower.contains(word))
+}
+
 pub fn search_models(
     endpoint: &str,
     query: &str,
@@ -160,11 +172,10 @@ pub fn search_models(
         })?;
 
     let models: Vec<ModelEntry> = parse_model_data(data);
-    let query_lower = query.to_lowercase();
 
     let filtered: Vec<ModelEntry> = models
         .into_iter()
-        .filter(|m| m.id.to_lowercase().contains(&query_lower))
+        .filter(|m| word_matches(&m.id, query))
         .collect();
 
     Ok(filtered)

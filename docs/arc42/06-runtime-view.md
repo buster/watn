@@ -88,7 +88,7 @@ sequenceDiagram
     User->>CLI: watn -3 -v "design a distributed queue"
     CLI->>Config: load config (layered merge)
     Config-->>CLI: resolved Config (tier: thinking -> o3-mini)
-    CLI->>CLI: reasoning_effort = "high", verbose = true
+    CLI->>CLI: reasoning_effort from [tiers.reasoning] (thinking -> high by default), verbose = true
     CLI->>Prov: chat_completions(messages, options{model, reasoning_effort: "high"})
     Prov->>API: POST /v1/chat/completions (body includes reasoning_effort: "high")
     API-->>Prov: SSE stream of chunks with content + reasoning fields
@@ -106,13 +106,54 @@ sequenceDiagram
 **Steps:**
 1. CLI parses args, detects tier `-3` (thinking) and flag `-v` (verbose)
 2. Config resolves thinking tier to model name
-3. CLI sets `reasoning_effort = "high"` on `RequestOptions` and `verbose = true`
+3. CLI resolves `reasoning_effort` from the tier's configured strength (default
+   "high" for thinking when unset) and sets `verbose = true`; builds the POST body with `reasoning_effort`
 4. Provider builds POST body with `reasoning_effort: "high"` in addition to standard fields
 5. Provider reads SSE chunks, extracting both `delta["content"]` and `delta["reasoning"]`
 6. Content is accumulated into `full_content` as before
 7. Reasoning is accumulated into `reasoning_content`
 8. After stream ends, compute tok/s from elapsed time and usage
 9. Command output printed to stdout; metadata + reasoning content printed to stderr
+
+## Scenario: Keyboard-driven model settings dialog
+
+**Trigger:** User runs `watn models` from a terminal.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Dialog as SettingsDialog
+    participant Worker as Search worker (thread)
+    participant API as Provider API
+    participant Config as Config
+
+    User->>Dialog: runs `watn models` (TTY)
+    Dialog->>Dialog: show small level: filter, list, reasoning selector
+    User->>Dialog: types "dee flash"
+    Dialog->>Worker: spawn: per-word local/remote match (gen=N)
+    API-->>Worker: matching models
+    Worker->>Dialog: newest result wins → update suggestions
+    User->>Dialog: ↓ (select), Tab (reasoning low)
+    User->>Dialog: Enter (confirm small, advance to normal)
+    loop normal, thinking
+        User->>Dialog: pick model + reasoning, Enter to advance
+    end
+    User->>Dialog: Escape → back to previous level
+    User->>Dialog: change previous level selection
+    User->>Dialog: confirm on final level
+    Dialog->>Config: persist [tiers] + [tiers.reasoning]
+    Dialog-->>User: "Tiers configured: ..."
+```
+
+**Steps:**
+1. Dialog opens on the small level with filter, model list, reasoning selector.
+2. Keystrokes update the visible filter; results match per-word,
+   order-independent and are debounced with a stale-result guard.
+3. Arrow/page keys move selection; Enter accepts the model and advances to the
+   next level; Escape returns to the previous level.
+4. Tab cycles reasoning strength (off/low/medium/high) for the current level.
+5. Confirming on the thinking level persists per-level model and reasoning
+   choices to config and prints confirmation.
 
 ## Scenario: Model exploration
 
@@ -130,13 +171,13 @@ sequenceDiagram
     alt endpoint configured
         CLI->>LLM: GET /models
         LLM-->>CLI: ["gpt-4o-mini", "gpt-4o", "o3-mini", ...]
-        CLI->>User: "Select model for small/fast:"
-        User->>CLI: "gpt-4o-mini"
-        CLI->>User: "Select model for normal:"
-        User->>CLI: "gpt-4o"
-        CLI->>User: "Select model for thinking:"
-        User->>CLI: "o3-mini"
-        CLI->>Config: write [tiers] to config file
+        CLI->>User: dialog: model + reasoning for small tier
+        User->>CLI: "gpt-4o-mini", reasoning off
+        CLI->>User: dialog: model + reasoning for normal tier
+        User->>CLI: "gpt-4o", reasoning low
+        CLI->>User: dialog: model + reasoning for thinking tier
+        User->>CLI: "o3-mini", reasoning high
+        CLI->>Config: write [tiers] and [tiers.reasoning] to config file
         CLI-->>User: "Configuration updated"
     else no endpoint
         CLI-->>User: "Configure providers manually at ~/.config/watn/config.toml"

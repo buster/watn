@@ -819,6 +819,22 @@ fn suggestions_not_include(w: &mut WatnWorld, model1: String, model2: String) {
     assert!(!ids.contains(&model2.as_str()), "expected suggestions to not contain '{}', got: {:?}", model2, ids);
 }
 
+#[then(expr = "the suggestions include {string}")]
+fn suggestions_single_include(w: &mut WatnWorld, model: String) {
+    let suggestions = w.picker_suggestions.as_ref()
+        .expect("no suggestions available");
+    let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
+    assert!(ids.contains(&model.as_str()), "expected suggestions to contain '{}', got: {:?}", model, ids);
+}
+
+#[then(expr = "the suggestions do not include {string}")]
+fn suggestions_single_not_include(w: &mut WatnWorld, model: String) {
+    let suggestions = w.picker_suggestions.as_ref()
+        .expect("no suggestions available");
+    let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
+    assert!(!ids.contains(&model.as_str()), "expected suggestions to not contain '{}', got: {:?}", model, ids);
+}
+
 #[when(regex = r#"^I replace the search text with "([^"]+)"$"#)]
 async fn replace_search_text(w: &mut WatnWorld, query: String) {
     let endpoint = w.picker_endpoint.clone().expect("no endpoint set up");

@@ -60,9 +60,10 @@ graph TB
 | Element | Responsibility |
 |---|---|
 | `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response |
-| `ModelPicker` | Raw-terminal autosuggest loop: reads keystrokes, dispatches debounced search requests, renders live suggestion list with stale-result guard |
-| `TierSelector` | Interactive dialoguer prompts for small/normal/thinking assignment (pre-autosuggest path) or `ModelPicker` per tier |
-| `ConfigWriter` | Persist selected tier assignments to user config file |
+| `SettingsDialog` | Ratatui keyboard-driven dialog: walks small/normal/thinking in a guided sequence; per level shows filter, highlighted model list, and reasoning-strength selector; arrow/page keys browse, Enter advances, Escape goes back, confirm persists choices |
+| `ModelPicker` | Raw-terminal autosuggest loop (legacy interactive path): reads keystrokes, dispatches debounced search requests, renders live suggestion list with stale-result guard |
+| `TierSelector` | Fallback interactive prompts for non-dialog paths |
+| `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths to user config file |
 
 ### Exec
 

@@ -104,23 +104,57 @@ to stdout; metadata goes to stderr as plain text (suitable for scripting).
 ## Raw terminal input (autosuggest picker)
 
 The model autosuggest picker operates in raw terminal mode via the `console`
-crate (explicit dep; already a transitive dep of `dialoguer` 0.11). Raw mode
-disables line buffering and echo — each keystroke is read individually via
-`console::Term::read_key()`. The picker enters raw mode at the start of each
-tier prompt and restores cooked mode before returning control to `run_models`.
+crate (explicit dep). Raw mode disables line buffering and echo — each
+keystroke is read individually via `console::Term::read_key()`. The picker
+enters raw mode at the start of each tier prompt and restores cooked mode
+before returning control to `run_models`.
+
+## Keyboard-driven model settings dialog
+
+The interactive `watn models` flow (TTY stdin) runs a ratatui-based
+`SettingsDialog` instead of per-tier raw-mode prompts. It renders a
+two-pane view using ratatui's `List`/`ListState` and `Layout`:
+
+- A filter line that always shows the current filter text.
+- The matching model list with the current selection highlighted.
+- A reasoning-strength selector (off, low, medium, high) for the current level.
+- A status line for the empty state or the unsupported-search notice.
 
 Key bindings:
-- Printable characters: append to search query, trigger debounced API call.
-- Backspace: remove last character, trigger search.
-- Up/Down arrows: move selection cursor in the suggestion list.
-- Enter: confirm current selection.
-- Escape: clear query, restore default (first-page) suggestions.
-- Ctrl-C: exit process (terminal is restored before exit).
+- Up/Down arrows: move selection through the list.
+- PageUp/PageDown: move selection a page at a time.
+- Printable characters / Backspace: update the filter.
+- Tab: cycle reasoning strength.
+- Enter: accept the highlighted model and advance to the next level.
+- Escape: return to the previous level (not on the first level).
+- Ctrl-C: exit process (terminal restored before exit).
 
-The stale-result guard uses `Arc<AtomicU64>` as a generation counter.
-Each keystroke increments the counter before spawning a search worker.
-The worker captures the counter value at spawn time; when the HTTP response
-arrives, it checks the counter — if it has advanced, the result is discarded.
+Filter matching is per-word and order-independent against the model id: the
+query is split on whitespace and every word must appear (case-insensitive)
+anywhere in the id, in any order ("dee flash" matches "DeepSeek V4 Flash").
+When the provider cannot be searched remotely, matching falls back to this
+local rule over the models already fetched.
+
+The stale-result guard uses `Arc<AtomicU64>` as a generation counter. Each
+filter change increments the counter before dispatching a search; the worker
+discards a response whose generation has advanced (newest-result-wins).
+
+## Per-level reasoning configuration
+
+Each tier's reasoning strength is persisted in config under `[tiers.reasoning]`:
+
+```toml
+[tiers.reasoning]
+small = "off"    # one of off | low | medium | high
+normal = "low"
+thinking = "high"
+```
+
+When a request runs on a tier, `reasoning_effort` is resolved from the
+configured strength: `off` (or absent config) sends no reasoning; any other
+strength sends that value. When a tier has no explicit reasoning configured,
+the prior default is preserved (thinking → "high", others → none) for
+backwards compatibility.
 
 ## PTY-based E2E test harness
 
@@ -136,5 +170,5 @@ The test helper `run_binary_pty`:
 4. Reads PTY output via non-blocking polling with a timeout.
 5. Populates `world.output` for Then-step assertions.
 
-This approach is scoped to the `@model-autosuggest` feature. Existing scenarios
-continue using the piped-stdin path.
+This approach is scoped to the `@model-autosuggest` and `@ratatui-model-picker`
+features. Existing scenarios continue using the piped-stdin path.

@@ -15,3 +15,4 @@ options, the decision outcome, and consequences.
 | ADR-0007 | Reasoning support via reasoning_effort parameter | [docs/adr/0007-reasoning-support.md](../adr/0007-reasoning-support.md) |
 | ADR-0008 | Template config generated from code | [docs/adr/0008-template-generated-from-code.md](../adr/0008-template-generated-from-code.md) |
 | ADR-0009 | Server-side filtering for paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
+| ADR-0010 | Keyboard-driven dialog for model and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |

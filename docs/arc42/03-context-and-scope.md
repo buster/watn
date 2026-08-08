@@ -15,6 +15,7 @@ graph TB
     CLI -->|"GET /models (optional)"| LiteLLM
     CLI -->|"GET /models?search=..."| LiteLLM
     CLI -->|"sh -c (when -x flag)"| Shell
+    User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab) in the model settings dialog"| CLI
     API -->|"SSE streaming response"| CLI
     LiteLLM -->|"model list"| CLI
     Shell -->|"command output"| User
@@ -22,7 +23,7 @@ graph TB
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`) | Shell command + metadata (model, tok/s, cost); or confirmation prompt |
+| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`); keyboard input in the model settings dialog (arrows, PageUp/PageDown, Enter, Escape, Tab) | Shell command + metadata (model, tok/s, cost); or confirmation prompt |
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions` |
 | LiteLLM (optional) | Endpoint URL (config), search query (typed by user) | HTTP GET to `/models`, HTTP GET to `/models?search=...` |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
@@ -44,7 +45,7 @@ graph TB
 |---|---|---|
 | LLM provider | HTTPS + SSE (OpenAI chat-completions) | Outbound |
 | LiteLLM | HTTPS + JSON | Outbound (optional) |
-| Config file | TOML | Read (user path) |
+| Config file | TOML | Read (user path), Write (tier + reasoning assignment) |
 | Environment | `WATN_*` variables | Read |
 | Stdout | Raw text or ANSI-rendered | Write |
 | Confirmation prompt | stdin line read | Read

@@ -4,13 +4,12 @@ use std::sync::Arc;
 
 use crate::error::Error;
 
-use super::list::{search_models, ModelEntry};
+use super::list::{search_models, word_matches, ModelEntry};
 
 fn local_filter(models: &[ModelEntry], query: &str) -> Vec<ModelEntry> {
-    let query_lower = query.to_lowercase();
     models
         .iter()
-        .filter(|m| m.id.to_lowercase().contains(&query_lower))
+        .filter(|m| word_matches(&m.id, query))
         .cloned()
         .collect()
 }
