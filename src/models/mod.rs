@@ -5,7 +5,7 @@ use dialoguer::Select;
 
 use crate::config::{resolve_provider, save_config};
 use crate::config::types::ModelTiers;
-use list::fetch_models;
+use list::{fetch_models, fetch_models_page};
 use std::io::IsTerminal;
 
 pub fn run_models(
@@ -55,12 +55,15 @@ pub fn run_models(
         Err(_) => None,
     };
 
-    let models = match fetch_models(&endpoint, api_key.as_deref()) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("error: failed to fetch models: {}", e);
-            std::process::exit(1);
-        }
+    let models = match fetch_models_page(&endpoint, 1, 50, api_key.as_deref()) {
+        Ok(m) if !m.is_empty() => m,
+        _ => match fetch_models(&endpoint, api_key.as_deref()) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("error: failed to fetch models: {}", e);
+                std::process::exit(1);
+            }
+        },
     };
 
     if models.is_empty() {
@@ -68,9 +71,20 @@ pub fn run_models(
         std::process::exit(1);
     }
 
-    let small = select_model(&models, "small");
-    let normal = select_model(&models, "normal");
-    let thinking = select_model(&models, "thinking");
+    let small;
+    let normal;
+    let thinking;
+
+    if std::io::stdin().is_terminal() {
+        // Interactive search-as-you-type picker (raw-mode terminal / PTY).
+        small = picker::ModelPicker::new(&endpoint, api_key.clone(), models.clone()).run("small");
+        normal = picker::ModelPicker::new(&endpoint, api_key.clone(), models.clone()).run("normal");
+        thinking = picker::ModelPicker::new(&endpoint, api_key.clone(), models.clone()).run("thinking");
+    } else {
+        small = select_model(&models, "small").clone();
+        normal = select_model(&models, "normal").clone();
+        thinking = select_model(&models, "thinking").clone();
+    }
 
     let mut updated = config.clone();
     updated.tiers = ModelTiers {

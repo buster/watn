@@ -4,7 +4,7 @@
 @givn.delta @model-autosuggest
 Feature: Model auto-suggest
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Find a model outside the initial page while assigning tiers
     Given a provider with a paginated model catalog
     And the initial suggestions include "gpt-4o-mini" and "gpt-4o"

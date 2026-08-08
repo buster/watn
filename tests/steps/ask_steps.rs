@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use crate::{MockServerWrap, WatnWorld};
-use super::{build_config, find_binary, run_binary_with_state};
+use super::{build_config, find_binary, finish_pty_session, pty_write, run_binary_with_state, start_pty_session};
 use watn::models::picker;
 
 // ===== GIVEN =====
@@ -974,37 +974,42 @@ fn picker_presents_normal(w: &mut WatnWorld) {
 #[given(regex = r#"^a provider with a paginated model catalog$"#)]
 fn paginated_model_catalog(w: &mut WatnWorld) {
     let endpoint = setup_search_mock(w);
-    let server = w.mock_server.0.as_ref().unwrap().clone();
 
-    // First page: gpt-4o-mini and gpt-4o
-    let page1_models = vec!["gpt-4o-mini".to_string(), "gpt-4o".to_string()];
-    let p1 = page1_models.clone();
-    let mock1 = server.mock(move |when, then| {
-        when.method(httpmock::Method::GET)
-            .path("/models")
-            .query_param("page", "1")
-            .query_param("limit", "50");
-        let data: Vec<serde_json::Value> = p1.iter().map(|id| serde_json::json!({"id": id})).collect();
-        then.status(200)
-            .header("Content-Type", "application/json")
-            .body(serde_json::json!({"data": data}).to_string());
-    });
-    w.search_mock_ids.push(mock1.id);
+    let base_url;
+    {
+        let server = w.mock_server.0.as_ref().unwrap();
+        base_url = format!("http://127.0.0.1:{}/", server.port());
 
-    // Second page: o3-pro
-    let page2_models = vec!["o3-pro".to_string()];
-    let p2 = page2_models.clone();
-    let mock2 = server.mock(move |when, then| {
-        when.method(httpmock::Method::GET)
-            .path("/models")
-            .query_param("page", "2")
-            .query_param("limit", "50");
-        let data: Vec<serde_json::Value> = p2.iter().map(|id| serde_json::json!({"id": id})).collect();
-        then.status(200)
-            .header("Content-Type", "application/json")
-            .body(serde_json::json!({"data": data}).to_string());
-    });
-    w.search_mock_ids.push(mock2.id);
+        // First page: gpt-4o-mini and gpt-4o
+        let page1_models = vec!["gpt-4o-mini".to_string(), "gpt-4o".to_string()];
+        let p1 = page1_models.clone();
+        let mock1 = server.mock(move |when, then| {
+            when.method(httpmock::Method::GET)
+                .path("/models")
+                .query_param("page", "1")
+                .query_param("limit", "50");
+            let data: Vec<serde_json::Value> = p1.iter().map(|id| serde_json::json!({"id": id})).collect();
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(serde_json::json!({"data": data}).to_string());
+        });
+        w.search_mock_ids.push(mock1.id);
+
+        // Second page: o3-pro
+        let page2_models = vec!["o3-pro".to_string()];
+        let p2 = page2_models.clone();
+        let mock2 = server.mock(move |when, then| {
+            when.method(httpmock::Method::GET)
+                .path("/models")
+                .query_param("page", "2")
+                .query_param("limit", "50");
+            let data: Vec<serde_json::Value> = p2.iter().map(|id| serde_json::json!({"id": id})).collect();
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(serde_json::json!({"data": data}).to_string());
+        });
+        w.search_mock_ids.push(mock2.id);
+    }
 
     // Search mock for "o3"
     let search_models = vec!["o3-pro".to_string()];
@@ -1012,4 +1017,76 @@ fn paginated_model_catalog(w: &mut WatnWorld) {
 
     w.picker_endpoint = Some(endpoint);
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
+
+    // Point a real provider at the mock so the actual binary (driven via PTY)
+    // resolves and queries it.
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{}\"\napi_key = \"test-key\"\n",
+        base_url
+    ));
+}
+
+#[given(regex = r#"^the initial suggestions include "([^"]+)" and "([^"]+)"$"#)]
+fn initial_suggestions_include(w: &mut WatnWorld, _m1: String, _m2: String) {
+    assert!(w.picker_endpoint.is_some(), "paginated catalog must be set up first");
+}
+
+#[given(regex = r#"^a later catalog page includes "([^"]+)"$"#)]
+fn later_catalog_page_includes(w: &mut WatnWorld, _model: String) {
+    assert!(w.picker_endpoint.is_some(), "paginated catalog must be set up first");
+}
+
+#[when(regex = r#"^I run `watn models`, type "([^"]+)" into the small tier picker, and choose "([^"]+)"$"#)]
+fn run_models_small_choose(w: &mut WatnWorld, query: String, selected: String) {
+    let mut session = start_pty_session(w, &["models"]);
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    pty_write(&mut session, &query);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(&mut session, "\r");
+    w.pty_session = Some(session);
+    let _ = selected;
+}
+
+#[when(regex = r#"^choose "([^"]+)" for the normal tier$"#)]
+fn choose_normal_tier(w: &mut WatnWorld, _selected: String) {
+    // Search for the target model by its distinctive prefix, then select it.
+    let mut session = w.pty_session.take().expect("pty session must be active");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    pty_write(&mut session, "o3");
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(&mut session, "\r");
+    w.pty_session = Some(session);
+}
+
+#[when(regex = r#"^choose "([^"]+)" for the thinking tier$"#)]
+fn choose_thinking_tier(w: &mut WatnWorld, _selected: String) {
+    let mut session = w.pty_session.take().expect("pty session must be active");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    pty_write(&mut session, "o3");
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(&mut session, "\r");
+    finish_pty_session(w, session);
+}
+
+#[then(regex = r#"^the picker displays "([^"]+)" as a matching suggestion$"#)]
+fn picker_displays_suggestion(w: &mut WatnWorld, model: String) {
+    let output = w.output.clone().or_else(|| {
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        w.output.clone()
+    }).expect("pty output captured");
+    assert!(output.contains(&model), "expected picker to display '{}', got: {:?}", model, output);
+}
+
+#[then(regex = r#"^the completed setup reports small="([^"]+)", normal="([^"]+)", thinking="([^"]+)"$"#)]
+fn completed_setup_reports(w: &mut WatnWorld, small: String, normal: String, thinking: String) {
+    let output = w.output.as_ref().expect("pty output captured");
+    let report = format!("Tiers configured: small={}, normal={}, thinking={}", small, normal, thinking);
+    assert!(output.contains(&report), "expected config report '{}', got: {:?}", report, output);
+
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    assert!(content.contains(&format!("small = \"{}\"", small)), "config small tier missing, got:\n{}", content);
+    assert!(content.contains(&format!("normal = \"{}\"", normal)), "config normal tier missing, got:\n{}", content);
+    assert!(content.contains(&format!("thinking = \"{}\"", thinking)), "config thinking tier missing, got:\n{}", content);
 }

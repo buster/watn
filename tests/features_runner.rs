@@ -39,6 +39,8 @@ pub struct WatnWorld {
     pub pending_config: HashMap<String, String>,
     pub raw_config: Option<String>,
     pub output: Option<String>,
+    pub pty_output_buffer: Option<String>,
+    pub pty_session: Option<crate::steps::PtySession>,
     pub stderr_output: Option<String>,
     pub exit_status: Option<i32>,
     pub executed_command: Option<String>,

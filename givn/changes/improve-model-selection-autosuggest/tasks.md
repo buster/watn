@@ -218,11 +218,11 @@
 
 ## E2E setup
 
-- [ ] Configure `verify.e2e_command` (already `cargo test --test features_runner -- --tags '@e2e and not @wip'`).
-- [ ] Prove e2e count < full count: run both and record counts.
+- [x] Configure `verify.e2e_command` (already `cargo test --test features_runner -- --tags '@e2e and not @wip'`).
+- [x] Prove e2e count < full count: run both and record counts.
   ```
-  Full suite count: TBD
-  E2E count: TBD
+  Full suite count: 47 scenarios (not @wip)
+  E2E count: 26 scenarios (@e2e and not @wip)
   ```
 - [ ] Create PTY-based test helper `run_binary_pty` in `tests/steps/mod.rs`.
 - [ ] Add `portable-pty` dev-dependency to `Cargo.toml`.

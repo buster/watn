@@ -9,7 +9,7 @@ use httpmock::{Method, MockServer};
 use regex::Regex;
 
 use crate::MockServerWrap;
-use std::io::Write;
+use std::io::{Read, Write};
 
 pub(crate) fn find_binary() -> PathBuf {
     if let Some(binary) = std::env::current_exe()
@@ -400,4 +400,182 @@ pub(crate) fn run_binary_with_state(
     world.output = Some(String::from_utf8_lossy(&result.stdout).to_string());
     world.stderr_output = Some(String::from_utf8_lossy(&result.stderr).to_string());
     world.exit_status = result.status.code();
+}
+
+/// Spawns the binary in a real pseudo-terminal and drives it with timed
+/// keystroke sequences `(delay_ms, key_sequence)`. The subprocess sees a real
+/// controlling terminal, so raw-mode pickers operate exactly as they would for
+/// a user. All PTY output (stdout + stderr) is captured into `world.output`.
+#[allow(dead_code)]
+pub(crate) fn run_binary_pty(
+    world: &mut crate::WatnWorld,
+    args: &[&str],
+    keys: &[(u64, &str)],
+) {
+    let binary = find_binary();
+    ensure_test_env(world);
+
+    let pty_system = portable_pty::native_pty_system();
+    let pair = pty_system
+        .openpty(portable_pty::PtySize {
+            rows: 40,
+            cols: 120,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .expect("open pty");
+
+    let mut cmd = portable_pty::CommandBuilder::new(binary);
+    for a in args {
+        cmd.arg(a);
+    }
+    cmd.env_remove("WATN_OPENAI_API_KEY");
+    cmd.env_remove("WATN_PROVIDER");
+    cmd.env_remove("WATN_MODEL");
+    for (key, value) in &world.env_vars {
+        cmd.env(key.as_str(), value.as_str());
+    }
+    cmd.env("TERM", "xterm-256color");
+
+    let mut child = pair.slave.spawn_command(cmd).expect("spawn pty command");
+    drop(pair.slave);
+
+    let mut reader = pair.master.try_clone_reader().expect("pty reader");
+    let mut writer = pair.master.take_writer().expect("pty writer");
+
+    let reader_handle = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let mut tmp = [0u8; 1024];
+        loop {
+            match reader.read(&mut tmp) {
+                Ok(0) => break,
+                Ok(n) => buf.extend_from_slice(&tmp[..n]),
+                Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => break,
+            }
+        }
+        buf
+    });
+
+    for (delay_ms, seq) in keys {
+        std::thread::sleep(std::time::Duration::from_millis(*delay_ms));
+        writer
+            .write_all(seq.as_bytes())
+            .expect("write keystrokes to pty");
+        writer.flush().ok();
+    }
+    drop(writer);
+
+    let status = child.wait().expect("wait for pty child");
+    let output = reader_handle.join().expect("join pty reader");
+
+    let text = String::from_utf8_lossy(&output).to_string();
+    world.pty_output_buffer = Some(text.clone());
+    world.output = Some(text);
+    world.stderr_output = Some(String::new());
+    world.exit_status = Some(status.exit_code() as i32);
+}
+
+/// A persistent PTY subprocess session, kept alive across multiple Gherkin
+/// steps so an interactive multi-tier flow can be driven incrementally.
+pub(crate) struct PtySession {
+    pub child: Box<dyn portable_pty::Child + Send + Sync>,
+    pub writer: Option<Box<dyn Write + Send>>,
+    pub output_rx: Option<std::sync::mpsc::Receiver<Vec<u8>>>,
+    pub finished: bool,
+}
+
+impl std::fmt::Debug for PtySession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PtySession")
+            .field("child", &self.child)
+            .field("writer", &self.writer.is_some())
+            .field("output_rx", &self.output_rx.is_some())
+            .field("finished", &self.finished)
+            .finish()
+    }
+}
+
+/// Start `watn <args>` in a PTY and return the live session. Environment and
+/// config are prepared from the world first.
+pub(crate) fn start_pty_session(
+    world: &mut crate::WatnWorld,
+    args: &[&str],
+) -> PtySession {
+    let binary = find_binary();
+    ensure_test_env(world);
+
+    let pty_system = portable_pty::native_pty_system();
+    let pair = pty_system
+        .openpty(portable_pty::PtySize {
+            rows: 40,
+            cols: 120,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .expect("open pty");
+
+    let mut cmd = portable_pty::CommandBuilder::new(binary);
+    for a in args {
+        cmd.arg(a);
+    }
+    cmd.env_remove("WATN_OPENAI_API_KEY");
+    cmd.env_remove("WATN_PROVIDER");
+    cmd.env_remove("WATN_MODEL");
+    for (key, value) in &world.env_vars {
+        cmd.env(key.as_str(), value.as_str());
+    }
+    cmd.env("TERM", "xterm-256color");
+
+    let mut child = pair.slave.spawn_command(cmd).expect("spawn pty command");
+    drop(pair.slave);
+
+    let mut reader = pair.master.try_clone_reader().expect("pty reader");
+    let writer = pair.master.take_writer().expect("pty writer");
+
+    let (tx, rx) = std::sync::mpsc::channel::<Vec<u8>>();
+    std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let mut tmp = [0u8; 1024];
+        loop {
+            match reader.read(&mut tmp) {
+                Ok(0) => break,
+                Ok(n) => buf.extend_from_slice(&tmp[..n]),
+                Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => break,
+            }
+        }
+        let _ = tx.send(buf);
+    });
+
+    PtySession {
+        child,
+        writer: Some(writer),
+        output_rx: Some(rx),
+        finished: false,
+    }
+}
+
+/// Write a keystroke sequence into a live PTY session.
+pub(crate) fn pty_write(session: &mut PtySession, seq: &str) {
+    let w = session.writer.as_mut().expect("pty writer still open");
+    w.write_all(seq.as_bytes()).expect("write keystrokes to pty");
+    w.flush().ok();
+}
+
+/// Wait for the PTY child to exit, collect its output into the world, and
+/// return the captured output text.
+pub(crate) fn finish_pty_session(
+    world: &mut crate::WatnWorld,
+    mut session: PtySession,
+) -> String {
+    let status = session.child.wait().expect("wait for pty child");
+    session.writer.take();
+    let buf = session.output_rx.take().unwrap().recv().unwrap_or_default();
+    let text = String::from_utf8_lossy(&buf).to_string();
+    world.exit_status = Some(status.exit_code() as i32);
+    world.pty_output_buffer = Some(text.clone());
+    world.output = Some(text.clone());
+    world.stderr_output = Some(String::new());
+    text
 }
