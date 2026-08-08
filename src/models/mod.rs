@@ -1,3 +1,4 @@
+pub mod dialog;
 pub mod list;
 pub mod picker;
 
@@ -5,6 +6,7 @@ use dialoguer::Select;
 
 use crate::config::{resolve_provider, save_config};
 use crate::config::types::ModelTiers;
+use crate::models::dialog::{ReasoningStrength, SettingsDialog};
 use list::{fetch_models, fetch_models_page};
 use std::io::IsTerminal;
 
@@ -74,19 +76,48 @@ pub fn run_models(
     let small;
     let normal;
     let thinking;
+    let reasoning: [String; 3];
 
     if std::io::stdin().is_terminal() {
-        // Interactive search-as-you-type picker (raw-mode terminal / PTY).
-        small = picker::ModelPicker::new(&endpoint, api_key.clone(), models.clone()).run("small");
-        normal = picker::ModelPicker::new(&endpoint, api_key.clone(), models.clone()).run("normal");
-        thinking = picker::ModelPicker::new(&endpoint, api_key.clone(), models.clone()).run("thinking");
+        // Keyboard-driven dialog (ratatui) covering all three levels in a
+        // guided sequence, each with a model pick + reasoning strength.
+        let parse = |r: &Option<String>| {
+            r.as_deref()
+                .and_then(ReasoningStrength::parse)
+                .unwrap_or(ReasoningStrength::Off)
+        };
+        let initial = [
+            parse(&config.tiers.reasoning.small),
+            parse(&config.tiers.reasoning.normal),
+            parse(&config.tiers.reasoning.thinking),
+        ];
+        let dialog = SettingsDialog::new(endpoint, api_key.clone(), models.clone(), initial);
+        match dialog.run() {
+            Ok(choices) => {
+                small = choices[0].model.clone();
+                normal = choices[1].model.clone();
+                thinking = choices[2].model.clone();
+                reasoning = [
+                    choices[0].reasoning.as_str().to_string(),
+                    choices[1].reasoning.as_str().to_string(),
+                    choices[2].reasoning.as_str().to_string(),
+                ];
+            }
+            Err(_) => std::process::exit(130),
+        }
     } else {
         small = select_model(&models, "small").clone();
         normal = select_model(&models, "normal").clone();
         thinking = select_model(&models, "thinking").clone();
+        reasoning = Default::default();
     }
 
     let mut updated = config.clone();
+    updated.tiers.reasoning = crate::config::types::TierReasoning {
+        small: Some(reasoning[0].clone()),
+        normal: Some(reasoning[1].clone()),
+        thinking: Some(reasoning[2].clone()),
+    };
     updated.tiers = ModelTiers {
         small: Some(small.id.clone()),
         normal: Some(normal.id.clone()),

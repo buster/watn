@@ -9,7 +9,7 @@
 
 Feature: Keyboard-driven model picker
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Configure model and reasoning for all three levels in the dialog
     Given  a configured provider "test" with models endpoint
     And  the endpoint returns models ["gpt-4o-mini", "o3-pro", "claude-3.7-sonnet"]

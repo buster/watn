@@ -1173,3 +1173,133 @@ fn completed_setup_reports(w: &mut WatnWorld, small: String, normal: String, thi
     assert!(content.contains(&format!("normal = \"{}\"", normal)), "config normal tier missing, got:\n{}", content);
     assert!(content.contains(&format!("thinking = \"{}\"", thinking)), "config thinking tier missing, got:\n{}", content);
 }
+
+// ===== ratatui-model-picker steps =====
+
+fn tier_reasoning_tab_count(strength: &str) -> usize {
+    match strength.trim_matches('"') {
+        "off" => 0,
+        "low" => 1,
+        "medium" => 2,
+        "high" => 3,
+        other => panic!("unknown reasoning strength '{}'", other),
+    }
+}
+
+#[when(regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small, "([^"]+)" with reasoning "([^"]+)" for normal, and "([^"]+)" with reasoning "([^"]+)" for thinking$"#)]
+fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: String, r2: String, f3: String, r3: String) {
+    let mut session = start_pty_session(w, &["models"]);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+
+    // small level: type filter, confirm (reasoning tabbed before Enter).
+    pty_write(&mut session, &f1);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs1 = tier_reasoning_tab_count(&r1);
+    for _ in 0..tabs1 {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+
+    // normal level
+    pty_write(&mut session, &f2);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs2 = tier_reasoning_tab_count(&r2);
+    for _ in 0..tabs2 {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+
+    // thinking level
+    pty_write(&mut session, &f3);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs3 = tier_reasoning_tab_count(&r3);
+    for _ in 0..tabs3 {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+
+    finish_pty_session(w, session);
+}
+
+#[when(regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small$"#)]
+fn run_models_configure_small(w: &mut WatnWorld, filter: String, reasoning: String) {
+    let mut session = start_pty_session(w, &["models"]);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(&mut session, &filter);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs = tier_reasoning_tab_count(&reasoning);
+    for _ in 0..tabs {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+    // Session kept alive: the process is now at the normal level.
+    w.pty_session = Some(session);
+}
+
+#[when("advance to the normal tier and back to the small tier")]
+fn advance_normal_then_back(w: &mut WatnWorld) {
+    let mut session = w.pty_session.take().expect("pty session must be active");
+    // We already advanced to normal when confirming the small tier; Esc returns.
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    pty_write(&mut session, "\x1b");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    w.pty_session = Some(session);
+}
+
+#[when(regex = r#"^change the small tier model to "([^"]+)" with reasoning "([^"]+)"$"#)]
+fn change_small_tier_model(w: &mut WatnWorld, filter: String, reasoning: String) {
+    let mut session = w.pty_session.take().expect("pty session must be active");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    pty_write(&mut session, &filter);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs = tier_reasoning_tab_count(&reasoning);
+    for _ in 0..tabs {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+    w.pty_session = Some(session);
+}
+
+#[when(regex = r#"^configure "([^"]+)" with reasoning "([^"]+)" for normal and "([^"]+)" with reasoning "([^"]+)" for thinking$"#)]
+fn configure_remaining_tiers(w: &mut WatnWorld, f2: String, r2: String, f3: String, r3: String) {
+    let mut session = w.pty_session.take().expect("pty session must be active");
+
+    pty_write(&mut session, &f2);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs2 = tier_reasoning_tab_count(&r2);
+    for _ in 0..tabs2 {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+
+    pty_write(&mut session, &f3);
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let tabs3 = tier_reasoning_tab_count(&r3);
+    for _ in 0..tabs3 {
+        pty_write(&mut session, "\t");
+    }
+    pty_write(&mut session, "\r");
+
+    finish_pty_session(w, session);
+}
+
+#[then("the config file should contain the selected tier assignments with their reasoning strengths")]
+fn config_contains_tiers_and_reasoning(w: &mut WatnWorld) {
+    let output = w.output.as_ref().expect("pty output captured");
+    assert!(output.contains("Tiers configured:"), "expected config report, got: {:?}", output);
+
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    assert!(content.contains("[tiers]"), "config should have [tiers] section, got:\n{}", content);
+    assert!(content.contains("small = \""), "config should have small tier, got:\n{}", content);
+    assert!(content.contains("normal = \""), "config should have normal tier, got:\n{}", content);
+    assert!(content.contains("thinking = \""), "config should have thinking tier, got:\n{}", content);
+    assert!(content.contains("[tiers.reasoning]"), "config should have [tiers.reasoning], got:\n{}", content);
+    assert!(content.contains("small = \"off\""), "config should have small reasoning off, got:\n{}", content);
+    assert!(content.contains("normal = \"low\""), "config should have normal reasoning low, got:\n{}", content);
+    assert!(content.contains("thinking = \"high\""), "config should have thinking reasoning high, got:\n{}", content);
+}
