@@ -24,7 +24,7 @@ Feature: Keyboard-driven model picker
     Then  the dialog highlights the selected model
     And  the completed setup reports small="model-12"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Type a filter and see the matching suggestions
     Given  a configured provider "test" with models endpoint
     And  the endpoint returns models ["deepseek/deepseek-v4-pro", "~deepseek/deepseek-v4-flash-latest", "z-ai/glm-5.2"]

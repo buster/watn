@@ -919,13 +919,15 @@ fn picker_says_no_models(w: &mut WatnWorld) {
 #[then(expr = "the dialog shows the filter text {string}")]
 fn dialog_shows_filter_text(w: &mut WatnWorld, text: String) {
     // Non-e2e: assert the stored picker query. (The e2e PTY variant asserts
-    // on rendered PTY output via the picker/session output.)
+    // the rendered filter line with ANSI sequences stripped.)
     if let Some(q) = &w.picker_query {
         assert_eq!(q, &text, "expected dialog filter text '{}', got '{}'", text, q);
         return;
     }
     let output = w.output.as_ref().expect("no output captured");
-    assert!(output.contains(&text), "expected dialog filter text '{}' in output, got: '{}'", text, output);
+    let ansi = Regex::new(r"\x1b\[[0-9;?]*[a-zA-Z]").unwrap();
+    let stripped = ansi.replace_all(output, "");
+    assert!(stripped.contains(&text), "expected dialog filter text '{}' in output, got: '{}'", text, stripped);
 }
 
 #[given(regex = r#"^a provider returns the results for "([^"]+)" more slowly than the results for "([^"]+)"$"#)]

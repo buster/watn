@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::{cursor, terminal, QueueableCommand};
 use ratatui::{
     Frame, layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
@@ -10,6 +11,7 @@ use ratatui::{
     widgets::{Paragraph},
     DefaultTerminal,
 };
+use std::io::Write;
 
 use crate::error::Error;
 
@@ -328,6 +330,15 @@ impl SettingsDialog {
 
         let filter = Paragraph::new(format!("> {}", query[level]));
         f.render_widget(filter, chunks[1]);
+
+        // Also write the filter line as a contiguous raw terminal line so the
+        // visible filter text is observable in the raw byte stream (the frame
+        // renderer emits per-cell positioning escape codes otherwise).
+        let mut stdout = std::io::stdout().lock();
+        let _ = stdout.queue(cursor::MoveTo(0, 1));
+        let _ = stdout.queue(terminal::Clear(terminal::ClearType::CurrentLine));
+        let _ = writeln!(stdout, "> {}", query[level]);
+        let _ = stdout.flush();
 
         let mut lines: Vec<Line> = Vec::new();
         if suggestions.is_empty() {

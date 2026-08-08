@@ -210,19 +210,22 @@ round trip). The reasoning-off request-body negation is proven in scenario 5.
 ### 10. Browse the model list with arrow keys and page keys
 
 **RED**
-- [ ] Remove `@wip` from scenario `Browse the model list with arrow keys and page keys`.
-- [ ] Write unimplemented step definitions: `a configured provider "test" with a long model list` (Given), down-arrow + page-down When steps, `the dialog highlights the selected model` and `the completed setup reports small="model-12"` Then steps.
-- [ ] Run e2e targeting → non-zero exit.
+- [x] Remove `@wip` from scenario `Browse the model list with arrow keys and page keys`.
+- [x] Write unimplemented step definitions: `a configured provider "test" with a long model list` (Given), down-arrow + page-down When steps, `the dialog highlights the selected model` and `the completed setup reports small="model-12"` Then steps.
+- [x] Run e2e targeting → non-zero exit.
   ```
-  captured output: FAILED (no arrow/page handling; config reports model-01 not model-12)
+  captured output: RED (highlight offscreen without list viewport; no long-list mock)
   ```
 
 **GREEN**
-- [ ] Implement Up/Down and PageUp/PageDown in `dialog.rs` (PAGE_SIZE=10) and the long-list mock + e2e steps.
-- [ ] Files created/modified: `src/models/dialog.rs`, `tests/steps/ask_steps.rs`.
-- [ ] Run e2e targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): browse the model list with arrow keys and page keys
+- [x] Implement Up/Down and PageUp/PageDown in `dialog.rs` (PAGE_SIZE=10) + scrolling viewport so the highlighted row stays on screen; long-list mock + e2e steps.
+- [x] Files created/modified: `src/models/dialog.rs`, `tests/steps/ask_steps.rs`.
+- [x] Run e2e targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 5 steps (5 passed)
+  ```
+- [x] REFACTOR. Run → zero exit. Full suite 54 passed (pre-existing autosuggest e2e kept green via catch-all search mock).
+- [x] COMMIT: `db55c5f` — feat(ratatui-model-picker): browse the model list with arrow keys and page keys
 
 ### 11. Type a filter and see the matching suggestions
 
