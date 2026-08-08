@@ -1,9 +1,4 @@
-██╗    ██╗ █████╗ ████████╗███╗   ██╗██████╗
-██║    ██║██╔══██╗╚══██╔══╝████╗  ██║╚════██╗
-██║ █╗ ██║███████║   ██║   ██╔██╗ ██║  ▄███╔╝
-██║███╗██║██╔══██║   ██║   ██║╚██╗██║  ▀▀══╝
-╚███╔███╔╝██║  ██║   ██║   ██║ ╚████║  ██╗
- ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═══╝  ╚═╝
+# Watn? ¯\\\_(ツ)\_/¯
 
 You know what you want. watn knows how to type it.
 Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
@@ -16,8 +11,7 @@ Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
 │                                              │
 │   find . -type f -mtime -1                   │
 │                                              │
-│   gpt-4o-mini · 142 tok/s · $0.0003 · 0.6s   │
-│   Execute now? [Y/n]                         │
+│   deepseek · 100 tok/s · 5.3s · ¯\_(ツ)_/¯   │
 └──────────────────────────────────────────────┘
 ```
 
@@ -26,7 +20,7 @@ Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
 ```
 git clone <repo>
 cd <project>
-make setup
+cargo run
 ```
 
 ## Prerequisites
@@ -37,7 +31,7 @@ make setup
 ## Usage
 
 ```text
-watn "find all files modified in the last day"
+watn find all files modified in the last day
 ```
 
 Pass a question as a positional argument or via stdin. watn streams the
