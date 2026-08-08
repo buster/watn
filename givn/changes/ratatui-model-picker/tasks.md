@@ -71,23 +71,29 @@
 ### 3. Empty filter result produces a clear empty state
 
 **RED**
-- [ ] Remove `@wip` from scenario `Empty filter result produces a clear empty state`.
-- [ ] Write unimplemented step definitions:
+- [x] Remove `@wip` from scenario `Empty filter result produces a clear empty state`.
+- [x] Write unimplemented step definitions:
   - `a provider with models "..."` (Given — reuse)
   - `I type "does-not-exist" into the active tier picker` (When — reuse)
   - `the picker says that no models were found` (Then — reuse)
   - `the dialog shows the filter text "..."` (Then — non-e2e: assert `picker_query`)
-- [ ] Run targeting this scenario → non-zero exit.
+- [x] Run targeting this scenario → non-zero exit.
   ```
-  captured output: FAILED (dialog-shows-filter step undefined / asserted wrong)
+  captured output: RED until dialog-shows step implemented
   ```
 
 **GREEN**
-- [ ] Implement `the dialog shows the filter text {string}` step (non-e2e variant asserting `w.picker_query`).
-- [ ] Files created/modified: `tests/steps/ask_steps.rs`.
-- [ ] Run targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): empty filter result produces a clear empty state
+- [x] Implement `the dialog shows the filter text {string}` step (non-e2e variant asserting `w.picker_query`).
+- [x] Files created/modified: `tests/steps/ask_steps.rs`.
+- [x] Run targeting → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 4 steps (4 passed)
+  ```
+- [x] REFACTOR. Run → zero exit.
+  ```
+  captured output: 1 scenario (1 passed)
+  ```
+- [x] COMMIT: `c1fe2a8` — feat(ratatui-model-picker): empty filter result produces a clear empty state
 
 ### 4. Model entry shows additional metadata when available
 

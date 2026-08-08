@@ -74,9 +74,9 @@ Feature: Keyboard-driven model picker
     Then  the picker says that no models were found
     And  the dialog shows the filter text "does-not-exist"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Model entry shows additional metadata when available
-    Given  a provider with models "model-a" and "model-b" where "model-a" has pricing
+    Given  the catalog has models "model-a" and "model-b" where "model-a" has pricing
     When  I format the model list for display
     Then  the entry for "model-a" shows a price
     And  the entry for "model-b" shows no price

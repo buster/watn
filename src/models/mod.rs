@@ -104,7 +104,7 @@ pub fn run_models(
     );
 }
 
-fn format_model_entry(entry: &list::ModelEntry, _index: usize) -> String {
+pub fn format_model_entry(entry: &list::ModelEntry) -> String {
     let mut parts = vec![format!("{}", entry.id)];
 
     if let Some(ref name) = entry.name {
@@ -132,8 +132,7 @@ fn format_model_entry(entry: &list::ModelEntry, _index: usize) -> String {
 fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> &'a list::ModelEntry {
     let selections: Vec<String> = models
         .iter()
-        .enumerate()
-        .map(|(i, m)| format_model_entry(m, i))
+        .map(format_model_entry)
         .collect();
 
     let prompt = format!("Select a model for the {} tier:", tier);

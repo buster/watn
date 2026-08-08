@@ -981,6 +981,40 @@ fn picker_reports_search_unavailable(w: &mut WatnWorld) {
         "expected picker to report search unavailable, got: {:?}", w.picker_error);
 }
 
+#[given(regex = r#"^the catalog has models "([^"]+)" and "([^"]+)" where "([^"]+)" has pricing$"#)]
+fn provider_with_models_pricing(w: &mut WatnWorld, m1: String, m2: String, priced: String) {
+    let mk = |id: String, has_pricing: bool| ModelEntry {
+        id,
+        name: None,
+        context_length: None,
+        pricing: if has_pricing { Some(watn::config::types::ModelPricing { input: 0.15, output: 0.60 }) } else { None },
+        supported_features: vec![],
+    };
+    let a = mk(m1.trim_matches('"').to_string(), priced.trim_matches('"') == "model-a");
+    let b = mk(m2.trim_matches('"').to_string(), false);
+    w.picker_local_models = Some(vec![a, b]);
+}
+
+#[when("I format the model list for display")]
+fn format_model_list(w: &mut WatnWorld) {
+    let models = w.picker_local_models.as_ref().expect("no models set up");
+    w.formatted_entries = Some(models.iter().map(watn::models::format_model_entry).collect());
+}
+
+#[then(expr = "the entry for {string} shows a price")]
+fn entry_shows_price(w: &mut WatnWorld, model: String) {
+    let entries = w.formatted_entries.as_ref().expect("no formatted entries");
+    let line = entries.iter().find(|l| l.starts_with(&model)).expect("entry not found");
+    assert!(line.contains('$'), "expected '{}' to show a price, got: '{}'", model, line);
+}
+
+#[then(expr = "the entry for {string} shows no price")]
+fn entry_shows_no_price(w: &mut WatnWorld, model: String) {
+    let entries = w.formatted_entries.as_ref().expect("no formatted entries");
+    let line = entries.iter().find(|l| l.starts_with(&model)).expect("entry not found");
+    assert!(!line.contains('$'), "expected '{}' to show no price, got: '{}'", model, line);
+}
+
 #[given(regex = r#"^a provider with a paginated model catalog$"#)]
 fn paginated_model_catalog(w: &mut WatnWorld) {
     let endpoint = setup_search_mock(w);
