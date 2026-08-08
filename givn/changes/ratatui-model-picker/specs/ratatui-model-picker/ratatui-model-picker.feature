@@ -53,7 +53,7 @@ Feature: Keyboard-driven model picker
     And  the API request should include reasoning with effort "low"
     And  stderr should not contain "reasoning:"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Level with reasoning off never sends a reasoning request
     Given  a configured default provider "openai"
     And  a model "gpt-4o-mini" assigned to the small tier with reasoning "off"

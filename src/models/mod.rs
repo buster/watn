@@ -91,6 +91,7 @@ pub fn run_models(
         small: Some(small.id.clone()),
         normal: Some(normal.id.clone()),
         thinking: Some(thinking.id.clone()),
+        reasoning: updated.tiers.reasoning.clone(),
     };
 
     if let Err(e) = save_config(&updated) {

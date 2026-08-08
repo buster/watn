@@ -46,6 +46,34 @@ fn model_assigned_thinking(w: &mut WatnWorld, model: String) {
     w.pending_mock_usage = Some(false);
 }
 
+#[given(expr = "a model {string} assigned to the small tier with reasoning {string}")]
+fn model_assigned_small_reasoning(w: &mut WatnWorld, model: String, reasoning: String) {
+    let r = reasoning.trim_matches('"').to_string();
+    let config = format!(
+        "[defaults]\nprovider = \"openai\"\n\n[tiers]\nsmall = \"{}\"\n\n[tiers.reasoning]\nsmall = \"{}\"\n",
+        model, r
+    );
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some(model);
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+    w.pending_mock_no_reasoning_assert = true;
+}
+
+#[given(expr = "a model {string} assigned to the normal tier with reasoning {string}")]
+fn model_assigned_normal_reasoning(w: &mut WatnWorld, model: String, reasoning: String) {
+    let r = reasoning.trim_matches('"').to_string();
+    let config = format!(
+        "[defaults]\nprovider = \"openai\"\n\n[tiers]\nnormal = \"{}\"\n\n[tiers.reasoning]\nnormal = \"{}\"\n",
+        model, r
+    );
+    w.raw_config = Some(config);
+    w.pending_mock_model = Some(model);
+    w.pending_mock_output = Some("some output".to_string());
+    w.pending_mock_usage = Some(false);
+    w.pending_mock_expected_reasoning_body = Some(format!("\"reasoning_effort\":\"{}\"", r));
+}
+
 #[given(regex = r#"^the mock returns command "([^"]*)"$"#)]
 fn mock_returns_command(w: &mut WatnWorld, command: String) {
     w.pending_mock_output = Some(command);
@@ -496,7 +524,18 @@ fn api_request_includes_reasoning(w: &mut WatnWorld, effort: String) {
     let mock_id = w.mock_server.1.expect("no mock id stored");
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
+    assert_eq!(w.exit_status, Some(0), "expected exit 0, got {:?}", w.exit_status);
     assert!(mock.hits() > 0, "expected mock to be hit (reasoning effort {})", effort);
+}
+
+#[then("the API request should not include reasoning")]
+fn api_request_not_include_reasoning(w: &mut WatnWorld) {
+    assert_eq!(w.exit_status, Some(0), "expected exit 0, got {:?}", w.exit_status);
+    let blocking_id = w.blocking_mock_id.expect("no blocking mock id stored");
+    let server = w.mock_server.0.as_ref().expect("no mock server");
+    let blocking = httpmock::Mock::new(blocking_id, server);
+    assert_eq!(blocking.hits(), 0,
+        "expected no reasoning_effort in the request, but a reasoning request was blocked");
 }
 
 #[then("the output should contain a version number")]

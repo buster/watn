@@ -43,6 +43,7 @@ impl Config {
                 small: Some("~deepseek/deepseek-v4-flash-latest".to_string()),
                 normal: Some("deepseek/deepseek-v4-pro".to_string()),
                 thinking: Some("z-ai/glm-5.2".to_string()),
+                reasoning: TierReasoning::default(),
             },
             providers: {
                 let mut m = HashMap::new();
@@ -100,6 +101,8 @@ pub struct ModelTiers {
     pub small: Option<String>,
     pub normal: Option<String>,
     pub thinking: Option<String>,
+    #[serde(default)]
+    pub reasoning: TierReasoning,
 }
 
 impl Default for ModelTiers {
@@ -108,6 +111,49 @@ impl Default for ModelTiers {
             small: None,
             normal: None,
             thinking: None,
+            reasoning: TierReasoning::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TierReasoning {
+    pub small: Option<String>,
+    pub normal: Option<String>,
+    pub thinking: Option<String>,
+}
+
+impl Default for TierReasoning {
+    fn default() -> Self {
+        Self {
+            small: None,
+            normal: None,
+            thinking: None,
+        }
+    }
+}
+
+impl TierReasoning {
+    /// Map a tier ("1"/"2"/"3" or None default "1") to a `reasoning_effort`
+    /// value. Returns `None` for "off" or an absent config (no reasoning),
+    /// otherwise `Some(strength)`. Backwards compatibility: the thinking tier
+    /// with no explicit config defaults to "high", matching prior behaviour.
+    pub fn effort(&self, tier: Option<&str>) -> Option<String> {
+        let value = match tier {
+            Some("2") => self.normal.as_deref(),
+            Some("3") => self.thinking.as_deref(),
+            _ => self.small.as_deref(),
+        };
+        match value {
+            None => {
+                if matches!(tier, Some("3")) {
+                    Some("high".to_string())
+                } else {
+                    None
+                }
+            }
+            Some("off") => None,
+            Some(s) => Some(s.to_string()),
         }
     }
 }

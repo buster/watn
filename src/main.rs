@@ -177,11 +177,7 @@ fn main() {
         },
     ];
 
-    let reasoning_effort = if cli.tier_thinking {
-        Some("high".to_string())
-    } else {
-        None
-    };
+    let reasoning_effort = config.tiers.reasoning.effort(tier);
 
     let options = RequestOptions {
         model: model.clone(),

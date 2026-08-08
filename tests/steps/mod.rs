@@ -31,8 +31,7 @@ pub(crate) fn build_config(
     pricing: Option<Vec<(&str, f64, f64)>>,
     litellm: Option<(&str, &str)>,
     default_model: Option<&str>,
-) -> String {
-    let mut lines = Vec::new();
+) -> String {    let mut lines = Vec::new();
 
     lines.push("[defaults]".to_string());
     lines.push(format!("provider = \"{}\"", default_provider));
@@ -85,18 +84,20 @@ fn setup_chat_completion_mock(
     delay_ms: u64,
     reasoning: &Option<String>,
     auth_header: Option<String>,
+    body_requirement: Option<String>,
 ) -> usize {
     let mc = output.to_string();
     let include_usage_val = include_usage;
     let reasoning_clone = reasoning.clone();
     let auth_clone = auth_header.clone();
     let mock = server_ref.mock(move |when, then| {
-        let when = when.method(Method::POST);
-        let when = if let Some(ref auth) = auth_clone {
-            when.header("Authorization", auth)
-        } else {
-            when
-        };
+        let mut when = when.method(Method::POST);
+        if let Some(body_req) = &body_requirement {
+            when = when.body_contains(body_req);
+        }
+        if let Some(ref auth) = auth_clone {
+            when = when.header("Authorization", auth);
+        }
         let _ = when.path("/chat/completions");
         if delay_ms > 0 {
             std::thread::sleep(std::time::Duration::from_millis(delay_ms));
@@ -205,6 +206,19 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             );
             has_config = true;
         } else {
+            if world.pending_mock_no_reasoning_assert {
+                // Register a blocking mock FIRST (lower id) that matches any
+                // chat request whose body contains "reasoning_effort" and
+                // returns HTTP 400. httpmock matches the first mock by id.
+                world.blocking_mock_id = Some(
+                    server.mock(move |when, then| {
+                        when.method(Method::POST)
+                            .path("/chat/completions")
+                            .body_contains("\"reasoning_effort\"");
+                        then.status(400).body(r#"{"error":"should not reason"}"#);
+                    }).id,
+                );
+            }
             let auth_header = world.env_vars.get("WATN_OPENAI_API_KEY")
                 .map(|key| format!("Bearer {}", key));
             let mock_id = setup_chat_completion_mock(
@@ -212,6 +226,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 world.pending_mock_delay_ms.unwrap_or(0),
                 &world.pending_mock_reasoning,
                 auth_header,
+                world.pending_mock_expected_reasoning_body.clone(),
             );
             world.mock_server.1 = Some(mock_id);
 
@@ -286,11 +301,27 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 let include_usage = world.pending_mock_usage.unwrap_or(false);
                 let auth_header = world.env_vars.get("WATN_OPENAI_API_KEY")
                     .map(|key| format!("Bearer {}", key));
+
+                if world.pending_mock_no_reasoning_assert {
+                    // Register a blocking mock FIRST (lower id) that matches any
+                    // chat request whose body contains "reasoning_effort" and
+                    // returns HTTP 400. httpmock matches the first mock by id.
+                    world.blocking_mock_id = Some(
+                        server.mock(move |when, then| {
+                            when.method(Method::POST)
+                                .path("/chat/completions")
+                                .body_contains("\"reasoning_effort\"");
+                            then.status(400).body(r#"{"error":"should not reason"}"#);
+                        }).id,
+                    );
+                }
+
                 let mock_id = setup_chat_completion_mock(
                     server, output, include_usage,
                     world.pending_mock_delay_ms.unwrap_or(0),
                     &world.pending_mock_reasoning,
                     auth_header,
+                    world.pending_mock_expected_reasoning_body.clone(),
                 );
                 world.mock_server.1 = Some(mock_id);
             }

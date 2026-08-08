@@ -98,22 +98,25 @@
 ### 4. Model entry shows additional metadata when available
 
 **RED**
-- [ ] Remove `@wip` from scenario `Model entry shows additional metadata when available`.
-- [ ] Write unimplemented step definitions:
-  - `a provider with models "A" and "B" where "A" has pricing` (Given — load rich + bare entries)
+- [x] Remove `@wip` from scenario `Model entry shows additional metadata when available`.
+- [x] Write unimplemented step definitions:
+  - `the catalog has models "A" and "B" where "A" has pricing` (Given)
   - `I format the model list for display` (When — run display formatter over world entries)
   - `the entry for "A" shows a price` / `the entry for "B" shows no price` (Then)
-- [ ] Run targeting this scenario → non-zero exit.
+- [x] Run targeting this scenario → non-zero exit.
   ```
-  captured output: FAILED (no format step implemented)
+  captured output: RED until steps + formatter written
   ```
 
 **GREEN**
-- [ ] Implement the format step that renders each entry via `format_model_entry` and asserts pricing presence/absence.
-- [ ] Files created/modified: `tests/steps/ask_steps.rs`, possibly `src/models/mod.rs` (expose formatter).
-- [ ] Run targeting → zero exit. Evidence.
-- [ ] REFACTOR. Run → zero exit. Evidence.
-- [ ] COMMIT: `XXXXX` — feat(ratatui-model-picker): model entry shows additional metadata when available
+- [x] Implement the format step using `format_model_entry` (made public in `src/models/mod.rs`) and assert pricing presence/absence.
+- [x] Files created/modified: `tests/steps/ask_steps.rs` (steps), `tests/features_runner.rs` (`formatted_entries`), `src/models/mod.rs` (`format_model_entry` made public).
+- [x] Run targeting this scenario → zero exit.
+  ```
+  captured output: 1 scenario (1 passed), 4 steps (4 passed)
+  ```
+- [x] REFACTOR. Run → zero exit. Full suite 50 passed.
+- [x] COMMIT: `68b0a75` — feat(ratatui-model-picker): model entry shows additional metadata when available
 
 ### 5. Level with reasoning off never sends a reasoning request
 
