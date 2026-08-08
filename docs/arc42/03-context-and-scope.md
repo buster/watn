@@ -13,6 +13,7 @@ graph TB
     User -->|"question via args/stdin"| CLI
     CLI -->|"POST /v1/chat/completions"| API
     CLI -->|"GET /models (optional)"| LiteLLM
+    CLI -->|"GET /models?search=..."| LiteLLM
     CLI -->|"sh -c (when -x flag)"| Shell
     API -->|"SSE streaming response"| CLI
     LiteLLM -->|"model list"| CLI
@@ -23,7 +24,7 @@ graph TB
 |---|---|---|
 | Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`) | Shell command + metadata (model, tok/s, cost); or confirmation prompt |
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions` |
-| LiteLLM (optional) | Endpoint URL (config) | HTTP GET to `/models` |
+| LiteLLM (optional) | Endpoint URL (config), search query (typed by user) | HTTP GET to `/models`, HTTP GET to `/models?search=...` |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
 
 ## Technical context

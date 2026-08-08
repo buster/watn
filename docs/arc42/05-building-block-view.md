@@ -59,8 +59,9 @@ graph TB
 
 | Element | Responsibility |
 |---|---|
-| `ModelExplorer` | Query LiteLLM `/models` endpoint, parse response |
-| `TierSelector` | Interactive dialoguer prompts for small/normal/thinking assignment |
+| `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response |
+| `ModelPicker` | Raw-terminal autosuggest loop: reads keystrokes, dispatches debounced search requests, renders live suggestion list with stale-result guard |
+| `TierSelector` | Interactive dialoguer prompts for small/normal/thinking assignment (pre-autosuggest path) or `ModelPicker` per tier |
 | `ConfigWriter` | Persist selected tier assignments to user config file |
 
 ### Exec

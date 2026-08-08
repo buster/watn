@@ -12,6 +12,7 @@
 | OpenAI-compatible chat-completions API shape | Must work with any provider that exposes the `/v1/chat/completions` endpoint |
 | XDG Base Directory Specification | Config at `~/.config/watn/`, data at `~/.local/share/watn/` |
 | TOML for config files | Rust ecosystem standard; serde + toml crate |
+| Provider model endpoint with optional `?search=` query support | Server-side model filtering for catalogs larger than one page; providers that do not support search report a clear error rather than silently filtering only the local page |
 
 ## Organisational constraints
 

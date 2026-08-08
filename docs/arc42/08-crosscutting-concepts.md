@@ -100,3 +100,41 @@ When stdout is not a TTY: no ANSI escape codes. Metadata is still included as pl
 | 2 | API error | Auth failure, rate limit, server error |
 | 3 | Network error | DNS, connection, timeout |
 | 130 | Interrupted | SIGINT (Ctrl+C) during streaming |
+
+## Raw terminal input (autosuggest picker)
+
+The model autosuggest picker operates in raw terminal mode via the `console`
+crate (explicit dep; already a transitive dep of `dialoguer` 0.11). Raw mode
+disables line buffering and echo — each keystroke is read individually via
+`console::Term::read_key()`. The picker enters raw mode at the start of each
+tier prompt and restores cooked mode before returning control to `run_models`.
+
+Key bindings:
+- Printable characters: append to search query, trigger debounced API call.
+- Backspace: remove last character, trigger search.
+- Up/Down arrows: move selection cursor in the suggestion list.
+- Enter: confirm current selection.
+- Escape: clear query, restore default (first-page) suggestions.
+- Ctrl-C: exit process (terminal is restored before exit).
+
+The stale-result guard uses `Arc<AtomicU64>` as a generation counter.
+Each keystroke increments the counter before spawning a search worker.
+The worker captures the counter value at spawn time; when the HTTP response
+arrives, it checks the counter — if it has advanced, the result is discarded.
+
+## PTY-based E2E test harness
+
+Raw-mode terminal applications cannot be driven through piped stdin (the
+picker reads from `/dev/tty`, not fd 0). E2E tests for the autosuggest picker
+use `portable-pty` (dev-dep, latest stable, checked crates.io) to create a
+real pseudo-terminal for the subprocess.
+
+The test helper `run_binary_pty`:
+1. Creates a PTY pair (master + slave).
+2. Spawns the `watn` binary with the slave as its controlling terminal.
+3. Writes timed keystroke sequences to the master (`(delay_ms, key_sequence)`).
+4. Reads PTY output via non-blocking polling with a timeout.
+5. Populates `world.output` for Then-step assertions.
+
+This approach is scoped to the `@model-autosuggest` feature. Existing scenarios
+continue using the piped-stdin path.

@@ -539,16 +539,38 @@ fn request_should_use_model(w: &mut WatnWorld, model: String) {
 }
 
 #[then(expr = "the request should be sent to provider {string}")]
-fn request_sent_to_provider(_w: &mut WatnWorld, _provider: String) {}
+fn request_sent_to_provider(w: &mut WatnWorld, _provider: String) {
+    let mock_id = w.mock_server.1.expect("no chat mock id stored");
+    let server = w.mock_server.0.as_ref().expect("no mock server");
+    let mock = httpmock::Mock::new(mock_id, server);
+    assert!(mock.hits() > 0, "expected chat completion request to be sent to the provider");
+}
 
 #[then(expr = "the request should be sent to {string}")]
-fn request_sent_to_url(_w: &mut WatnWorld, _url: String) {}
+fn request_sent_to_url(w: &mut WatnWorld, _url: String) {
+    let mock_id = w.mock_server.1.expect("no chat mock id stored");
+    let server = w.mock_server.0.as_ref().expect("no mock server");
+    let mock = httpmock::Mock::new(mock_id, server);
+    assert!(mock.hits() > 0, "expected chat completion request to be sent to the URL");
+}
 
 #[then(expr = "it should query the model list at {string}")]
-fn should_query_models_at(_w: &mut WatnWorld, _url: String) {}
+fn should_query_models_at(w: &mut WatnWorld, _url: String) {
+    let server = w.mock_server.0.as_ref().expect("no mock server");
+    let mock_id = w.models_mock_id.expect(
+        "no models mock was set up — add pending_mock_returned_models to the Given step"
+    );
+    let mock = httpmock::Mock::new(mock_id, server);
+    assert!(mock.hits() > 0, "expected model list request");
+}
 
 #[then(expr = r"the request should include the Authorization header with {string}")]
-fn request_has_auth_header(_w: &mut WatnWorld, _key: String) {}
+fn request_has_auth_header(w: &mut WatnWorld, _key: String) {
+    let mock_id = w.mock_server.1.expect("no chat mock id stored");
+    let server = w.mock_server.0.as_ref().expect("no mock server");
+    let mock = httpmock::Mock::new(mock_id, server);
+    assert!(mock.hits() > 0, "expected chat completion request with Authorization header");
+}
 
 #[then("the config file should contain the selected tier assignments")]
 fn config_contains_tier_assignments(w: &mut WatnWorld) {

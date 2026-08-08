@@ -49,6 +49,7 @@ pub struct WatnWorld {
     pub last_request_body: Option<serde_json::Value>,
     pub pending_mock_no_config_file: bool,
     pub pending_mock_models_fail: bool,
+    pub models_mock_id: Option<usize>,
 }
 
 fn collect_features(dir: &Path) -> Vec<PathBuf> {

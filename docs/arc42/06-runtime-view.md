@@ -143,6 +143,45 @@ sequenceDiagram
     end
 ```
 
+## Scenario: Autosuggest model picker
+
+**Trigger:** User runs `watn models`, types a search query in the tier picker.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Picker as ModelPicker
+    participant Worker as Search worker (thread)
+    participant API as Provider API
+
+    User->>Picker: types "o3"
+    Picker->>Picker: increment generation counter
+    Picker->>Worker: spawn: GET /models?search=o3 (gen=N)
+    Picker-->>User: render spinner + previous suggestions
+    API-->>Worker: { data: [{id:"o3-mini"}, {id:"o3-pro"}] }
+    Worker->>Picker: check generation == N → update suggestions
+    Picker-->>User: render "o3-mini", "o3-pro" with cursor
+    User->>Picker: ↓ (arrow down)
+    Picker-->>User: move cursor to "o3-pro"
+    User->>Picker: Enter
+    Picker-->>User: selection confirmed, advance to next tier
+```
+
+**Steps:**
+1. Picker enters raw terminal mode.
+2. Keystrokes append to or remove from the live query string.
+3. Each change bumps an `Arc<AtomicU64>` generation counter and spawns a
+   blocking worker thread that calls `GET /models?search=<query>`.
+4. Worker thread captures the generation at spawn time. On response, if the
+   generation has advanced, the result is discarded (stale-result guard).
+5. Valid results update the suggestion list; the terminal is repainted.
+6. Arrow keys move a highlight cursor; Enter confirms the selection.
+7. Escape clears the query and restores the first-page default list.
+8. A 4xx/5xx on a non-empty search shows "Model search is not supported by
+   this provider" and retains the previous suggestions.
+9. After selection, the picker restores cooked terminal mode and returns
+   the chosen `ModelEntry` to `run_models`.
+
 ## Scenario: Config loading
 
 ```mermaid

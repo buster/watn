@@ -13,3 +13,7 @@
 | Tokens/second | Completion tokens divided by wall-clock seconds from first to last SSE chunk |
 | Pricing | Per-model cost configuration ($/1M input tokens, $/1M output tokens) stored in config |
 | Reasoning | Chain-of-thought or step-by-step explanation produced by the LLM alongside the final answer. Exposed via the API's `reasoning` field in the streaming delta. Displayed on stderr when `-v`/`--verbose` is set. |
+| Autosuggest picker | Raw-terminal input loop that updates a suggestion list as the user types; replaces the static scrollable list for model tier assignment |
+| Search query | Free-text filter sent to the provider as `GET /models?search=<query>` to narrow a large model catalog |
+| Stale-result guard | A generation counter that prevents an older, slower API response from overwriting newer suggestions already displayed |
+| PTY | Pseudo-terminal — a virtual terminal device used in E2E tests to drive raw-mode terminal applications as a real user would |

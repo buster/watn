@@ -16,8 +16,9 @@
 | CLI parsing | clap v4 | Derive macros, `-1`/`-2`/`-3` flag groups, subcommand dispatch |
 | HTTP client | reqwest (blocking) | Blocking streaming SSE, TLS; chunks piped through mpsc channel for progressive rendering |
 | Config format | TOML via `toml` crate | Rust ecosystem standard |
-| Terminal interaction | dialoguer | Interactive model selection via list prompts |
+| Terminal interaction | dialoguer (list prompts), console (raw terminal for autosuggest) | Interactive model selection; console is already a transitive dep, promoted to explicit |
 | Gherkin runner | cucumber-rs | Mature Rust cucumber implementation |
+| Pseudo-terminal testing | portable-pty | PTY-based E2E tests for raw-mode terminal pickers |
 
 ## Approach to quality goals
 

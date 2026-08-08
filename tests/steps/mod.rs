@@ -84,12 +84,20 @@ fn setup_chat_completion_mock(
     include_usage: bool,
     delay_ms: u64,
     reasoning: &Option<String>,
+    auth_header: Option<String>,
 ) -> usize {
     let mc = output.to_string();
     let include_usage_val = include_usage;
     let reasoning_clone = reasoning.clone();
+    let auth_clone = auth_header.clone();
     let mock = server_ref.mock(move |when, then| {
-        when.method(Method::POST).path("/chat/completions");
+        let when = when.method(Method::POST);
+        let when = if let Some(ref auth) = auth_clone {
+            when.header("Authorization", auth)
+        } else {
+            when
+        };
+        let _ = when.path("/chat/completions");
         if delay_ms > 0 {
             std::thread::sleep(std::time::Duration::from_millis(delay_ms));
         }
@@ -106,12 +114,12 @@ fn setup_chat_completion_mock(
     mock.id
 }
 
-fn setup_models_mock(server_ref: &httpmock::MockServer, models: &[String], fail: bool) {
-    if fail {
+fn setup_models_mock(server_ref: &httpmock::MockServer, models: &[String], fail: bool) -> Option<usize> {
+    let mock = if fail {
         server_ref.mock(move |when, then| {
             when.method(Method::GET).path("/models");
             then.status(500).body(r#"{"error":"server error"}"#);
-        });
+        })
     } else {
         let models_clone = models.to_vec();
         server_ref.mock(move |when, then| {
@@ -122,8 +130,9 @@ fn setup_models_mock(server_ref: &httpmock::MockServer, models: &[String], fail:
             then.status(200)
                 .header("Content-Type", "application/json")
                 .body(serde_json::json!({"data": data}).to_string());
-        });
-    }
+        })
+    };
+    Some(mock.id)
 }
 
 fn setup_auth_fail_mock(server_ref: &httpmock::MockServer) {
@@ -151,7 +160,7 @@ fn rewrite_provider_endpoints(content: &str, base_url: &str) -> String {
                 // New section — leave provider block
                 in_provider = false;
             } else if endpoint_re.is_match(line) {
-                result.push_str(&format!("{}endpoint = \"{}\"", line.split_once('=').unwrap().0.trim_start(), base_url));
+                result.push_str(&format!("endpoint = \"{}\"", base_url));
                 result.push('\n');
                 continue;
             }
@@ -196,15 +205,18 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             );
             has_config = true;
         } else {
+            let auth_header = world.env_vars.get("WATN_OPENAI_API_KEY")
+                .map(|key| format!("Bearer {}", key));
             let mock_id = setup_chat_completion_mock(
                 server, &output, include_usage,
                 world.pending_mock_delay_ms.unwrap_or(0),
                 &world.pending_mock_reasoning,
+                auth_header,
             );
             world.mock_server.1 = Some(mock_id);
 
             if !world.pending_mock_returned_models.is_empty() {
-                setup_models_mock(
+                world.models_mock_id = setup_models_mock(
                     server,
                     &world.pending_mock_returned_models,
                     world.pending_mock_models_fail,
@@ -243,6 +255,15 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                     config_content = mock_cfg;
                 }
                 has_config = !no_config;
+
+                if world.pending_mock_returned_models.is_empty()
+                    && raw.contains("[litellm]")
+                {
+                    let default_models = vec!["test-model".to_string()];
+                    world.models_mock_id =
+                        setup_models_mock(server, &default_models, false);
+                    world.pending_mock_returned_models = default_models;
+                }
             }
         }
     } else if let Some(ref raw) = world.raw_config {
@@ -253,7 +274,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             config_content = rewrite_provider_endpoints(raw, &base_url);
 
             if !world.pending_mock_returned_models.is_empty() {
-                setup_models_mock(
+                world.models_mock_id = setup_models_mock(
                     server,
                     &world.pending_mock_returned_models,
                     world.pending_mock_models_fail,
@@ -263,10 +284,13 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 let _model = world.pending_mock_model.as_deref().unwrap_or("test-model");
                 let output = world.pending_mock_output.as_deref().unwrap_or("output");
                 let include_usage = world.pending_mock_usage.unwrap_or(false);
+                let auth_header = world.env_vars.get("WATN_OPENAI_API_KEY")
+                    .map(|key| format!("Bearer {}", key));
                 let mock_id = setup_chat_completion_mock(
                     server, output, include_usage,
                     world.pending_mock_delay_ms.unwrap_or(0),
                     &world.pending_mock_reasoning,
+                    auth_header,
                 );
                 world.mock_server.1 = Some(mock_id);
             }
@@ -299,11 +323,15 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
     // If the default provider is "openai" and there is no explicit
     // [providers.openai] section, inject one so the mock server is used.
+    // Also inject when WATN_OPENAI_API_KEY env var is set (binary uses
+    // --provider openai and needs the endpoint to point to the mock).
     if let Some(ref server) = world.mock_server.0 {
         let base_url = format!("http://127.0.0.1:{}", server.port());
+        let needs_openai = config_content.contains(r#"provider = "openai""#)
+            || world.env_vars.contains_key("WATN_OPENAI_API_KEY");
         if has_config
             && !config_content.contains("[providers.openai]")
-            && config_content.contains(r#"provider = "openai""#)
+            && needs_openai
         {
             config_content.push_str(&format!(
                 "\n[providers.openai]\nendpoint = \"{}\"\n",
