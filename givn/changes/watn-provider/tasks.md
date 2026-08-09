@@ -48,18 +48,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Keep readiness detection network-free and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A recognized environment credential skips automatic provider setup`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): A recognized environment credential skips automatic provider setup`.
+  - Commit hash: `e274a50`
 
 ## Scenario: A saved provider with a default model skips automatic provider setup
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A saved provider with a default model skips automatic provider setup$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Resolve a saved custom provider and its default model without onboarding, assert the exact `/chat/completions` URL, and preserve the existing explicit request path.
-  - Production files: `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Separate implicit readiness from explicit request resolution and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A saved provider with a default model skips automatic provider setup$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the configured-provider fixture step was initially undefined.
+- [x] GREEN: Resolve a saved custom provider and its default model without onboarding, assert the exact `/chat/completions` URL, and preserve the existing explicit request path.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Separate implicit readiness from explicit request resolution and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): A saved provider with a default model skips automatic provider setup`.
   - Commit hash: _pending_
 

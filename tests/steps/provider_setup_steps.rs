@@ -130,6 +130,52 @@ fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     assert!(!content.contains(&secret), "config unexpectedly contained secret");
 }
 
+fn rebuild_saved_provider_config(world: &mut WatnWorld) {
+    let provider = world
+        .pending_config
+        .get("saved_provider")
+        .cloned()
+        .expect("saved provider name");
+    let endpoint = world
+        .pending_config
+        .get("saved_endpoint")
+        .cloned()
+        .expect("saved provider endpoint");
+    let key = world
+        .pending_config
+        .get("saved_key")
+        .cloned()
+        .unwrap_or_default();
+    let model = world
+        .pending_config
+        .get("saved_model")
+        .cloned()
+        .unwrap_or_default();
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"{endpoint}\"\napi_key = \"{key}\"\ndefault_model = \"{model}\"\n"
+    ));
+    world.pending_mock_model = Some(model);
+    world.pending_mock_output = Some("some output".to_string());
+    world.pending_mock_usage = Some(false);
+}
+
+#[given(regex = r#"^a configured default provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
+fn configured_default_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
+    world.pending_config.insert("saved_provider".to_string(), provider);
+    world.pending_config.insert("saved_endpoint".to_string(), endpoint);
+}
+
+#[given(regex = r#"^its saved credential is \"([^\"]+)\"$"#)]
+fn saved_provider_credential(world: &mut WatnWorld, key: String) {
+    world.pending_config.insert("saved_key".to_string(), key);
+}
+
+#[given(regex = r#"^its saved default model is \"([^\"]+)\"$"#)]
+fn saved_provider_default_model(world: &mut WatnWorld, model: String) {
+    world.pending_config.insert("saved_model".to_string(), model);
+    rebuild_saved_provider_config(world);
+}
+
 #[given("the request transport returns a successful response for the implicit OpenRouter request")]
 fn implicit_openrouter_transport(world: &mut WatnWorld) {
     world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
@@ -192,4 +238,16 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
 #[then("the process should not initialize ratatui")]
 fn process_does_not_initialize_ratatui(world: &mut WatnWorld) {
     provider_setup_should_not_start(world);
+}
+
+#[then(regex = r#"^the API request should be sent to \"([^\"]+)\"$"#)]
+fn api_request_sent_to(world: &mut WatnWorld, endpoint: String) {
+    let configured = world
+        .pending_config
+        .get("saved_endpoint")
+        .expect("saved endpoint");
+    assert_eq!(format!("{configured}/chat/completions"), endpoint);
+    let mock_id = world.mock_server.1.expect("chat mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
 }

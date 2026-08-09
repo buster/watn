@@ -77,7 +77,7 @@ Feature: Interactive provider setup
     And the API request should use API key "sk-or-v1-test"
     And the process should not initialize ratatui
 
-  @givn.added @wip
+  @givn.added
   Scenario: A saved provider with a default model skips automatic provider setup
     Given a configured default provider "custom" with endpoint "https://llm.example.com/v1"
     And its saved credential is "sk-custom-key"
