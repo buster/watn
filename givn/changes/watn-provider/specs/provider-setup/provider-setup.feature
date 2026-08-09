@@ -37,7 +37,7 @@ Feature: Interactive provider setup
     And the config file should contain endpoint exactly "https://llm.example.com/v1"
     And the config file should contain api_key exactly "sk-custom-key"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Configure a custom provider with the generic environment variable
     Given no provider is configured
     And environment variable WATN_API_KEY is set to "sk-watn-test"

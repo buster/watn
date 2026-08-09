@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::WatnWorld;
 use watn::config::{self, save_provider_draft};
 use watn::config::types::Config;
-use watn::provider::setup::build_provider_draft;
+use watn::provider::setup::{build_provider_draft, suggested_api_key_env};
 
 #[when(regex = r#"^provider setup accepts endpoint \"([^\"]+)\"$"#)]
 fn provider_setup_accepts_endpoint(world: &mut WatnWorld, endpoint: String) {
@@ -28,6 +28,9 @@ fn config_path(world: &mut WatnWorld) -> PathBuf {
         "XDG_CONFIG_HOME".to_string(),
         dir.to_string_lossy().to_string(),
     );
+    for (name, value) in &world.env_vars {
+        std::env::set_var(name, value);
+    }
     std::env::set_var("XDG_CONFIG_HOME", &dir);
     config_dir.join("config.toml")
 }
@@ -60,6 +63,36 @@ fn provider_setup_accepts_pasted_credential(world: &mut WatnWorld, credential: S
     world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
 }
 
+fn save_environment_draft(world: &mut WatnWorld, name: String) {
+    let endpoint = world
+        .pending_config
+        .get("provider_endpoint")
+        .cloned()
+        .expect("provider endpoint must be accepted first");
+    let reference = format!("${{{name}}}");
+    let draft = build_provider_draft(&endpoint, &reference).expect("build environment draft");
+    let mut config = load_world_config(world);
+    save_provider_draft(&mut config, &draft).expect("save environment draft");
+    world
+        .pending_config
+        .insert("provider_name".to_string(), draft.name.clone());
+    world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
+}
+
+#[then(regex = r#"^provider setup should suggest environment variable \"([^\"]+)\"$"#)]
+fn provider_setup_suggests_environment(world: &mut WatnWorld, variable: String) {
+    let endpoint = world
+        .pending_config
+        .get("provider_endpoint")
+        .expect("provider endpoint must be accepted first");
+    assert_eq!(suggested_api_key_env(endpoint), variable);
+}
+
+#[when(regex = r#"^provider setup chooses environment variable \"([^\"]+)\"$"#)]
+fn provider_setup_chooses_environment(world: &mut WatnWorld, variable: String) {
+    save_environment_draft(world, variable);
+}
+
 #[then(regex = r#"^provider setup should return configured provider \"([^\"]+)\"$"#)]
 fn provider_setup_returns_provider(world: &mut WatnWorld, provider: String) {
     assert_eq!(
@@ -87,4 +120,10 @@ fn config_contains_api_key(world: &mut WatnWorld, api_key: String) {
     let config = load_world_config(world);
     let provider = config.defaults.provider.as_deref().expect("default provider");
     assert_eq!(config.providers[provider].api_key.as_deref(), Some(api_key.as_str()));
+}
+
+#[then(regex = r#"^the config file should not contain \"([^\"]+)\"$"#)]
+fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
+    let content = std::fs::read_to_string(config_path(world)).expect("read test config");
+    assert!(!content.contains(&secret), "config unexpectedly contained secret");
 }

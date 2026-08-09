@@ -12,30 +12,30 @@
   - Evidence: regular `24 scenarios (24 passed)`, E2E `32 scenarios (32 passed)`, all non-WIP `56 scenarios (56 passed)`.
 - [x] Create the renderer-independent provider setup state/result seam and PTY helper hooks without empty step bodies.
   - Evidence: `src/provider/setup.rs` defines typed provider/model setup results and cancellation values; existing persistent PTY helpers are reused; the provider step module contains a failing RED stub, not an empty body.
-- [ ] Include setup changes in the first scenario commit.
-  - Commit hash: _pending_
+- [x] Include setup changes in the first scenario commit.
+  - Commit hash: `a8a766b`
 
 ## Scenario: Configure a custom endpoint with a pasted credential
 
 - [x] RED: Remove `@wip` from this scenario only, bind its steps with real or failing stubs, and run `cargo test --test features_runner -- --name '^Configure a custom endpoint with a pasted credential$'`; record a non-zero strict-runner result.
   - Evidence: Targeted run exited non-zero at the `provider setup accepts endpoint` step with `not implemented: provider setup step not implemented`.
-- [ ] GREEN: Implement endpoint and non-empty literal credential collection, fixed provider name `custom`, default-provider persistence, and exact TOML assertions.
-  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Simplify the setup/config seam without changing the persisted endpoint, provider name, or literal credential; rerun the named scenario.
-  - Evidence: _pending_
-- [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with message `feat(provider-setup): Configure a custom endpoint with a pasted credential`.
-  - Commit hash: _pending_
+- [x] GREEN: Implement endpoint and non-empty literal credential collection, fixed provider name `custom`, default-provider persistence, and exact TOML assertions.
+  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`. Coverage was not emitted by the ordinary runner; coverage remains unmeasured until the configured llvm-cov command.
+- [x] REFACTOR: Simplify the setup/config seam without changing the persisted endpoint, provider name, or literal credential; rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with message `feat(provider-setup): Configure a custom endpoint with a pasted credential`.
+  - Commit hash: `a8a766b`
 
 ## Scenario: Configure a custom provider with the generic environment variable
 
-- [ ] RED: Remove `@wip` from this scenario only, bind the provider setup state steps, and run `cargo test --test features_runner -- --name '^Configure a custom provider with the generic environment variable$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Suggest `WATN_API_KEY` for custom endpoints, persist `${WATN_API_KEY}`, and assert the resolved secret is not written.
-  - Production files: `src/provider/setup.rs`, `src/config/env.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Consolidate environment-source validation and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only, bind the provider setup state steps, and run `cargo test --test features_runner -- --name '^Configure a custom provider with the generic environment variable$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because `provider setup should suggest environment variable "WATN_API_KEY"` was initially undefined.
+- [x] GREEN: Suggest `WATN_API_KEY` for custom endpoints, persist `${WATN_API_KEY}`, and assert the resolved secret is not written.
+  - Production files: `src/provider/setup.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Consolidate environment-source validation and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Configure a custom provider with the generic environment variable`.
   - Commit hash: _pending_
 

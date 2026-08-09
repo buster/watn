@@ -56,6 +56,14 @@ pub fn provider_name(endpoint: &str) -> &'static str {
     }
 }
 
+pub fn suggested_api_key_env(endpoint: &str) -> &'static str {
+    if endpoint == OPENROUTER_ENDPOINT {
+        "OPENROUTER_API_KEY"
+    } else {
+        "WATN_API_KEY"
+    }
+}
+
 pub fn build_provider_draft(endpoint: &str, api_key: &str) -> Result<ProviderDraft, Error> {
     let endpoint = normalize_endpoint(endpoint)?;
     if api_key.trim().is_empty() {
