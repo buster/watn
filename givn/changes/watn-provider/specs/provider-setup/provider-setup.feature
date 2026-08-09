@@ -174,7 +174,7 @@ Feature: Interactive provider setup
     And provider "legacy" should still contain credential "sk-old-key"
     And no request should be sent to "/chat/completions"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Model catalog failure after provider setup preserves the provider and sends no request
     Given no config file exists
     And the model catalog transport returns HTTP 500 for "/models"

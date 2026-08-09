@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use crate::WatnWorld;
 use crate::MockServerWrap;
+use super::run_binary_with_state;
 use watn::config::{self, save_provider_draft};
 use watn::config::types::Config;
 use watn::provider::setup::{build_provider_draft, suggested_api_key_env};
@@ -343,6 +344,26 @@ fn environment_variable_not_set(world: &mut WatnWorld, name: String) {
     std::env::remove_var(name);
 }
 
+#[given(regex = r#"^the model catalog transport returns HTTP (\d+) for \"([^\"]+)\"$"#)]
+fn model_catalog_transport_failure(world: &mut WatnWorld, status: u16, path: String) {
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let (base_url, mock_id) = {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        let base_url = format!("http://127.0.0.1:{}", server.port());
+        let mock_id = server
+            .mock(|when, then| {
+                when.method(httpmock::Method::GET).path(path.as_str());
+                then.status(status).body("{\"error\":\"catalog failure\"}");
+            })
+            .id;
+        (base_url, mock_id)
+    };
+    world.models_mock_id = Some(mock_id);
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+}
+
 #[given(regex = r#"^a config file contains provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
 fn config_contains_provider(world: &mut WatnWorld, provider: String, endpoint: String) {
     world.raw_config = Some(format!(
@@ -371,6 +392,20 @@ fn saved_provider_default_model(world: &mut WatnWorld, model: String) {
     rebuild_saved_provider_config(world);
 }
 
+#[when(regex = r#"^automatic onboarding saves provider endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]
+fn automatic_onboarding_saves_provider(world: &mut WatnWorld, endpoint: String, key: String) {
+    let mut config = load_world_config(world);
+    let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
+    save_provider_draft(&mut config, &draft).expect("save provider draft");
+    world.pending_config.insert("provider_name".to_string(), draft.name);
+    world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
+}
+
+#[when("automatic model setup attempts catalog discovery")]
+fn automatic_model_setup_attempts_discovery(world: &mut WatnWorld) {
+    run_binary_with_state(world, &["models"], None);
+}
+
 #[when("I resolve the saved OpenRouter provider for a request")]
 fn resolve_saved_openrouter_provider(world: &mut WatnWorld) {
     let config = load_world_config(world);
@@ -388,6 +423,25 @@ fn selected_endpoint_exact(world: &mut WatnWorld, endpoint: String) {
 #[then(regex = r#"^the built-in endpoint \"([^\"]+)\" should not be selected$"#)]
 fn builtin_endpoint_not_selected(world: &mut WatnWorld, endpoint: String) {
     assert_ne!(world.pending_config.get("selected_endpoint"), Some(&endpoint));
+}
+
+#[then(regex = r#"^the config file should contain provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
+fn config_contains_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
+    let config = load_world_config(world);
+    assert_eq!(config.providers[&provider].endpoint, endpoint);
+}
+
+#[then("the config file should not contain selected tier assignments")]
+fn config_has_no_selected_tiers(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    assert!(config.tiers.small.is_none());
+    assert!(config.tiers.normal.is_none());
+    assert!(config.tiers.thinking.is_none());
+}
+
+#[then("no original chat completion request should be sent")]
+fn no_original_chat_completion(world: &mut WatnWorld) {
+    assert!(!world.pending_config.contains_key("original_chat_request"));
 }
 
 #[given("the request transport returns a successful response for the implicit OpenRouter request")]

@@ -63,7 +63,7 @@ pub fn run_models(
             Ok(m) => m,
             Err(e) => {
                 eprintln!("error: failed to fetch models: {}", e);
-                std::process::exit(1);
+                std::process::exit(crate::error::exit_code(&e));
             }
         },
     };

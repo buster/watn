@@ -168,18 +168,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Share terminal cleanup between Escape and Ctrl-C paths and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Ctrl-C cancellation preserves the existing provider configuration`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Ctrl-C cancellation preserves the existing provider configuration`.
+  - Commit hash: `4c88873`
 
 ## Scenario: Model catalog failure after provider setup preserves the provider and sends no request
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Model catalog failure after provider setup preserves the provider and sends no request$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Save the provider before model discovery, return typed model failure status 2, preserve the provider, omit tiers, and do not dispatch the original chat request.
-  - Production files: `src/main.rs`, `src/models/mod.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Remove process exits from reusable model setup and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Model catalog failure after provider setup preserves the provider and sends no request$'`; record non-zero output.
+  - Evidence: Targeted run initially exited non-zero with status 1 instead of required status 2 and lacked the catalog fixture step.
+- [x] GREEN: Save the provider before model discovery, return typed model failure status 2, preserve the provider, omit tiers, and do not dispatch the original chat request.
+  - Production files: `src/models/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Remove process exits from reusable model setup and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Model catalog failure after provider setup preserves the provider and sends no request`.
   - Commit hash: _pending_
 
