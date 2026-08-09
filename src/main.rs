@@ -192,8 +192,10 @@ fn main() {
         int_flag.store(true, Ordering::SeqCst);
     }).expect("install SIGINT handler");
 
+    let spinner = watn::output::spinner::Spinner::start(&model);
     match provider.chat_completions_streaming(&messages, &options) {
         Ok(response) => {
+            spinner.finish();
             let cost = config.pricing.get(&model).map(|p| {
                 let input_cost = p.input * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64 / 1_000_000.0;
                 let output_cost = p.output * response.final_usage.as_ref().map_or(0, |u| u.completion_tokens) as f64 / 1_000_000.0;
@@ -229,6 +231,7 @@ fn main() {
             }
         }
         Err(e) => {
+            spinner.finish();
             let code = exit_code(&e);
             eprintln!("{}", e);
             std::process::exit(code);

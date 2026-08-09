@@ -44,6 +44,7 @@ pub fn load_config() -> Result<Config, Error> {
     let content = std::fs::read_to_string(&config_path)
         .map_err(|e| Error::ConfigError(format!("cannot read config: {}", e)))?;
 
+    #[cfg(unix)]
     let has_real_content = content.lines().any(|line| {
         let line = line.trim();
         !line.is_empty() && !line.starts_with('#')
@@ -55,10 +56,6 @@ pub fn load_config() -> Result<Config, Error> {
         toml::from_str(&content)
             .map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
     };
-
-    if has_real_content && config.schema_version.is_none() {
-        eprintln!("warning: config file has no schema_version; future updates may require manual migration");
-    }
 
     #[cfg(unix)]
     if has_real_content {
