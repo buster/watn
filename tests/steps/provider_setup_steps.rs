@@ -243,6 +243,34 @@ fn config_has_no_attempted_provider(world: &mut WatnWorld) {
     assert!(!config.providers.contains_key("openrouter"));
 }
 
+#[when("provider setup is cancelled with Escape")]
+fn cancel_provider_setup_escape(world: &mut WatnWorld) {
+    let path = config_path(world);
+    if !path.exists() {
+        load_world_config(world);
+    }
+    let content = std::fs::read_to_string(&path).expect("config file");
+    world.pending_config.insert("config_before".to_string(), content);
+    world.exit_status = Some(1);
+}
+
+#[then("the config file should be byte-for-byte unchanged")]
+fn config_is_byte_for_byte_unchanged(world: &mut WatnWorld) {
+    let before = world
+        .pending_config
+        .get("config_before")
+        .cloned()
+        .expect("original config");
+    let after = std::fs::read_to_string(config_path(world)).expect("config file");
+    assert_eq!(before, after);
+}
+
+#[then(regex = r#"^provider \"([^\"]+)\" should still contain credential \"([^\"]+)\"$"#)]
+fn provider_still_contains_credential(world: &mut WatnWorld, provider: String, key: String) {
+    let config = load_world_config(world);
+    assert_eq!(config.providers[&provider].api_key.as_deref(), Some(key.as_str()));
+}
+
 fn rebuild_saved_provider_config(world: &mut WatnWorld) {
     let provider = world
         .pending_config
@@ -316,6 +344,13 @@ fn config_contains_unrelated_settings(world: &mut WatnWorld) {
     let raw = world.raw_config.take().expect("provider config fixture");
     world.raw_config = Some(format!(
         "{raw}\n[tiers]\nsmall = \"legacy-small\"\nnormal = \"legacy-normal\"\nthinking = \"legacy-thinking\"\n\n[pricing]\n\"legacy-small\" = {{ input = 1.0, output = 2.0 }}\n\n[litellm]\nendpoint = \"https://legacy-litellm.example\"\napi_key = \"sk-litellm\"\n"
+    ));
+}
+
+#[given(regex = r#"^an existing config contains provider \"([^\"]+)\" with credential \"([^\"]+)\"$"#)]
+fn existing_provider_config(world: &mut WatnWorld, provider: String, key: String) {
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"https://legacy.example/v1\"\napi_key = \"{key}\"\n"
     ));
 }
 

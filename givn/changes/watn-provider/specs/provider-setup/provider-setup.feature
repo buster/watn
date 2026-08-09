@@ -156,7 +156,7 @@ Feature: Interactive provider setup
     And the existing tiers, pricing, and LiteLLM settings should remain unchanged
     And only the fixed provider entry "custom" should be replaced or created
 
-  @givn.added @wip
+  @givn.added
   Scenario: Escape cancellation preserves the existing provider configuration
     Given an existing config contains provider "legacy" with credential "sk-old-key"
     When provider setup is cancelled with Escape
