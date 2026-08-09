@@ -218,7 +218,7 @@ Feature: Interactive provider setup
     Then the API request should use API key "sk-saved-literal"
     And the environment fallback values should not be used
 
-  @givn.added @wip
+  @givn.added
   Scenario: Explicit provider selection from the environment preserves missing-key errors
     Given environment variable WATN_PROVIDER is set to "custom"
     And provider "custom" has endpoint "https://llm.example.com/v1" and no api_key

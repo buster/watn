@@ -216,18 +216,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Keep fallback lookup limited to absent `api_key` values and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A literal saved credential is authoritative over environment fallback`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): A literal saved credential is authoritative over environment fallback`.
+  - Commit hash: `c400fd2`
 
 ## Scenario: Explicit provider selection from the environment preserves missing-key errors
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Explicit provider selection from the environment preserves missing-key errors$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Treat `WATN_PROVIDER` as explicit selection, bypass automatic onboarding, preserve missing-key exit 2, and prevent any request.
-  - Production files: `src/config/env.rs`, `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Centralize selection-source detection and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Explicit provider selection from the environment preserves missing-key errors$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the explicit-provider fixture step was initially undefined.
+- [x] GREEN: Treat `WATN_PROVIDER` as explicit selection, bypass automatic onboarding, preserve missing-key exit 2, and prevent any request.
+  - Production files: `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Centralize selection-source detection and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Explicit provider selection from the environment preserves missing-key errors`.
   - Commit hash: _pending_
 

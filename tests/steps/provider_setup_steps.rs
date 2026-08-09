@@ -360,6 +360,16 @@ fn configured_provider_endpoint(world: &mut WatnWorld, provider: String, endpoin
     configured_default_provider_endpoint(world, provider, endpoint);
 }
 
+#[given(regex = r#"^provider \"([^\"]+)\" has endpoint \"([^\"]+)\" and no api_key$"#)]
+fn provider_without_api_key(world: &mut WatnWorld, provider: String, endpoint: String) {
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"{endpoint}\"\ndefault_model = \"custom-model\"\n"
+    ));
+    world.pending_mock_model = Some("custom-model".to_string());
+    world.pending_mock_output = Some("some output".to_string());
+    world.pending_mock_usage = Some(false);
+}
+
 #[given(regex = r#"^its saved credential is \"([^\"]+)\"$"#)]
 fn saved_provider_credential(world: &mut WatnWorld, key: String) {
     world.pending_config.insert("saved_key".to_string(), key);
