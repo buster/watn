@@ -410,6 +410,11 @@ fn no_recognized_provider_environment(world: &mut WatnWorld) {
     }
 }
 
+#[given("no supported provider environment variable is set")]
+fn no_supported_provider_environment(world: &mut WatnWorld) {
+    no_recognized_provider_environment(world);
+}
+
 #[given(regex = r#"^the model catalog transport returns HTTP (\d+) for \"([^\"]+)\"$"#)]
 fn model_catalog_transport_failure(world: &mut WatnWorld, status: u16, path: String) {
     world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
@@ -425,6 +430,9 @@ fn model_catalog_transport_failure(world: &mut WatnWorld, status: u16, path: Str
         (base_url, mock_id)
     };
     world.models_mock_id = Some(mock_id);
+    world
+        .pending_config
+        .insert("e2e_models_mock".to_string(), mock_id.to_string());
     world
         .env_vars
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
@@ -621,9 +629,51 @@ fn ephemeral_e2e_chat_transport(world: &mut WatnWorld, path: String) {
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
 }
 
+#[given(regex = r#"^the ephemeral E2E transport returns models \[([^\]]+)\] for \"([^\"]+)\"$"#)]
+fn ephemeral_e2e_models_transport(world: &mut WatnWorld, models: String, path: String) {
+    assert_eq!(path, "/models");
+    let models: Vec<String> = models
+        .split(',')
+        .map(|model| model.trim().trim_matches('"').to_string())
+        .collect();
+    world.pending_mock_returned_models = models.clone();
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let (base_url, mock_id) = {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        let base_url = format!("http://127.0.0.1:{}", server.port());
+        let data: Vec<serde_json::Value> = models
+            .iter()
+            .map(|id| serde_json::json!({"id": id}))
+            .collect();
+        let mock_id = server
+            .mock(|when, then| {
+                when.method(httpmock::Method::GET).path("/models");
+                then.status(200)
+                    .header("Content-Type", "application/json")
+                    .body(serde_json::json!({"data": data}).to_string());
+            })
+            .id;
+        (base_url, mock_id)
+    };
+    world.models_mock_id = Some(mock_id);
+    world
+        .pending_config
+        .insert("e2e_models_mock".to_string(), mock_id.to_string());
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+}
+
 #[when(regex = r#"^I start `watn provider` in a terminal$"#)]
 fn start_provider_in_terminal(world: &mut WatnWorld) {
     let session = start_pty_session(world, &["provider"]);
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    world.pty_session = Some(session);
+}
+
+#[when(regex = r#"^I start interactive `watn \"([^\"]+)\"` in a terminal$"#)]
+fn start_interactive_question_in_terminal(world: &mut WatnWorld, question: String) {
+    let session = start_pty_session(world, &[question.as_str()]);
     std::thread::sleep(std::time::Duration::from_millis(300));
     world.pty_session = Some(session);
 }
@@ -633,6 +683,47 @@ fn setup_terminal_shows_endpoint(world: &mut WatnWorld, endpoint: String) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     std::thread::sleep(std::time::Duration::from_millis(200));
     assert!(pty_snapshot(session).contains(&endpoint));
+}
+
+#[then("the terminal should show model setup after provider setup")]
+fn terminal_shows_model_setup(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("interactive onboarding PTY");
+    let output = pty_snapshot(session);
+    assert!(output.contains("Select a model for the small tier"), "terminal output: {output:?}");
+}
+
+#[when(regex = r#"^I select \"([^\"]+)\" for small, \"([^\"]+)\" for normal, and \"([^\"]+)\" for thinking$"#)]
+fn select_models_in_terminal(world: &mut WatnWorld, small: String, normal: String, thinking: String) {
+    let mut session = world.pty_session.take().expect("interactive onboarding PTY");
+    for model in [small, normal, thinking] {
+        pty_write(&mut session, &model);
+        std::thread::sleep(std::time::Duration::from_millis(400));
+        pty_write(&mut session, "\r");
+        std::thread::sleep(std::time::Duration::from_millis(300));
+    }
+    finish_pty_session(world, session);
+}
+
+#[then("automatic onboarding should exit successfully after model selection")]
+fn automatic_onboarding_exits_successfully(world: &mut WatnWorld) {
+    assert_eq!(world.exit_status, Some(0), "onboarding output: {:?}", world.output);
+}
+
+#[then(regex = r#"^the model catalog request should hit ephemeral path \"([^\"]+)\"$"#)]
+fn model_catalog_hits_ephemeral_path(world: &mut WatnWorld, path: String) {
+    assert_eq!(path, "/models");
+    let fixture_mock_id = world
+        .pending_config
+        .get("e2e_models_mock")
+        .and_then(|id| id.parse().ok())
+        .expect("models mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    let fixture_hits = httpmock::Mock::new(fixture_mock_id, server).hits();
+    let helper_hits = world
+        .models_mock_id
+        .map(|id| httpmock::Mock::new(id, server).hits())
+        .unwrap_or(0);
+    assert!(fixture_hits > 0 || helper_hits > 0);
 }
 
 #[then("the setup terminal should show pasted and environment credential choices")]
@@ -648,6 +739,18 @@ fn accept_openrouter_endpoint(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(200));
+}
+
+#[when("accept the default endpoint in provider setup")]
+fn accept_default_endpoint_in_provider_setup(world: &mut WatnWorld) {
+    accept_openrouter_endpoint(world);
+}
+
+#[when(regex = r#"^paste credential \"([^\"]+)\"$"#)]
+fn paste_credential_in_terminal(world: &mut WatnWorld, credential: String) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, &format!("\r{credential}\r"));
+    std::thread::sleep(std::time::Duration::from_millis(500));
 }
 
 #[when(regex = r#"^choose environment variable \"([^\"]+)\" for the credential$"#)]

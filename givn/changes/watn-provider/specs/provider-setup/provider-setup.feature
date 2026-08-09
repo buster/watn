@@ -48,7 +48,7 @@ Feature: Interactive provider setup
     And the config file should contain api_key exactly "${WATN_API_KEY}"
     And the config file should not contain "sk-watn-test"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: First normal use starts provider setup and then model setup
     Given no config file exists
     And no supported provider environment variable is set

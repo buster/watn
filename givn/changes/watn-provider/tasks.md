@@ -261,18 +261,18 @@
   - Evidence: Targeted E2E GREEN run passed: `1 scenario (1 passed)`, `16 steps (16 passed)`; terminal prompts and loopback chat request were asserted.
 - [x] REFACTOR: Stabilize PTY timing, cleanup, and transport assertions without weakening the real-interface checks; rerun the named E2E scenario.
   - Evidence: Targeted E2E REFACTOR run passed: `1 scenario (1 passed)`, `16 steps (16 passed)`.
-- [ ] COMMIT: Commit atomically with message `test(e2e): Configure OpenRouter with an environment-backed credential`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `test(e2e): Configure OpenRouter with an environment-backed credential`.
+  - Commit hash: `1315bdf`
 
 ## Scenario: First normal use starts provider setup and then model setup
 
-- [ ] RED: Remove `@wip` from this scenario only, drive it through a persistent PTY, and run `cargo test --test features_runner -- --name '^First normal use starts provider setup and then model setup$'`; record a non-zero E2E result.
-  - Evidence: _pending_
-- [ ] GREEN: Gate implicit TTY onboarding, keep provider and model dialogs in one real CLI session, route `/models` through the ephemeral twin, persist provider plus tiers, exit after model selection, and assert no original chat request.
-  - Production files: `src/main.rs`, `src/provider/setup.rs`, `src/models/mod.rs`, `src/config/mod.rs`, `src/models/list.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Add bounded PTY wait/kill handling and make the automatic transition assertion deterministic without replacing the terminal interaction; rerun the named E2E scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only, drive it through a persistent PTY, and run `cargo test --test features_runner -- --name '^First normal use starts provider setup and then model setup$'`; record a non-zero E2E result.
+  - Evidence: Targeted E2E run initially failed on the undefined model fixture, interactive-start, transition, selection, and catalog assertions.
+- [x] GREEN: Gate implicit TTY onboarding, keep provider and model dialogs in one real CLI session, route `/models` through the ephemeral twin, persist provider plus tiers, exit after model selection, and assert no original chat request.
+  - Production files: `src/main.rs`, `src/provider/setup.rs`, `tests/steps/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted E2E GREEN run passed: `1 scenario (1 passed)`, `15 steps (15 passed)`; PTY transition, tier persistence, model catalog hit, and no-chat behavior were asserted.
+- [x] REFACTOR: Add bounded PTY wait/kill handling and make the automatic transition assertion deterministic without replacing the terminal interaction; rerun the named E2E scenario.
+  - Evidence: Targeted E2E REFACTOR run passed: `1 scenario (1 passed)`, `15 steps (15 passed)`.
 - [ ] COMMIT: Commit atomically with message `test(e2e): First normal use starts provider setup and then model setup`.
   - Commit hash: _pending_
 
