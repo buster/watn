@@ -118,6 +118,12 @@ pub fn resolve_provider(
         .ok_or_else(|| Error::ProviderNotFound(provider_name.to_string()))
 }
 
+pub fn provider_ready(config: &Config, provider_name: &str) -> bool {
+    resolve_provider(config, provider_name)
+        .and_then(|provider| get_provider_api_key(provider_name, &provider).map(|_| ()))
+        .is_ok()
+}
+
 pub fn resolve_endpoint(
     _provider_name: &str,
     provider_config: &ProviderConfig,

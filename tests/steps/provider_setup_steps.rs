@@ -147,6 +147,11 @@ fn send_request_through_configured_provider(world: &mut WatnWorld) {
     world.pending_config.insert("resolved_key".to_string(), key);
 }
 
+#[when(regex = r#"^I run a non-TTY request for \"([^\"]+)\"$"#)]
+fn run_non_tty_request(world: &mut WatnWorld, question: String) {
+    run_binary_with_state(world, &[&question], None);
+}
+
 #[then(regex = r#"^provider setup should return configured provider \"([^\"]+)\"$"#)]
 fn provider_setup_returns_provider(world: &mut WatnWorld, provider: String) {
     assert_eq!(
@@ -225,6 +230,33 @@ fn only_fixed_provider_entry(world: &mut WatnWorld, provider: String) {
 fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     let content = std::fs::read_to_string(config_path(world)).expect("read test config");
     assert!(!content.contains(&secret), "config unexpectedly contained secret");
+}
+
+#[then("stderr should contain actionable guidance to run \"watn provider\" in a terminal")]
+fn stderr_contains_setup_guidance(world: &mut WatnWorld) {
+    let stderr = world.stderr_output.as_deref().expect("stderr output");
+    assert!(stderr.contains("watn provider"));
+    assert!(stderr.contains("terminal"));
+}
+
+#[then("stderr should contain the configuration path \"config.toml\"")]
+fn stderr_contains_config_path(world: &mut WatnWorld) {
+    let stderr = world.stderr_output.as_deref().expect("stderr output");
+    assert!(stderr.contains("config.toml"));
+}
+
+#[then("stderr should not contain ANSI escape sequences")]
+fn stderr_has_no_ansi(world: &mut WatnWorld) {
+    let stderr = world.stderr_output.as_deref().expect("stderr output");
+    assert!(!stderr.contains('\u{1b}'));
+}
+
+#[then("ratatui should not be initialized")]
+fn ratatui_not_initialized(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(!output.contains("Provider setup"));
+    assert!(!stderr.contains("Provider setup"));
 }
 
 #[then(regex = r#"^provider setup should show validation error \"([^\"]+)\"$"#)]
@@ -342,6 +374,14 @@ fn saved_provider_api_key(world: &mut WatnWorld, key: String) {
 fn environment_variable_not_set(world: &mut WatnWorld, name: String) {
     world.env_vars.remove(&name);
     std::env::remove_var(name);
+}
+
+#[given("no recognized provider environment variable is set")]
+fn no_recognized_provider_environment(world: &mut WatnWorld) {
+    for name in ["OPENROUTER_API_KEY", "WATN_API_KEY", "WATN_PROVIDER"] {
+        world.env_vars.remove(name);
+        std::env::remove_var(name);
+    }
 }
 
 #[given(regex = r#"^the model catalog transport returns HTTP (\d+) for \"([^\"]+)\"$"#)]

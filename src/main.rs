@@ -54,6 +54,7 @@ struct Cli {
 #[derive(clap::Subcommand)]
 enum Commands {
     Models,
+    Provider,
 }
 
 impl Cli {
@@ -75,8 +76,13 @@ impl Cli {
 fn main() {
     let cli = Cli::parse();
 
-    if let Some(_) = &cli.command {
-        watn::models::run_models(cli.set_small, cli.set_normal, cli.set_thinking);
+    if let Some(command) = &cli.command {
+        match command {
+            Commands::Models => {
+                watn::models::run_models(cli.set_small, cli.set_normal, cli.set_thinking);
+            }
+            Commands::Provider => run_provider_setup_command(),
+        }
         return;
     }
 
@@ -112,6 +118,22 @@ fn main() {
     let provider_name = cli.provider.as_deref().unwrap_or(
         config.defaults.provider.as_deref().unwrap_or("openrouter"),
     );
+
+    let explicit_provider = cli.provider.is_some() || std::env::var("WATN_PROVIDER").is_ok();
+    if !explicit_provider && !config::provider_ready(&config, provider_name) {
+        if !std::io::stdin().is_terminal() {
+            watn::provider::setup::print_setup_guidance();
+            std::process::exit(1);
+        }
+        match watn::provider::setup::run_interactive() {
+            Ok(_) => {}
+            Err(e) => {
+                let code = exit_code(&e);
+                eprintln!("{}", e);
+                std::process::exit(code);
+            }
+        }
+    }
 
     let tier = cli.tier();
     let model = match resolve_model(&config, tier, cli.model.as_deref()) {
@@ -254,4 +276,20 @@ fn build_registry(
         active_provider.to_string(),
         Box::new(OpenAICompatibleProvider::new(endpoint.to_string(), api_key.to_string())),
     );
+}
+
+fn run_provider_setup_command() {
+    if !std::io::stdin().is_terminal() {
+        watn::provider::setup::print_setup_guidance();
+        std::process::exit(1);
+    }
+
+    match watn::provider::setup::run_interactive() {
+        Ok(_) => {}
+        Err(e) => {
+            let code = exit_code(&e);
+            eprintln!("{}", e);
+            std::process::exit(code);
+        }
+    }
 }

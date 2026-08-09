@@ -192,18 +192,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Keep explicit provider dispatch separate from automatic onboarding and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): The explicit provider command ends without model setup`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): The explicit provider command ends without model setup`.
+  - Commit hash: `112093d`
 
 ## Scenario: Non-TTY first use prints setup guidance instead of starting ratatui
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Non-TTY first use prints setup guidance instead of starting ratatui$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Gate implicit onboarding on stdin TTY status, print actionable `watn provider` and config-path guidance, exit 1, and make no model or chat request.
-  - Production files: `src/main.rs`, `src/provider/setup.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Keep TTY selection-source handling explicit and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Non-TTY first use prints setup guidance instead of starting ratatui$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero with status 2 instead of required status 1 and lacked guidance steps.
+- [x] GREEN: Gate implicit onboarding on stdin TTY status, print actionable `watn provider` and config-path guidance, exit 1, and make no model or chat request.
+  - Production files: `src/main.rs`, `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Keep TTY selection-source handling explicit and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Non-TTY first use prints setup guidance instead of starting ratatui`.
   - Commit hash: _pending_
 

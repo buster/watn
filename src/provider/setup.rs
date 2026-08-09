@@ -28,6 +28,18 @@ pub enum ModelSetupResult {
     Failed(Error),
 }
 
+pub fn print_setup_guidance() {
+    eprintln!(
+        "No provider is configured. Run `watn provider` in a terminal or edit ~/.config/watn/config.toml."
+    );
+}
+
+pub fn run_interactive() -> Result<ProviderSetupResult, Error> {
+    Err(Error::ConfigError(
+        "interactive provider setup is not available".to_string(),
+    ))
+}
+
 pub fn normalize_endpoint(endpoint: &str) -> Result<String, Error> {
     let endpoint = endpoint.trim().trim_end_matches('/').to_string();
     if endpoint.is_empty() {

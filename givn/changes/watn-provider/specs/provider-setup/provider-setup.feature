@@ -194,7 +194,7 @@ Feature: Interactive provider setup
     And model setup should not start
     And no model catalog request should be sent to "/models"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-TTY first use prints setup guidance instead of starting ratatui
     Given no config file exists
     And no recognized provider environment variable is set
