@@ -24,3 +24,16 @@ pub fn read_env_overrides() -> HashMap<String, String> {
 
     overrides
 }
+
+pub fn provider_api_key(provider_name: &str) -> Option<String> {
+    let provider_specific = if provider_name == "openrouter" {
+        "OPENROUTER_API_KEY".to_string()
+    } else {
+        format!("WATN_{}_API_KEY", provider_name.to_uppercase())
+    };
+
+    std::env::var(&provider_specific)
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(|| std::env::var("WATN_API_KEY").ok().filter(|value| !value.is_empty()))
+}

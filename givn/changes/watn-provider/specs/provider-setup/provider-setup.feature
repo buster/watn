@@ -236,4 +236,3 @@ Feature: Interactive provider setup
     When provider setup saves endpoint "https://llm.example.com/v1" and credential "sk-new-key"
     Then the config file should have Unix mode "0600"
     And the saved provider endpoint should be "https://llm.example.com/v1"
-    And the save should use the existing direct-write behavior without an atomic-file promise

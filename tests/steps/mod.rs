@@ -628,7 +628,17 @@ pub(crate) fn finish_pty_session(
     world: &mut crate::WatnWorld,
     mut session: PtySession,
 ) -> String {
-    let status = session.child.wait().expect("wait for pty child");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let status = loop {
+        if let Some(status) = session.child.try_wait().expect("poll pty child") {
+            break status;
+        }
+        if std::time::Instant::now() >= deadline {
+            let _ = session.child.kill();
+            break session.child.wait().expect("wait for killed pty child");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    };
     session.writer.take();
     let buf = session.output_buffer.lock().unwrap().clone();
     let text = String::from_utf8_lossy(&buf).to_string();

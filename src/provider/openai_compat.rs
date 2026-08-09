@@ -13,6 +13,11 @@ pub struct OpenAICompatibleProvider {
     client: reqwest::blocking::Client,
 }
 
+pub fn chat_completions_url(endpoint: &str) -> String {
+    let endpoint = crate::provider::transport::endpoint(endpoint);
+    format!("{}/chat/completions", endpoint.trim_end_matches('/'))
+}
+
 impl OpenAICompatibleProvider {
     pub fn new(endpoint: String, api_key: String) -> Self {
         let client = reqwest::blocking::Client::builder()
@@ -34,8 +39,7 @@ impl Provider for OpenAICompatibleProvider {
         options: &RequestOptions,
     ) -> Result<StreamingResponse, Error> {
         let start = Instant::now();
-        let endpoint = crate::provider::transport::endpoint(&self.endpoint);
-        let url = format!("{}/chat/completions", endpoint.trim_end_matches('/'));
+        let url = chat_completions_url(&self.endpoint);
 
         let mut body = serde_json::json!({
             "model": options.model,

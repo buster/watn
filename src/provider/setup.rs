@@ -30,6 +30,10 @@ pub enum ProviderSetupResult {
     Cancelled(SetupCancellation),
 }
 
+pub fn cancellation_result(cancellation: SetupCancellation) -> ProviderSetupResult {
+    ProviderSetupResult::Cancelled(cancellation)
+}
+
 #[derive(Debug)]
 pub enum ModelSetupResult {
     Saved,
@@ -55,6 +59,8 @@ enum SetupStage {
     Endpoint,
     CredentialSource,
     CredentialValue,
+    Review,
+    Confirmed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,10 +74,16 @@ fn run_interactive_inner(terminal: &mut DefaultTerminal) -> Result<ProviderSetup
     let mut source = CredentialSource::Paste;
     let mut endpoint = OPENROUTER_ENDPOINT.to_string();
     let mut value = String::new();
+    let mut credential = String::new();
     let mut env_name = suggested_api_key_env(OPENROUTER_ENDPOINT).to_string();
     let mut validation = String::new();
 
     loop {
+        if stage == SetupStage::Confirmed {
+            let draft = build_provider_draft(&endpoint, &credential)
+                .map_err(|error| Error::ConfigError(error_message(&error)))?;
+            return Ok(ProviderSetupResult::Configured(draft));
+        }
         terminal.draw(|frame| draw_setup(frame, stage, &endpoint, source, &value, &env_name, &validation))?;
         if !event::poll(Duration::from_millis(100))
             .map_err(|error| Error::IoError(std::io::Error::other(error)))?
@@ -129,7 +141,7 @@ fn run_interactive_inner(terminal: &mut DefaultTerminal) -> Result<ProviderSetup
                         value.pop();
                     }
                     KeyCode::Enter => {
-                        let credential = match source {
+                        credential = match source {
                             CredentialSource::Paste => {
                                 if value.trim().is_empty() {
                                     validation = "credential cannot be empty".to_string();
@@ -145,13 +157,18 @@ fn run_interactive_inner(terminal: &mut DefaultTerminal) -> Result<ProviderSetup
                                 format!("${{{env_name}}}")
                             }
                         };
-                        let draft = build_provider_draft(&endpoint, &credential)
-                            .map_err(|error| Error::ConfigError(error_message(&error)))?;
-                        return Ok(ProviderSetupResult::Configured(draft));
+                        validation.clear();
+                        stage = SetupStage::Review;
                     }
                     _ => {}
                 }
             }
+            SetupStage::Review => {
+                if key.code == KeyCode::Enter {
+                    stage = SetupStage::Confirmed;
+                }
+            }
+            SetupStage::Confirmed => {}
         }
     }
 }
@@ -197,6 +214,8 @@ fn draw_setup(
         SetupStage::Endpoint => "Endpoint (Enter to accept, Ctrl-U to clear)",
         SetupStage::CredentialSource => "Credential source: [p] Paste credential [e] Environment variable",
         SetupStage::CredentialValue => "Credential value (Enter to confirm)",
+        SetupStage::Review => "Review provider configuration (Enter to save)",
+        SetupStage::Confirmed => "Provider configuration confirmed",
     };
     let text = format!(
         "OpenAI-compatible endpoint:\n{endpoint}\n\nCredential choices: [p] Paste credential [e] Environment variable\n{stage_hint}\nSelected: {credential}\n{value_display}\n\n{validation}"

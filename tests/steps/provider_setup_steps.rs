@@ -75,6 +75,42 @@ fn config_path(world: &mut WatnWorld) -> PathBuf {
     config_dir.join("config.toml")
 }
 
+fn ensure_chat_request_mock(world: &mut WatnWorld) {
+    if world.mock_server.1.is_some() {
+        return;
+    }
+    if world.mock_server.0.is_none() {
+        world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    }
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::POST).path("/chat/completions");
+            then.status(200)
+                .header("Content-Type", "text/event-stream")
+                .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"unused\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
+        })
+        .id;
+    world.mock_server.1 = Some(mock_id);
+}
+
+fn ensure_models_request_mock(world: &mut WatnWorld) {
+    if world.models_mock_id.is_some() {
+        return;
+    }
+    if world.mock_server.0.is_none() {
+        world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    }
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200).body("{\"data\":[]}");
+        })
+        .id;
+    world.models_mock_id = Some(mock_id);
+}
+
 fn load_world_config(world: &mut WatnWorld) -> Config {
     let path = config_path(world);
     if !path.exists() {
@@ -185,14 +221,14 @@ fn config_contains_api_key(world: &mut WatnWorld, api_key: String) {
 fn model_catalog_url_exact(world: &mut WatnWorld, url: String) {
     let config = load_world_config(world);
     let provider = config.defaults.provider.as_deref().expect("default provider");
-    assert_eq!(format!("{}/models", config.providers[provider].endpoint), url);
+    assert_eq!(watn::models::list::models_url(&config.providers[provider].endpoint), url);
 }
 
 #[then(regex = r#"^the chat completion URL should be exactly \"([^\"]+)\"$"#)]
 fn chat_completion_url_exact(world: &mut WatnWorld, url: String) {
     let config = load_world_config(world);
     let provider = config.defaults.provider.as_deref().expect("default provider");
-    assert_eq!(format!("{}/chat/completions", config.providers[provider].endpoint), url);
+    assert_eq!(watn::provider::openai_compat::chat_completions_url(&config.providers[provider].endpoint), url);
 }
 
 #[then(regex = r#"^the default provider should be \"([^\"]+)\"$"#)]
@@ -284,6 +320,12 @@ fn cancel_provider_setup_escape(world: &mut WatnWorld) {
     }
     let content = std::fs::read_to_string(&path).expect("config file");
     world.pending_config.insert("config_before".to_string(), content);
+    assert!(matches!(
+        watn::provider::setup::cancellation_result(watn::provider::setup::SetupCancellation::Escape),
+        watn::provider::setup::ProviderSetupResult::Cancelled(
+            watn::provider::setup::SetupCancellation::Escape
+        )
+    ));
     world.exit_status = Some(1);
 }
 
@@ -295,6 +337,12 @@ fn cancel_provider_setup_ctrl_c(world: &mut WatnWorld) {
     }
     let content = std::fs::read_to_string(&path).expect("config file");
     world.pending_config.insert("config_before".to_string(), content);
+    assert!(matches!(
+        watn::provider::setup::cancellation_result(watn::provider::setup::SetupCancellation::CtrlC),
+        watn::provider::setup::ProviderSetupResult::Cancelled(
+            watn::provider::setup::SetupCancellation::CtrlC
+        )
+    ));
     world.exit_status = Some(130);
 }
 
@@ -358,6 +406,7 @@ fn saved_default_provider_endpoint(world: &mut WatnWorld, provider: String, endp
 #[given(regex = r#"^a configured provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
 fn configured_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
     configured_default_provider_endpoint(world, provider, endpoint);
+    ensure_chat_request_mock(world);
 }
 
 #[given(regex = r#"^provider \"([^\"]+)\" has endpoint \"([^\"]+)\" and no api_key$"#)]
@@ -368,6 +417,7 @@ fn provider_without_api_key(world: &mut WatnWorld, provider: String, endpoint: S
     world.pending_mock_model = Some("custom-model".to_string());
     world.pending_mock_output = Some("some output".to_string());
     world.pending_mock_usage = Some(false);
+    ensure_chat_request_mock(world);
 }
 
 #[given(regex = r#"^an existing provider config file has Unix mode \"([^\"]+)\"$"#)]
@@ -436,6 +486,7 @@ fn model_catalog_transport_failure(world: &mut WatnWorld, status: u16, path: Str
     world
         .env_vars
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+    ensure_chat_request_mock(world);
 }
 
 #[given(regex = r#"^a config file contains provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
@@ -458,6 +509,7 @@ fn existing_provider_config(world: &mut WatnWorld, provider: String, key: String
     world.raw_config = Some(format!(
         "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"https://legacy.example/v1\"\napi_key = \"{key}\"\n"
     ));
+    ensure_chat_request_mock(world);
 }
 
 #[given(regex = r#"^its saved default model is \"([^\"]+)\"$"#)]
@@ -481,7 +533,7 @@ fn explicit_provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: S
     let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
     save_provider_draft(&mut config, &draft).expect("save provider draft");
     world.exit_status = Some(0);
-    world.pending_config.insert("model_setup_started".to_string(), "false".to_string());
+    ensure_models_request_mock(world);
 }
 
 #[when(regex = r#"^provider setup saves endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]
@@ -490,12 +542,19 @@ fn provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: String) {
     let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
     save_provider_draft(&mut config, &draft).expect("save provider draft");
     world.pending_config.insert("saved_endpoint".to_string(), draft.endpoint);
-    world.pending_config.insert("write_semantics".to_string(), "direct".to_string());
 }
 
 #[when("automatic model setup attempts catalog discovery")]
 fn automatic_model_setup_attempts_discovery(world: &mut WatnWorld) {
-    run_binary_with_state(world, &["models"], None);
+    let result = std::thread::spawn(|| watn::models::run_models_result(None, None, None))
+        .join()
+        .expect("model setup thread");
+    match result {
+        watn::provider::setup::ModelSetupResult::Failed(error) => {
+            world.exit_status = Some(watn::error::exit_code(&error));
+        }
+        other => panic!("expected model setup failure, got {:?}", other),
+    }
 }
 
 #[when("I resolve the saved OpenRouter provider for a request")]
@@ -544,22 +603,18 @@ fn saved_provider_endpoint(world: &mut WatnWorld, endpoint: String) {
     assert_eq!(world.pending_config.get("saved_endpoint"), Some(&endpoint));
 }
 
-#[then("the save should use the existing direct-write behavior without an atomic-file promise")]
-fn direct_write_behavior(world: &mut WatnWorld) {
-    assert_eq!(world.pending_config.get("write_semantics"), Some(&"direct".to_string()));
-}
-
 #[then("model setup should not start")]
 fn model_setup_does_not_start(world: &mut WatnWorld) {
-    assert_eq!(world.pending_config.get("model_setup_started"), Some(&"false".to_string()));
+    let mock_id = world.models_mock_id.expect("models mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
 }
 
 #[then(regex = r#"^no model catalog request should be sent to \"([^\"]+)\"$"#)]
 fn no_model_catalog_request(world: &mut WatnWorld, _path: String) {
-    if let Some(mock_id) = world.models_mock_id {
-        let server = world.mock_server.0.as_ref().expect("mock server");
-        assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
-    }
+    let mock_id = world.models_mock_id.expect("models mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
 }
 
 #[then("the config file should not contain selected tier assignments")]
@@ -572,7 +627,9 @@ fn config_has_no_selected_tiers(world: &mut WatnWorld) {
 
 #[then("no original chat completion request should be sent")]
 fn no_original_chat_completion(world: &mut WatnWorld) {
-    assert!(!world.pending_config.contains_key("original_chat_request"));
+    let mock_id = world.mock_server.1.expect("chat mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
 }
 
 #[given("the request transport returns a successful response for the implicit OpenRouter request")]
@@ -749,16 +806,16 @@ fn accept_default_endpoint_in_provider_setup(world: &mut WatnWorld) {
 #[when(regex = r#"^paste credential \"([^\"]+)\"$"#)]
 fn paste_credential_in_terminal(world: &mut WatnWorld, credential: String) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
-    pty_write(session, &format!("\r{credential}\r"));
+    pty_write(session, &format!("\r{credential}\r\r"));
     std::thread::sleep(std::time::Duration::from_millis(500));
 }
 
 #[when(regex = r#"^choose environment variable \"([^\"]+)\" for the credential$"#)]
 fn choose_environment_credential_terminal(world: &mut WatnWorld, variable: String) {
+    assert_eq!(variable, "OPENROUTER_API_KEY");
     let session = world.pty_session.take().expect("provider PTY session");
     let mut session = session;
-    pty_write(&mut session, &format!("e\r\r"));
-    let _ = variable;
+    pty_write(&mut session, &format!("e\r\r\r"));
     finish_pty_session(world, session);
 }
 
@@ -845,8 +902,7 @@ fn api_request_sent_to(world: &mut WatnWorld, endpoint: String) {
 
 #[then(regex = r#"^no request should be sent to \"([^\"]+)\"$"#)]
 fn no_request_sent_to(world: &mut WatnWorld, _path: String) {
-    if let Some(mock_id) = world.mock_server.1 {
-        let server = world.mock_server.0.as_ref().expect("mock server");
-        assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
-    }
+    let mock_id = world.mock_server.1.expect("chat mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
 }

@@ -768,20 +768,6 @@ fn mock_search_response(w: &mut WatnWorld, query: &str, models: &[String], delay
     w.search_mock_ids.push(mock.id);
 }
 
-fn mock_search_error(w: &mut WatnWorld, query: &str, status: u16) {
-    let server = w.mock_server.0.as_ref().expect("mock server not set up");
-    let q = query.to_string();
-    let mock = server.mock(move |when, then| {
-        when.method(httpmock::Method::GET)
-            .path("/models")
-            .query_param("search", &q);
-        then.status(status)
-            .header("Content-Type", "application/json")
-            .body(r#"{"error":"not supported"}"#);
-    });
-    w.search_mock_ids.push(mock.id);
-}
-
 #[given(regex = r#"^a provider with models (.+)$"#)]
 fn provider_with_models(w: &mut WatnWorld, models_str: String) {
     // Parse the models string: it may be "gpt-4o-mini", "gpt-4o", "o3-mini", and "o3-pro"

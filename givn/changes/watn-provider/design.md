@@ -416,6 +416,22 @@ The first scenario verifies request-time environment expansion and chat
 transport. The second verifies automatic model discovery and explicitly
 asserts that no original chat request is sent after setup.
 
+### Local Runnability
+
+Run the complete local stack with:
+
+```text
+cargo test --test features_runner -- --tags '@e2e and not @wip'
+```
+
+The command starts the Gherkin runner, instrumented or normal CLI subprocesses,
+the persistent PTY sessions, and an `httpmock::MockServer` loopback twin for
+each external provider interaction. There is no database, queue, application
+server, container, or live third-party service. Each scenario owns its random
+loopback server and temporary XDG config directory. The PTY harness polls child
+termination with a bounded timeout and kills a stuck child before collecting
+output.
+
 ### Coverage and profile paths
 
 Coverage uses the same scenario filters as verification and passes a

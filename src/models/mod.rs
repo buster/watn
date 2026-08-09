@@ -6,16 +6,21 @@ use dialoguer::Select;
 
 use crate::config::{resolve_provider, save_config};
 use crate::config::types::ModelTiers;
+use crate::error::Error;
 use crate::models::dialog::{ReasoningStrength, SettingsDialog};
+use crate::provider::setup::{ModelSetupResult, SetupCancellation};
 use list::{fetch_models, fetch_models_page};
 use std::io::IsTerminal;
 
-pub fn run_models(
+pub fn run_models_result(
     set_small: Option<String>,
     set_normal: Option<String>,
     set_thinking: Option<String>,
-) {
-    let config = crate::config::load_config().unwrap_or_default();
+) -> ModelSetupResult {
+    let config = match crate::config::load_config() {
+        Ok(config) => config,
+        Err(error) => return ModelSetupResult::Failed(error),
+    };
 
     if let (Some(small), Some(normal), Some(thinking)) =
         (&set_small, &set_normal, &set_thinking)
@@ -25,14 +30,13 @@ pub fn run_models(
         updated.tiers.normal = Some(normal.clone());
         updated.tiers.thinking = Some(thinking.clone());
         if let Err(e) = save_config(&updated) {
-            eprintln!("error: failed to save config: {}", e);
-            std::process::exit(1);
+            return ModelSetupResult::Failed(e);
         }
         println!(
             "Tiers configured: small={}, normal={}, thinking={}",
             small, normal, thinking
         );
-        return;
+        return ModelSetupResult::Saved;
     }
 
     let provider_name = config
@@ -47,7 +51,7 @@ pub fn run_models(
             println!("No provider endpoint configured.");
             println!("To configure providers manually, edit ~/.config/watn/config.toml");
             println!("See the configuration guide for details.");
-            return;
+            return ModelSetupResult::Saved;
         }
     };
 
@@ -61,16 +65,14 @@ pub fn run_models(
         Ok(m) if !m.is_empty() => m,
         _ => match fetch_models(&endpoint, api_key.as_deref()) {
             Ok(m) => m,
-            Err(e) => {
-                eprintln!("error: failed to fetch models: {}", e);
-                std::process::exit(crate::error::exit_code(&e));
-            }
+            Err(e) => return ModelSetupResult::Failed(e),
         },
     };
 
     if models.is_empty() {
-        eprintln!("error: no models returned from endpoint");
-        std::process::exit(1);
+        return ModelSetupResult::Failed(Error::ConfigError(
+            "no models returned from endpoint".to_string(),
+        ));
     }
 
     let small;
@@ -103,12 +105,24 @@ pub fn run_models(
                     choices[2].reasoning.as_str().to_string(),
                 ];
             }
-            Err(_) => std::process::exit(130),
+            Err(error) if error.to_string().contains("interrupted") => {
+                return ModelSetupResult::Cancelled(SetupCancellation::CtrlC);
+            }
+            Err(error) => return ModelSetupResult::Failed(error),
         }
     } else {
-        small = select_model(&models, "small").clone();
-        normal = select_model(&models, "normal").clone();
-        thinking = select_model(&models, "thinking").clone();
+        small = match select_model(&models, "small") {
+            Ok(model) => model.clone(),
+            Err(error) => return ModelSetupResult::Failed(error),
+        };
+        normal = match select_model(&models, "normal") {
+            Ok(model) => model.clone(),
+            Err(error) => return ModelSetupResult::Failed(error),
+        };
+        thinking = match select_model(&models, "thinking") {
+            Ok(model) => model.clone(),
+            Err(error) => return ModelSetupResult::Failed(error),
+        };
         reasoning = Default::default();
     }
 
@@ -126,14 +140,14 @@ pub fn run_models(
     };
 
     if let Err(e) = save_config(&updated) {
-        eprintln!("error: failed to save config: {}", e);
-        std::process::exit(1);
+        return ModelSetupResult::Failed(e);
     }
 
     println!(
         "Tiers configured: small={}, normal={}, thinking={}",
         small.id, normal.id, thinking.id
     );
+    ModelSetupResult::Saved
 }
 
 pub fn format_model_entry(entry: &list::ModelEntry) -> String {
@@ -161,7 +175,7 @@ pub fn format_model_entry(entry: &list::ModelEntry) -> String {
     parts.join(" ")
 }
 
-fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> &'a list::ModelEntry {
+fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> Result<&'a list::ModelEntry, Error> {
     let selections: Vec<String> = models
         .iter()
         .map(format_model_entry)
@@ -175,33 +189,28 @@ fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> &'a list::Mod
             .items(&selections)
             .default(0)
             .interact()
-            .unwrap_or_else(|_| {
-                eprintln!("error: failed to read selection");
-                std::process::exit(1);
-            })
+            .map_err(|_| Error::IoError(std::io::Error::other("failed to read selection")))?
     } else {
-        select_model_non_interactive(&selections, tier)
+        select_model_non_interactive(&selections, tier)?
     };
 
-    &models[selection]
+    Ok(&models[selection])
 }
 
-fn select_model_non_interactive(selections: &[String], tier: &str) -> usize {
+fn select_model_non_interactive(selections: &[String], tier: &str) -> Result<usize, Error> {
     eprintln!("{}", selections.join("\n"));
     eprintln!();
     eprint!("Enter index for {} tier: ", tier);
     let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap_or_else(|_| {
-        eprintln!("error: failed to read input");
-        std::process::exit(1);
-    });
-    let index: usize = input.trim().parse().unwrap_or_else(|_| {
-        eprintln!("error: invalid index");
-        std::process::exit(1);
-    });
+    std::io::stdin()
+        .read_line(&mut input)
+        .map_err(|_| Error::IoError(std::io::Error::other("failed to read input")))?;
+    let index: usize = input
+        .trim()
+        .parse()
+        .map_err(|_| Error::ConfigError("invalid index".to_string()))?;
     if index >= selections.len() {
-        eprintln!("error: index out of range");
-        std::process::exit(1);
+        return Err(Error::ConfigError("index out of range".to_string()));
     }
-    index
+    Ok(index)
 }

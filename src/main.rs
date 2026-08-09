@@ -79,7 +79,7 @@ fn main() {
     if let Some(command) = &cli.command {
         match command {
             Commands::Models => {
-                watn::models::run_models(cli.set_small, cli.set_normal, cli.set_thinking);
+                run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
             }
             Commands::Provider => run_provider_setup_command(),
         }
@@ -131,8 +131,16 @@ fn main() {
                     eprintln!("{}", error);
                     std::process::exit(exit_code(&error));
                 }
-                watn::models::run_models(None, None, None);
-                return;
+                match watn::models::run_models_result(None, None, None) {
+                    watn::provider::setup::ModelSetupResult::Saved => return,
+                    watn::provider::setup::ModelSetupResult::Cancelled(cancellation) => {
+                        exit_setup_cancellation(cancellation);
+                    }
+                    watn::provider::setup::ModelSetupResult::Failed(error) => {
+                        eprintln!("error: failed to configure models: {}", error);
+                        std::process::exit(exit_code(&error));
+                    }
+                }
             }
             Ok(watn::provider::setup::ProviderSetupResult::Cancelled(cancellation)) => {
                 exit_setup_cancellation(cancellation);
@@ -316,6 +324,23 @@ fn run_provider_setup_command() {
             let code = exit_code(&e);
             eprintln!("{}", e);
             std::process::exit(code);
+        }
+    }
+}
+
+fn run_models_command(
+    set_small: Option<String>,
+    set_normal: Option<String>,
+    set_thinking: Option<String>,
+) {
+    match watn::models::run_models_result(set_small, set_normal, set_thinking) {
+        watn::provider::setup::ModelSetupResult::Saved => {}
+        watn::provider::setup::ModelSetupResult::Cancelled(cancellation) => {
+            exit_setup_cancellation(cancellation);
+        }
+        watn::provider::setup::ModelSetupResult::Failed(error) => {
+            eprintln!("error: failed to configure models: {}", error);
+            std::process::exit(exit_code(&error));
         }
     }
 }

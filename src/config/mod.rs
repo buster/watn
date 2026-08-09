@@ -124,13 +124,6 @@ pub fn provider_ready(config: &Config, provider_name: &str) -> bool {
         .is_ok()
 }
 
-pub fn resolve_endpoint(
-    _provider_name: &str,
-    provider_config: &ProviderConfig,
-) -> String {
-    provider_config.endpoint.clone()
-}
-
 pub fn resolve_model(
     config: &Config,
     tier: Option<&str>,
@@ -262,27 +255,8 @@ pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfi
         return expand_api_key(key);
     }
 
-    if provider_name == "openrouter" {
-        if let Ok(key) = std::env::var("OPENROUTER_API_KEY") {
-            if key.is_empty() {
-                return Err(Error::AuthError("api key not found for provider 'openrouter'".to_string()));
-            }
-            return Ok(key);
-        }
-    }
-
-    let env_var = format!("WATN_{}_API_KEY", provider_name.to_uppercase());
-    if let Ok(key) = std::env::var(&env_var) {
-        if key.is_empty() {
-            return Err(Error::AuthError(format!("api key not found for provider '{}'", provider_name)));
-        }
+    if let Some(key) = env::provider_api_key(provider_name) {
         return Ok(key);
-    }
-
-    if let Ok(key) = std::env::var("WATN_API_KEY") {
-        if !key.is_empty() {
-            return Ok(key);
-        }
     }
 
     Err(Error::AuthError(format!("api key not found for provider '{}'", provider_name)))

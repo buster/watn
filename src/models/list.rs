@@ -10,9 +10,23 @@ pub struct ModelEntry {
     pub supported_features: Vec<String>,
 }
 
-pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEntry>, Error> {
+pub fn models_url(endpoint: &str) -> String {
     let endpoint = crate::provider::transport::endpoint(endpoint);
-    let url = format!("{}/models", endpoint.trim_end_matches('/'));
+    format!("{}/models", endpoint.trim_end_matches('/'))
+}
+
+pub fn models_search_url(endpoint: &str, query: &str) -> String {
+    let endpoint = crate::provider::transport::endpoint(endpoint);
+    format!("{}/models?search={}", endpoint.trim_end_matches('/'), query)
+}
+
+pub fn models_page_url(endpoint: &str, page: u32, limit: u32) -> String {
+    let endpoint = crate::provider::transport::endpoint(endpoint);
+    format!("{}/models?page={}&limit={}", endpoint.trim_end_matches('/'), page, limit)
+}
+
+pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEntry>, Error> {
+    let url = models_url(endpoint);
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -121,9 +135,7 @@ pub fn search_models(
     query: &str,
     api_key: Option<&str>,
 ) -> Result<Vec<ModelEntry>, Error> {
-    let endpoint = crate::provider::transport::endpoint(endpoint);
-    let base = endpoint.trim_end_matches('/');
-    let url = format!("{}/models?search={}", base, query);
+    let url = models_search_url(endpoint, query);
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -189,9 +201,7 @@ pub fn fetch_models_page(
     limit: u32,
     api_key: Option<&str>,
 ) -> Result<Vec<ModelEntry>, Error> {
-    let endpoint = crate::provider::transport::endpoint(endpoint);
-    let base = endpoint.trim_end_matches('/');
-    let url = format!("{}/models?page={}&limit={}", base, page, limit);
+    let url = models_page_url(endpoint, page, limit);
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
