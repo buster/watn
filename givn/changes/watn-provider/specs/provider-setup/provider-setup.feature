@@ -125,7 +125,7 @@ Feature: Interactive provider setup
     Then the selected endpoint should be exactly "https://saved-openrouter.example/v1"
     And the built-in endpoint "https://openrouter.ai/api/v1" should not be selected
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicitly named environment variable is persisted and expanded at use time
     Given no provider is configured
     And environment variable CUSTOM_LLM_TOKEN is set to "sk-explicit-test"

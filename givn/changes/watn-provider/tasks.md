@@ -108,18 +108,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Consolidate built-in and configured provider resolution and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A saved OpenRouter endpoint takes precedence over the built-in endpoint`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): A saved OpenRouter endpoint takes precedence over the built-in endpoint`.
+  - Commit hash: `484a2c4`
 
 ## Scenario: An explicitly named environment variable is persisted and expanded at use time
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^An explicitly named environment variable is persisted and expanded at use time$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Validate arbitrary uppercase environment names, persist `${CUSTOM_LLM_TOKEN}`, expand it only when sending the request, and assert the secret is absent from config.
-  - Production files: `src/provider/setup.rs`, `src/config/env.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Share exact-reference parsing between setup and resolution and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^An explicitly named environment variable is persisted and expanded at use time$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because explicitly named environment-variable selection was initially undefined.
+- [x] GREEN: Validate arbitrary uppercase environment names, persist `${CUSTOM_LLM_TOKEN}`, expand it only when sending the request, and assert the secret is absent from config.
+  - Production files: `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Share exact-reference parsing between setup and resolution and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): An explicitly named environment variable is persisted and expanded at use time`.
   - Commit hash: _pending_
 

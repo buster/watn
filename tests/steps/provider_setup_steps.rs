@@ -132,6 +132,20 @@ fn provider_setup_chooses_environment(world: &mut WatnWorld, variable: String) {
     save_environment_draft(world, variable);
 }
 
+#[when(regex = r#"^provider setup chooses explicitly named environment variable \"([^\"]+)\"$"#)]
+fn provider_setup_chooses_explicit_environment(world: &mut WatnWorld, variable: String) {
+    save_environment_draft(world, variable);
+}
+
+#[when("I send a request through the configured provider")]
+fn send_request_through_configured_provider(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    let provider_name = config.defaults.provider.as_deref().expect("default provider");
+    let provider = config.providers.get(provider_name).expect("provider config");
+    let key = config::get_provider_api_key(provider_name, provider).expect("resolve API key");
+    world.pending_config.insert("resolved_key".to_string(), key);
+}
+
 #[then(regex = r#"^provider setup should return configured provider \"([^\"]+)\"$"#)]
 fn provider_setup_returns_provider(world: &mut WatnWorld, provider: String) {
     assert_eq!(
@@ -319,6 +333,10 @@ fn request_uses_implicit_openrouter(world: &mut WatnWorld) {
 
 #[then(regex = r#"^the API request should use API key \"([^\"]+)\"$"#)]
 fn api_request_uses_key(world: &mut WatnWorld, key: String) {
+    if let Some(resolved) = world.pending_config.get("resolved_key") {
+        assert_eq!(resolved, &key);
+        return;
+    }
     let id = world
         .pending_config
         .get("implicit_chat_mock")
