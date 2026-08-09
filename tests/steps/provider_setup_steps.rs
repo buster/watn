@@ -458,11 +458,13 @@ fn no_recognized_provider_environment(world: &mut WatnWorld) {
         world.env_vars.remove(name);
         std::env::remove_var(name);
     }
+    ensure_models_request_mock(world);
 }
 
 #[given("no supported provider environment variable is set")]
 fn no_supported_provider_environment(world: &mut WatnWorld) {
     no_recognized_provider_environment(world);
+    ensure_models_request_mock(world);
 }
 
 #[given(regex = r#"^the model catalog transport returns HTTP (\d+) for \"([^\"]+)\"$"#)]
