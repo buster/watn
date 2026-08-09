@@ -185,7 +185,7 @@ Feature: Interactive provider setup
     And the config file should not contain selected tier assignments
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: The explicit provider command ends without model setup
     Given no provider is configured
     When the explicit provider setup command saves endpoint "https://llm.example.com/v1" and credential "sk-custom-key"

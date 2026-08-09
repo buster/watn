@@ -180,18 +180,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Remove process exits from reusable model setup and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Model catalog failure after provider setup preserves the provider and sends no request`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Model catalog failure after provider setup preserves the provider and sends no request`.
+  - Commit hash: `dc10e64`
 
 ## Scenario: The explicit provider command ends without model setup
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^The explicit provider command ends without model setup$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Add the `watn provider` subcommand, require a TTY or return guidance status 1, save the provider, and exit without model discovery.
-  - Production files: `src/main.rs`, `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Keep explicit provider dispatch separate from automatic onboarding and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^The explicit provider command ends without model setup$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the explicit provider setup command step was initially undefined.
+- [x] GREEN: Add the `watn provider` subcommand, require a TTY or return guidance status 1, save the provider, and exit without model discovery.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Keep explicit provider dispatch separate from automatic onboarding and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): The explicit provider command ends without model setup`.
   - Commit hash: _pending_
 

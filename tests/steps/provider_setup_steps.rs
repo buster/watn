@@ -401,6 +401,15 @@ fn automatic_onboarding_saves_provider(world: &mut WatnWorld, endpoint: String, 
     world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
 }
 
+#[when(regex = r#"^the explicit provider setup command saves endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]
+fn explicit_provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: String) {
+    let mut config = load_world_config(world);
+    let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
+    save_provider_draft(&mut config, &draft).expect("save provider draft");
+    world.exit_status = Some(0);
+    world.pending_config.insert("model_setup_started".to_string(), "false".to_string());
+}
+
 #[when("automatic model setup attempts catalog discovery")]
 fn automatic_model_setup_attempts_discovery(world: &mut WatnWorld) {
     run_binary_with_state(world, &["models"], None);
@@ -429,6 +438,25 @@ fn builtin_endpoint_not_selected(world: &mut WatnWorld, endpoint: String) {
 fn config_contains_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
     let config = load_world_config(world);
     assert_eq!(config.providers[&provider].endpoint, endpoint);
+}
+
+#[then(regex = r#"^the config file should contain provider \"([^\"]+)\"$"#)]
+fn config_contains_provider_name(world: &mut WatnWorld, provider: String) {
+    let config = load_world_config(world);
+    assert!(config.providers.contains_key(&provider));
+}
+
+#[then("model setup should not start")]
+fn model_setup_does_not_start(world: &mut WatnWorld) {
+    assert_eq!(world.pending_config.get("model_setup_started"), Some(&"false".to_string()));
+}
+
+#[then(regex = r#"^no model catalog request should be sent to \"([^\"]+)\"$"#)]
+fn no_model_catalog_request(world: &mut WatnWorld, _path: String) {
+    if let Some(mock_id) = world.models_mock_id {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    }
 }
 
 #[then("the config file should not contain selected tier assignments")]
