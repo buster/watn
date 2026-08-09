@@ -308,5 +308,5 @@
   - Evidence: Full regular suite passed `43 scenarios (43 passed)`, `235 steps (235 passed)`.
 - [x] Run `cargo test --test features_runner -- --tags '@e2e and not @wip'` and record the full E2E suite result.
   - Evidence: Full E2E suite passed `34 scenarios (34 passed)`, `189 steps (189 passed)`; the E2E count is smaller than the all-scenario count.
-- [ ] Run `givn check review --change watn-provider` after implementation and confirm the change is ready for archive.
-  - Evidence: _pending_
+- [x] Run `givn check review --change watn-provider` after implementation and confirm the change is ready for archive.
+  - Evidence: `givn check review --change watn-provider` passed verify, verify-e2e, integrity, and review checks.
