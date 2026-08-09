@@ -575,6 +575,13 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
     assert!(httpmock::Mock::new(id, server).hits() > 0, "request did not carry expected API key {}", key);
 }
 
+#[then("the environment fallback values should not be used")]
+fn environment_fallback_values_not_used(world: &mut WatnWorld) {
+    let resolved = world.pending_config.get("resolved_key").expect("resolved key");
+    assert_ne!(resolved, "sk-env-different");
+    assert_ne!(resolved, "sk-generic-different");
+}
+
 #[then("the process should not initialize ratatui")]
 fn process_does_not_initialize_ratatui(world: &mut WatnWorld) {
     provider_setup_should_not_start(world);

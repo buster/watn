@@ -204,18 +204,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Keep TTY selection-source handling explicit and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Non-TTY first use prints setup guidance instead of starting ratatui`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Non-TTY first use prints setup guidance instead of starting ratatui`.
+  - Commit hash: `de4b007`
 
 ## Scenario: A literal saved credential is authoritative over environment fallback
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A literal saved credential is authoritative over environment fallback$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Treat a saved literal as authoritative and do not use provider-specific or generic environment fallback values when it exists.
-  - Production files: `src/config/env.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Keep fallback lookup limited to absent `api_key` values and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A literal saved credential is authoritative over environment fallback$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the fallback-exclusion assertion was initially undefined.
+- [x] GREEN: Treat a saved literal as authoritative and do not use provider-specific or generic environment fallback values when it exists.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Keep fallback lookup limited to absent `api_key` values and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): A literal saved credential is authoritative over environment fallback`.
   - Commit hash: _pending_
 

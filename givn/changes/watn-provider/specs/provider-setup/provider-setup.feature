@@ -207,7 +207,7 @@ Feature: Interactive provider setup
     And no model catalog request should be sent to "/models"
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: A literal saved credential is authoritative over environment fallback
     Given a configured provider "custom" with endpoint "https://llm.example.com/v1"
     And its saved api_key is "sk-saved-literal"
