@@ -15,6 +15,28 @@ fn provider_setup_accepts_endpoint(world: &mut WatnWorld, endpoint: String) {
         .insert("provider_endpoint".to_string(), endpoint);
 }
 
+#[when(regex = r#"^provider setup receives endpoint \"([^\"]+)\"$"#)]
+fn provider_setup_receives_endpoint(world: &mut WatnWorld, endpoint: String) {
+    let result = watn::provider::setup::normalize_endpoint(&endpoint);
+    match result {
+        Ok(normalized) => {
+            world
+                .pending_config
+                .insert("provider_endpoint".to_string(), normalized);
+            world.pending_config.remove("setup_error");
+        }
+        Err(error) => {
+            let message = match error {
+                watn::error::Error::ConfigError(message) => message,
+                other => other.to_string(),
+            };
+            world
+                .pending_config
+                .insert("setup_error".to_string(), message);
+        }
+    }
+}
+
 fn config_path(world: &mut WatnWorld) -> PathBuf {
     let dir = if let Some(dir) = &world.temp_dir {
         dir.path().to_path_buf()
@@ -128,6 +150,23 @@ fn config_contains_api_key(world: &mut WatnWorld, api_key: String) {
 fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     let content = std::fs::read_to_string(config_path(world)).expect("read test config");
     assert!(!content.contains(&secret), "config unexpectedly contained secret");
+}
+
+#[then(regex = r#"^provider setup should show validation error \"([^\"]+)\"$"#)]
+fn provider_setup_shows_validation_error(world: &mut WatnWorld, message: String) {
+    assert_eq!(world.pending_config.get("setup_error"), Some(&message));
+}
+
+#[then("provider setup should not return a configured provider")]
+fn provider_setup_does_not_return_provider(world: &mut WatnWorld) {
+    assert!(!world.pending_config.contains_key("provider_name"));
+}
+
+#[then("the config file should not contain a provider entry for the attempted setup")]
+fn config_has_no_attempted_provider(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    assert!(!config.providers.contains_key("custom"));
+    assert!(!config.providers.contains_key("openrouter"));
 }
 
 fn rebuild_saved_provider_config(world: &mut WatnWorld) {

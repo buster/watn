@@ -60,18 +60,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Separate implicit readiness from explicit request resolution and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A saved provider with a default model skips automatic provider setup`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): A saved provider with a default model skips automatic provider setup`.
+  - Commit hash: `aca8cb2`
 
 ## Scenario: Invalid endpoint remains in provider setup for correction
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Invalid endpoint remains in provider setup for correction$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Validate HTTP/HTTPS endpoints, keep invalid input in the setup state, emit the exact validation message, and avoid writing a provider entry.
-  - Production files: `src/provider/setup.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Centralize endpoint validation and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Invalid endpoint remains in provider setup for correction$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because `provider setup receives endpoint` was initially undefined.
+- [x] GREEN: Validate HTTP/HTTPS endpoints, keep invalid input in the setup state, emit the exact validation message, and avoid writing a provider entry.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Centralize endpoint validation and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Invalid endpoint remains in provider setup for correction`.
   - Commit hash: _pending_
 

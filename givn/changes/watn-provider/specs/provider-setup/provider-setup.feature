@@ -87,7 +87,7 @@ Feature: Interactive provider setup
     And the API request should be sent to "https://llm.example.com/v1/chat/completions"
     And the request should use model "custom-model"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Invalid endpoint remains in provider setup for correction
     Given no provider is configured
     When provider setup receives endpoint "not a URL"
