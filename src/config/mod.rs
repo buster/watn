@@ -242,6 +242,9 @@ fn environment_reference(value: &str) -> Option<&str> {
 }
 
 pub fn expand_api_key(value: &str) -> Result<String, Error> {
+    if value.trim().is_empty() {
+        return Err(Error::AuthError("api key is empty".to_string()));
+    }
     let Some(name) = environment_reference(value) else {
         return Ok(value.to_string());
     };

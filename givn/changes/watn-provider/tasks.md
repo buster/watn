@@ -273,16 +273,16 @@
   - Evidence: Targeted E2E GREEN run passed: `1 scenario (1 passed)`, `15 steps (15 passed)`; PTY transition, tier persistence, model catalog hit, and no-chat behavior were asserted.
 - [x] REFACTOR: Add bounded PTY wait/kill handling and make the automatic transition assertion deterministic without replacing the terminal interaction; rerun the named E2E scenario.
   - Evidence: Targeted E2E REFACTOR run passed: `1 scenario (1 passed)`, `15 steps (15 passed)`.
-- [ ] COMMIT: Commit atomically with message `test(e2e): First normal use starts provider setup and then model setup`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `test(e2e): First normal use starts provider setup and then model setup`.
+  - Commit hash: `ff77081`
 
 ## Final Verification
 
-- [ ] Run `givn lint --change watn-provider` with no remaining WIP findings.
-  - Evidence: _pending_
-- [ ] Run `cargo test --test features_runner -- --tags 'not @wip and not @e2e'` and record the full regular suite result.
-  - Evidence: _pending_
-- [ ] Run `cargo test --test features_runner -- --tags '@e2e and not @wip'` and record the full E2E suite result.
-  - Evidence: _pending_
+- [x] Run `givn lint --change watn-provider` with no remaining WIP findings.
+  - Evidence: `givn lint --change watn-provider` completed cleanly with no WIP findings.
+- [x] Run `cargo test --test features_runner -- --tags 'not @wip and not @e2e'` and record the full regular suite result.
+  - Evidence: Full regular suite passed `43 scenarios (43 passed)`, `235 steps (235 passed)`.
+- [x] Run `cargo test --test features_runner -- --tags '@e2e and not @wip'` and record the full E2E suite result.
+  - Evidence: Full E2E suite passed `34 scenarios (34 passed)`, `189 steps (189 passed)`; the E2E count is smaller than the all-scenario count.
 - [ ] Run `givn check review --change watn-provider` after implementation and confirm the change is ready for archive.
   - Evidence: _pending_

@@ -111,7 +111,9 @@ fn configured_default_provider_with_model(w: &mut WatnWorld, provider: String, m
 }
 
 #[given("no arguments and no stdin")]
-fn no_args_no_stdin(_w: &mut WatnWorld) {}
+fn no_args_no_stdin(w: &mut WatnWorld) {
+    w.stdin_input = Some(String::new());
+}
 
 #[given(regex = r#"^pricing configured at "\$2\.50/1M input tokens" per model$"#)]
 fn pricing_configured_given(w: &mut WatnWorld) {
@@ -205,7 +207,10 @@ fn provider_without_key(w: &mut WatnWorld, _provider: String) {
 }
 
 #[given(regex = r#"^a provider "([^"]+)" with no api_key configured and no env var set$"#)]
-fn provider_no_key_no_env(_w: &mut WatnWorld, _provider: String) {}
+fn provider_no_key_no_env(w: &mut WatnWorld, provider: String) {
+    w.raw_config = Some(format!("[defaults]\nprovider = \"{}\"\n", provider));
+    w.env_vars.remove("WATN_OPENAI_API_KEY");
+}
 
 #[given(regex = r#"^a LiteLLM endpoint at "([^"]+)"$"#)]
 fn litellm_endpoint(w: &mut WatnWorld, url: String) {
