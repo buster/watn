@@ -16,3 +16,26 @@ options, the decision outcome, and consequences.
 | ADR-0008 | Template config generated from code | [docs/adr/0008-template-generated-from-code.md](../adr/0008-template-generated-from-code.md) |
 | ADR-0009 | Server-side filtering for paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
 | ADR-0010 | Keyboard-driven dialog for model and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |
+| ADR-0011 | Interactive provider onboarding with environment-backed credentials | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
+
+## ADR-0011 summary
+
+ADR-0011 chooses a TTY-gated ratatui/crossterm provider setup state machine
+with typed provider/model results and environment-backed credential references.
+The considered dialoguer alternative is intentionally recorded: dialoguer is
+adequate for linear prompts, but does not provide the same renderer boundary,
+inline validation, masking, terminal restoration, and review-state contract.
+
+The onboarding names are fixed: normalized OpenRouter uses `openrouter`, and
+every other endpoint uses `custom`. A rerun replaces the selected fixed entry,
+so an existing manually maintained `openrouter` or `custom` entry is an
+intentional collision. The default-provider field and that one entry change;
+unrelated providers, tiers, pricing, LiteLLM settings, and other config remain
+unchanged. This fixed-name consequence is part of the decision, not an
+implementation detail.
+
+The same ADR records the TTY/non-TTY boundary, explicit-provider error
+preservation, saved credential precedence, direct-write `0600` enforcement
+without an atomic rename promise, typed cancellation, no-resume automatic
+completion, and the ephemeral E2E HTTP construction override for both
+`/models` and `/chat/completions`.

@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use crate::config::types::*;
 use crate::error::Error;
+use crate::provider::setup::ProviderDraft;
 
 pub fn xdg_config_path() -> PathBuf {
     let base = if let Ok(dir) = std::env::var("XDG_CONFIG_HOME") {
@@ -191,6 +192,19 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
     }
     std::fs::write(&config_path, content)
         .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))
+}
+
+pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result<(), Error> {
+    config.defaults.provider = Some(draft.name.clone());
+    config.providers.insert(
+        draft.name.clone(),
+        ProviderConfig {
+            endpoint: draft.endpoint.clone(),
+            api_key: Some(draft.api_key.clone()),
+            default_model: None,
+        },
+    );
+    save_config(config)
 }
 
 pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfig) -> Result<String, Error> {

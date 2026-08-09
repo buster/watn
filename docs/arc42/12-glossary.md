@@ -9,7 +9,7 @@
 | XDG | XDG Base Directory Specification — standard for config (`~/.config`), data (`~/.local/share`), and cache (`~/.cache`) paths |
 | LiteLLM | A proxy that exposes multiple LLM providers behind a single OpenAI-compatible API and provides a `/models` endpoint for discovery |
 | Raw output | Plain text without ANSI escape codes; suitable for scripting and pipes |
-| TTY detection | Runtime check of whether stdout is a terminal (interactive) or a pipe (scripting) |
+| TTY detection | Runtime check of whether stdin is a terminal (interactive) or a pipe (scripting); automatic onboarding requires an implicit selection and a TTY |
 | Tokens/second | Completion tokens divided by wall-clock seconds from first to last SSE chunk |
 | Pricing | Per-model cost configuration ($/1M input tokens, $/1M output tokens) stored in config |
 | Reasoning | Chain-of-thought or step-by-step explanation produced by the LLM alongside the final answer. Exposed via the API's `reasoning` field in the streaming delta. Displayed on stderr when `-v`/`--verbose` is set. |
@@ -21,4 +21,12 @@
 | Per-word filter | Order-independent matching where every whitespace-separated word of the query must appear somewhere in the model id |
 | Search query | Free-text filter sent to the provider as `GET /models?search=<query>` to narrow a large model catalog |
 | Stale-result guard | A generation counter that prevents an older, slower API response from overwriting newer suggestions already displayed |
-| PTY | Pseudo-terminal — a virtual terminal device used in E2E tests to drive raw-mode terminal applications as a real user would |
+| PTY | Pseudo-terminal — a virtual terminal device used in E2E tests to drive the ratatui/crossterm terminal interface as a real user would |
+| Provider readiness | Local determination that a provider endpoint and usable literal or environment-backed credential are available without contacting the provider |
+| Environment-backed credential | A credential stored in config as a reference such as `${OPENROUTER_API_KEY}` and resolved from the process environment only when used |
+| Provider setup | The interactive ratatui flow started by `watn provider` to collect an endpoint and credential source |
+| First-run onboarding | The TTY-only automatic provider setup followed by model setup when an implicitly selected provider is not ready; successful setup ends before the original request |
+| Fixed provider name | The stable onboarding name `openrouter` for the normalized OpenRouter endpoint or `custom` for every other endpoint; reruns replace only that entry |
+| Setup result | A typed provider/model outcome: configured or saved, cancelled by Escape/Ctrl-C, or failed without lower-level process exit |
+| Ephemeral transport override | A test-only endpoint selected when HTTP clients are constructed; it is not persisted and is not used for readiness |
+| Automatic setup completion | Successful first-use provider and model setup that exits after tier selection without sending the original question |

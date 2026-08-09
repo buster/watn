@@ -1,7 +1,7 @@
 verify:
-  command: "cargo test --test features_runner -- --tags 'not @wip'"
+  command: "cargo test --test features_runner -- --tags 'not @wip and not @e2e'"
   e2e_command: "cargo test --test features_runner -- --tags '@e2e and not @wip'"
 
 coverage:
-  non_e2e_command: "mkdir -p coverage && cargo llvm-cov clean --workspace && cargo llvm-cov run --bin watn --no-report -- --version >/dev/null && cargo llvm-cov test --no-clean --test features_runner --cobertura --output-path coverage/non-e2e-cobertura.xml -- --tags 'not @wip'"
-  e2e_command: "mkdir -p coverage && cargo llvm-cov clean --workspace && cargo llvm-cov run --bin watn --no-report -- --version >/dev/null && cargo llvm-cov test --no-clean --test features_runner --cobertura --output-path coverage/e2e-cobertura.xml -- --tags '@e2e and not @wip'"
+  non_e2e_command: "mkdir -p coverage/profraw && cargo llvm-cov clean --workspace && LLVM_PROFILE_FILE=coverage/profraw/%p-%m.profraw cargo llvm-cov run --bin watn --no-report -- --version >/dev/null && LLVM_PROFILE_FILE=coverage/profraw/%p-%m.profraw cargo llvm-cov test --no-clean --test features_runner --cobertura --output-path coverage/non-e2e-cobertura.xml -- --tags 'not @wip and not @e2e'"
+  e2e_command: "mkdir -p coverage/profraw && cargo llvm-cov clean --workspace && LLVM_PROFILE_FILE=coverage/profraw/%p-%m.profraw cargo llvm-cov run --bin watn --no-report -- --version >/dev/null && LLVM_PROFILE_FILE=coverage/profraw/%p-%m.profraw cargo llvm-cov test --no-clean --test features_runner --cobertura --output-path coverage/e2e-cobertura.xml -- --tags '@e2e and not @wip'"

@@ -7,17 +7,21 @@ graph TB
     CLI["CLI<br/>(clap dispatch)"]
     Config["Config<br/>(layered merge)"]
     Provider["Provider<br/>(trait + adapters)"]
+    Setup["Provider Setup<br/>(ratatui onboarding)"]
     Output["Output<br/>(metadata + command)"]
     Models["Models<br/>(explorer)"]
     Exec["Exec<br/>(command execution)"]
 
     CLI --> Config
     CLI --> Provider
+    CLI --> Setup
     CLI --> Output
     CLI --> Models
     CLI --> Exec
     Provider --> Config
     Models --> Config
+    Setup --> Config
+    Setup --> Models
     Exec --> Config
 ```
 
@@ -26,8 +30,9 @@ graph TB
 | CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
 | Config | Load and merge from built-in defaults, user config file, env, CLI |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait |
+| Provider Setup | Guide endpoint and credential selection in a TTY, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
 | Output | Format response with metadata header (model, tok/s, cost) + command body |
-| Models | Query LiteLLM `/models` endpoint; interactive tier selection via dialoguer; persist to config |
+| Models | Query the provider `/models` endpoint; interactive tier selection via the existing dialoguer/ratatui paths; return a typed setup result and persist tiers through the direct config writer |
 | Exec | Print command, prompt confirmation, invoke `sh -c` if confirmed |
 
 ## Level 2 — Key building blocks
@@ -50,6 +55,8 @@ graph TB
 |---|---|
 | `ConfigLoader` | Ordered chain: defaults → user config → env → CLI overrides |
 | `EnvReader` | Read `WATN_*` environment variables |
+| `ProviderReadiness` | Decide locally whether a configured provider and credential can be resolved without probing the network or consulting the E2E transport override |
+| `CredentialResolver` | Apply saved-literal/reference precedence, expand a complete `${VARIABLE}` reference at request or model-discovery time, and fall back only when `api_key` is absent |
 | `Config` struct | Serde-deserializable root config with `providers`, `tiers`, `pricing`, `litellm` |
 | `AutoInit` | On first run (no config file exists), writes a commented-out template to the standard XDG path before proceeding |
 
@@ -61,9 +68,9 @@ graph TB
 |---|---|
 | `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response |
 | `SettingsDialog` | Ratatui keyboard-driven dialog: walks small/normal/thinking in a guided sequence; per level shows filter, highlighted model list, and reasoning-strength selector; arrow/page keys browse, Enter advances, Escape goes back, confirm persists choices |
-| `ModelPicker` | Raw-terminal autosuggest loop (legacy interactive path): reads keystrokes, dispatches debounced search requests, renders live suggestion list with stale-result guard |
+| `ModelPicker` | Shared model-search and local-filter logic used by the dialog and test seam; remote search results use a stale-result guard |
 | `TierSelector` | Fallback interactive prompts for non-dialog paths |
-| `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths to user config file |
+| `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths through the existing direct writer, enforcing Unix mode `0600` after every save |
 
 ### Exec
 

@@ -1,0 +1,279 @@
+# Tasks: watn-provider
+
+## Setup
+
+- [x] Add the globally registered capability step module at `tests/steps/provider_setup_steps.rs`; do not create a separate E2E step namespace.
+- [x] Keep the configured runner commands aligned with `design.md`:
+  - `cargo test --test features_runner -- --tags 'not @wip and not @e2e'`
+  - `cargo test --test features_runner -- --tags '@e2e and not @wip'`
+- [x] Prove strict mode with `.fail_on_skipped()` by binding one new step to `unimplemented!("provider setup step not implemented")`, running `cargo test --test features_runner -- --name '^Configure a custom endpoint with a pasted credential$'`, and recording the required non-zero exit.
+  - Evidence: `cargo test --test features_runner -- --name '^Configure a custom endpoint with a pasted credential$'` exited non-zero; the targeted scenario failed at `tests/steps/provider_setup_steps.rs` with `not implemented: provider setup step not implemented`.
+- [x] Prove the runner loads both permanent and change feature files and prove the E2E filter is distinct. Record counts for the regular command, the E2E command, and `cargo test --test features_runner -- --tags 'not @wip'`; the E2E count must be smaller than the all-non-WIP count.
+  - Evidence: regular `24 scenarios (24 passed)`, E2E `32 scenarios (32 passed)`, all non-WIP `56 scenarios (56 passed)`.
+- [x] Create the renderer-independent provider setup state/result seam and PTY helper hooks without empty step bodies.
+  - Evidence: `src/provider/setup.rs` defines typed provider/model setup results and cancellation values; existing persistent PTY helpers are reused; the provider step module contains a failing RED stub, not an empty body.
+- [ ] Include setup changes in the first scenario commit.
+  - Commit hash: _pending_
+
+## Scenario: Configure a custom endpoint with a pasted credential
+
+- [x] RED: Remove `@wip` from this scenario only, bind its steps with real or failing stubs, and run `cargo test --test features_runner -- --name '^Configure a custom endpoint with a pasted credential$'`; record a non-zero strict-runner result.
+  - Evidence: Targeted run exited non-zero at the `provider setup accepts endpoint` step with `not implemented: provider setup step not implemented`.
+- [ ] GREEN: Implement endpoint and non-empty literal credential collection, fixed provider name `custom`, default-provider persistence, and exact TOML assertions.
+  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Simplify the setup/config seam without changing the persisted endpoint, provider name, or literal credential; rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with message `feat(provider-setup): Configure a custom endpoint with a pasted credential`.
+  - Commit hash: _pending_
+
+## Scenario: Configure a custom provider with the generic environment variable
+
+- [ ] RED: Remove `@wip` from this scenario only, bind the provider setup state steps, and run `cargo test --test features_runner -- --name '^Configure a custom provider with the generic environment variable$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Suggest `WATN_API_KEY` for custom endpoints, persist `${WATN_API_KEY}`, and assert the resolved secret is not written.
+  - Production files: `src/provider/setup.rs`, `src/config/env.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Consolidate environment-source validation and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Configure a custom provider with the generic environment variable`.
+  - Commit hash: _pending_
+
+## Scenario: A recognized environment credential skips automatic provider setup
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A recognized environment credential skips automatic provider setup$'`; record the strict failure.
+  - Evidence: _pending_
+- [ ] GREEN: Detect `OPENROUTER_API_KEY` as a ready implicit provider, bypass ratatui, route the request through the mock transport, and assert no terminal initialization.
+  - Production files: `src/config/env.rs`, `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Keep readiness detection network-free and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A recognized environment credential skips automatic provider setup`.
+  - Commit hash: _pending_
+
+## Scenario: A saved provider with a default model skips automatic provider setup
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A saved provider with a default model skips automatic provider setup$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Resolve a saved custom provider and its default model without onboarding, assert the exact `/chat/completions` URL, and preserve the existing explicit request path.
+  - Production files: `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Separate implicit readiness from explicit request resolution and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A saved provider with a default model skips automatic provider setup`.
+  - Commit hash: _pending_
+
+## Scenario: Invalid endpoint remains in provider setup for correction
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Invalid endpoint remains in provider setup for correction$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Validate HTTP/HTTPS endpoints, keep invalid input in the setup state, emit the exact validation message, and avoid writing a provider entry.
+  - Production files: `src/provider/setup.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Centralize endpoint validation and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Invalid endpoint remains in provider setup for correction`.
+  - Commit hash: _pending_
+
+## Scenario: Empty credential remains in provider setup for correction
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Empty credential remains in provider setup for correction$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Reject empty literal credentials, show the exact validation message, preserve the setup state, and avoid partial config writes.
+  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Reuse credential validation for literal and environment sources and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Empty credential remains in provider setup for correction`.
+  - Commit hash: _pending_
+
+## Scenario: A missing saved environment reference fails authentication without a request
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A missing saved environment reference fails authentication without a request$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Expand exact `${MISSING_WATN_KEY}` references at use time, return exit 2 with the variable name in the diagnostic, and prevent transport construction/request dispatch.
+  - Production files: `src/config/mod.rs`, `src/config/env.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Keep missing-reference handling distinct from fallback lookup and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A missing saved environment reference fails authentication without a request`.
+  - Commit hash: _pending_
+
+## Scenario: A saved OpenRouter endpoint takes precedence over the built-in endpoint
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A saved OpenRouter endpoint takes precedence over the built-in endpoint$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Make OpenRouter resolution honor a saved provider entry before the built-in endpoint and assert the exact selected endpoint without a network probe.
+  - Production files: `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Consolidate built-in and configured provider resolution and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A saved OpenRouter endpoint takes precedence over the built-in endpoint`.
+  - Commit hash: _pending_
+
+## Scenario: An explicitly named environment variable is persisted and expanded at use time
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^An explicitly named environment variable is persisted and expanded at use time$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Validate arbitrary uppercase environment names, persist `${CUSTOM_LLM_TOKEN}`, expand it only when sending the request, and assert the secret is absent from config.
+  - Production files: `src/provider/setup.rs`, `src/config/env.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Share exact-reference parsing between setup and resolution and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): An explicitly named environment variable is persisted and expanded at use time`.
+  - Commit hash: _pending_
+
+## Scenario: Trailing slashes are normalized before persistence and requests
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Trailing slashes are normalized before persistence and requests$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Trim trailing slashes before provider classification, persistence, `/models`, and `/chat/completions` URL construction.
+  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `src/provider/openai_compat.rs`, `src/models/list.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Use one endpoint-normalization helper across model and chat clients and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Trailing slashes are normalized before persistence and requests`.
+  - Commit hash: _pending_
+
+## Scenario: Rerunning provider setup preserves unrelated configuration
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Rerunning provider setup preserves unrelated configuration$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Replace only the fixed `custom` provider entry, set it as default, and preserve unrelated providers, tiers, pricing, LiteLLM settings, metadata, and fields.
+  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Make provider replacement explicit and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Rerunning provider setup preserves unrelated configuration`.
+  - Commit hash: _pending_
+
+## Scenario: Escape cancellation preserves the existing provider configuration
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Escape cancellation preserves the existing provider configuration$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Return Escape cancellation as status 1, avoid saving drafts, preserve the config byte-for-byte, and send no request.
+  - Production files: `src/provider/setup.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Ensure cancellation ownership remains at the CLI boundary and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Escape cancellation preserves the existing provider configuration`.
+  - Commit hash: _pending_
+
+## Scenario: Ctrl-C cancellation preserves the existing provider configuration
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Ctrl-C cancellation preserves the existing provider configuration$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Return Ctrl-C cancellation as status 130, restore the terminal, preserve the config byte-for-byte, and send no request.
+  - Production files: `src/provider/setup.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Share terminal cleanup between Escape and Ctrl-C paths and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Ctrl-C cancellation preserves the existing provider configuration`.
+  - Commit hash: _pending_
+
+## Scenario: Model catalog failure after provider setup preserves the provider and sends no request
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Model catalog failure after provider setup preserves the provider and sends no request$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Save the provider before model discovery, return typed model failure status 2, preserve the provider, omit tiers, and do not dispatch the original chat request.
+  - Production files: `src/main.rs`, `src/models/mod.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Remove process exits from reusable model setup and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Model catalog failure after provider setup preserves the provider and sends no request`.
+  - Commit hash: _pending_
+
+## Scenario: The explicit provider command ends without model setup
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^The explicit provider command ends without model setup$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Add the `watn provider` subcommand, require a TTY or return guidance status 1, save the provider, and exit without model discovery.
+  - Production files: `src/main.rs`, `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Keep explicit provider dispatch separate from automatic onboarding and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): The explicit provider command ends without model setup`.
+  - Commit hash: _pending_
+
+## Scenario: Non-TTY first use prints setup guidance instead of starting ratatui
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Non-TTY first use prints setup guidance instead of starting ratatui$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Gate implicit onboarding on stdin TTY status, print actionable `watn provider` and config-path guidance, exit 1, and make no model or chat request.
+  - Production files: `src/main.rs`, `src/provider/setup.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Keep TTY selection-source handling explicit and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Non-TTY first use prints setup guidance instead of starting ratatui`.
+  - Commit hash: _pending_
+
+## Scenario: A literal saved credential is authoritative over environment fallback
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A literal saved credential is authoritative over environment fallback$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Treat a saved literal as authoritative and do not use provider-specific or generic environment fallback values when it exists.
+  - Production files: `src/config/env.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Keep fallback lookup limited to absent `api_key` values and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A literal saved credential is authoritative over environment fallback`.
+  - Commit hash: _pending_
+
+## Scenario: Explicit provider selection from the environment preserves missing-key errors
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Explicit provider selection from the environment preserves missing-key errors$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Treat `WATN_PROVIDER` as explicit selection, bypass automatic onboarding, preserve missing-key exit 2, and prevent any request.
+  - Production files: `src/config/env.rs`, `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Centralize selection-source detection and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Explicit provider selection from the environment preserves missing-key errors`.
+  - Commit hash: _pending_
+
+## Scenario: Saving provider configuration secures a world-readable file
+
+- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Saving provider configuration secures a world-readable file$'`; record non-zero output.
+  - Evidence: _pending_
+- [ ] GREEN: Apply Unix mode `0600` after every direct config write, repair an existing `0644` file, and retain direct-write semantics without claiming atomic replacement.
+  - Production files: `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Reuse one permission-enforcement helper for template, provider, and model saves and rerun the named scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Saving provider configuration secures a world-readable file`.
+  - Commit hash: _pending_
+
+## Scenario: Configure OpenRouter with an environment-backed credential
+
+- [ ] RED: Remove `@wip` from this scenario only, add PTY step bindings in the global provider capability module, and run `cargo test --test features_runner -- --name '^Configure OpenRouter with an environment-backed credential$'`; record a non-zero E2E result.
+  - Evidence: _pending_
+- [ ] GREEN: Drive the real `watn provider` terminal flow with `portable-pty`, persist exact OpenRouter endpoint and `${OPENROUTER_API_KEY}`, route the subsequent chat through the ephemeral transport override, and assert terminal/request output as primary evidence.
+  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `src/provider/openai_compat.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Stabilize PTY timing, cleanup, and transport assertions without weakening the real-interface checks; rerun the named E2E scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `test(e2e): Configure OpenRouter with an environment-backed credential`.
+  - Commit hash: _pending_
+
+## Scenario: First normal use starts provider setup and then model setup
+
+- [ ] RED: Remove `@wip` from this scenario only, drive it through a persistent PTY, and run `cargo test --test features_runner -- --name '^First normal use starts provider setup and then model setup$'`; record a non-zero E2E result.
+  - Evidence: _pending_
+- [ ] GREEN: Gate implicit TTY onboarding, keep provider and model dialogs in one real CLI session, route `/models` through the ephemeral twin, persist provider plus tiers, exit after model selection, and assert no original chat request.
+  - Production files: `src/main.rs`, `src/provider/setup.rs`, `src/models/mod.rs`, `src/config/mod.rs`, `src/models/list.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: _pending_
+- [ ] REFACTOR: Add bounded PTY wait/kill handling and make the automatic transition assertion deterministic without replacing the terminal interaction; rerun the named E2E scenario.
+  - Evidence: _pending_
+- [ ] COMMIT: Commit atomically with message `test(e2e): First normal use starts provider setup and then model setup`.
+  - Commit hash: _pending_
+
+## Final Verification
+
+- [ ] Run `givn lint --change watn-provider` with no remaining WIP findings.
+  - Evidence: _pending_
+- [ ] Run `cargo test --test features_runner -- --tags 'not @wip and not @e2e'` and record the full regular suite result.
+  - Evidence: _pending_
+- [ ] Run `cargo test --test features_runner -- --tags '@e2e and not @wip'` and record the full E2E suite result.
+  - Evidence: _pending_
+- [ ] Run `givn check review --change watn-provider` after implementation and confirm the change is ready for archive.
+  - Evidence: _pending_

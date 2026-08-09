@@ -1,5 +1,6 @@
 pub mod openai_compat;
 pub mod registry;
+pub mod setup;
 
 use crate::error::Error;
 

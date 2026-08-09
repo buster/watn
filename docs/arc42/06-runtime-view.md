@@ -243,3 +243,76 @@ sequenceDiagram
 ```
 
 **Notes:** Missing files are silently skipped. Malformed TOML produces exit code 1 with a parse-error diagnostic on stderr.
+
+## Scenario: First normal use with no recognized provider
+
+**Trigger:** User runs `watn "hello"` without a configured provider or supported
+provider credential environment variable and provider selection is implicit.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant CLI as watn CLI
+    participant Setup as Provider Setup
+    participant Config as Config
+    participant Models as Model Setup
+    participant Twin as OpenAI-compatible endpoint
+
+    User->>CLI: watn "hello"
+    CLI->>Config: load config and inspect provider readiness
+    Config-->>CLI: Missing
+    alt stdin is not a TTY
+        CLI-->>User: actionable `watn provider` and config-path guidance
+        CLI-->>User: exit 1; no ratatui and no network request
+    else stdin is a TTY
+        CLI->>Setup: open ratatui provider flow
+        User->>Setup: accept OpenRouter endpoint and enter credential source
+        Setup->>Config: save endpoint and literal or `${VARIABLE}` credential
+        CLI->>Models: start existing model setup in-process
+        Models->>Twin: GET /models
+        Twin-->>Models: model catalog
+        User->>Models: select small, normal, and thinking models
+        Models->>Config: save tier assignments
+        CLI-->>User: setup complete; exit 0
+        Note over CLI: original question is not sent; user reruns it
+    end
+```
+
+**Steps:**
+1. Load the config and check actual provider data plus recognized environment
+   variables; do not use a network probe for readiness.
+2. If stdin is not a TTY, print actionable setup guidance and exit 1 without
+   initializing ratatui.
+3. If stdin is a TTY, open the provider setup dialog when no implicit provider
+   is ready.
+4. Save the endpoint and either the literal credential or the `${VARIABLE}`
+   reference without printing the resolved secret.
+5. Invoke the existing model setup function in the same process and terminal.
+6. Save all three model tiers and exit successfully. Do not send or resume the
+   original question.
+
+## Scenario: Explicit provider setup
+
+**Trigger:** User runs `watn provider`.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant CLI as watn CLI
+    participant Setup as Provider Setup
+    participant Config as Config
+
+    User->>CLI: watn provider
+    CLI->>Setup: open ratatui provider flow
+    Setup-->>User: OpenRouter endpoint default and credential-source choices
+    User->>Setup: accept or edit endpoint; choose literal or environment source
+    Setup->>Config: save default provider and credential representation
+    Config-->>Setup: save result
+    Setup-->>CLI: configured
+    CLI-->>User: completion status
+```
+
+The explicit command ends after provider configuration. It does not invoke
+model setup; only the automatic first-use TTY path performs that chain. An
+explicit `--provider` or `WATN_PROVIDER` selection never enters automatic
+onboarding and retains normal unknown-provider and missing-key errors.

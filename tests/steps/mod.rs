@@ -2,6 +2,7 @@ pub mod ask_steps;
 pub mod config_steps;
 pub mod models_steps;
 pub mod providers_steps;
+pub mod provider_setup_steps;
 
 use std::path::PathBuf;
 

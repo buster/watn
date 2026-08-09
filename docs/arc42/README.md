@@ -3,6 +3,10 @@
 This directory contains the project's arc42 architecture documentation.
 Maintained by the `arc42-docs` givn artifact — updated with each change via `givn`.
 
+The current architecture includes TTY-gated provider onboarding through
+`watn provider`, environment-backed credentials, and automatic first-use
+provider/model setup that stops before the original request.
+
 | Chapter | File | Description |
 |---|---|---|
 | 1 | [Introduction and Goals](01-introduction-and-goals.md) | Requirements, quality goals, stakeholders |
