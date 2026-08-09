@@ -51,6 +51,11 @@ generated command to stdout and metadata (model, tokens/s, cost) to stderr.
 Layered config stack: built-in defaults → XDG config file → environment
 variables → CLI flags. Config file is TOML.
 
+Run `watn provider` in a terminal to configure an OpenAI-compatible endpoint.
+OpenRouter is the default endpoint. Use `OPENROUTER_API_KEY` or choose another
+environment variable to keep the credential out of the config file; the saved
+config stores a reference such as `${OPENROUTER_API_KEY}`.
+
 ## Development
 
 ```
@@ -59,9 +64,9 @@ cargo test --test features_runner
 
 ## Coverage
 
-[![Coverage: 77.8%](https://img.shields.io/badge/coverage-77.8%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+[![Coverage: 51.6%](https://img.shields.io/badge/coverage-51.6%25-brightgreen)](coverage/non-e2e-cobertura.xml)
 
-Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `583/749` lines (`77.8%`); the E2E subset covers `465/749` lines (`62.1%`).
+Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `872/1689` lines (`51.6%`); the E2E subset covers `1163/1689` lines (`68.9%`).
 
 ```sh
 mkdir -p coverage
@@ -69,7 +74,7 @@ cargo llvm-cov clean --workspace
 cargo llvm-cov run --bin watn --no-report -- --version
 cargo llvm-cov test --no-clean --test features_runner \
   --cobertura --output-path coverage/non-e2e-cobertura.xml \
-  -- --tags 'not @wip'
+  -- --tags 'not @wip and not @e2e'
 ```
 
 ## License
@@ -77,6 +82,6 @@ cargo llvm-cov test --no-clean --test features_runner \
 GPL-3.0-or-later
 
 <!-- givn:begin:coverage -->
-Line coverage: 73% (1817/2474)
+Line coverage: 60% (2035/3378)
 Branch coverage: 0% (0/0)
 <!-- givn:end:coverage -->
