@@ -8,6 +8,7 @@ use std::path::PathBuf;
 
 use httpmock::{Method, MockServer};
 use regex::Regex;
+use std::sync::{Arc, Mutex};
 
 use crate::MockServerWrap;
 use std::io::{Read, Write};
@@ -533,7 +534,7 @@ pub(crate) fn run_binary_pty(
 pub(crate) struct PtySession {
     pub child: Box<dyn portable_pty::Child + Send + Sync>,
     pub writer: Option<Box<dyn Write + Send>>,
-    pub output_rx: Option<std::sync::mpsc::Receiver<Vec<u8>>>,
+    pub output_buffer: Arc<Mutex<Vec<u8>>>,
     pub finished: bool,
 }
 
@@ -542,7 +543,7 @@ impl std::fmt::Debug for PtySession {
         f.debug_struct("PtySession")
             .field("child", &self.child)
             .field("writer", &self.writer.is_some())
-            .field("output_rx", &self.output_rx.is_some())
+            .field("output_buffer", &self.output_buffer.lock().map(|buffer| buffer.len()).unwrap_or(0))
             .field("finished", &self.finished)
             .finish()
     }
@@ -574,6 +575,9 @@ pub(crate) fn start_pty_session(
     cmd.env_remove("WATN_OPENAI_API_KEY");
     cmd.env_remove("WATN_PROVIDER");
     cmd.env_remove("WATN_MODEL");
+    cmd.env_remove("OPENROUTER_API_KEY");
+    cmd.env_remove("WATN_API_KEY");
+    cmd.env_remove("WATN_TEST_ENDPOINT_OVERRIDE");
     for (key, value) in &world.env_vars {
         cmd.env(key.as_str(), value.as_str());
     }
@@ -585,25 +589,24 @@ pub(crate) fn start_pty_session(
     let mut reader = pair.master.try_clone_reader().expect("pty reader");
     let writer = pair.master.take_writer().expect("pty writer");
 
-    let (tx, rx) = std::sync::mpsc::channel::<Vec<u8>>();
+    let output_buffer = Arc::new(Mutex::new(Vec::new()));
+    let reader_buffer = Arc::clone(&output_buffer);
     std::thread::spawn(move || {
-        let mut buf = Vec::new();
         let mut tmp = [0u8; 1024];
         loop {
             match reader.read(&mut tmp) {
                 Ok(0) => break,
-                Ok(n) => buf.extend_from_slice(&tmp[..n]),
+                Ok(n) => reader_buffer.lock().unwrap().extend_from_slice(&tmp[..n]),
                 Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
                 Err(_) => break,
             }
         }
-        let _ = tx.send(buf);
     });
 
     PtySession {
         child,
         writer: Some(writer),
-        output_rx: Some(rx),
+        output_buffer,
         finished: false,
     }
 }
@@ -615,6 +618,10 @@ pub(crate) fn pty_write(session: &mut PtySession, seq: &str) {
     w.flush().ok();
 }
 
+pub(crate) fn pty_snapshot(session: &PtySession) -> String {
+    String::from_utf8_lossy(&session.output_buffer.lock().unwrap()).to_string()
+}
+
 /// Wait for the PTY child to exit, collect its output into the world, and
 /// return the captured output text.
 pub(crate) fn finish_pty_session(
@@ -623,7 +630,7 @@ pub(crate) fn finish_pty_session(
 ) -> String {
     let status = session.child.wait().expect("wait for pty child");
     session.writer.take();
-    let buf = session.output_rx.take().unwrap().recv().unwrap_or_default();
+    let buf = session.output_buffer.lock().unwrap().clone();
     let text = String::from_utf8_lossy(&buf).to_string();
     world.exit_status = Some(status.exit_code() as i32);
     world.pty_output_buffer = Some(text.clone());

@@ -42,10 +42,11 @@ Feature: Configuration management
     When I run `watn "hello"`
     Then the output should contain a cost estimate
 
-  Scenario: Missing config file does not error
+  Scenario: Missing config file prints provider setup guidance
     Given no config file exists
     When I run `watn "hello"`
-    Then the exit status should be 0
+    Then the exit status should be 1
+    And stderr should contain actionable guidance to run "watn provider" in a terminal
 
   Scenario: Config file with syntax error produces diagnostic
     Given a user config file with invalid TOML content

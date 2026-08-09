@@ -8,7 +8,7 @@ Feature: Interactive provider setup
   A user can configure an OpenAI-compatible provider and continue to model setup
   without manually editing the configuration file.
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Configure OpenRouter with an environment-backed credential
     Given no provider is configured
     And environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"

@@ -240,18 +240,27 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Reuse one permission-enforcement helper for template, provider, and model saves and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Saving provider configuration secures a world-readable file`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Saving provider configuration secures a world-readable file`.
+  - Commit hash: `4d3481c`
+
+## E2E Setup
+
+- [x] Run the configured E2E command with the existing scenarios before removing any new E2E `@wip` tag.
+  - Evidence: `cargo test --test features_runner -- --tags '@e2e and not @wip'` passed `32 scenarios (32 passed)`, `158 steps (158 passed)`.
+- [x] Confirm the regular suite remains green before E2E implementation.
+  - Evidence: `cargo test --test features_runner -- --tags 'not @wip and not @e2e'` passed `43 scenarios (43 passed)`, `235 steps (235 passed)`.
+- [x] Confirm the loopback HTTP twin and persistent PTY helpers are available; use `WATN_TEST_ENDPOINT_OVERRIDE` only in child processes and clean inherited variables after each scenario.
+  - Evidence: `httpmock::MockServer`, `portable-pty`, and `WatnWorld` cleanup are wired; no live provider is contacted by the baseline E2E run.
 
 ## Scenario: Configure OpenRouter with an environment-backed credential
 
-- [ ] RED: Remove `@wip` from this scenario only, add PTY step bindings in the global provider capability module, and run `cargo test --test features_runner -- --name '^Configure OpenRouter with an environment-backed credential$'`; record a non-zero E2E result.
-  - Evidence: _pending_
-- [ ] GREEN: Drive the real `watn provider` terminal flow with `portable-pty`, persist exact OpenRouter endpoint and `${OPENROUTER_API_KEY}`, route the subsequent chat through the ephemeral transport override, and assert terminal/request output as primary evidence.
-  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `src/provider/openai_compat.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Stabilize PTY timing, cleanup, and transport assertions without weakening the real-interface checks; rerun the named E2E scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only, add PTY step bindings in the global provider capability module, and run `cargo test --test features_runner -- --name '^Configure OpenRouter with an environment-backed credential$'`; record a non-zero E2E result.
+  - Evidence: Targeted E2E run initially failed on the undefined transport/PTY assertions and then on the missing contiguous credential-choice output.
+- [x] GREEN: Drive the real `watn provider` terminal flow with `portable-pty`, persist exact OpenRouter endpoint and `${OPENROUTER_API_KEY}`, route the subsequent chat through the ephemeral transport override, and assert terminal/request output as primary evidence.
+  - Production files: `src/provider/setup.rs`, `src/main.rs`, `tests/steps/mod.rs`, `tests/features_runner.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted E2E GREEN run passed: `1 scenario (1 passed)`, `16 steps (16 passed)`; terminal prompts and loopback chat request were asserted.
+- [x] REFACTOR: Stabilize PTY timing, cleanup, and transport assertions without weakening the real-interface checks; rerun the named E2E scenario.
+  - Evidence: Targeted E2E REFACTOR run passed: `1 scenario (1 passed)`, `16 steps (16 passed)`.
 - [ ] COMMIT: Commit atomically with message `test(e2e): Configure OpenRouter with an environment-backed credential`.
   - Commit hash: _pending_
 

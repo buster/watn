@@ -71,6 +71,23 @@ pub struct WatnWorld {
     pub search_query_delays: HashMap<String, u64>,
 }
 
+impl Drop for WatnWorld {
+    fn drop(&mut self) {
+        for name in self.env_vars.keys() {
+            std::env::remove_var(name);
+        }
+        for name in [
+            "OPENROUTER_API_KEY",
+            "WATN_API_KEY",
+            "WATN_PROVIDER",
+            "WATN_MODEL",
+            "WATN_TEST_ENDPOINT_OVERRIDE",
+        ] {
+            std::env::remove_var(name);
+        }
+    }
+}
+
 fn collect_features(dir: &Path) -> Vec<PathBuf> {
     let mut files = Vec::new();
     if !dir.exists() {

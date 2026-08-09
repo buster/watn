@@ -106,7 +106,7 @@ fn main() {
         }
     };
 
-    let config = match load_config() {
+    let mut config = match load_config() {
         Ok(c) => c,
         Err(e) => {
             let code = exit_code(&e);
@@ -126,7 +126,17 @@ fn main() {
             std::process::exit(1);
         }
         match watn::provider::setup::run_interactive() {
-            Ok(_) => {}
+            Ok(watn::provider::setup::ProviderSetupResult::Configured(draft)) => {
+                if let Err(error) = config::save_provider_draft(&mut config, &draft) {
+                    eprintln!("{}", error);
+                    std::process::exit(exit_code(&error));
+                }
+                watn::models::run_models(None, None, None);
+                return;
+            }
+            Ok(watn::provider::setup::ProviderSetupResult::Cancelled(cancellation)) => {
+                exit_setup_cancellation(cancellation);
+            }
             Err(e) => {
                 let code = exit_code(&e);
                 eprintln!("{}", e);
@@ -285,11 +295,35 @@ fn run_provider_setup_command() {
     }
 
     match watn::provider::setup::run_interactive() {
-        Ok(_) => {}
+        Ok(watn::provider::setup::ProviderSetupResult::Configured(draft)) => {
+            let mut config = match load_config() {
+                Ok(config) => config,
+                Err(error) => {
+                    eprintln!("{}", error);
+                    std::process::exit(exit_code(&error));
+                }
+            };
+            if let Err(error) = config::save_provider_draft(&mut config, &draft) {
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
+            }
+            println!("Provider configured: {}", draft.name);
+        }
+        Ok(watn::provider::setup::ProviderSetupResult::Cancelled(cancellation)) => {
+            exit_setup_cancellation(cancellation);
+        }
         Err(e) => {
             let code = exit_code(&e);
             eprintln!("{}", e);
             std::process::exit(code);
         }
     }
+}
+
+fn exit_setup_cancellation(cancellation: watn::provider::setup::SetupCancellation) -> ! {
+    let code = match cancellation {
+        watn::provider::setup::SetupCancellation::Escape => 1,
+        watn::provider::setup::SetupCancellation::CtrlC => 130,
+    };
+    std::process::exit(code);
 }

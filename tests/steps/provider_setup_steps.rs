@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::WatnWorld;
 use crate::MockServerWrap;
-use super::run_binary_with_state;
+use super::{finish_pty_session, pty_snapshot, pty_write, run_binary_with_state, start_pty_session};
 use watn::config::{self, save_provider_draft};
 use watn::config::types::Config;
 use watn::provider::setup::{build_provider_draft, suggested_api_key_env};
@@ -594,6 +594,89 @@ fn implicit_openrouter_transport(world: &mut WatnWorld) {
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
 }
 
+#[given(regex = r#"^the ephemeral E2E transport returns a successful chat completion for \"([^\"]+)\"$"#)]
+fn ephemeral_e2e_chat_transport(world: &mut WatnWorld, path: String) {
+    assert_eq!(path, "/chat/completions");
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let (base_url, mock_id) = {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        let base_url = format!("http://127.0.0.1:{}", server.port());
+        let mock_id = server
+            .mock(|when, then| {
+                when.method(httpmock::Method::POST)
+                    .path("/chat/completions")
+                    .header("Authorization", "Bearer sk-or-v1-test");
+                then.status(200)
+                    .header("Content-Type", "text/event-stream")
+                    .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"some output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
+            })
+            .id;
+        (base_url, mock_id)
+    };
+    world
+        .pending_config
+        .insert("e2e_chat_mock".to_string(), mock_id.to_string());
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+}
+
+#[when(regex = r#"^I start `watn provider` in a terminal$"#)]
+fn start_provider_in_terminal(world: &mut WatnWorld) {
+    let session = start_pty_session(world, &["provider"]);
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    world.pty_session = Some(session);
+}
+
+#[then(regex = r#"^the setup terminal should show endpoint prompt default \"([^\"]+)\"$"#)]
+fn setup_terminal_shows_endpoint(world: &mut WatnWorld, endpoint: String) {
+    let session = world.pty_session.as_ref().expect("provider PTY session");
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    assert!(pty_snapshot(session).contains(&endpoint));
+}
+
+#[then("the setup terminal should show pasted and environment credential choices")]
+fn setup_terminal_shows_credential_choices(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("provider PTY session");
+    let output = pty_snapshot(session);
+    assert!(output.contains("Paste credential"), "provider setup output: {output:?}");
+    assert!(output.contains("Environment variable"), "provider setup output: {output:?}");
+}
+
+#[when("I accept the OpenRouter endpoint")]
+fn accept_openrouter_endpoint(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(200));
+}
+
+#[when(regex = r#"^choose environment variable \"([^\"]+)\" for the credential$"#)]
+fn choose_environment_credential_terminal(world: &mut WatnWorld, variable: String) {
+    let session = world.pty_session.take().expect("provider PTY session");
+    let mut session = session;
+    pty_write(&mut session, &format!("e\r\r"));
+    let _ = variable;
+    finish_pty_session(world, session);
+}
+
+#[then(regex = r#"^the request should hit the ephemeral E2E transport path \"([^\"]+)\"$"#)]
+fn request_hits_e2e_transport(world: &mut WatnWorld, path: String) {
+    assert_eq!(path, "/chat/completions");
+    let id = world
+        .pending_config
+        .get("e2e_chat_mock")
+        .expect("E2E chat mock id")
+        .parse()
+        .expect("valid mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert!(httpmock::Mock::new(id, server).hits() > 0);
+}
+
+#[then(regex = r#"^the persisted provider endpoint should still be exactly \"([^\"]+)\"$"#)]
+fn persisted_provider_endpoint_exact(world: &mut WatnWorld, endpoint: String) {
+    config_contains_endpoint(world, endpoint);
+}
+
 #[then("provider setup should not start")]
 fn provider_setup_should_not_start(world: &mut WatnWorld) {
     let output = world.output.as_deref().unwrap_or_default();
@@ -620,10 +703,13 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
         assert_eq!(resolved, &key);
         return;
     }
-    let id = world
+    let id_value = world
         .pending_config
         .get("implicit_chat_mock")
+        .or_else(|| world.pending_config.get("e2e_chat_mock"))
         .expect("chat mock id")
+        .clone();
+    let id = id_value
         .parse()
         .expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
