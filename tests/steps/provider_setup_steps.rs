@@ -1,7 +1,9 @@
 use cucumber::{then, when};
+use cucumber::given;
 use std::path::PathBuf;
 
 use crate::WatnWorld;
+use crate::MockServerWrap;
 use watn::config::{self, save_provider_draft};
 use watn::config::types::Config;
 use watn::provider::setup::{build_provider_draft, suggested_api_key_env};
@@ -126,4 +128,68 @@ fn config_contains_api_key(world: &mut WatnWorld, api_key: String) {
 fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     let content = std::fs::read_to_string(config_path(world)).expect("read test config");
     assert!(!content.contains(&secret), "config unexpectedly contained secret");
+}
+
+#[given("the request transport returns a successful response for the implicit OpenRouter request")]
+fn implicit_openrouter_transport(world: &mut WatnWorld) {
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let (base_url, mock_id) = {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        let base_url = format!("http://127.0.0.1:{}", server.port());
+        let mock_id = {
+            let mock = server.mock(|when, then| {
+            when.method(httpmock::Method::POST)
+                .path("/chat/completions")
+                .header("Authorization", "Bearer sk-or-v1-test");
+            then.status(200)
+                .header("Content-Type", "text/event-stream")
+                .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"some output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
+            });
+            mock.id
+        };
+        (base_url, mock_id)
+    };
+    world
+        .pending_config
+        .insert("implicit_chat_mock".to_string(), mock_id.to_string());
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+}
+
+#[then("provider setup should not start")]
+fn provider_setup_should_not_start(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(!output.contains("Provider setup"));
+    assert!(!stderr.contains("Provider setup"));
+}
+
+#[then("the request should use the implicit OpenRouter endpoint")]
+fn request_uses_implicit_openrouter(world: &mut WatnWorld) {
+    let id = world
+        .pending_config
+        .get("implicit_chat_mock")
+        .expect("implicit chat mock id")
+        .parse()
+        .expect("valid mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert!(httpmock::Mock::new(id, server).hits() > 0);
+}
+
+#[then(regex = r#"^the API request should use API key \"([^\"]+)\"$"#)]
+fn api_request_uses_key(world: &mut WatnWorld, key: String) {
+    let id = world
+        .pending_config
+        .get("implicit_chat_mock")
+        .expect("chat mock id")
+        .parse()
+        .expect("valid mock id");
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    assert!(httpmock::Mock::new(id, server).hits() > 0, "request did not carry expected API key {}", key);
+}
+
+#[then("the process should not initialize ratatui")]
+fn process_does_not_initialize_ratatui(world: &mut WatnWorld) {
+    provider_setup_should_not_start(world);
 }

@@ -66,7 +66,7 @@ Feature: Interactive provider setup
     And the model catalog request should hit ephemeral path "/models"
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: A recognized environment credential skips automatic provider setup
     Given no config file exists
     And environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"

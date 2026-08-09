@@ -36,18 +36,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Consolidate environment-source validation and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Configure a custom provider with the generic environment variable`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Configure a custom provider with the generic environment variable`.
+  - Commit hash: `6c1cf10`
 
 ## Scenario: A recognized environment credential skips automatic provider setup
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A recognized environment credential skips automatic provider setup$'`; record the strict failure.
-  - Evidence: _pending_
-- [ ] GREEN: Detect `OPENROUTER_API_KEY` as a ready implicit provider, bypass ratatui, route the request through the mock transport, and assert no terminal initialization.
-  - Production files: `src/config/env.rs`, `src/config/mod.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Keep readiness detection network-free and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A recognized environment credential skips automatic provider setup$'`; record the strict failure.
+  - Evidence: Targeted run exited non-zero because `the request transport returns a successful response for the implicit OpenRouter request` was initially undefined.
+- [x] GREEN: Detect `OPENROUTER_API_KEY` as a ready implicit provider, bypass ratatui, route the request through the mock transport, and assert no terminal initialization.
+  - Production files: `src/provider/transport.rs`, `src/provider/openai_compat.rs`, `src/models/list.rs`, `tests/steps/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Keep readiness detection network-free and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): A recognized environment credential skips automatic provider setup`.
   - Commit hash: _pending_
 

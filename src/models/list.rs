@@ -11,6 +11,7 @@ pub struct ModelEntry {
 }
 
 pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEntry>, Error> {
+    let endpoint = crate::provider::transport::endpoint(endpoint);
     let url = format!("{}/models", endpoint.trim_end_matches('/'));
 
     let client = reqwest::blocking::Client::builder()
@@ -120,6 +121,7 @@ pub fn search_models(
     query: &str,
     api_key: Option<&str>,
 ) -> Result<Vec<ModelEntry>, Error> {
+    let endpoint = crate::provider::transport::endpoint(endpoint);
     let base = endpoint.trim_end_matches('/');
     let url = format!("{}/models?search={}", base, query);
 
@@ -187,6 +189,7 @@ pub fn fetch_models_page(
     limit: u32,
     api_key: Option<&str>,
 ) -> Result<Vec<ModelEntry>, Error> {
+    let endpoint = crate::provider::transport::endpoint(endpoint);
     let base = endpoint.trim_end_matches('/');
     let url = format!("{}/models?page={}&limit={}", base, page, limit);
 

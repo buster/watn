@@ -34,7 +34,8 @@ impl Provider for OpenAICompatibleProvider {
         options: &RequestOptions,
     ) -> Result<StreamingResponse, Error> {
         let start = Instant::now();
-        let url = format!("{}/chat/completions", self.endpoint.trim_end_matches('/'));
+        let endpoint = crate::provider::transport::endpoint(&self.endpoint);
+        let url = format!("{}/chat/completions", endpoint.trim_end_matches('/'));
 
         let mut body = serde_json::json!({
             "model": options.model,

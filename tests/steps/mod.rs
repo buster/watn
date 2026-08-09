@@ -414,6 +414,9 @@ pub(crate) fn apply_env(world: &crate::WatnWorld, cmd: &mut std::process::Comman
     cmd.env_remove("WATN_OPENAI_API_KEY");
     cmd.env_remove("WATN_PROVIDER");
     cmd.env_remove("WATN_MODEL");
+    cmd.env_remove("OPENROUTER_API_KEY");
+    cmd.env_remove("WATN_API_KEY");
+    cmd.env_remove("WATN_TEST_ENDPOINT_OVERRIDE");
     for (key, value) in &world.env_vars {
         cmd.env(key, value);
     }
