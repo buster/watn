@@ -62,6 +62,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): A saved provider with a default model skips automatic provider setup`.
   - Commit hash: `aca8cb2`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Invalid endpoint remains in provider setup for correction
 
@@ -74,6 +75,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Invalid endpoint remains in provider setup for correction`.
   - Commit hash: `2f8d66a`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Empty credential remains in provider setup for correction
 
@@ -86,6 +88,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Empty credential remains in provider setup for correction`.
   - Commit hash: `76bc6c9`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: A missing saved environment reference fails authentication without a request
 
@@ -122,6 +125,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): An explicitly named environment variable is persisted and expanded at use time`.
   - Commit hash: `01acc18`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Trailing slashes are normalized before persistence and requests
 
@@ -134,6 +138,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Trailing slashes are normalized before persistence and requests`.
   - Commit hash: `51c9d8f`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Rerunning provider setup preserves unrelated configuration
 
@@ -146,6 +151,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Rerunning provider setup preserves unrelated configuration`.
   - Commit hash: `ec8a0f0`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Escape cancellation preserves the existing provider configuration
 
@@ -158,6 +164,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Escape cancellation preserves the existing provider configuration`.
   - Commit hash: `0183ce3`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Ctrl-C cancellation preserves the existing provider configuration
 
@@ -170,6 +177,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Ctrl-C cancellation preserves the existing provider configuration`.
   - Commit hash: `4c88873`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Model catalog failure after provider setup preserves the provider and sends no request
 
@@ -194,6 +202,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): The explicit provider command ends without model setup`.
   - Commit hash: `112093d`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Non-TTY first use prints setup guidance instead of starting ratatui
 
@@ -218,6 +227,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): A literal saved credential is authoritative over environment fallback`.
   - Commit hash: `c400fd2`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Explicit provider selection from the environment preserves missing-key errors
 
@@ -230,6 +240,7 @@
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] COMMIT: Commit atomically with message `feat(provider-setup): Explicit provider selection from the environment preserves missing-key errors`.
   - Commit hash: `23659d2`
+  - Production remediation: `2cc0a17`
 
 ## Scenario: Saving provider configuration secures a world-readable file
 
@@ -275,6 +286,19 @@
   - Evidence: Targeted E2E REFACTOR run passed: `1 scenario (1 passed)`, `15 steps (15 passed)`.
 - [x] COMMIT: Commit atomically with message `test(e2e): First normal use starts provider setup and then model setup`.
   - Commit hash: `ff77081`
+  - Production remediation: `2cc0a17`
+
+## Review Remediation
+
+- [x] Replace lower-level model process exits with `ModelSetupResult`, map results at the CLI boundary, and preserve the automatic no-resume flow.
+  - Evidence: `src/models/mod.rs` now returns `Saved`, `Cancelled`, or `Failed`; `src/main.rs` maps the result. Targeted model-failure and automatic-onboarding scenarios pass.
+  - Commit hash: `2cc0a17`
+- [x] Add provider Review and Confirmed stages, production cancellation results, real zero-hit mock assertions, production URL builders, environment-module fallback lookup, and bounded PTY termination.
+  - Evidence: Targeted provider cancellation, explicit command, missing-reference, trailing URL, and both E2E scenarios pass; PTY teardown now polls for 10 seconds and kills stuck children.
+  - Commit hash: `2cc0a17`
+- [x] Repair shared baseline fixtures and remove unused production/test helpers found by the fabrication audit.
+  - Evidence: Empty Given bodies and unused `resolve_endpoint`/`mock_search_error` were removed; the full regular and E2E suites pass.
+  - Commit hash: `624dec3`, `2cc0a17`, `d58047b`
 
 ## Final Verification
 
