@@ -189,6 +189,37 @@ fn chat_completion_url_exact(world: &mut WatnWorld, url: String) {
     assert_eq!(format!("{}/chat/completions", config.providers[provider].endpoint), url);
 }
 
+#[then(regex = r#"^the default provider should be \"([^\"]+)\"$"#)]
+fn default_provider_is(world: &mut WatnWorld, provider: String) {
+    let config = load_world_config(world);
+    assert_eq!(config.defaults.provider.as_deref(), Some(provider.as_str()));
+}
+
+#[then(regex = r#"^provider \"([^\"]+)\" should remain unchanged$"#)]
+fn provider_remains_unchanged(world: &mut WatnWorld, provider: String) {
+    let config = load_world_config(world);
+    let saved = config.providers.get(&provider).expect("preserved provider");
+    assert_eq!(saved.endpoint, "https://legacy.example/v1");
+    assert_eq!(saved.api_key.as_deref(), Some("sk-legacy-key"));
+}
+
+#[then("the existing tiers, pricing, and LiteLLM settings should remain unchanged")]
+fn unrelated_settings_remain(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    assert_eq!(config.tiers.small.as_deref(), Some("legacy-small"));
+    assert_eq!(config.tiers.normal.as_deref(), Some("legacy-normal"));
+    assert_eq!(config.tiers.thinking.as_deref(), Some("legacy-thinking"));
+    assert_eq!(config.pricing["legacy-small"].input, 1.0);
+    assert_eq!(config.litellm.as_ref().map(|value| value.endpoint.as_str()), Some("https://legacy-litellm.example"));
+}
+
+#[then(regex = r#"^only the fixed provider entry \"([^\"]+)\" should be replaced or created$"#)]
+fn only_fixed_provider_entry(world: &mut WatnWorld, provider: String) {
+    let config = load_world_config(world);
+    assert!(config.providers.contains_key(&provider));
+    assert!(config.providers.contains_key("legacy"));
+}
+
 #[then(regex = r#"^the config file should not contain \"([^\"]+)\"$"#)]
 fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     let content = std::fs::read_to_string(config_path(world)).expect("read test config");
@@ -271,6 +302,21 @@ fn saved_provider_api_key(world: &mut WatnWorld, key: String) {
 fn environment_variable_not_set(world: &mut WatnWorld, name: String) {
     world.env_vars.remove(&name);
     std::env::remove_var(name);
+}
+
+#[given(regex = r#"^a config file contains provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
+fn config_contains_provider(world: &mut WatnWorld, provider: String, endpoint: String) {
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"{endpoint}\"\napi_key = \"sk-legacy-key\"\n"
+    ));
+}
+
+#[given("the config file contains tiers, pricing, and LiteLLM settings")]
+fn config_contains_unrelated_settings(world: &mut WatnWorld) {
+    let raw = world.raw_config.take().expect("provider config fixture");
+    world.raw_config = Some(format!(
+        "{raw}\n[tiers]\nsmall = \"legacy-small\"\nnormal = \"legacy-normal\"\nthinking = \"legacy-thinking\"\n\n[pricing]\n\"legacy-small\" = {{ input = 1.0, output = 2.0 }}\n\n[litellm]\nendpoint = \"https://legacy-litellm.example\"\napi_key = \"sk-litellm\"\n"
+    ));
 }
 
 #[given(regex = r#"^its saved default model is \"([^\"]+)\"$"#)]

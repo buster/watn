@@ -145,7 +145,7 @@ Feature: Interactive provider setup
     And the model catalog URL should be exactly "https://llm.example.com/v1/models"
     And the chat completion URL should be exactly "https://llm.example.com/v1/chat/completions"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rerunning provider setup preserves unrelated configuration
     Given a config file contains provider "legacy" with endpoint "https://legacy.example/v1"
     And the config file contains tiers, pricing, and LiteLLM settings

@@ -132,18 +132,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Use one endpoint-normalization helper across model and chat clients and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Trailing slashes are normalized before persistence and requests`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Trailing slashes are normalized before persistence and requests`.
+  - Commit hash: `51c9d8f`
 
 ## Scenario: Rerunning provider setup preserves unrelated configuration
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Rerunning provider setup preserves unrelated configuration$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Replace only the fixed `custom` provider entry, set it as default, and preserve unrelated providers, tiers, pricing, LiteLLM settings, metadata, and fields.
-  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Make provider replacement explicit and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Rerunning provider setup preserves unrelated configuration$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the config-preservation fixture step was initially undefined.
+- [x] GREEN: Replace only the fixed `custom` provider entry, set it as default, and preserve unrelated providers, tiers, pricing, LiteLLM settings, metadata, and fields.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Make provider replacement explicit and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Rerunning provider setup preserves unrelated configuration`.
   - Commit hash: _pending_
 
