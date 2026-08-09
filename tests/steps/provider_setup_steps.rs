@@ -533,9 +533,14 @@ fn automatic_onboarding_saves_provider(world: &mut WatnWorld, endpoint: String, 
 fn explicit_provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: String) {
     let mut config = load_world_config(world);
     let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
-    save_provider_draft(&mut config, &draft).expect("save provider draft");
-    world.exit_status = Some(0);
-    ensure_models_request_mock(world);
+    match watn::provider::setup::configured_result(draft) {
+        watn::provider::setup::ProviderSetupResult::Configured(draft) => {
+            save_provider_draft(&mut config, &draft).expect("save provider draft");
+            world.exit_status = Some(0);
+            ensure_models_request_mock(world);
+        }
+        other => panic!("expected configured provider result, got {:?}", other),
+    }
 }
 
 #[when(regex = r#"^provider setup saves endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]

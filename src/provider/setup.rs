@@ -34,6 +34,10 @@ pub fn cancellation_result(cancellation: SetupCancellation) -> ProviderSetupResu
     ProviderSetupResult::Cancelled(cancellation)
 }
 
+pub fn configured_result(draft: ProviderDraft) -> ProviderSetupResult {
+    ProviderSetupResult::Configured(draft)
+}
+
 #[derive(Debug)]
 pub enum ModelSetupResult {
     Saved,
