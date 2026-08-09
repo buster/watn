@@ -165,7 +165,7 @@ Feature: Interactive provider setup
     And provider "legacy" should still contain credential "sk-old-key"
     And no request should be sent to "/chat/completions"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Ctrl-C cancellation preserves the existing provider configuration
     Given an existing config contains provider "legacy" with credential "sk-old-key"
     When provider setup is cancelled with Ctrl-C

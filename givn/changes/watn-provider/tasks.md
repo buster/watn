@@ -156,18 +156,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Ensure cancellation ownership remains at the CLI boundary and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Escape cancellation preserves the existing provider configuration`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Escape cancellation preserves the existing provider configuration`.
+  - Commit hash: `0183ce3`
 
 ## Scenario: Ctrl-C cancellation preserves the existing provider configuration
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Ctrl-C cancellation preserves the existing provider configuration$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Return Ctrl-C cancellation as status 130, restore the terminal, preserve the config byte-for-byte, and send no request.
-  - Production files: `src/provider/setup.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Share terminal cleanup between Escape and Ctrl-C paths and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Ctrl-C cancellation preserves the existing provider configuration$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because Ctrl-C cancellation was initially undefined.
+- [x] GREEN: Return Ctrl-C cancellation as status 130, restore the terminal, preserve the config byte-for-byte, and send no request.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Share terminal cleanup between Escape and Ctrl-C paths and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Ctrl-C cancellation preserves the existing provider configuration`.
   - Commit hash: _pending_
 

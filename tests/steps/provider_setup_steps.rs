@@ -254,6 +254,17 @@ fn cancel_provider_setup_escape(world: &mut WatnWorld) {
     world.exit_status = Some(1);
 }
 
+#[when("provider setup is cancelled with Ctrl-C")]
+fn cancel_provider_setup_ctrl_c(world: &mut WatnWorld) {
+    let path = config_path(world);
+    if !path.exists() {
+        load_world_config(world);
+    }
+    let content = std::fs::read_to_string(&path).expect("config file");
+    world.pending_config.insert("config_before".to_string(), content);
+    world.exit_status = Some(130);
+}
+
 #[then("the config file should be byte-for-byte unchanged")]
 fn config_is_byte_for_byte_unchanged(world: &mut WatnWorld) {
     let before = world
