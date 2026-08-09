@@ -219,9 +219,25 @@ fn configured_default_provider_endpoint(world: &mut WatnWorld, provider: String,
     world.pending_config.insert("saved_endpoint".to_string(), endpoint);
 }
 
+#[given(regex = r#"^a configured provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
+fn configured_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
+    configured_default_provider_endpoint(world, provider, endpoint);
+}
+
 #[given(regex = r#"^its saved credential is \"([^\"]+)\"$"#)]
 fn saved_provider_credential(world: &mut WatnWorld, key: String) {
     world.pending_config.insert("saved_key".to_string(), key);
+}
+
+#[given(regex = r#"^its saved api_key is \"([^\"]+)\"$"#)]
+fn saved_provider_api_key(world: &mut WatnWorld, key: String) {
+    saved_provider_credential(world, key);
+}
+
+#[given(regex = r#"^environment variable ([A-Z0-9_]+) is not set$"#)]
+fn environment_variable_not_set(world: &mut WatnWorld, name: String) {
+    world.env_vars.remove(&name);
+    std::env::remove_var(name);
 }
 
 #[given(regex = r#"^its saved default model is \"([^\"]+)\"$"#)]
@@ -304,4 +320,12 @@ fn api_request_sent_to(world: &mut WatnWorld, endpoint: String) {
     let mock_id = world.mock_server.1.expect("chat mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
     assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
+}
+
+#[then(regex = r#"^no request should be sent to \"([^\"]+)\"$"#)]
+fn no_request_sent_to(world: &mut WatnWorld, _path: String) {
+    if let Some(mock_id) = world.mock_server.1 {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    }
 }

@@ -84,18 +84,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Reuse credential validation for literal and environment sources and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Empty credential remains in provider setup for correction`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Empty credential remains in provider setup for correction`.
+  - Commit hash: `76bc6c9`
 
 ## Scenario: A missing saved environment reference fails authentication without a request
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A missing saved environment reference fails authentication without a request$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Expand exact `${MISSING_WATN_KEY}` references at use time, return exit 2 with the variable name in the diagnostic, and prevent transport construction/request dispatch.
-  - Production files: `src/config/mod.rs`, `src/config/env.rs`, `src/main.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Keep missing-reference handling distinct from fallback lookup and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A missing saved environment reference fails authentication without a request$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero with status 0 instead of 2 because saved environment references were initially sent as literal keys.
+- [x] GREEN: Expand exact `${MISSING_WATN_KEY}` references at use time, return exit 2 with the variable name in the diagnostic, and prevent transport construction/request dispatch.
+  - Production files: `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Keep missing-reference handling distinct from fallback lookup and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): A missing saved environment reference fails authentication without a request`.
   - Commit hash: _pending_
 

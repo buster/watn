@@ -104,7 +104,7 @@ Feature: Interactive provider setup
     And provider setup should not return a configured provider
     And the config file should not contain a provider entry for the attempted setup
 
-  @givn.added @wip
+  @givn.added
   Scenario: A missing saved environment reference fails authentication without a request
     Given a configured provider "custom" with endpoint "https://llm.example.com/v1"
     And its saved api_key is "${MISSING_WATN_KEY}"

@@ -207,20 +207,61 @@ pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result
     save_config(config)
 }
 
+fn environment_reference(value: &str) -> Option<&str> {
+    let name = value.strip_prefix("${")?.strip_suffix('}')?;
+    if name.is_empty()
+        || !name
+            .chars()
+            .enumerate()
+            .all(|(index, character)| {
+                (index == 0 && (character == '_' || character.is_ascii_uppercase()))
+                    || (index > 0 && (character == '_' || character.is_ascii_uppercase() || character.is_ascii_digit()))
+            })
+    {
+        return None;
+    }
+    Some(name)
+}
+
+pub fn expand_api_key(value: &str) -> Result<String, Error> {
+    let Some(name) = environment_reference(value) else {
+        return Ok(value.to_string());
+    };
+    match std::env::var(name) {
+        Ok(key) if !key.is_empty() => Ok(key),
+        _ => Err(Error::AuthError(format!(
+            "api key environment variable '{}' is not set",
+            name
+        ))),
+    }
+}
+
 pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfig) -> Result<String, Error> {
     if let Some(key) = &provider_config.api_key {
-        return Ok(key.clone());
+        return expand_api_key(key);
     }
 
     if provider_name == "openrouter" {
         if let Ok(key) = std::env::var("OPENROUTER_API_KEY") {
+            if key.is_empty() {
+                return Err(Error::AuthError("api key not found for provider 'openrouter'".to_string()));
+            }
             return Ok(key);
         }
     }
 
     let env_var = format!("WATN_{}_API_KEY", provider_name.to_uppercase());
     if let Ok(key) = std::env::var(&env_var) {
+        if key.is_empty() {
+            return Err(Error::AuthError(format!("api key not found for provider '{}'", provider_name)));
+        }
         return Ok(key);
+    }
+
+    if let Ok(key) = std::env::var("WATN_API_KEY") {
+        if !key.is_empty() {
+            return Ok(key);
+        }
     }
 
     Err(Error::AuthError(format!("api key not found for provider '{}'", provider_name)))
