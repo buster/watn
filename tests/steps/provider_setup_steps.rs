@@ -37,6 +37,21 @@ fn provider_setup_receives_endpoint(world: &mut WatnWorld, endpoint: String) {
     }
 }
 
+#[when("provider setup receives an empty pasted credential")]
+fn provider_setup_receives_empty_credential(world: &mut WatnWorld) {
+    let endpoint = world
+        .pending_config
+        .get("provider_endpoint")
+        .cloned()
+        .expect("provider endpoint must be received first");
+    let error = build_provider_draft(&endpoint, "").expect_err("empty credential should fail");
+    let message = match error {
+        watn::error::Error::ConfigError(message) => message,
+        other => other.to_string(),
+    };
+    world.pending_config.insert("setup_error".to_string(), message);
+}
+
 fn config_path(world: &mut WatnWorld) -> PathBuf {
     let dir = if let Some(dir) = &world.temp_dir {
         dir.path().to_path_buf()

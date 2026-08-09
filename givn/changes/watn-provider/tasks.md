@@ -72,18 +72,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Centralize endpoint validation and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Invalid endpoint remains in provider setup for correction`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Invalid endpoint remains in provider setup for correction`.
+  - Commit hash: `2f8d66a`
 
 ## Scenario: Empty credential remains in provider setup for correction
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Empty credential remains in provider setup for correction$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Reject empty literal credentials, show the exact validation message, preserve the setup state, and avoid partial config writes.
-  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Reuse credential validation for literal and environment sources and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Empty credential remains in provider setup for correction$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because `provider setup receives an empty pasted credential` was initially undefined.
+- [x] GREEN: Reject empty literal credentials, show the exact validation message, preserve the setup state, and avoid partial config writes.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Reuse credential validation for literal and environment sources and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Empty credential remains in provider setup for correction`.
   - Commit hash: _pending_
 

@@ -95,7 +95,7 @@ Feature: Interactive provider setup
     And provider setup should not return a configured provider
     And the config file should not contain a provider entry for the attempted setup
 
-  @givn.added @wip
+  @givn.added
   Scenario: Empty credential remains in provider setup for correction
     Given no provider is configured
     When provider setup receives endpoint "https://llm.example.com/v1"
