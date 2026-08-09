@@ -1,2 +1,6 @@
 /target
 .ralph/
+/AGENTS.md
+.claude/
+.agents/
+.opencode/
