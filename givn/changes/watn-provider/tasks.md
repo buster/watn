@@ -228,18 +228,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Centralize selection-source detection and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): Explicit provider selection from the environment preserves missing-key errors`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): Explicit provider selection from the environment preserves missing-key errors`.
+  - Commit hash: `23659d2`
 
 ## Scenario: Saving provider configuration secures a world-readable file
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Saving provider configuration secures a world-readable file$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Apply Unix mode `0600` after every direct config write, repair an existing `0644` file, and retain direct-write semantics without claiming atomic replacement.
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Saving provider configuration secures a world-readable file$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero with mode `0644` instead of required `0600`.
+- [x] GREEN: Apply Unix mode `0600` after every direct config write, repair an existing `0644` file, and retain direct-write semantics without claiming atomic replacement.
   - Production files: `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Reuse one permission-enforcement helper for template, provider, and model saves and rerun the named scenario.
-  - Evidence: _pending_
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Reuse one permission-enforcement helper for template, provider, and model saves and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Saving provider configuration secures a world-readable file`.
   - Commit hash: _pending_
 

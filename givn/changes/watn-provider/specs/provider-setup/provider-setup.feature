@@ -230,7 +230,7 @@ Feature: Interactive provider setup
     And stderr should contain "api key"
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Saving provider configuration secures a world-readable file
     Given an existing provider config file has Unix mode "0644"
     When provider setup saves endpoint "https://llm.example.com/v1" and credential "sk-new-key"

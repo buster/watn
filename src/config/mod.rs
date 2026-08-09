@@ -200,7 +200,16 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
             .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
     }
     std::fs::write(&config_path, content)
-        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))
+        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
+            .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
+    }
+
+    Ok(())
 }
 
 pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result<(), Error> {

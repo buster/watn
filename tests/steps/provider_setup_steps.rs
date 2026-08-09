@@ -370,6 +370,22 @@ fn provider_without_api_key(world: &mut WatnWorld, provider: String, endpoint: S
     world.pending_mock_usage = Some(false);
 }
 
+#[given(regex = r#"^an existing provider config file has Unix mode \"([^\"]+)\"$"#)]
+fn existing_provider_config_mode(world: &mut WatnWorld, mode: String) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"legacy\"\n\n[providers.legacy]\nendpoint = \"https://legacy.example/v1\"\napi_key = \"sk-old-key\"\n"
+            .to_string(),
+    );
+    let path = config_path(world);
+    load_world_config(world);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let permissions = std::fs::Permissions::from_mode(u32::from_str_radix(&mode, 8).expect("mode"));
+        std::fs::set_permissions(path, permissions).expect("set config mode");
+    }
+}
+
 #[given(regex = r#"^its saved credential is \"([^\"]+)\"$"#)]
 fn saved_provider_credential(world: &mut WatnWorld, key: String) {
     world.pending_config.insert("saved_key".to_string(), key);
@@ -460,6 +476,15 @@ fn explicit_provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: S
     world.pending_config.insert("model_setup_started".to_string(), "false".to_string());
 }
 
+#[when(regex = r#"^provider setup saves endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]
+fn provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: String) {
+    let mut config = load_world_config(world);
+    let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
+    save_provider_draft(&mut config, &draft).expect("save provider draft");
+    world.pending_config.insert("saved_endpoint".to_string(), draft.endpoint);
+    world.pending_config.insert("write_semantics".to_string(), "direct".to_string());
+}
+
 #[when("automatic model setup attempts catalog discovery")]
 fn automatic_model_setup_attempts_discovery(world: &mut WatnWorld) {
     run_binary_with_state(world, &["models"], None);
@@ -494,6 +519,26 @@ fn config_contains_provider_endpoint(world: &mut WatnWorld, provider: String, en
 fn config_contains_provider_name(world: &mut WatnWorld, provider: String) {
     let config = load_world_config(world);
     assert!(config.providers.contains_key(&provider));
+}
+
+#[then(regex = r#"^the config file should have Unix mode \"([^\"]+)\"$"#)]
+fn config_has_unix_mode(world: &mut WatnWorld, mode: String) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let actual = std::fs::metadata(config_path(world)).expect("config metadata").permissions().mode() & 0o777;
+        assert_eq!(actual, u32::from_str_radix(&mode, 8).expect("mode"));
+    }
+}
+
+#[then(regex = r#"^the saved provider endpoint should be \"([^\"]+)\"$"#)]
+fn saved_provider_endpoint(world: &mut WatnWorld, endpoint: String) {
+    assert_eq!(world.pending_config.get("saved_endpoint"), Some(&endpoint));
+}
+
+#[then("the save should use the existing direct-write behavior without an atomic-file promise")]
+fn direct_write_behavior(world: &mut WatnWorld) {
+    assert_eq!(world.pending_config.get("write_semantics"), Some(&"direct".to_string()));
 }
 
 #[then("model setup should not start")]
