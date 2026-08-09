@@ -116,7 +116,7 @@ Feature: Interactive provider setup
     And stderr should contain "MISSING_WATN_KEY"
     And no request should be sent to "/chat/completions"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A saved OpenRouter endpoint takes precedence over the built-in endpoint
     Given a saved default provider "openrouter" with endpoint "https://saved-openrouter.example/v1"
     And its saved credential is "sk-saved-openrouter"

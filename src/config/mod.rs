@@ -101,9 +101,12 @@ pub fn resolve_provider(
     }
 
     if provider_name == "openrouter" {
+        if let Some(provider) = config.providers.get("openrouter") {
+            return Ok(provider.clone());
+        }
         return Ok(ProviderConfig {
             endpoint: "https://openrouter.ai/api/v1".to_string(),
-            api_key: std::env::var("OPENROUTER_API_KEY").ok(),
+            api_key: None,
             default_model: None,
         });
     }

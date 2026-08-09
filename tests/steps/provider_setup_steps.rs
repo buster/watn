@@ -219,6 +219,11 @@ fn configured_default_provider_endpoint(world: &mut WatnWorld, provider: String,
     world.pending_config.insert("saved_endpoint".to_string(), endpoint);
 }
 
+#[given(regex = r#"^a saved default provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
+fn saved_default_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
+    configured_default_provider_endpoint(world, provider, endpoint);
+}
+
 #[given(regex = r#"^a configured provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
 fn configured_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
     configured_default_provider_endpoint(world, provider, endpoint);
@@ -244,6 +249,25 @@ fn environment_variable_not_set(world: &mut WatnWorld, name: String) {
 fn saved_provider_default_model(world: &mut WatnWorld, model: String) {
     world.pending_config.insert("saved_model".to_string(), model);
     rebuild_saved_provider_config(world);
+}
+
+#[when("I resolve the saved OpenRouter provider for a request")]
+fn resolve_saved_openrouter_provider(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    let provider = config::resolve_provider(&config, "openrouter").expect("resolve provider");
+    world
+        .pending_config
+        .insert("selected_endpoint".to_string(), provider.endpoint);
+}
+
+#[then(regex = r#"^the selected endpoint should be exactly \"([^\"]+)\"$"#)]
+fn selected_endpoint_exact(world: &mut WatnWorld, endpoint: String) {
+    assert_eq!(world.pending_config.get("selected_endpoint"), Some(&endpoint));
+}
+
+#[then(regex = r#"^the built-in endpoint \"([^\"]+)\" should not be selected$"#)]
+fn builtin_endpoint_not_selected(world: &mut WatnWorld, endpoint: String) {
+    assert_ne!(world.pending_config.get("selected_endpoint"), Some(&endpoint));
 }
 
 #[given("the request transport returns a successful response for the implicit OpenRouter request")]

@@ -96,18 +96,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Keep missing-reference handling distinct from fallback lookup and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): A missing saved environment reference fails authentication without a request`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): A missing saved environment reference fails authentication without a request`.
+  - Commit hash: `97a5e73`
 
 ## Scenario: A saved OpenRouter endpoint takes precedence over the built-in endpoint
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A saved OpenRouter endpoint takes precedence over the built-in endpoint$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Make OpenRouter resolution honor a saved provider entry before the built-in endpoint and assert the exact selected endpoint without a network probe.
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^A saved OpenRouter endpoint takes precedence over the built-in endpoint$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the saved OpenRouter fixture step was initially undefined.
+- [x] GREEN: Make OpenRouter resolution honor a saved provider entry before the built-in endpoint and assert the exact selected endpoint without a network probe.
   - Production files: `src/config/mod.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Consolidate built-in and configured provider resolution and rerun the named scenario.
-  - Evidence: _pending_
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Consolidate built-in and configured provider resolution and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): A saved OpenRouter endpoint takes precedence over the built-in endpoint`.
   - Commit hash: _pending_
 
