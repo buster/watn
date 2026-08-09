@@ -136,7 +136,7 @@ Feature: Interactive provider setup
     When I send a request through the configured provider
     Then the API request should use API key "sk-explicit-test"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Trailing slashes are normalized before persistence and requests
     Given no provider is configured
     When provider setup accepts endpoint "https://llm.example.com/v1///"

@@ -175,6 +175,20 @@ fn config_contains_api_key(world: &mut WatnWorld, api_key: String) {
     assert_eq!(config.providers[provider].api_key.as_deref(), Some(api_key.as_str()));
 }
 
+#[then(regex = r#"^the model catalog URL should be exactly \"([^\"]+)\"$"#)]
+fn model_catalog_url_exact(world: &mut WatnWorld, url: String) {
+    let config = load_world_config(world);
+    let provider = config.defaults.provider.as_deref().expect("default provider");
+    assert_eq!(format!("{}/models", config.providers[provider].endpoint), url);
+}
+
+#[then(regex = r#"^the chat completion URL should be exactly \"([^\"]+)\"$"#)]
+fn chat_completion_url_exact(world: &mut WatnWorld, url: String) {
+    let config = load_world_config(world);
+    let provider = config.defaults.provider.as_deref().expect("default provider");
+    assert_eq!(format!("{}/chat/completions", config.providers[provider].endpoint), url);
+}
+
 #[then(regex = r#"^the config file should not contain \"([^\"]+)\"$"#)]
 fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     let content = std::fs::read_to_string(config_path(world)).expect("read test config");

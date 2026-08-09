@@ -120,18 +120,18 @@
   - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`. Ordinary runner coverage is unmeasured.
 - [x] REFACTOR: Share exact-reference parsing between setup and resolution and rerun the named scenario.
   - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: Commit atomically with message `feat(provider-setup): An explicitly named environment variable is persisted and expanded at use time`.
-  - Commit hash: _pending_
+- [x] COMMIT: Commit atomically with message `feat(provider-setup): An explicitly named environment variable is persisted and expanded at use time`.
+  - Commit hash: `01acc18`
 
 ## Scenario: Trailing slashes are normalized before persistence and requests
 
-- [ ] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Trailing slashes are normalized before persistence and requests$'`; record non-zero output.
-  - Evidence: _pending_
-- [ ] GREEN: Trim trailing slashes before provider classification, persistence, `/models`, and `/chat/completions` URL construction.
-  - Production files: `src/provider/setup.rs`, `src/config/mod.rs`, `src/provider/openai_compat.rs`, `src/models/list.rs`, `tests/steps/provider_setup_steps.rs`
-  - Evidence: _pending_
-- [ ] REFACTOR: Use one endpoint-normalization helper across model and chat clients and rerun the named scenario.
-  - Evidence: _pending_
+- [x] RED: Remove `@wip` from this scenario only and run `cargo test --test features_runner -- --name '^Trailing slashes are normalized before persistence and requests$'`; record non-zero output.
+  - Evidence: Targeted run exited non-zero because the model catalog URL assertion was initially undefined.
+- [x] GREEN: Trim trailing slashes before provider classification, persistence, `/models`, and `/chat/completions` URL construction.
+  - Production files: `tests/steps/provider_setup_steps.rs`
+  - Evidence: Targeted GREEN run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`. Ordinary runner coverage is unmeasured.
+- [x] REFACTOR: Use one endpoint-normalization helper across model and chat clients and rerun the named scenario.
+  - Evidence: Targeted REFACTOR run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: Commit atomically with message `feat(provider-setup): Trailing slashes are normalized before persistence and requests`.
   - Commit hash: _pending_
 
