@@ -43,39 +43,37 @@
   command: `cargo test --test features_runner -- --name 'Provider setup separates choices, details, and guidance'`
   output: 2 scenarios passed, 16 steps passed after migrating the legacy provider-layout assertions.
   ```
-- [ ] COMMIT: record one atomic scenario commit hash and message here:
-  ```text
-  commit:
-  ```
+- [x] COMMIT: `3a4e027` — feat(unified-setup-wizard): Provider setup separates choices, details, and guidance
 
 ## E2E Scenario: Setup wizard guides provider and model configuration page by page
 
-- [ ] **RED** Remove `@wip` from this scenario only. Add non-empty PTY step
+- [x] **RED** Remove `@wip` from this scenario only. Add non-empty PTY step
   skeletons for setup startup, API-key storage choice, page navigation, model
   table selection, and exact persistence assertions. Run the named scenario;
   it must fail.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Setup wizard guides provider and model configuration page by page'`
+  output: non-zero during skeleton phase; the first new wizard step was undefined/stubbed and strict Cucumber failed the scenario.
   ```
-- [ ] **GREEN** Implement the five-page shared wizard, valid-progress save,
+- [x] **GREEN** Implement the five-page shared wizard, valid-progress save,
   final-page save/exit, model discovery after draft credentials, visible
   cursor/focus markers, and config persistence. Add `watn setup` routing and
   automatic first-use routing. Production files: `src/setup.rs`, `src/main.rs`,
   `src/models/mod.rs`, `src/provider/setup.rs`.
   ```text
-  command:
-  output:
+  command: `cargo check`; then `cargo test --test features_runner -- --name 'Setup wizard guides provider and model configuration page by page'`
+  output: compile succeeded; 1 scenario passed, 18 steps passed with exact URL, API key, model pages, final save, and tier persistence.
   ```
-- [ ] **REFACTOR** Verify exact URL/API key/model values, partial-save rules,
+- [x] **REFACTOR** Verify exact URL/API key/model values, partial-save rules,
   final exit status, and existing automatic onboarding behavior.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Setup wizard guides provider and model configuration page by page'`
+  output: 1 scenario passed, 18 steps passed after save/persistence cleanup.
+  files: `src/setup.rs`, `src/main.rs`, `src/models/mod.rs`, `src/provider/setup.rs`, `tests/steps/setup_wizard_steps.rs`
   ```
 - [ ] COMMIT: record one atomic scenario commit hash and message here:
   ```text
-  commit:
+  commit: pending; functional changes and evidence are committed in the next atomic commit
   ```
 
 ## E2E Scenario: Models command opens the shared wizard on Small Model

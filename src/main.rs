@@ -340,6 +340,7 @@ fn run_setup_command() {
                 eprintln!("{}", error);
                 std::process::exit(exit_code(&error));
             }
+            println!("Setup complete");
         }
         Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
             exit_setup_cancellation(cancellation);
