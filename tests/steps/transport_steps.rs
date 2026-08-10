@@ -223,6 +223,12 @@ fn run_transport_binary(world: &mut WatnWorld, binary_env: &str, override_endpoi
     });
 }
 
+fn run_fallback_pair(world: &mut WatnWorld) {
+    for override_endpoint in [None, Some("   ")] {
+        run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", override_endpoint);
+    }
+}
+
 #[when("I run the default-feature debug binary with the override set to the competing twin")]
 fn run_default_debug_binary(world: &mut WatnWorld) {
     let endpoint = world
@@ -249,8 +255,7 @@ fn run_isolated_debug_binary(world: &mut WatnWorld) {
     "I run the test-support debug binary once with no override and once with a whitespace override"
 )]
 fn run_debug_binary_with_fallback_states(world: &mut WatnWorld) {
-    run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", None);
-    run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", Some("   "));
+    run_fallback_pair(world);
 }
 
 #[then(regex = r##"^each binary should exit successfully with output containing "([^"]+)"$"##)]

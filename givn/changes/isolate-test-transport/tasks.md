@@ -74,9 +74,9 @@
   catch-all mock matchers, and rerun this scenario through verify-e2e. The
   formatted shared-cache rerun passed with 1 scenario and 10 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Normal debug requests ignore test routing settings`. Commit hash: pending
-  until commit creation. The earlier release-scoped implementation commit
-  `0554516` is superseded by this debug-scope correction.
+  `Normal debug requests ignore test routing settings`. Commit hash: `93b0343`.
+  The earlier release-scoped implementation commit `0554516` is superseded by
+  this debug-scope correction.
 
 ## Scenario: Test-support requests use isolated routing without changing saved configuration
 
@@ -100,20 +100,21 @@
 
 ## Scenario: Missing or whitespace test overrides fall back to the configured provider
 
-- [ ] RED: Remove `@wip` from this scenario, bind the two-invocation steps with
+- [x] RED: Remove `@wip` from this scenario, bind the two-invocation steps with
   real stubs, and run only the scenario through verify-e2e. Expected result:
-  non-zero exit. Evidence: pending.
-- [ ] GREEN: Implement both `missing` and `whitespace` child environments.
+  non-zero exit. Evidence: the runner matched the fallback action stub and
+  exited non-zero with `Step panicked ... not implemented` and `1 step failed`.
+- [x] GREEN: Implement both `missing` and `whitespace` child environments.
   Assert both configured responses, exact configured URL and path, exact
   Authorization header, two configured hits, zero competing hits, and unchanged
   TOML. Run only the scenario through verify-e2e and record passing output.
-  Evidence: pending.
-- [ ] REFACTOR: Remove duplicated fallback setup while keeping both child
-  invocations independently observable. Rerun the scenario through verify-e2e.
-  Evidence: pending.
-- [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
+  Efficient two-build bootstrap passed with 1 scenario and 10 steps.
+- [x] REFACTOR: Remove duplicated fallback setup while keeping both child
+  invocations independently observable. The formatted efficient-bootstrap
+  rerun passed with 1 scenario and 10 steps.
+- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Missing or whitespace test overrides fall back to the configured provider`.
-  Commit hash: pending.
+  Commit hash: pending until commit creation.
 
 ## Final Change Verification
 
