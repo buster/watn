@@ -93,22 +93,22 @@
 
 ## Non-E2E Scenario 3: LiteLLM Discovery Without a Key Sends No Authorization Header
 
-- [ ] RED: Remove `@wip` from only `Scenario: LiteLLM discovery without a key sends no authorization header`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: LiteLLM discovery without a key sends no authorization header`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101: Cucumber reported `1 scenario (1 failed)` at undefined catalog-source setup.
   ```
-- [ ] GREEN: Replace stubs with real LiteLLM endpoint and absent-header assertions; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real LiteLLM endpoint and absent-header assertions; implement minimum production code. Production files created/modified: `src/models/mod.rs`, `tests/steps/catalog_source_steps.rs`, `tests/steps/mod.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `6 steps (6 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
+- [x] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `6 steps (6 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `LiteLLM discovery without a key sends no authorization header`.
+- [x] COMMIT: Create one atomic commit referencing `LiteLLM discovery without a key sends no authorization header`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 4: Provider Discovery Is Used When LiteLLM Is Absent

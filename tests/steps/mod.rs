@@ -273,7 +273,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 world.mock_server.1 = Some(mock_id);
             }
 
-            if !world.pending_mock_returned_models.is_empty() {
+            if !world.pending_mock_returned_models.is_empty() && world.models_mock_id.is_none() {
                 world.models_mock_id = setup_models_mock(
                     server,
                     &world.pending_mock_returned_models,
@@ -331,7 +331,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             let base_url = format!("http://127.0.0.1:{}", server.port());
             config_content = rewrite_provider_endpoints(raw, &base_url);
 
-            if !world.pending_mock_returned_models.is_empty() {
+            if !world.pending_mock_returned_models.is_empty() && world.models_mock_id.is_none() {
                 world.models_mock_id = setup_models_mock(
                     server,
                     &world.pending_mock_returned_models,
