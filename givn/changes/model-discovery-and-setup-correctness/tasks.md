@@ -331,7 +331,7 @@
   After `cargo fmt --all`, targeted PTY runner exited 0: `1 scenario (1 passed)`, `13 steps (13 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Interactive model discovery preserves an OpenRouter environment credential`.
-- Commit hash: `PENDING`
+- Commit hash: `da7cbbc833ed4e75385dffaf6c25abce44d21d53`
 
 ## E2E Scenario 2: A Literal Saved Credential Is Authoritative Over Environment Fallback
 
