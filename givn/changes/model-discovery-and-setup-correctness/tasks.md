@@ -253,22 +253,22 @@
 
 ## Non-E2E Scenario 11: Existing Reasoning Survives Selection Without a Valid Replacement
 
-- [ ] RED: Remove `@wip` from only `Scenario: Existing reasoning survives selection without a valid replacement`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit.
+- [x] RED: Remove `@wip` from only `Scenario: Existing reasoning survives selection without a valid replacement`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at undefined persisted-reasoning setup.
   ```
-- [ ] GREEN: Replace stubs with real persisted-reasoning and model assertions; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real persisted-reasoning and model assertions; implement minimum production code. Production files created/modified: `src/models/mod.rs`, `tests/steps/reasoning_policy_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
-- [ ] REFACTOR: Clean up, rerun the targeted scenario, and confirm zero exit.
+- [x] REFACTOR: Clean up, rerun the targeted scenario, and confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Existing reasoning survives selection without a valid replacement`.
+- [x] COMMIT: Create one atomic commit referencing `Existing reasoning survives selection without a valid replacement`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 12: The Newest Search Result Stays Visible When an Older Result Arrives Later

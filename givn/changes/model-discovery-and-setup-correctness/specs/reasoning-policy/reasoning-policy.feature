@@ -44,7 +44,7 @@ Feature: Reasoning default and persistence policy
     When I run `watn models` and select "model-a" for small, "model-b" for normal, and "model-c" for thinking
     Then the config file should not contain an empty reasoning value
 
-  @givn.added @wip
+  @givn.added
   Scenario: Existing reasoning survives selection without a valid replacement
     Given a configured provider "test" with models that have no reasoning metadata
     And the existing small tier reasoning is "medium"

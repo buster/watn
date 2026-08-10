@@ -115,19 +115,13 @@ pub fn run_models_result(
         Ok(model) => model.clone(),
         Err(error) => return ModelSetupResult::Failed(error),
     };
-    let reasoning: [String; 3] = Default::default();
-
     let mut updated = config.clone();
-    updated.tiers.reasoning = crate::config::types::TierReasoning {
-        small: Some(reasoning[0].clone()),
-        normal: Some(reasoning[1].clone()),
-        thinking: Some(reasoning[2].clone()),
-    };
+    let reasoning = updated.tiers.reasoning.clone();
     updated.tiers = ModelTiers {
         small: Some(small.id.clone()),
         normal: Some(normal.id.clone()),
         thinking: Some(thinking.id.clone()),
-        reasoning: updated.tiers.reasoning.clone(),
+        reasoning,
     };
 
     if let Err(e) = save_config(&updated) {
