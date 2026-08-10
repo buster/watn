@@ -189,7 +189,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `3 steps (3 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Mandatory reasoning excludes off`.
-- Commit hash: `PENDING`
+- Commit hash: `aa626389a2f32dc5c6c81a47d75f5ffa090ed674`
 
 ## Non-E2E Scenario 8: Mandatory Reasoning With No Usable Metadata Returns a Policy Error
 
@@ -209,7 +209,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Mandatory reasoning with no usable metadata returns a policy error`.
-- Commit hash: `PENDING`
+- Commit hash: `aa626389a2f32dc5c6c81a47d75f5ffa090ed674`
 
 ## Non-E2E Scenario 9: Unknown Persisted Reasoning Sends No Reasoning Request
 
