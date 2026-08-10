@@ -34,7 +34,7 @@ Feature: Release truth and repository cleanup
     And the documentation does not use plain r for reasoning focus
     And the documentation does not name obsolete setup helper components
 
-  @givn.added @wip
+  @givn.added
   Scenario: Active documentation distinguishes archived historical snapshots
     Given the active architecture documentation and archived architecture snapshots
     When I inspect their status labels

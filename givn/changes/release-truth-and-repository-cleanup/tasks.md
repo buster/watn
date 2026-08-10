@@ -71,28 +71,30 @@
   Applied formatting and narrowed absence checks to stale positive claims;
   targeted rerun passed with 1 feature, 1 scenario, 11 steps.
   ```
-- [x] COMMIT: `befc0f7` plus the active-step follow-up `[pending hash]` - `docs(release-truth-and-repository-cleanup): Active documentation describes current command streaming`
+- [x] COMMIT: `6f85e4f` - `docs(release-truth-and-repository-cleanup): Active documentation describes current command streaming`
 
 ## Scenario: Active documentation distinguishes archived historical snapshots
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and run the
   scenario. Expected non-zero result. Evidence:
   ```text
-  [targeted runner output]
+  Targeted command exited non-zero after matching `archive_docs_stub`; the
+  runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Add an explicit archive-status section and historical links to the
+- [x] GREEN: Add an explicit archive-status section and historical links to the
   active Arc42 index. Assert archived assessments are identified as historical
   and are not presented as current architecture. Production files: none. Test
-  files: [list]. Targeted result:
+  file: `tests/steps/release_truth_steps.rs`. Targeted result:
   ```text
-  [targeted runner output]
+  1 feature, 1 scenario, 4 steps passed.
   ```
-- [ ] REFACTOR: Keep active/archive path assertions exact and idempotent.
+- [x] REFACTOR: Keep active/archive path assertions exact and idempotent.
   Targeted rerun:
   ```text
-  [targeted runner output]
+  Normalized documentation whitespace for stable assertions and reran: 1
+  feature, 1 scenario, 4 steps passed.
   ```
-- [ ] COMMIT: `[hash]` - `docs(release-truth-and-repository-cleanup): Active documentation distinguishes archived historical snapshots`
+- [x] COMMIT: `[pending hash]` - `docs(release-truth-and-repository-cleanup): Active documentation distinguishes archived historical snapshots`
 
 ## Hygiene Verification
 

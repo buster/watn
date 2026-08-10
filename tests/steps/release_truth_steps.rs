@@ -11,6 +11,7 @@ pub struct ReleaseTruthState {
     pub library_output: Option<String>,
     pub library_status: Option<bool>,
     pub active_docs: Option<String>,
+    pub archive_status: Option<String>,
 }
 
 impl fmt::Debug for ReleaseTruthState {
@@ -22,6 +23,7 @@ impl fmt::Debug for ReleaseTruthState {
             .field("file_output", &self.file_output)
             .field("library_status", &self.library_status)
             .field("active_docs", &self.active_docs.is_some())
+            .field("archive_status", &self.archive_status.is_some())
             .finish()
     }
 }
@@ -200,6 +202,48 @@ fn docs_no_obsolete(world: &mut crate::WatnWorld) {
             "obsolete documentation claim: {obsolete}"
         );
     }
+}
+
+#[given("the active architecture documentation and archived architecture snapshots")]
+fn archive_docs(world: &mut crate::WatnWorld) {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let active = std::fs::read_to_string(root.join("docs/arc42/README.md"))
+        .expect("read active Arc42 index");
+    let archived =
+        std::fs::read_to_string(root.join("givn/archive/incremental-sse-rendering/arc42.md"))
+            .expect("read archived Arc42 assessment");
+    world.release_truth.archive_status = Some(format!("{active}\n{archived}"));
+}
+
+#[when("I inspect their status labels")]
+fn inspect_archive_docs(world: &mut crate::WatnWorld) {
+    assert!(!world
+        .release_truth
+        .archive_status
+        .as_deref()
+        .unwrap_or_default()
+        .is_empty());
+}
+
+#[then("active documentation identifies archived snapshots as historical")]
+fn active_archive_status(world: &mut crate::WatnWorld) {
+    let docs = world
+        .release_truth
+        .archive_status
+        .as_deref()
+        .expect("archive docs");
+    assert!(docs.contains("historical records"));
+}
+
+#[then("archived snapshots are not presented as the current architecture")]
+fn archived_not_current(world: &mut crate::WatnWorld) {
+    let docs = world
+        .release_truth
+        .archive_status
+        .as_deref()
+        .expect("archive docs");
+    let normalized = docs.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(normalized.contains("not current architecture snapshots"));
 }
 
 fn active_docs_text(world: &crate::WatnWorld) -> &str {
