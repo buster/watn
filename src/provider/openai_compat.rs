@@ -92,92 +92,156 @@ impl Provider for OpenAICompatibleProvider {
             };
         }
 
-        let mut full_content = String::new();
-        let mut reasoning_content = String::new();
-        let mut final_usage = None;
-        let mut response_model = options.model.clone();
+        parse_sse_stream(BufReader::new(response), &options.model, sink)
+    }
+}
 
-        let mut reader = BufReader::new(response);
-        let mut line = String::new();
-        let mut first_event_at = None;
-        let mut completed = false;
+fn parse_sse_stream<R: BufRead>(
+    mut reader: R,
+    requested_model: &str,
+    sink: &mut dyn FnMut(StreamEvent) -> Result<(), Error>,
+) -> Result<StreamingResponse, Error> {
+    let mut full_content = String::new();
+    let mut reasoning_content = String::new();
+    let mut final_usage = None;
+    let mut response_model = requested_model.to_string();
 
-        loop {
-            line.clear();
-            let bytes_read = reader
-                .read_line(&mut line)
-                .map_err(|e| Error::NetworkError(e.to_string()))?;
-            if bytes_read == 0 {
-                break;
-            }
+    let mut line = String::new();
+    let mut first_event_at = None;
+    let mut completed = false;
 
-            let line = line.trim_end_matches(['\r', '\n']);
-            let Some(data) = line.strip_prefix("data:") else {
-                continue;
-            };
-            let data = data.strip_prefix(' ').unwrap_or(data).trim();
-            if data == "[DONE]" {
-                completed = true;
-                break;
-            }
+    loop {
+        line.clear();
+        let bytes_read = reader
+            .read_line(&mut line)
+            .map_err(|e| Error::NetworkError(e.to_string()))?;
+        if bytes_read == 0 {
+            break;
+        }
 
-            first_event_at.get_or_insert_with(Instant::now);
+        let line = line.trim_end_matches(['\r', '\n']);
+        let Some(data) = line.strip_prefix("data:") else {
+            continue;
+        };
+        let data = data.strip_prefix(' ').unwrap_or(data).trim();
+        if data == "[DONE]" {
+            completed = true;
+            break;
+        }
 
-            let Ok(chunk) = serde_json::from_str::<serde_json::Value>(data) else {
-                continue;
-            };
+        first_event_at.get_or_insert_with(Instant::now);
 
-            if let Some(model) = chunk["model"].as_str() {
-                response_model = model.to_string();
-            }
+        let Ok(chunk) = serde_json::from_str::<serde_json::Value>(data) else {
+            continue;
+        };
 
-            if let Some(usage) = chunk["usage"].as_object() {
-                final_usage = Some(TokenUsage {
-                    prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
-                    completion_tokens: usage["completion_tokens"].as_u64().unwrap_or(0) as u32,
-                });
-            }
+        if let Some(model) = chunk["model"].as_str() {
+            response_model = model.to_string();
+        }
 
-            if let Some(choices) = chunk["choices"].as_array() {
-                for choice in choices {
-                    let delta = &choice["delta"];
-                    if let Some(content) = delta["content"].as_str() {
-                        if !content.is_empty() {
-                            full_content.push_str(content);
-                            sink(StreamEvent::Content(content.to_string()))?;
-                        }
+        if let Some(usage) = chunk["usage"].as_object() {
+            final_usage = Some(TokenUsage {
+                prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
+                completion_tokens: usage["completion_tokens"].as_u64().unwrap_or(0) as u32,
+            });
+        }
+
+        if let Some(choices) = chunk["choices"].as_array() {
+            for choice in choices {
+                let delta = &choice["delta"];
+                if let Some(content) = delta["content"].as_str() {
+                    if !content.is_empty() {
+                        full_content.push_str(content);
+                        sink(StreamEvent::Content(content.to_string()))?;
                     }
+                }
 
-                    if let Some(reasoning) = delta["reasoning"]
-                        .as_str()
-                        .or_else(|| delta["reasoning_content"].as_str())
-                    {
-                        reasoning_content.push_str(reasoning);
-                    }
+                if let Some(reasoning) = delta["reasoning"]
+                    .as_str()
+                    .or_else(|| delta["reasoning_content"].as_str())
+                {
+                    reasoning_content.push_str(reasoning);
                 }
             }
         }
+    }
 
-        if !completed {
-            return Err(Error::NetworkError(
-                "stream ended before [DONE]".to_string(),
-            ));
-        }
+    if !completed {
+        return Err(Error::NetworkError(
+            "stream ended before [DONE]".to_string(),
+        ));
+    }
 
-        let elapsed_secs = first_event_at
-            .map(|started| started.elapsed().as_secs_f64())
-            .unwrap_or(0.0);
+    let elapsed_secs = first_event_at
+        .map(|started| started.elapsed().as_secs_f64())
+        .unwrap_or(0.0);
 
-        Ok(StreamingResponse {
-            final_usage,
-            model: response_model,
-            full_content,
-            elapsed_secs,
-            reasoning_content: if reasoning_content.is_empty() {
-                None
-            } else {
-                Some(reasoning_content)
-            },
+    Ok(StreamingResponse {
+        final_usage,
+        model: response_model,
+        full_content,
+        elapsed_secs,
+        reasoning_content: if reasoning_content.is_empty() {
+            None
+        } else {
+            Some(reasoning_content)
+        },
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_sse_stream;
+    use crate::provider::StreamEvent;
+    use std::io::Cursor;
+
+    #[test]
+    fn accepts_data_without_space_and_done_without_trailing_newline() {
+        let body =
+            br#"data:{"model":"response-model","choices":[{"delta":{"content":"printf test"}}]}
+
+data: [DONE]"#;
+        let mut content = String::new();
+        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |event| {
+            match event {
+                StreamEvent::Content(value) => content.push_str(&value),
+            }
+            Ok(())
         })
+        .expect("valid stream should parse");
+
+        assert_eq!(content, "printf test");
+        assert_eq!(response.full_content, "printf test");
+        assert_eq!(response.model, "response-model");
+    }
+
+    #[test]
+    fn accumulates_reasoning_content_alias() {
+        let body =
+            br#"data: {"model":"model","choices":[{"delta":{"reasoning_content":"inspect"}}]}
+
+data: [DONE]
+"#;
+        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()))
+            .expect("valid reasoning stream should parse");
+
+        assert_eq!(response.reasoning_content.as_deref(), Some("inspect"));
+    }
+
+    #[test]
+    fn final_usage_event_replaces_earlier_usage() {
+        let body = br#"data: {"model":"requested-model","choices":[{"delta":{"content":"printf"}}],"usage":{"prompt_tokens":1,"completion_tokens":1}}
+
+data: {"model":"response-model","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":20}}
+
+data: [DONE]
+"#;
+        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()))
+            .expect("valid usage stream should parse");
+        let usage = response.final_usage.expect("usage should be present");
+
+        assert_eq!(usage.prompt_tokens, 10);
+        assert_eq!(usage.completion_tokens, 20);
+        assert_eq!(response.model, "response-model");
     }
 }

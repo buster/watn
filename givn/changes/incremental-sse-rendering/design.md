@@ -66,7 +66,8 @@ The provider parser performs these operations for every response line:
    immediately, and return without waiting for the server to close its HTTP
    connection.
 5. Ignore a malformed JSON data event and continue reading later events. A
-   malformed event contributes neither content nor metadata.
+   malformed event contributes neither content nor metadata, although its
+   arrival still establishes the first-event timing boundary.
 6. Read top-level `model` independently of `choices`, so a valid choices-empty
    usage event can replace the requested-model fallback.
 7. Read top-level `usage` independently of `choices`, including when `choices`
@@ -153,7 +154,8 @@ actions are skipped.
 - A response model in any valid event replaces the requested-model fallback,
   even when that event has no choices.
 - A malformed data event contributes neither content nor metadata and does not
-  abort the connection.
+  abort the connection; if it is the first data line, it still starts elapsed
+  time measurement.
 - `[DONE]` is mandatory. A stream ending without it is not a successful empty
   response, even if valid content was already emitted.
 - A content callback error is propagated unchanged as `Error::IoError`; it is
@@ -258,10 +260,12 @@ interactive cases use a real pseudo-terminal so stdin is a TTY and crossterm
 raw mode is exercised. There is no browser or API-only substitute for the
 retained E2E interactions.
 
-The E2E runner is the existing configured command:
+The E2E runner is the configured wrapper command. It builds explicit default
+and test-support debug copies, then runs the real Cucumber runner with the E2E
+tag filter:
 
 ```text
-root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip'
+./run-tests.sh --e2e
 ```
 
 The runner is strict because `tests/features_runner.rs` calls
@@ -301,8 +305,12 @@ behavior to be reused.
 | Cucumber runner and child watn binaries | configured coverage commands | `cargo llvm-cov` debug binaries and test runner | existing collision-safe `coverage/profraw/%p-%m.profraw` pattern | `cargo llvm-cov ... --cobertura` | streamed provider request, callback rendering, and failure cleanup |
 
 Normal verification does not require coverage tooling. Coverage verification
-uses the existing commands in `givn/commands.yaml` and must continue to run the
-feature files rather than a parallel test-only harness.
+uses `measure-coverage.sh` and `merge-coverages.sh` from `givn/commands.yaml`.
+The measurement disables cargo-llvm-cov's default workspace-test exclusion so
+`tests/features_runner.rs` is present in both Cobertura reports, ignores only
+registry/toolchain/target artifacts, and merges per-file/per-line hits rather
+than adding duplicate report totals. Branch coverage is not claimed because
+the installed cargo-llvm-cov branch mode requires a nightly compiler.
 
 ## Interaction Coverage Matrix
 
@@ -314,20 +322,25 @@ feature files rather than a parallel test-only harness.
 | invoke watn with execute enabled from a raw terminal and confirm the generated command | Raw terminal confirmation happens after the complete command arrives | CLI | A real built `watn -x` process runs under `portable-pty`; the step checks the generated line and absence of execution output before sending a raw Enter key, then asserts each line exactly once. |
 | invoke watn with execute enabled from piped input and confirm the generated command | Piped confirmation remains available after streamed output | CLI | A real built `watn -x` subprocess receives `y\n` through piped stdin; assertions count the complete generated command line separately from the execution output line. |
 
-Every retained `@e2e` scenario maps to exactly one inventory entry. Parser,
-usage, DONE-held-connection, EOF, and controlled-output-writer scenarios remain
-non-E2E because their direct provider or renderer seams are the clearer evidence
-for those contracts.
+Every retained `@e2e` scenario maps to exactly one inventory entry. The regular
+parser, usage, DONE-held-connection, partial-read, malformed-event, and EOF
+scenarios drive the real CLI through loopback twins; the controlled-output-writer
+scenario uses the reviewed renderer seam because an unwritable process stdout
+cannot be injected through a portable subprocess boundary. Its assertions are
+limited to renderer state, visible prefix, and propagated I/O error.
 
 ## Single-Scenario Commands
 
-The configured verification command executes every feature under both
+The configured verification wrapper executes every feature under both
 `givn/specs/` and the active change directory because `tests/features_runner.rs`
 collects both trees. The non-E2E command is:
 
 ```text
-root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
+./run-tests.sh
 ```
+
+The wrapper's single-scenario equivalent uses the same explicit binary
+bootstrap and the Cucumber `--name` filter documented below.
 
 To run one named scenario during RED/GREEN/REFACTOR, use the same binary
 bootstrap and replace the final filter with the exact scenario name:

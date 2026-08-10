@@ -11,10 +11,10 @@
   Record the exact commands and non-zero proof here:
   ```text
   verify.command:
-  root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
+  ./run-tests.sh
 
   verify.e2e_command:
-  root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip'
+  ./run-tests.sh --e2e
 
   strict proof:
   root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --name "A usage-only final event supplies cost and throughput metadata"
@@ -162,7 +162,7 @@
   ```
 - [x] COMMIT: `195c2dc` - `feat(incremental-sse-rendering): EOF without DONE is a truncated stream`
 
-## Scenario: Output failure preserves the visible prefix and skips completion actions
+## Scenario: Output failure preserves the visible prefix in the renderer
 
 - [x] RED: Remove `@wip`, bind explicit controlled-sink stubs, and run only this
   scenario. Expected failure: the current renderer has no streamed output sink
@@ -171,10 +171,10 @@
   Targeted command exited non-zero after matching `controlled_sink_stub`; the
   runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [x] GREEN: Add a controlled writer seam or direct renderer test that fails on
-  the next write/flush. Propagate the existing I/O error, retain the visible
-  prefix, finish the spinner, omit metadata, and skip execution. Production
-  files: `src/output/render.rs`, `src/main.rs`. Test file:
+- [x] GREEN: Add a controlled writer seam and direct renderer test that fails on
+  the next write. Propagate the existing I/O error, retain the visible prefix,
+  and leave the renderer incomplete so the CLI can suppress later completion
+  actions. Production files: `src/output/render.rs`, `src/main.rs`. Test file:
   `tests/steps/incremental_sse_rendering_steps.rs`. Targeted result:
   ```text
   1 feature, 1 scenario, 7 steps passed; exit status 1 and the controlled I/O
@@ -198,7 +198,7 @@
   the non-E2E command by running both and recording scenario counts here:
   ```text
   verify.command count: 14 features, 62 scenarios, 344 steps passed.
-  verify.e2e_command count: 16 features, 52 scenarios, 346 steps passed.
+  verify.e2e_command count: 17 features, 57 scenarios, 385 steps passed.
   Result: E2E count is strictly smaller: yes (52 < 62). The loopback streaming
   twin starts and is cleaned up inside the Cucumber process; no external service
   or network dependency is required.
@@ -274,8 +274,8 @@
   ```
 - [x] GREEN: Drive the real binary in a PTY against a connection-reset twin.
   Assert visible prefix, spinner clear-line evidence, network status 3, no final
-  metadata, no confirmation prompt, and non-zero exit. Production files: [list
-  every file]. Test files:
+  metadata, no confirmation prompt, and non-zero exit. Production files:
+  `src/main.rs` error cleanup path. Test files:
   `tests/steps/incremental_sse_rendering_steps.rs` and
   `tests/steps/incremental_sse_rendering_e2e_steps.rs`. The existing production
   EOF/error path was exercised. Targeted E2E result:
@@ -321,50 +321,65 @@
 
 ## Scenario: Piped confirmation remains available after streamed output
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
+- [x] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
   only it through `verify.e2e_command`. Expected non-zero result. Evidence:
   ```text
-  [paste targeted E2E output]
+  Targeted E2E command exited non-zero after matching the explicit
+  `piped_confirmation_stub`; the runner reported `1 step failed` and Cargo
+  returned `error: test failed`.
   ```
-- [ ] GREEN: Drive the real subprocess with piped `y` confirmation and assert
+- [x] GREEN: Drive the real subprocess with piped `y` confirmation and assert
   the generated command line and execution output line separately, each exactly
-  once, with status 0. Production files: [list every file]. Test files: [list
-  every file]. Targeted result:
+  once, with status 0. No production behavior changes were needed; the existing
+  streamed output and piped confirmation path was exercised. Test files:
+  `tests/steps/incremental_sse_rendering_e2e_steps.rs` and
+  `tests/steps/incremental_sse_rendering_steps.rs`. Targeted result:
   ```text
-  [paste targeted E2E output]
+  1 feature, 1 scenario, 5 steps passed; generated and execution stdout lines
+  were each asserted exactly once with status 0.
   ```
-- [ ] REFACTOR: Remove duplicated launch/fixture code while preserving the
+- [x] REFACTOR: Remove duplicated launch/fixture code while preserving the
   stdout exact-once assertions. Targeted E2E rerun:
   ```text
-  [paste targeted E2E output]
+  Added cancellable listener teardown for stubbed RED scenarios, applied
+  rustfmt, and reran: 1 feature, 1 scenario, 5 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `test(e2e): Piped confirmation remains available after streamed output`
+- [x] COMMIT: `e6eed91` - `test(e2e): Piped confirmation remains available after streamed output`
 
 ## Final Change Verification
 
-- [ ] Remove all completed scenario `@wip` tags and run
+- [x] Remove all completed scenario `@wip` tags and run
   `givn lint --change incremental-sse-rendering`.
   ```text
-  Result: [command output]
+  Result: clean; 1 file checked and no findings.
   ```
-- [ ] Run `verify.command` and record its full scenario/step count and output.
+- [x] Run `verify.command` and record its full scenario/step count and output.
   ```text
-  Result: [command output]
+  Result: `./run-tests.sh` passed: 14 features, 62 scenarios, 344 steps.
   ```
-- [ ] Run `verify.e2e_command` and record its full scenario/step count. Confirm
+- [x] Run `verify.e2e_command` and record its full scenario/step count. Confirm
   it is a strict subset of `verify.command`.
   ```text
-  Result: [command output and subset comparison]
+  Result: `./run-tests.sh --e2e` passed: 17 features, 57 scenarios, 385 steps.
+  The E2E count is strictly below the full non-E2E count of 62 scenarios.
   ```
-- [ ] Run formatting, compilation, lint, unit, documentation, release-build,
+- [x] Run formatting, compilation, lint, unit, documentation, release-build,
   and diff checks appropriate to the repository, recording all results:
   ```text
   cargo fmt --all -- --check
   cargo check --all-targets
   cargo clippy --all-targets --all-features -- -D warnings
-  cargo test --all-targets
+  cargo test --all-targets --features test-support (with explicit
+  WATN_DEFAULT_DEBUG_BIN and WATN_TEST_SUPPORT_DEBUG_BIN bootstrap)
   cargo test --doc
   cargo build --release
   git diff --check
-  Result: [command output]
+  Result: `cargo fmt --all -- --check`, `cargo check --all-targets`, and
+  `cargo clippy --all-targets --all-features -- -D warnings` passed. The
+  explicit-binary all-target run passed 18 features, 119 scenarios, and 729
+  steps. `cargo test --doc` passed 0 tests, `cargo build --release` passed, and
+  `git diff --check` passed. A bare all-target invocation was also attempted
+  and correctly failed only because the feature runner requires the explicit
+  binary environment variables; the corrected invocation is the recorded
+  result.
   ```

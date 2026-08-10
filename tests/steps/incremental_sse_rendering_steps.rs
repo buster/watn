@@ -4,6 +4,7 @@ use serde_json::json;
 use std::fmt;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::os::fd::AsRawFd;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
@@ -20,8 +21,7 @@ pub struct StreamingState {
     controlled_prefix: Option<String>,
     controlled_visible: Option<String>,
     controlled_error: Option<String>,
-    controlled_metadata: bool,
-    controlled_execution_prompted: bool,
+    controlled_completed: Option<bool>,
 }
 
 impl fmt::Debug for StreamingState {
@@ -36,11 +36,7 @@ impl fmt::Debug for StreamingState {
             .field("pricing", &self.pricing)
             .field("controlled_visible", &self.controlled_visible)
             .field("controlled_error", &self.controlled_error)
-            .field("controlled_metadata", &self.controlled_metadata)
-            .field(
-                "controlled_execution_prompted",
-                &self.controlled_execution_prompted,
-            )
+            .field("controlled_completed", &self.controlled_completed)
             .finish()
     }
 }
@@ -141,6 +137,10 @@ impl StreamingServer {
         Self::start_with_options(events, hold_after, false)
     }
 
+    fn start_reset(events: Vec<Vec<u8>>) -> Self {
+        Self::start_with_behavior(events, None, false, Duration::ZERO, true)
+    }
+
     fn start_with_options(
         events: Vec<Vec<u8>>,
         hold_after: Option<usize>,
@@ -154,6 +154,16 @@ impl StreamingServer {
         hold_after: Option<usize>,
         bytewise_first: bool,
         initial_delay: Duration,
+    ) -> Self {
+        Self::start_with_behavior(events, hold_after, bytewise_first, initial_delay, false)
+    }
+
+    fn start_with_behavior(
+        events: Vec<Vec<u8>>,
+        hold_after: Option<usize>,
+        bytewise_first: bool,
+        initial_delay: Duration,
+        reset_after: bool,
     ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
         listener
@@ -221,6 +231,9 @@ impl StreamingServer {
                         .wait();
                 }
             }
+            if reset_after {
+                reset_connection(stream);
+            }
         });
 
         Self {
@@ -236,6 +249,23 @@ impl StreamingServer {
             release.release();
         }
     }
+}
+
+fn reset_connection(stream: TcpStream) {
+    let linger = nix::libc::linger {
+        l_onoff: 1,
+        l_linger: 0,
+    };
+    unsafe {
+        let _ = nix::libc::setsockopt(
+            stream.as_raw_fd(),
+            nix::libc::SOL_SOCKET,
+            nix::libc::SO_LINGER,
+            &linger as *const nix::libc::linger as *const nix::libc::c_void,
+            std::mem::size_of::<nix::libc::linger>() as nix::libc::socklen_t,
+        );
+    }
+    let _ = stream.shutdown(std::net::Shutdown::Both);
 }
 
 fn read_request_headers(stream: &mut TcpStream) {
@@ -372,10 +402,10 @@ pub(crate) fn configure_verbose_content(
 }
 
 pub(crate) fn configure_failure_content(world: &mut WatnWorld, content: String) {
-    world.streaming.server = Some(StreamingServer::start(
-        vec![content_event("test-model", &content)],
-        None,
-    ));
+    world.streaming.server = Some(StreamingServer::start_reset(vec![content_event(
+        "test-model",
+        &content,
+    )]));
     update_config(world);
 }
 
@@ -662,18 +692,22 @@ fn render_controlled_sink(world: &mut WatnWorld) {
         .controlled_prefix
         .clone()
         .expect("controlled prefix");
-    let mut writer = FailingWriter::fails_on_next_write();
+    let writer = FailingWriter::fails_on_next_write();
+    let mut renderer = watn::output::render::StreamRenderer::new(writer);
     assert!(
-        watn::output::render::write_streamed_content(&mut writer, &prefix).is_ok(),
+        renderer.write_content(&prefix).is_ok(),
         "the controlled sink should accept the visible prefix"
     );
-    let error = watn::output::render::write_streamed_content(&mut writer, " suffix")
+    let error = renderer
+        .write_content(" suffix")
         .expect_err("the controlled sink should fail on the next write");
+    let completed = renderer.completed();
+    let writer = renderer.into_writer();
     world.streaming.controlled_visible = Some(String::from_utf8_lossy(&writer.output).to_string());
+    let error = watn::error::Error::IoError(error);
     world.streaming.controlled_error = Some(error.to_string());
-    world.streaming.controlled_metadata = false;
-    world.streaming.controlled_execution_prompted = false;
-    world.exit_status = Some(1);
+    world.streaming.controlled_completed = Some(completed);
+    world.exit_status = Some(watn::error::exit_code(&error));
 }
 
 #[then(regex = r##"^the visible command prefix is preserved as "([^"]+)"$"##)]
@@ -688,16 +722,16 @@ fn visible_prefix(world: &mut WatnWorld, prefix: String) {
 fn io_error_reported(world: &mut WatnWorld) {
     assert_eq!(
         world.streaming.controlled_error.as_deref(),
-        Some("controlled output failure")
+        Some("I/O error: controlled output failure")
     );
 }
 
-#[then("final success metadata is omitted")]
-fn metadata_omitted(world: &mut WatnWorld) {
-    assert!(!world.streaming.controlled_metadata);
+#[then("the renderer is not marked complete")]
+fn renderer_not_complete(world: &mut WatnWorld) {
+    assert_eq!(world.streaming.controlled_completed, Some(false));
 }
 
-#[then("execution is not prompted")]
-fn execution_not_prompted(world: &mut WatnWorld) {
-    assert!(!world.streaming.controlled_execution_prompted);
+#[then("the execution boundary is not reached")]
+fn execution_boundary_not_reached(world: &mut WatnWorld) {
+    assert_eq!(world.streaming.controlled_completed, Some(false));
 }

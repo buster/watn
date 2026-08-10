@@ -235,28 +235,28 @@ fn main() {
     .expect("install SIGINT handler");
 
     let mut spinner = Some(watn::output::spinner::Spinner::start(&model));
-    let mut content_emitted = false;
-    let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
-        match event {
-            StreamEvent::Content(content) if !content.is_empty() => {
-                if !content_emitted {
-                    if let Some(active_spinner) = spinner.take() {
-                        active_spinner.finish();
+    let mut output = render::StreamRenderer::new(io::stdout());
+    let stream_result = {
+        let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
+            match event {
+                StreamEvent::Content(content) if !content.is_empty() => {
+                    if !output.has_content() {
+                        if let Some(active_spinner) = spinner.take() {
+                            active_spinner.finish();
+                        }
                     }
-                    content_emitted = true;
+
+                    output
+                        .write_content(&content)
+                        .map_err(watn::error::Error::IoError)?;
                 }
-
-                let mut stdout = io::stdout();
-                render::write_streamed_content(&mut stdout, &content)
-                    .map_err(watn::error::Error::IoError)?;
+                StreamEvent::Content(_) => {}
             }
-            StreamEvent::Content(_) => {}
-        }
-        Ok(())
-    };
+            Ok(())
+        };
 
-    let stream_result = provider.chat_completions_streaming(&messages, &options, &mut emit_content);
-    drop(emit_content);
+        provider.chat_completions_streaming(&messages, &options, &mut emit_content)
+    };
 
     match stream_result {
         Ok(response) => {
@@ -264,7 +264,7 @@ fn main() {
                 active_spinner.finish();
             }
 
-            if let Err(error) = render::finish_streamed_command(content_emitted) {
+            if let Err(error) = output.complete() {
                 let error = watn::error::Error::IoError(error);
                 eprintln!("{}", error);
                 std::process::exit(exit_code(&error));
@@ -328,8 +328,8 @@ fn main() {
             if let Some(active_spinner) = spinner.take() {
                 active_spinner.finish();
             }
-            if content_emitted {
-                let _ = render::finish_streamed_command(true);
+            if output.has_content() {
+                let _ = output.finish_partial();
             }
             let code = exit_code(&e);
             eprintln!("{}", e);
