@@ -14,7 +14,7 @@ Feature: Setup persistence boundaries
     And paste credential "sk-first-run"
     And confirm the credential before loading models
     Then the setup wizard should report the catalog failure
-    And the config file should contain provider "custom" with endpoint "https://llm.example.com/v1"
+    And the config file should contain provider "openrouter" with endpoint "https://openrouter.ai/api/v1"
     And the config file should not contain selected tier assignments
     And no original chat completion request should be sent
 

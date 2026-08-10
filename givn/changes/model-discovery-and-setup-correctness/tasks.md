@@ -395,23 +395,23 @@
 
 ## E2E Scenario 5: Model Catalog Failure After Provider Setup Preserves the Provider and Sends No Request
 
-- [ ] RED: Remove `@wip` from only `Scenario: Model catalog failure after provider setup preserves the provider and sends no request`; implement PTY steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Model catalog failure after provider setup preserves the provider and sends no request`; implement PTY steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at the missing catalog-failure assertion.
   ```
-- [ ] GREEN: Drive the actual setup wizard through PTY, assert the visible catalog failure and terminal exit primarily, then verify persistence/request side effects secondarily; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Drive the actual setup wizard through PTY, assert the visible failure/exit and persistence/request side effects; implement minimum production code. Production files created/modified: `src/setup.rs`, `tests/steps/setup_persistence_steps.rs`, `QUESTIONS.md`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted PTY runner exited 0: `2 scenarios (2 passed)`, `18 steps (18 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
+- [x] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted PTY runner exited 0: `2 scenarios (2 passed)`, `18 steps (18 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Model catalog failure after provider setup preserves the provider and sends no request`.
-- Commit hash: `3f3347d616baedf3cc24e2f0f303615606d1b1b0`
+- [x] COMMIT: Create one atomic commit referencing `Model catalog failure after provider setup preserves the provider and sends no request`.
+- Commit hash: `PENDING`
 
 ## E2E Scenario 6: Assigning Tiers Does Not Replace the Active Provider or Catalog Settings
 
@@ -471,7 +471,7 @@
   After `cargo fmt --all`, targeted PTY runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `The terminal model picker displays the newest overlapping search result`.
-- Commit hash: `PENDING`
+- Commit hash: `a0dd7161bfc7f7551ced52b3b3cd10790bc36558`
 
 ## Final Verification
 

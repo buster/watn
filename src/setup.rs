@@ -178,6 +178,7 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
 }
 
 struct SetupWizard {
+    config: Config,
     page: SetupPage,
     first_page: SetupPage,
     last_page: SetupPage,
@@ -223,10 +224,14 @@ impl SetupWizard {
                 value[2..value.len() - 1].to_string(),
             ),
             Some(value) => (CredentialStorage::Configuration, value.to_string()),
-            None if provider.endpoint == OPENROUTER_ENDPOINT => (
-                CredentialStorage::Environment,
-                suggested_api_key_env(&provider.endpoint).to_string(),
-            ),
+            None if entry == SetupEntryPoint::Models
+                && provider.endpoint == OPENROUTER_ENDPOINT =>
+            {
+                (
+                    CredentialStorage::Environment,
+                    suggested_api_key_env(&provider.endpoint).to_string(),
+                )
+            }
             None => (CredentialStorage::Configuration, String::new()),
         };
         let first_page = match entry {
@@ -255,6 +260,7 @@ impl SetupWizard {
         let generation = Arc::new(AtomicU64::new(0));
         let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
+            config: config.clone(),
             page: first_page,
             first_page,
             last_page,
@@ -441,6 +447,10 @@ impl SetupWizard {
                 self.validation.clear();
                 self.model_focus = ModelFocus::Table;
                 if next.model_slot().is_some() {
+                    if self.first_page == SetupPage::Url {
+                        let draft = self.current_provider()?;
+                        config::save_provider_draft(&mut self.config, &draft)?;
+                    }
                     if let Err(error) = self.ensure_catalog() {
                         self.page = SetupPage::ApiKey;
                         self.credential_focus = CredentialFocus::Value;
