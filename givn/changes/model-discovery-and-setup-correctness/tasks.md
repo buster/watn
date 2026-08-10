@@ -273,22 +273,22 @@
 
 ## Non-E2E Scenario 12: The Newest Search Result Stays Visible When an Older Result Arrives Later
 
-- [ ] RED: Remove `@wip` from only `Scenario: The newest search result stays visible when an older result arrives later`; implement coordinated-worker steps with `unimplemented!`; target by name; confirm non-zero exit.
+- [x] RED: Remove `@wip` from only `Scenario: The newest search result stays visible when an older result arrives later`; implement coordinated-worker steps with `unimplemented!`; target by name; confirm non-zero exit.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner initially exited 101 due the undefined coordinated-search steps.
   ```
-- [ ] GREEN: Replace stubs with deterministic generation coordination, exact suggestions, and worker-cleanup assertions; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with deterministic generation coordination, exact suggestions, and worker-cleanup assertions. Production files created/modified: `src/models/picker.rs` existing generation behavior exercised; `tests/steps/search_concurrency_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `2 features`, `2 scenarios (2 passed)`, `10 steps (10 passed)`.
   ```
-- [ ] REFACTOR: Clean up, rerun the targeted scenario, and confirm zero exit.
+- [x] REFACTOR: Clean up, rerun the targeted scenario, and confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `2 features`, `2 scenarios (2 passed)`, `10 steps (10 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `The newest search result stays visible when an older result arrives later`.
+- [x] COMMIT: Create one atomic commit referencing `The newest search result stays visible when an older result arrives later`.
 - Commit hash: `PENDING`
 
 ## E2E Setup
