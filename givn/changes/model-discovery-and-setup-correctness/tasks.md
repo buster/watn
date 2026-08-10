@@ -249,7 +249,7 @@
   Targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Non-TTY model assignment never persists empty reasoning values`.
-- Commit hash: `PENDING`
+- Commit hash: `f4eefc069f93be073bf3b630b329ab4de081e43c`
 
 ## Non-E2E Scenario 11: Existing Reasoning Survives Selection Without a Valid Replacement
 
