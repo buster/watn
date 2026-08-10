@@ -435,22 +435,22 @@
 
 ## E2E Scenario 7: Minimal Reasoning Is Persisted and Sent
 
-- [ ] RED: Remove `@wip` from only `Scenario: Minimal reasoning is persisted and sent`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Minimal reasoning is persisted and sent`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Initial targeted run exited 101 at the unimplemented E2E scenario contract.
   ```
-- [ ] GREEN: Drive `watn -2` through the real subprocess, assert successful CLI output primarily and request reasoning secondarily; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Drive `watn -2` through the real subprocess, assert successful CLI output primarily and request reasoning secondarily; implement minimum production code. Production files created/modified: existing ask subprocess steps and request construction exercised.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted subprocess runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
+- [x] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Minimal reasoning is persisted and sent`.
+- [x] COMMIT: Create one atomic commit referencing `Minimal reasoning is persisted and sent`.
 - Commit hash: `PENDING`
 
 ## E2E Scenario 8: The Terminal Model Picker Displays the Newest Overlapping Search Result

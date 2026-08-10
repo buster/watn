@@ -4,7 +4,7 @@
 @givn.delta @reasoning-policy
 Feature: Reasoning default and persistence policy
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Minimal reasoning is persisted and sent
     Given a model "gpt-4o" assigned to the normal tier with reasoning "minimal"
     When I run `watn -2 "summarise the changes"`
