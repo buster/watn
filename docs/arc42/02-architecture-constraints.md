@@ -12,19 +12,20 @@
 | OpenAI-compatible chat-completions API shape | Must work with any provider that exposes the `/v1/chat/completions` endpoint and its SSE response framing |
 | Complete SSE termination | A successful streaming response must provide a `[DONE]` data event; EOF without it is a truncated network failure even when content was received |
 | Single blocking stream consumer | The current CLI consumes provider events through a synchronous content callback; no async runtime, worker channel, or background output path is introduced |
-| XDG Base Directory Specification | Config at `~/.config/watn/`, data at `~/.local/share/watn/` |
+| XDG Base Directory Specification | Watn uses `$XDG_CONFIG_HOME/watn/config.toml` for configuration, defaulting to `~/.config/watn/config.toml`; it does not use an XDG data directory |
 | TOML for config files | Rust ecosystem standard; serde + toml crate |
 | Provider model endpoint with optional `?search=` query support | Server-side model filtering for catalogs larger than one page; providers that do not support search report a clear error rather than silently filtering only the local page |
 | Ratatui/crossterm terminal interaction | Provider onboarding and model selection must work as keyboard-driven terminal flows in the existing single binary; automatic onboarding is TTY-only |
 | Credential references must remain environment-resolved | A configured `${VARIABLE}` reference may be persisted, but its resolved value must not be emitted in status output or replace the reference in config |
 | Direct config writes enforce Unix mode `0600` | Every template, provider, and model save uses the existing direct-write mechanism and repairs file permissions after writing; atomic rename is not promised |
 | Test transport is debug-only | The endpoint override branch is compiled only under `cfg(all(feature = "test-support", debug_assertions))`; every release-profile build, including one with `test-support`, uses the configured endpoint branch |
+| Release evidence is target-specific | The release artifact is inspected with `file` and `ldd` on Linux or `otool -L` on macOS; a static artifact and universal shared-library set are not assumed |
 
 ## Organisational constraints
 
 | Constraint | Motivation |
 |---|---|
-| Single binary distribution | No runtime dependencies; `cargo build --release` produces a standalone binary |
+| Single binary distribution | `cargo build --release` produces one executable for the selected target; its target-dependent runtime libraries must be available at deployment time |
 
 ## Conventions
 

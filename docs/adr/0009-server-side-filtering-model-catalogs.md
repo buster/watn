@@ -6,8 +6,9 @@
 
 ## Context and Problem Statement
 
-The `watn models` picker fetches the complete model list from `GET /models` and
-presents it as a single scrollable `dialoguer::Select` list. Providers with
+The `watn models` SetupWizard model pages fetch the complete model list from
+`GET /models` and present it through the shared model-picker search logic.
+Providers with
 large catalogs (OpenRouter exposes thousands) make this unusable: the list is
 too long to scan, and models beyond the first page of a paginated response are
 invisible.
@@ -43,10 +44,9 @@ filter on the returned `id` fields. If the endpoint returns 4xx/5xx on a
 non-empty search, the picker displays "Model search is not supported by this
 provider" and retains whatever suggestions were previously visible.
 
-The autosuggest picker uses raw terminal I/O (`console` crate, already a
-transitive dep via `dialoguer`) instead of `dialoguer::Select` because
-`Select` does not support dynamic, server-driven item lists or raw keystroke
-reading.
+The SetupWizard model pages use the shared model-picker search logic because a
+framework-managed list must support dynamic, server-driven item lists and raw
+keystroke reading without a separate prompt loop.
 
 ## Consequences
 

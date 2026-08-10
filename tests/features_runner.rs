@@ -65,6 +65,7 @@ pub struct WatnWorld {
     pub transport: crate::steps::TransportState,
     pub streaming: crate::steps::incremental_sse_rendering_steps::StreamingState,
     pub live_stream: Option<crate::steps::incremental_sse_rendering_e2e_steps::LiveInvocation>,
+    pub release_truth: crate::steps::release_truth_steps::ReleaseTruthState,
 }
 
 impl Drop for WatnWorld {

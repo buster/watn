@@ -20,13 +20,13 @@ sequenceDiagram
     API-->>Prov: SSE stream of events
     loop Each complete content event
         Prov-->>CLI: content callback
-        CLI->>User: flushed command content (raw text)
+        CLI->>User: flushed command content (stdout, raw text)
     end
     API-->>Prov: usage event and [DONE]
     Prov-->>CLI: final aggregate after [DONE]
     CLI->>CLI: compute tokens/sec from first data event to [DONE]
     CLI->>CLI: compute cost (if pricing configured)
-    CLI-->>User: metadata (model, tok/s, cost)
+    CLI-->>User: metadata (stderr: model, tok/s, cost)
     CLI-->>User: exit 0
 ```
 
@@ -60,8 +60,8 @@ sequenceDiagram
     Prov->>API: POST /v1/chat/completions
     API-->>Prov: streaming response and [DONE]
     Prov-->>CLI: content callbacks, then final aggregate
-    CLI-->>User: flushed command: echo hello
-    CLI->>User: "Execute now? [Y/n]"
+    CLI-->>User: flushed command on stdout: echo hello
+    CLI->>User: "Execute now? [Y/n]" on stderr
     User->>CLI: Enter (or y)
     CLI->>Shell: sh -c "echo hello"
     Shell-->>User: hello
@@ -110,8 +110,8 @@ The harness asserts the exact full URL, `POST /v1/chat/completions`, one hit on
 the isolated twin, zero hits on the configured competing twin, and the exact
 `Authorization: Bearer sk-configured` header. The source guard makes a
 release-profile binary with `test-support` use the configured-endpoint branch;
-runtime proof of that branch is deferred to
-`release-truth-and-repository-cleanup`.
+release verification inspects that exact artifact and its target runtime
+libraries.
 
 ## Scenario: Normal debug requests ignore test routing
 
@@ -187,33 +187,33 @@ sequenceDiagram
 9. When `-v` is active, print buffered reasoning to stderr, then final metadata;
    on failure, print neither
 
-## Scenario: Keyboard-driven model settings dialog
+## Scenario: Keyboard-driven SetupWizard model pages
 
 **Trigger:** User runs `watn models` from a terminal.
 
 ```mermaid
 sequenceDiagram
     participant User as User
-    participant Dialog as Setup Wizard
+    participant Wizard as Setup Wizard
     participant Worker as Search worker (thread)
     participant API as Provider API
     participant Config as Config
 
-    User->>Dialog: runs `watn models` (TTY)
-    Dialog->>Dialog: show five tabs with Small Model active, page position, and cursor
-    User->>Dialog: types "dee flash"
-    Dialog->>Worker: spawn: per-word local/remote match (gen=N)
+    User->>Wizard: runs `watn models` (TTY)
+    Wizard->>Wizard: show five tabs with Small Model active, page position, and cursor
+    User->>Wizard: types "dee flash"
+    Wizard->>Worker: spawn: per-word local/remote match (gen=N)
     API-->>Worker: matching models
-    Worker->>Dialog: newest result wins → update suggestions
-    User->>Dialog: ↓ (select), `r` (reasoning minimal)
-    User->>Dialog: Enter or Tab (confirm small, advance to Middle Model)
+    Worker->>Wizard: newest result wins → update suggestions
+    User->>Wizard: ↓ (select), Ctrl-R, Up/Down (reasoning minimal)
+    User->>Wizard: Enter or Tab (confirm small, advance to Middle Model)
     loop normal, thinking
-        User->>Dialog: pick model, Enter or Tab to advance
+        User->>Wizard: pick model, Enter or Tab to advance
     end
-    User->>Dialog: Shift-Tab → previous page
-    User->>Dialog: Escape → save/discard prompt
-    Dialog->>Config: persist [tiers] + [tiers.reasoning]
-    Dialog-->>User: "Tiers configured: ..."
+    User->>Wizard: Shift-Tab → previous page
+    User->>Wizard: Escape → save/discard prompt
+    Wizard->>Config: persist [tiers] + [tiers.reasoning]
+    Wizard-->>User: "Tiers configured: ..."
 ```
 
 **Steps:**
@@ -224,7 +224,7 @@ sequenceDiagram
    order-independent and are debounced with a stale-result guard.
 3. Arrow/page keys move selection; Enter and Tab accept/advance; Shift-Tab
    returns to the previous page.
-    4. `r` exposes the closed reasoning set (off/low/minimal/medium/high) on a
+ 4. Ctrl-R focuses the closed reasoning set (off/low/minimal/medium/high) on a
        model page; mandatory models exclude off.
 5. Escape opens a save/discard prompt; saving persists the provider and all
    completed model choices.
@@ -245,11 +245,11 @@ sequenceDiagram
     alt endpoint configured
         CLI->>LLM: GET /models
         LLM-->>CLI: ["gpt-4o-mini", "gpt-4o", "o3-mini", ...]
-        CLI->>User: dialog: model + reasoning for small tier
+        CLI->>User: SetupWizard: model + reasoning for small tier
         User->>CLI: "gpt-4o-mini", reasoning off
-        CLI->>User: dialog: model + reasoning for normal tier
+        CLI->>User: SetupWizard: model + reasoning for normal tier
         User->>CLI: "gpt-4o", reasoning low
-        CLI->>User: dialog: model + reasoning for thinking tier
+        CLI->>User: SetupWizard: model + reasoning for thinking tier
         User->>CLI: "o3-mini", reasoning high
         CLI->>Config: write [tiers] and [tiers.reasoning] to config file
         CLI-->>User: "Configuration updated"
@@ -258,9 +258,9 @@ sequenceDiagram
     end
 ```
 
-## Scenario: Autosuggest model picker
+## Scenario: Model-picker search in the SetupWizard
 
-**Trigger:** User runs `watn models`, types a search query in the tier picker.
+**Trigger:** User runs `watn models`, types a search query on a SetupWizard model page.
 
 ```mermaid
 sequenceDiagram

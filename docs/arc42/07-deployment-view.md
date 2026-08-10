@@ -1,11 +1,14 @@
 # 7. Deployment View
 
-Deployment via `cargo install` or copying the single statically-linked binary to
-PATH. No runtime dependencies, no server infrastructure.
+Deployment via `cargo install` or copying the release executable to PATH. The
+artifact is one binary for the selected target, but its runtime library
+requirements are target-dependent; no server infrastructure is required.
 
-The binary is built with `cargo build --release` and produces a standalone
-executable with no dynamic library requirements beyond the OS kernel. Users
-install it once and run it from any terminal.
+The binary is built with `cargo build --release`. On the verified Linux host,
+`file target/release/watn` identifies a dynamically linked executable and
+`ldd target/release/watn` lists the shared libraries it requires. On macOS,
+`otool -L target/release/watn` provides the equivalent library inspection. The
+project does not claim a universal static deployment artifact.
 
 ## Verification build topology
 
@@ -21,13 +24,13 @@ result to a unique temporary path:
 The builds run sequentially so the second feature build can reuse Cargo's
 dependency cache without overwriting the first copied executable. The harness
 receives only these two absolute paths and never discovers or reuses
-`target/debug/watn`. Release-profile runtime verification is deferred to
-`release-truth-and-repository-cleanup`; product release deployment remains the
-single release binary described above.
+`target/debug/watn`. Product release deployment remains the single release
+executable described above, with the target-library inspection as its release
+truth check.
 
-The incremental SSE change does not add a production service, sidecar, runtime
-dependency, or deployment artifact. Verification now deploys the child binary
-against a loopback streaming twin that can flush content, hold a later event,
-send `[DONE]` without closing immediately, close without `[DONE]`, or reset the
-connection. The twin and its release gates exist only in the test process; the
-installed production binary continues to use the configured provider endpoint.
+The incremental SSE change does not add a production service, sidecar, or
+deployment artifact. Verification runs the child binary against a loopback
+streaming twin that can flush content, hold a later event, send `[DONE]` without
+closing immediately, close without `[DONE]`, or reset the connection. The twin
+exists only in the test process; the installed production binary continues to
+use the configured provider endpoint.

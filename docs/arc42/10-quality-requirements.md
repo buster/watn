@@ -23,8 +23,8 @@
   - QS-013: Environment-backed credentials remain references in config
   - QS-014: Literal credentials are masked during entry
   - QS-015: Every config save repairs Unix mode to `0600`
-- **Portability** — Single binary, no runtime deps
-  - QS-006: Standalone binary across Linux/macOS
+- **Portability** — One release executable with verified target runtime requirements
+  - QS-006: Release artifact and target libraries are identified for the selected host
 - **Observability** — Model, speed, cost, reasoning in output
   - QS-007: Tokens/second displayed after response
   - QS-008: Cost displayed when pricing configured
@@ -33,6 +33,7 @@
   - QS-032: Command content is visible before a delayed stream completes
   - QS-033: A completed stream is distinguished from EOF without `[DONE]`
   - QS-034: Partial output and output failures have safe cleanup behavior
+  - QS-039: Version output matches the package metadata
 
 ## Quality scenarios
 
@@ -43,7 +44,7 @@
 | QS-003 | Flexibility | User configures custom provider in config | Request is sent to the configured endpoint |
 | QS-004 | Flexibility | User assigns models to tiers in config | `-1` uses small model, `-3` uses thinking model |
 | QS-005 | Flexibility | User runs `watn models` with LiteLLM endpoint | Interactive selection works; tier config is persisted |
-| QS-006 | Portability | User downloads single binary on clean machine | Binary runs without runtime installation |
+| QS-006 | Portability | User deploys a release artifact on its verified target | `file` identifies the artifact as dynamically linked and `ldd` (Linux) or `otool -L` (macOS) identifies successful target-library requirements; no static portability claim is made |
 | QS-007 | Observability | Response completes | Output contains "tokens/s" with a numeric value |
 | QS-008 | Observability | Pricing configured in config | Output contains "cost:" with a monetary value |
 | QS-009 | Observability | User runs `watn -3 -v "..."` and API returns reasoning | Reasoning content printed to stderr on its own line |
@@ -60,7 +61,7 @@
 | QS-020 | Usability / Responsiveness | User changes the model filter while a provider search is delayed | The UI remains able to redraw and accept input; after the debounce only the newest query's results are applied, and an older result cannot replace them |
 | QS-021 | Onboarding / Usability | User opens setup and edits a page | The active tab, page number, prompt, and visible cursor identify exactly what is being edited |
 | QS-022 | Onboarding / Usability | User advances through setup | URL, API key, Small Model, Middle Model, and Large Model appear as one ordered wizard; Enter/Tab advances, Shift-Tab returns, and Escape presents save/discard |
-| QS-023 | Security / Portability | The transport resolver is compiled for a release profile with `test-support` enabled | The negated `cfg(all(feature = "test-support", debug_assertions))` branch is selected and the release binary has no active override lookup; runtime smoke verification is deferred to `release-truth-and-repository-cleanup` |
+| QS-023 | Security / Portability | The transport resolver is compiled for a release profile with `test-support` enabled | The negated `cfg(all(feature = "test-support", debug_assertions))` branch is selected and the release binary has no active override lookup; the release artifact and target runtime libraries are inspected by release verification |
 | QS-024 | Security / Testability | A debug test-support request uses a local twin | The expected full URL and method/path are exact, request count is exactly 1, Authorization is exactly `Bearer sk-configured`, and the persisted configured endpoint is unchanged |
 | QS-025 | Security / Testability | The override is absent or whitespace | The configured endpoint receives exactly 1 request with the exact Authorization header; the competing endpoint receives exactly 0; persisted TOML is unchanged |
 | QS-026 | Correctness | Readiness is evaluated while a competing override is present | Readiness is true from configuration alone; both local twins receive exactly 0 requests |
@@ -76,3 +77,4 @@
 | QS-036 | Recovery / Usability | A provider resets or reaches EOF after a visible command prefix | The prefix remains visible, spinner clear-line cleanup is observable, mapped network status is 3, final success metadata is absent, and no execute prompt appears |
 | QS-037 | Recovery / Correctness | A command-output write or flush fails after a visible prefix | The existing I/O error status 1 is returned; the prefix and spinner cleanup remain observable; final metadata and execution confirmation are omitted |
 | QS-038 | Correctness / Usability | A command is confirmed from a raw terminal or a pipe | The generated command is one complete line exactly once; execution output is asserted separately and occurs only after successful completion and confirmation |
+| QS-039 | Correctness / Release truth | User runs `watn --version` from the release artifact | Exit status is 0 and the output contains the exact Cargo package version used to build the binary |

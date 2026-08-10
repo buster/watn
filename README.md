@@ -39,8 +39,10 @@ cargo run
 watn find all files modified in the last day
 ```
 
-Pass a question as a positional argument or via stdin. watn streams the
-generated command to stdout and metadata (model, tokens/s, cost) to stderr.
+Pass a question as a positional argument or via stdin. watn streams generated
+command content incrementally to stdout and writes final metadata (model,
+tokens/s, cost) to stderr. Reasoning is buffered during the stream and is
+printed to stderr only after successful completion when `-v` is set.
 
 | Flag | Description |
 |---|---|
@@ -54,12 +56,26 @@ generated command to stdout and metadata (model, tokens/s, cost) to stderr.
 ## Configuration
 
 Layered config stack: built-in defaults → XDG config file → environment
-variables → CLI flags. Config file is TOML.
+variables → CLI flags. Config is TOML at `$XDG_CONFIG_HOME/watn/config.toml`
+(normally `~/.config/watn/config.toml`); watn does not use an XDG data
+directory.
 
 Run `watn provider` in a terminal to configure an OpenAI-compatible endpoint.
 OpenRouter is the default endpoint. Use `OPENROUTER_API_KEY` or choose another
 environment variable to keep the credential out of the config file; the saved
 config stores a reference such as `${OPENROUTER_API_KEY}`.
+
+The interactive `watn setup`, `watn provider`, and `watn models` commands share
+the five-page SetupWizard. On model pages, `Ctrl-R` toggles focus between the
+model table and reasoning strength.
+
+## Release artifacts
+
+`cargo build --release` produces one executable for the selected target. Release
+artifacts are dynamically linked on the verified host and require that target's
+runtime libraries. On Linux, inspect them with `file target/release/watn` and
+`ldd target/release/watn`; on macOS, use `otool -L`. The project does not claim a
+universal static deployment artifact.
 
 ## Development
 

@@ -26,8 +26,9 @@ Top requirements:
 17. Generated command content must become visible and flushed before a delayed provider stream completes
 18. Only an SSE stream terminated by `[DONE]` succeeds; truncated or failed streams preserve visible output and never execute it
 19. Command-output write failures must retain the visible prefix, clean up progress, and use the existing I/O status without success metadata
+20. `watn --version` must report the Cargo package version, and release documentation must match verified target runtime requirements
 
-See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
+See `givn/specs/` for the permanent executable Gherkin specifications.
 
 ## Quality goals
 
@@ -35,7 +36,7 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 |---|---|---|
 | 1 | Usability | One-shot shell command generation; confirmation-prompted execution; scannable interactive setup views |
 | 2 | Flexibility | Any OpenAI-compatible API; any model; model tier assignment |
-| 3 | Portability | Single static binary, no runtime dependencies beyond the OS |
+| 3 | Portability | A single release executable with runtime libraries documented and verified for its target |
 | 4 | Security | Prefer environment-backed credentials, mask pasted credentials, enforce private config permissions, and keep resolved secrets out of diagnostics |
 | 5 | Observability | Model name, tokens/second, cost (when priced), and buffered reasoning (when verbose after success) printed per response; exit codes for scripting |
 | 6 | Test isolation | Loopback transport overrides are available only to debug test-support binaries and cannot redirect release or normal invocations |
@@ -50,3 +51,4 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 | Power user | Configure custom providers, model tiers, pricing for cost tracking |
 | CI/user | Pipe questions in, get clean output with exit codes and metadata
 | Test maintainer | Run deterministic local-provider scenarios without changing release-binary behavior or persisted user configuration |
+| Release maintainer | Verify package version output and target-dependent runtime-library requirements before distribution |

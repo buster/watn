@@ -20,13 +20,22 @@ The outbound transport boundary keeps configured endpoints authoritative for
 normal and release-profile binaries; only a debug `test-support` binary may
 route requests to a loopback test twin, and that route is never persisted or
 used for readiness. Debug transport verification uses two copied binaries from
-Cargo's shared target cache; release-profile runtime verification is deferred
-to `release-truth-and-repository-cleanup`.
+Cargo's shared target cache. Release verification inspects the built artifact
+for target-dependent dynamic runtime libraries; no universal static-deployment
+claim is made.
 Chat completion responses are consumed as OpenAI-compatible SSE through a
 synchronous content callback with no worker channel. Command content is flushed
 incrementally, reasoning is buffered and printed only after successful
 completion under `-v`, and `[DONE]` is mandatory; truncated or failed streams
 preserve visible prefixes but do not print success metadata or execute.
+
+## Archive Status
+
+The files in this directory describe the current architecture. Archived givn
+change artifacts, including historical Arc42 assessments, are retained under
+[`givn/archive/`](../../givn/archive/) as historical records. They are not
+current architecture snapshots and are not rewritten when active documentation
+changes.
 
 | Chapter | File | Description |
 |---|---|---|

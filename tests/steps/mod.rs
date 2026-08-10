@@ -10,6 +10,8 @@ pub mod provider_setup_layout_steps;
 pub mod provider_setup_steps;
 pub mod providers_steps;
 pub mod reasoning_policy_steps;
+pub mod release_truth_e2e_steps;
+pub mod release_truth_steps;
 pub mod search_concurrency_steps;
 pub mod setup_persistence_steps;
 pub mod setup_wizard_steps;

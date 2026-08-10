@@ -10,7 +10,7 @@
 | Stream sink | The synchronous CLI callback that writes and flushes command content; it is not a worker channel and does not render reasoning |
 | DONE marker | The exact SSE data payload `[DONE]` that is required for successful stream completion |
 | Truncated stream | A provider response that reaches EOF or a read failure before the DONE marker; visible content is preserved but the result is a network error |
-| XDG | XDG Base Directory Specification — standard for config (`~/.config`), data (`~/.local/share`), and cache (`~/.cache`) paths |
+| XDG | XDG Base Directory Specification; watn uses the config directory (`$XDG_CONFIG_HOME/watn/`, normally `~/.config/watn/`) and does not use an XDG data directory |
 | LiteLLM | A proxy that exposes multiple LLM providers behind a single OpenAI-compatible API and provides a `/models` endpoint for discovery |
 | Raw output | Plain text without ANSI escape codes; suitable for scripting and pipes |
 | TTY detection | Runtime check of whether stdin is a terminal (interactive) or a pipe (scripting); automatic onboarding requires an implicit selection and a TTY |
@@ -19,10 +19,10 @@
 | Reasoning | Explanation produced by the LLM alongside the final answer. Accepted from `reasoning` or `reasoning_content`, buffered in the provider aggregate, and displayed on stderr only after successful completion when `-v`/`--verbose` is set |
 | Buffered reasoning | Provider-collected reasoning that is deliberately not emitted during the content stream and is discarded from user-visible output when the stream fails |
 | Partial output | Command content already flushed before a provider or output failure; it remains visible but is never treated as a successful executable result |
-| Autosuggest picker | Raw-terminal input loop that updates a suggestion list as the user types; replaces the static scrollable list for model tier assignment |
-| SettingsDialog | Ratatui keyboard-driven dialog that walks the small/normal/thinking levels in a guided sequence, showing the filter, the highlighted model list, and a reasoning-strength selector per level |
+| Model picker | The SetupWizard model-page search flow that updates suggestions as the user types and applies a stale-generation guard to remote results |
+| SetupWizard | The ratatui keyboard-driven five-page flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
 | Reasoning strength | Graduated per-level setting (`off`, `low`, `minimal`, `medium`, `high`) controlling the `reasoning_effort` sent on that tier's requests; `off` sends no field |
-| Guided sequence | The fixed small → normal → thinking walk performed by the settings dialog, with the ability to return to a previous level before confirming |
+| Guided sequence | The fixed Small Model → Middle Model → Large Model walk performed by the SetupWizard, with the ability to return to a previous page before confirming |
 | Page navigation | Moving the selection through the model list by a full page at a time with PageUp/PageDown keys |
 | Per-word filter | Order-independent matching where every whitespace-separated word of the query must appear somewhere in the model id |
 | Search query | Free-text filter sent to the provider as `GET /models?search=<query>` to narrow a large model catalog |

@@ -15,19 +15,20 @@ options, the decision outcome, and consequences.
 | ADR-0007 | Reasoning support via reasoning_effort parameter | [docs/adr/0007-reasoning-support.md](../adr/0007-reasoning-support.md) |
 | ADR-0008 | Template config generated from code | [docs/adr/0008-template-generated-from-code.md](../adr/0008-template-generated-from-code.md) |
 | ADR-0009 | Server-side filtering for paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
-| ADR-0010 | Keyboard-driven dialog for model and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |
+| ADR-0010 | SetupWizard model picker and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |
 | ADR-0011 | Interactive provider onboarding with environment-backed credentials | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
 | ADR-0012 | Structured widget composition for terminal setup views | [docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md](../adr/0012-structured-widget-composition-for-terminal-setup-views.md) |
 | ADR-0013 | Shared five-page setup wizard | [docs/adr/0013-shared-five-page-setup-wizard.md](../adr/0013-shared-five-page-setup-wizard.md) |
 | ADR-0014 | Independent catalog source and provider confirmation boundary | [docs/adr/0014-independent-catalog-source-and-provider-confirmation.md](../adr/0014-independent-catalog-source-and-provider-confirmation.md) |
 | ADR-0015 | Synchronous stream callback and completion boundary | [docs/adr/0015-synchronous-stream-callback-and-completion-boundary.md](../adr/0015-synchronous-stream-callback-and-completion-boundary.md) |
+| ADR-0016 | Release truth and target-dependent runtime requirements | [docs/adr/0016-release-truth-and-target-dependent-runtime-requirements.md](../adr/0016-release-truth-and-target-dependent-runtime-requirements.md) |
 
 ## ADR-0011 summary
 
 ADR-0011 chooses a TTY-gated ratatui/crossterm provider setup state machine
 with typed provider/model results and environment-backed credential references.
-The considered dialoguer alternative is intentionally recorded: dialoguer is
-adequate for linear prompts, but does not provide the same renderer boundary,
+The considered linear-prompt alternative is intentionally recorded: it is
+adequate for simple input, but does not provide the same renderer boundary,
 inline validation, masking, terminal restoration, and review-state contract.
 
 The onboarding names are fixed: normalized OpenRouter uses `openrouter`, and
@@ -46,8 +47,8 @@ completion, and the ephemeral E2E HTTP construction override for both
 available only under `cfg(all(feature = "test-support", debug_assertions))`,
 requires pure URL builders after resolution, and uses two copied debug paths
 from Cargo's shared target cache. A release binary with the feature enabled
-still uses the configured endpoint by source guard; runtime release proof is
-deferred to `release-truth-and-repository-cleanup`.
+still uses the configured endpoint by source guard; current release verification
+inspects the exact release artifact and its target runtime libraries.
 
 ## ADR-0012 summary
 
@@ -77,3 +78,53 @@ is mandatory; truncation and read failures preserve visible content but skip
 metadata and execution, while output write/flush failures use the existing I/O
 status. Completion timing begins at the first non-DONE data event and does not
 wait for a post-DONE connection close.
+
+## ADR-0016 summary
+
+ADR-0016 derives the CLI version from Cargo package metadata and makes release
+deployment claims target-specific. Release evidence uses `file` and `ldd` on
+Linux or `otool -L` on macOS to identify the dynamic runtime libraries of the
+exact artifact. The decision deliberately does not add or promise a universal
+static artifact.
+
+<!--
+MADR template for future decisions:
+
+# ADR-NNNN: Decision title
+
+- **Status:** proposed | accepted | deprecated | superseded
+- **Date:** YYYY-MM-DD
+- **Decision-makers:** role or name
+
+## Context and Problem Statement
+
+What problem requires a decision?
+
+## Decision Drivers
+
+- Driver one
+- Driver two
+
+## Considered Options
+
+- **Option one** - tradeoff
+- **Option two** - tradeoff
+
+## Decision Outcome
+
+Chosen option and the governing details.
+
+## Consequences
+
+### Good
+
+- Positive consequence
+
+### Bad
+
+- Negative consequence
+
+## Confirmation
+
+How the decision is verified.
+-->

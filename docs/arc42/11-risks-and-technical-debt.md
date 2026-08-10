@@ -9,11 +9,11 @@
 | R-003 | Config file with secrets (API keys) committed to version control | Medium | High | Support env-var-only API key config; warn if config file is world-readable |
 | R-004 | LiteLLM `/models` endpoint schema drifts | Low | Low | Parse response leniently; error gracefully on unexpected format |
 | R-005 | User confirms execution and the command is destructive | Low | High | Tool prints the command before prompting; user sees what they are confirming |
-| R-006 | Execution flow UX — command printed to stdout before prompt, user may interpret as already-executed | Medium | Medium | Command printed to stderr with prompt, execution output to stdout |
+| R-006 | Execution flow UX — command content is streamed to stdout before the prompt and may be mistaken for already-executed work | Medium | Medium | Keep command content on stdout for piping, put the confirmation prompt and metadata on stderr, and require confirmation before execution |
 | R-007 | Model returns empty reasoning tokens on thinking tier | Medium | Low | Trim reasoning content before printing; skip print if content is empty/whitespace after trimming |
 | R-008 | Template config generated from code may include irrelevant fields as Config grows | Low | Low | Template is a starting point — users delete what they do not need; template is meant to be edited |
 | R-009 | PTY-based E2E tests are flaky across platforms/terminal emulators | Medium | Medium | Run PTY tests in CI with a known terminal type (`TERM=dumb` or `xterm-256color`); add generous read timeouts; document that local test failures may require `script`/`unbuffer` wrappers |
-| R-010 | Arrow/page escape sequences differ across terminal emulators in the ratatui dialog | Low | Medium | Standard sequences (`\x1b[A/B`, `\x1b[5~/6~`); PTY E2E tests pin `TERM=xterm-256color`; ratatui/crossterm parse both classic and application-cursor modes |
+| R-010 | Arrow/page escape sequences differ across terminal emulators in the SetupWizard | Low | Medium | Standard sequences (`\x1b[A/B`, `\x1b[5~/6~`); PTY E2E tests pin `TERM=xterm-256color`; ratatui/crossterm parse both classic and application-cursor modes |
 | R-011 | A user chooses literal credential storage and the API key remains on disk | Medium | High | Prefer environment-backed references, mask input, apply mode `0600`, and warn on world-readable config files |
 | R-012 | Automatic onboarding requires an interactive terminal and a reachable model catalog | Medium | Medium | Detect non-TTY use, print actionable setup guidance, keep explicit `watn provider` and `watn models` commands available, and allow rerunning setup after a catalog failure |
 | R-013 | Provider setup succeeds but model selection is cancelled or fails, leaving a provider without tiers | Medium | Medium | Save provider first, return a typed model result, preserve the provider on failure, report the model failure clearly, map Escape/Ctrl-C to 1/130, and make model setup repeatable |
@@ -23,11 +23,11 @@
 | R-017 | Direct config writes are not atomic and may be interrupted | Low | High | Keep the existing direct-write mechanism as the explicit constraint, enforce mode `0600` after every save, and do not promise temp-file/rename semantics |
 | R-018 | The ephemeral E2E transport override could leak into persistence/readiness or cover only one request path | Medium | High | Apply it only at HTTP construction under the debug-plus-feature guard, never consult it during readiness, assert the exact persisted endpoint, and cover every touched `/models` and `/chat/completions` path |
 | R-019 | Structured columns and multiple regions can become cramped or unreadable on small terminals | Medium | Medium | Use Ratatui layout constraints, truncation-safe cells, wrapped paragraphs, and PTY coverage at the supported test size; keep keyboard flow independent of visual width |
-| R-020 | Debounced worker results can race with user input or outlive the dialog | Medium | Medium | Increment a generation for every query change, check it before and after the debounce, apply results only through the event loop, ignore Enter while pending, and reap the dialog before exit |
+| R-020 | Debounced worker results can race with user input or outlive the SetupWizard | Medium | Medium | Increment a generation for every query change, check it before and after the debounce, apply results only through the event loop, ignore Enter while pending, and reap the SetupWizard before exit |
 | R-021 | A shared wizard can make a partial save ambiguous when the user leaves before model selection is complete | Medium | Medium | Keep provider and completed model choices separate in the runtime result, validate before Save, and write only completed sections while Discard performs no write |
-| R-022 | Migrating Tab and Escape changes can surprise users of the existing model dialog | Medium | Medium | Keep Shift-Tab as the explicit back-page key, make Ctrl-R reasoning focus visible, migrate permanent scenarios, and retain command-specific entry points |
+| R-022 | Migrating Tab and Escape changes can surprise users of the existing model pages | Medium | Medium | Keep Shift-Tab as the explicit back-page key, make Ctrl-R reasoning focus visible, migrate permanent scenarios, and retain command-specific entry points |
 | R-023 | `watn models` and `watn provider` can start the shared wizard with stale or incomplete page state | Medium | Medium | Seed endpoint, credential storage, current tier selections, and model-specific reasoning from the loaded config; define and test each entry point's initial/final page range |
-| R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; defer release-profile runtime smoke verification to `release-truth-and-repository-cleanup` and keep the source invariant explicit |
+| R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; inspect the release-profile artifact and keep the configured-endpoint source invariant explicit |
 | R-025 | A stale or overwritten debug executable could make transport tests execute the wrong binary | Medium | High | Build the two debug variants sequentially through Cargo's shared target cache, copy each to a unique temporary path, pass only those absolute paths to the harness, and fail before scenarios when a path is missing |
 | R-026 | Broad mocks could report a successful request from the wrong endpoint or credential | Medium | High | Use separate local twin servers and mocks matching exact method/path/Authorization; assert expected counts, competing zero hits, response source, and persisted endpoint |
 | R-027 | A catalog source may be configured with an endpoint or credential policy that differs from the active chat provider | Medium | High | Resolve catalog and chat sources separately, pass the selected source explicitly to list/page/search calls, and assert exact source, query, and Authorization behavior |
@@ -39,6 +39,8 @@
 | R-033 | Buffered verbose reasoning may be mistaken for missing reasoning while a stream is active | Medium | Low | Keep reasoning in the final aggregate, print it only after successful `[DONE]` and only under `-v`, and assert its absence before the release gate |
 | R-034 | A provider sends usage or model metadata in a choices-empty event and final accounting falls back to the requested model | Medium | Medium | Extract top-level model and usage independently of choices, configure pricing only for the response model in the fixture, and assert exact model, cost, and throughput |
 | R-035 | Terminal spinner cleanup can race first content or a stream error and leave control sequences visible | Medium | Medium | Keep one CLI-owned spinner lifecycle, finish it on first content and every return path, and assert PTY clear-line evidence for both delayed success and mid-stream failure |
+| R-036 | A release artifact's target-dependent shared-library requirements are hidden by a universal static-deployment claim | Medium | High | Build the exact release target, inspect it with `file` and `ldd` on Linux or `otool -L` on macOS, and document only the verified target requirements |
+| R-037 | The CLI version can drift from the Cargo package version used to build the release artifact | Medium | Medium | Derive the CLI version from package metadata and assert the exact package version through the real release-binary scenario |
 
 ## Technical debt
 
@@ -73,8 +75,8 @@ The following consequences are accepted and mitigated explicitly:
 - Test transport seam: the override is ephemeral, construction-time only, and
   verified on all touched HTTP paths without changing readiness or persisted
   endpoint values. The compile-time guard keeps it out of every release
-  profile, including release with `test-support` enabled; runtime proof is
-  assigned to `release-truth-and-repository-cleanup`.
+  profile, including release with `test-support` enabled; the release artifact
+  check records the target-specific runtime result.
 - Debug build selection: the two debug variants reuse Cargo's dependency cache
   but are copied to distinct absolute paths before Cucumber starts, so a stale
   or overwritten `target/debug/watn` cannot produce a false-green result.
@@ -122,3 +124,30 @@ The following consequences are accepted and mitigated explicitly:
 - Exact-once output: content chunks are written once and the final aggregate is
   never reprinted; raw-terminal and piped scenarios count generated and execution
   lines separately.
+
+## ADR-0016 consequence coverage
+
+The release-truth decision has these durable consequences:
+
+- Package metadata is the single version source, so a changed package version
+  requires a rebuilt binary before verification.
+- Release deployment requires compatible runtime libraries for the selected
+  target. Linux uses `file` and `ldd`; macOS uses `otool -L`.
+- The shared-library set varies by target, so the documentation records the
+  verified target rather than promising one universal list.
+- No static artifact is introduced. Static portability remains a separate
+  release-engineering decision.
+
+## Cleanup boundary
+
+Repository cleanup is deliberately conservative:
+
+- Remove only the unused `_config` parameter from `build_registry()` after
+  implementation.
+- Retain public `ProviderRegistry` because it remains the provider lookup
+  boundary and current CLI code uses it.
+- Retain public `ProviderSetupResult`, `cancellation_result`, and
+  `configured_result` because current provider setup feature steps consume them
+  and external consumers of the public library modules are unknown.
+- Remove only `WatnWorld` fields proven write-only by repository-wide search
+  after scenario migration. Any field used by a permanent feature step remains.

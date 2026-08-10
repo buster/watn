@@ -17,7 +17,7 @@
 - Interactive setup uses native Ratatui widget composition rather than paragraph-flattened or hand-positioned terminal output
 - Provider and model onboarding share one page-based Ratatui wizard; commands select its initial and final page rather than owning separate event loops
 - Test transport is a compile-time debug capability: only `test-support` plus `debug_assertions` can read the endpoint override; release-profile builds use configured endpoints even when the feature is enabled
-- Debug verification builds the default-feature and `test-support` binaries sequentially through Cargo's shared default target cache, copies them to unique temporary paths, and passes those absolute paths to the subprocess harness; release runtime verification is deferred to `release-truth-and-repository-cleanup`
+- Debug verification builds the default-feature and `test-support` binaries sequentially through Cargo's shared default target cache, copies them to unique temporary paths, and passes those absolute paths to the subprocess harness; release verification inspects the exact target artifact and its runtime libraries
 - Catalog source resolution is explicit: `[litellm]` owns model listing, pagination, and search when present; otherwise the selected provider is used, while chat construction remains provider-only
 - Credential values retain their persisted source representation and are expanded only at the outbound discovery or chat request boundary; a confirmed provider draft is saved before its first catalog request
 - A shared reasoning policy validates closed-set strengths, honors model default-enabled and mandatory metadata, and preserves existing valid reasoning when no replacement exists
@@ -31,10 +31,10 @@
 | CLI parsing | clap v4 | Derive macros, `-1`/`-2`/`-3` flag groups, subcommand dispatch |
 | HTTP client | reqwest (blocking) | Blocking SSE with a buffered reader and synchronous content callback for progressive rendering; no worker channel |
 | Config format | TOML via `toml` crate | Rust ecosystem standard |
-| Terminal interaction | dialoguer (existing non-TTY model prompts), ratatui/crossterm widgets (shared setup wizard) | One TTY-only wizard renders URL, API key, and three model pages with `Block`, `Tabs`, `Paragraph`, `Table`, and `Scrollbar`; command entry points choose the starting page |
+| Terminal interaction | ratatui/crossterm `SetupWizard` and the `model-picker` search module | One TTY-only wizard renders URL, API key, and three model pages with `Block`, `Tabs`, `Paragraph`, `Table`, and `Scrollbar`; command entry points choose the starting page |
 | Filter matching | Per-word, order-independent substring over model id | "dee flash" matches "DeepSeek V4 Flash"; each word must appear anywhere in the id, any order |
 | Gherkin runner | cucumber-rs | Mature Rust cucumber implementation |
-| Pseudo-terminal testing | portable-pty | PTY-based E2E tests for the terminal dialog |
+| Pseudo-terminal testing | portable-pty | PTY-based E2E tests for the SetupWizard |
 | Transport verification | `httpmock` loopback twins plus explicit subprocess paths | Proves endpoint, path, request count, Authorization, competing-server, and persistence behavior without live providers |
 | Catalog resolution | Runtime-only catalog source value | Keeps LiteLLM discovery separate from active chat and makes optional catalog authentication explicit |
 | Reasoning policy | Pure closed-set resolver | Prevents TTY, non-TTY, and request-body reasoning behavior from diverging |
@@ -45,7 +45,7 @@
 |---|---|
 | Usability | Default tier produces command in one invocation; execution confirmation is a single Enter |
 | Flexibility | OpenAI-compatible wire protocol; model tiers configurable; LiteLLM discovery optional |
-| Portability | Single Rust binary; no runtime deps |
+| Portability | Release artifacts are verified on the selected host and documented with their dynamic runtime-library requirements; static portability is not claimed |
 | Observability | Model name, tok/s, cost printed after `[DONE]`; buffered reasoning printed only under `-v` after success; exit codes 0/1/2/3/130 |
 | Recovery | Visible content survives network/truncation failures; output I/O failures retain the prefix, clean up progress, omit metadata and execution, and use status 1 |
 | First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |

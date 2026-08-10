@@ -68,9 +68,9 @@ Transport verification starts separate loopback twins and asserts full endpoint,
 method/path, per-child and aggregate request counts, exact
 `Authorization: Bearer <key>`, competing server zero hits, response source, and
 unchanged persisted endpoint. The `cfg` guard keeps the override out of
-release-profile compilation; runtime verification with
-`cargo build --release --features test-support` is deferred to
-`release-truth-and-repository-cleanup`.
+release-profile compilation. Release verification builds the artifact and
+inspects its target-dependent runtime libraries with `file` and `ldd` on Linux
+or `otool -L` on macOS.
 
 Environment-backed credentials are persisted as complete references such as
 `${OPENROUTER_API_KEY}`. The resolver expands the reference for an outbound
@@ -205,14 +205,14 @@ setup guidance go to stderr as plain text (suitable for scripting).
 
 ## Model interaction modes
 
-The current model settings dialog uses ratatui and crossterm when stdin is a
-TTY. It reads terminal events through crossterm, renders a bordered picker with
-tier tabs, filter/status paragraphs, an aligned metadata table, and a stateful
-scrollbar, then restores the terminal before returning a typed result. The
-existing dialoguer path remains available for explicit non-dialog model
-selection.
+The SetupWizard uses ratatui and crossterm when stdin is a TTY. It reads
+terminal events through crossterm, renders a bordered model page with tier tabs,
+filter/status paragraphs, an aligned metadata table, and a stateful scrollbar,
+then restores the terminal before returning a typed result. The `model-picker`
+module supplies remote search, local matching, and stale-generation handling;
+there is no separate legacy model prompt path.
 
-## Keyboard-driven model settings dialog
+## Keyboard-driven SetupWizard model pages
 
 The interactive `watn setup`, `watn provider`, and `watn models` flows (TTY
 stdin) share a ratatui-based setup wizard. It renders one bordered page at a

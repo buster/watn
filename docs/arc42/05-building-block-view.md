@@ -11,7 +11,7 @@ graph TB
     Setup["Provider Setup<br/>(ratatui onboarding)"]
     Wizard["Setup Wizard<br/>(five pages)"]
     Output["Output<br/>(metadata + command)"]
-    Models["Models<br/>(explorer)"]
+    Models["Models<br/>(catalog and model-picker)"]
     Exec["Exec<br/>(command execution)"]
 
     CLI --> Config
@@ -53,7 +53,7 @@ graph TB
 |---|---|
 | `Provider` trait | Defines `chat_completions_streaming()` with a synchronous content-event sink |
 | `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses buffered SSE lines, extracts content/reasoning/model/usage, invokes the content sink, and rejects EOF without `[DONE]` |
-| `ProviderRegistry` | Maps provider names (from config) to `Box<dyn Provider>` instances |
+| `ProviderRegistry` | Public provider lookup boundary that maps provider names (from config) to `Box<dyn Provider>` instances; it remains useful even when the binary currently registers one active provider |
 
 The transport boundary is the only production endpoint-resolution seam. URL
 builders receive an effective endpoint and remain free of environment lookups.
@@ -94,9 +94,8 @@ empty or partial tier values.
 | Element | Responsibility |
 |---|---|
 | `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response |
-| `SettingsDialog` | Supplies model-selection domain types and search behavior used by the shared Setup Wizard; the wizard owns the page event loop and persistence boundary |
-| `ModelPicker` | Shared model-search and local-filter logic used by the dialog and test seam; remote search results use a stale-result guard |
-| `TierSelector` | Fallback interactive prompts for non-dialog paths |
+| `SetupWizard` model pages | Own the shared Small, Middle, and Large Model pages, page event loop, reasoning focus, and persistence boundary |
+| `model-picker` | Provides model-search and local-filter logic; remote search results use a stale-generation guard |
 | `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths through the existing direct writer, enforcing Unix mode `0600` after every save |
 
 ### Exec
@@ -105,4 +104,18 @@ empty or partial tier values.
 
  | Element | Responsibility |
  |---|---|
- | `Executor` | Read stdin for confirmation and run the already rendered `sh -c <cmd>` only after the stream succeeds; it does not print the aggregate again |
+  | `Executor` | Read stdin for confirmation and run the already rendered `sh -c <cmd>` only after the stream succeeds; it does not print the aggregate again |
+
+## Repository hygiene boundary
+
+The cleanup keeps architectural and consumer boundaries explicit:
+
+- Remove only the unused `_config` parameter from `build_registry()` after the
+  implementation is complete.
+- Retain public `ProviderRegistry`, `ProviderSetupResult`, and the
+  `cancellation_result` and `configured_result` wrapper functions. Current
+  feature steps consume the setup result wrappers, and external consumers of the
+  public library modules cannot be ruled out.
+- Remove only `WatnWorld` fields proven write-only by repository-wide search
+  after the active scenarios are migrated. Fields read or written by permanent
+  feature steps remain.

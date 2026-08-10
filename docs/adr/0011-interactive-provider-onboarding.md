@@ -120,7 +120,8 @@ sequentially for the debug profile through Cargo's shared default target cache,
 then copies them to unique temporary paths. Only those two absolute paths are
 passed to the subprocess harness; scenarios do not discover a stale
 `target/debug/watn` or build during execution. Release-profile runtime
-verification is deferred to `release-truth-and-repository-cleanup`.
+verification inspects the exact release artifact and its target runtime
+libraries.
 
 ## Consequences
 
@@ -157,7 +158,7 @@ verification is deferred to `release-truth-and-repository-cleanup`.
   debug builds with copied binary paths, per-child accounting, and exact twin
   assertions; the extra setup is deliberate because a broad mock or stale
   binary would create false-green transport tests. Release-profile runtime
-  proof remains a later change.
+  proof is recorded by the release artifact inspection.
 
 ## Confirmation
 

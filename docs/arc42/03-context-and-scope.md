@@ -17,7 +17,7 @@ graph TB
     CLI -->|"GET /models, pages, search"| LiteLLM
     CLI -->|"GET /models when LiteLLM absent"| API
     CLI -->|"sh -c (when -x flag)"| Shell
-    User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab) in the model settings dialog"| CLI
+    User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab / Ctrl-R) in SetupWizard model pages"| CLI
     CLI -->|"write provider endpoint and credential representation"| Config
     API -->|"SSE content events and [DONE]"| CLI
     LiteLLM -->|"model list"| CLI
@@ -26,7 +26,7 @@ graph TB
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); page navigation and editing in the shared `watn setup` wizard; `watn models` model-page entry | Incrementally flushed shell command content, then final metadata (model, tok/s, cost); buffered reasoning on stderr only after successful completion with `-v`; five-page setup wizard with visible tabs, cursor, provider credential choice, model tables, and save/discard prompt; saved provider/tier setup; actionable non-TTY setup guidance; or confirmation prompt |
+| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); page navigation and editing in the shared `watn setup` wizard; `watn models` model-page entry | Incrementally flushed shell command content on stdout, then final metadata on stderr; buffered reasoning on stderr only after successful completion with `-v`; five-page SetupWizard with visible tabs, cursor, provider credential choice, model tables, and save/discard prompt; saved provider/tier setup; actionable non-TTY setup guidance; or confirmation prompt |
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions`; SSE must end with `[DONE]` for success |
 | LiteLLM (optional) | Endpoint URL (config), optional credential, search query (typed by user) | HTTP GET to `/models`, paginated `/models`, and HTTP GET to `/models?search=...`; never receives chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
