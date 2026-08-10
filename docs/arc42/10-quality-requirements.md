@@ -28,8 +28,11 @@
 - **Observability** — Model, speed, cost, reasoning in output
   - QS-007: Tokens/second displayed after response
   - QS-008: Cost displayed when pricing configured
-  - QS-009: Reasoning content displayed on stderr when verbose flag is set
+  - QS-009: Buffered reasoning content displayed on stderr after successful completion when verbose flag is set
   - QS-010: Exit code categories for scripting
+  - QS-032: Command content is visible before a delayed stream completes
+  - QS-033: A completed stream is distinguished from EOF without `[DONE]`
+  - QS-034: Partial output and output failures have safe cleanup behavior
 
 ## Quality scenarios
 
@@ -66,3 +69,10 @@
 | QS-029 | Correctness / Recovery | User confirms a provider and catalog discovery fails or setup is cancelled | Provider source is persisted before catalog access; tiers remain unchanged; pre-confirmation cancellation writes nothing; no original chat request is sent |
 | QS-030 | Correctness | Model metadata or persisted config contains disabled, mandatory, minimal, empty, or unknown reasoning values | Shared policy selects a valid strength, persists/sends `minimal` when selected, excludes `off` for mandatory models, and emits no reasoning field for empty/unknown values |
 | QS-031 | Responsiveness / Correctness | Slow and fast model searches overlap | Fast/newest IDs remain visible after the slow result completes; stale IDs are absent and all workers are cleaned up before scenario exit |
+| QS-032 | Responsiveness / Usability | A provider flushes a first command event and delays a later event | The first content is observable before release; the spinner was visible beforehand and a clear-line cleanup is observable after first content; the complete generated command appears exactly once after success |
+| QS-033 | Correctness / Recovery | A provider sends `[DONE]` and keeps the connection open, or closes without `[DONE]` | `[DONE]` permits exit 0 before connection close; EOF without `[DONE]` preserves visible content, reports a network error, emits no success metadata or prompt, and exits 3 |
+| QS-034 | Observability / Correctness | Verbose reasoning and command content arrive in the same stream | Command stdout is visible before completion; reasoning is absent before completion, then appears on stderr only under `-v` after `[DONE]`; stdout never contains reasoning |
+| QS-035 | Correctness / Observability | A choices-empty usage event supplies response model and usage after content | Final metadata names the response model rather than the requested model, uses pricing for that response model, and contains a non-zero cost and positive throughput |
+| QS-036 | Recovery / Usability | A provider resets or reaches EOF after a visible command prefix | The prefix remains visible, spinner clear-line cleanup is observable, mapped network status is 3, final success metadata is absent, and no execute prompt appears |
+| QS-037 | Recovery / Correctness | A command-output write or flush fails after a visible prefix | The existing I/O error status 1 is returned; the prefix and spinner cleanup remain observable; final metadata and execution confirmation are omitted |
+| QS-038 | Correctness / Usability | A command is confirmed from a raw terminal or a pipe | The generated command is one complete line exactly once; execution output is asserted separately and occurs only after successful completion and confirmation |

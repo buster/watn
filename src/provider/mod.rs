@@ -25,6 +25,11 @@ pub struct TokenUsage {
     pub completion_tokens: u32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StreamEvent {
+    Content(String),
+}
+
 #[derive(Debug, Clone)]
 pub struct StreamingResponse {
     pub final_usage: Option<TokenUsage>,
@@ -39,5 +44,6 @@ pub trait Provider: Send + Sync {
         &self,
         messages: &[Message],
         options: &RequestOptions,
+        sink: &mut dyn FnMut(StreamEvent) -> Result<(), Error>,
     ) -> Result<StreamingResponse, Error>;
 }

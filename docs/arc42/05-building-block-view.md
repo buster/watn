@@ -35,13 +35,13 @@ graph TB
 |---|---|
 | CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
 | Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources and resolve the catalog source |
-| Provider | Chat with any OpenAI-compatible API via the Provider trait |
+| Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, and require `[DONE]` |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
 | Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, and save/discard prompt; save a confirmed provider draft before catalog access and return optional provider plus completed model drafts |
-| Output | Format response with metadata header (model, tok/s, cost) + command body |
+| Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
 | Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
-| Exec | Print command, prompt confirmation, invoke `sh -c` if confirmed |
+| Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
 
 ## Level 2 — Key building blocks
 
@@ -51,8 +51,8 @@ graph TB
 
 | Element | Responsibility |
 |---|---|
-| `Provider` trait | Defines `chat_completions_streaming()` (SSE streaming) |
-| `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses SSE chunks (extracts both `content` and `reasoning` from delta) |
+| `Provider` trait | Defines `chat_completions_streaming()` with a synchronous content-event sink |
+| `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses buffered SSE lines, extracts content/reasoning/model/usage, invokes the content sink, and rejects EOF without `[DONE]` |
 | `ProviderRegistry` | Maps provider names (from config) to `Box<dyn Provider>` instances |
 
 The transport boundary is the only production endpoint-resolution seam. URL
@@ -105,4 +105,4 @@ empty or partial tier values.
 
  | Element | Responsibility |
  |---|---|
- | `Executor` | Print command, read stdin for confirmation, run `sh -c <cmd>` |
+ | `Executor` | Read stdin for confirmation and run the already rendered `sh -c <cmd>` only after the stream succeeds; it does not print the aggregate again |

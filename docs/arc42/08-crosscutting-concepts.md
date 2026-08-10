@@ -16,6 +16,14 @@ each variant to an exit code and prints a diagnostic to stderr:
 
 Error messages are human-readable and include context.
 
+Streaming adds two completion and output rules. A provider response is
+successful only after `[DONE]`; clean EOF or a reader failure before that marker
+is `NetworkError` (exit 3), even when command content was already flushed.
+Already visible content is preserved and the spinner is finished, but final
+success metadata, buffered verbose reasoning, and execution confirmation are
+omitted. A stdout/stderr write or flush failure is `IoError` (exit 1), with the
+same prefix-preservation and cleanup guarantees.
+
 Provider setup and model setup return typed results rather than exiting inside
 their lower-level functions. Escape cancellation maps to status 1; Ctrl-C maps
 to status 130. Provider setup does not save partial input. If provider setup
@@ -130,18 +138,25 @@ Per-model pricing configured in `[pricing]` section of config:
 ```
 
 Values are $ per 1M tokens. Cost = (input_tokens * input_price + output_tokens * output_price) / 1_000_000.
-Displayed after response completion. When pricing is not configured, cost is omitted from output.
+The response model from the final valid provider aggregate selects the pricing
+entry, including when it was supplied by a choices-empty usage event. Displayed
+only after `[DONE]`. When pricing is not configured, cost is omitted from output.
 
 ## Tokens/second
 
-Wall clock measured from first SSE chunk to final chunk via `std::time::Instant`.
+Wall clock measured from the first non-`[DONE]` SSE data line, before JSON
+decoding, to the observed `[DONE]` marker via `std::time::Instant`. Time waiting
+for a server-side connection close is excluded.
 tok/s = completion_tokens / elapsed_seconds. Displayed after response completion.
 
 ## Execution mode (`-x`)
 
-When `-x` is passed, the returned command is printed to stdout, then the user
-is prompted on stderr: `Execute now? [Y/n]`. Empty line or `y`/`Y` runs the
-command via `sh -c <cmd>` with inherited stdout/stderr. `n`/`N` exits 0.
+When `-x` is passed, the command has already been rendered incrementally to
+stdout exactly once before the user is prompted on stderr: `Execute now? [Y/n]`.
+The final aggregate is used for the confirmation command but is not printed
+again. Empty line or `y`/`Y` runs the command via `sh -c <cmd>` with inherited
+stdout/stderr. `n`/`N` exits 0. A stream or output failure never reaches the
+prompt.
 
 ## Reasoning and verbose mode
 
@@ -153,9 +168,16 @@ When the thinking tier (`-3` / `--thinking`) is activated, the request body incl
 
 This signals the API to generate reasoning tokens alongside the answer. A valid non-`off` configured strength may be sent for any model tier; the thinking tier retains its compatibility default of `high` when no value is configured.
 
-Response chunks from the API may include a `reasoning` field in the delta object alongside the `content` field. The provider accumulates reasoning content separately from command content.
+Response chunks from the API may include a `reasoning` or
+`reasoning_content` field in the delta object alongside the `content` field. The
+provider accumulates reasoning content separately from command content and does
+not send it through the incremental output callback.
 
-When `-v` / `--verbose` is passed, the accumulated reasoning content is printed to stderr after the response completes, on its own line prefixed with `reasoning:`. If the model returned no reasoning content, nothing additional is printed.
+When `-v` / `--verbose` is passed and the stream reaches `[DONE]`, the
+accumulated reasoning content is printed to stderr on its own line prefixed with
+`reasoning:`. It is buffered until completion, so it is absent from stderr while
+the provider is still sending content. If the model returned no reasoning
+content, or if the stream failed, nothing additional is printed.
 
 The verbose flag is independent of the thinking tier. Any tier with `-v` will print reasoning content if the API returns it. Without `-v`, reasoning content is accumulated into the response struct but not printed.
 
@@ -167,9 +189,9 @@ from the pipe. Automatic provider onboarding is allowed only for implicit
 provider selection with TTY stdin. An implicit non-TTY first-use request emits
 actionable `watn provider` and config-path guidance, exits 1, and does not
 initialize ratatui. Explicit `--provider` and `WATN_PROVIDER` selections retain
-their existing resolution errors regardless of TTY state. Command output goes
-to stdout; metadata and setup guidance go to stderr as plain text (suitable for
-scripting).
+their existing resolution errors regardless of TTY state. Command content goes
+to stdout incrementally; final metadata, buffered verbose reasoning, errors, and
+setup guidance go to stderr as plain text (suitable for scripting).
 
 ## Exit code convention
 

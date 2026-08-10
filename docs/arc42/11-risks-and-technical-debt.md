@@ -34,6 +34,11 @@
 | R-028 | A malformed reasoning default or supported-effort list could silently change request behavior | Medium | Medium | Use one closed-set policy, ignore unknown efforts, enforce mandatory non-off selection, preserve valid existing choices, and cover request bodies plus persisted TOML |
 | R-029 | Saving a provider at the wrong wizard transition could either lose a confirmed source or write unconfirmed input | Medium | High | Validate and resolve before the first catalog request, persist only at credential confirmation, keep tier writes separate, and drive failure/cancellation through the real wizard |
 | R-030 | A corrected concurrent-search test could still pass without proving worker overlap or cleanup | Medium | Medium | Coordinate slow and fast workers with channels/barriers, apply through the generation guard, assert exact final IDs, and join every worker before scenario exit |
+| R-031 | A provider closes a valid SSE response without `[DONE]`, causing a user to mistake a visible prefix for a complete command | Medium | High | Require `[DONE]`, preserve the prefix for diagnosis, map truncation to network status 3, omit success metadata and execution, and cover clean EOF separately from connection reset |
+| R-032 | A synchronous content callback couples provider read progress to terminal write speed and can fail after visible output | Medium | Medium | Propagate write/flush errors as the existing I/O status, finish the spinner on every path, preserve the prefix, omit metadata and execution, and test with a controlled writer |
+| R-033 | Buffered verbose reasoning may be mistaken for missing reasoning while a stream is active | Medium | Low | Keep reasoning in the final aggregate, print it only after successful `[DONE]` and only under `-v`, and assert its absence before the release gate |
+| R-034 | A provider sends usage or model metadata in a choices-empty event and final accounting falls back to the requested model | Medium | Medium | Extract top-level model and usage independently of choices, configure pricing only for the response model in the fixture, and assert exact model, cost, and throughput |
+| R-035 | Terminal spinner cleanup can race first content or a stream error and leave control sequences visible | Medium | Medium | Keep one CLI-owned spinner lifecycle, finish it on first content and every return path, and assert PTY clear-line evidence for both delayed success and mid-stream failure |
 
 ## Technical debt
 
@@ -101,3 +106,19 @@ The following consequences are accepted and mitigated explicitly:
   tiers and avoiding an unintended original request.
 - Concurrent search evidence: deterministic overlap and worker joins ensure the
   newest-result guarantee is tested rather than inferred from serialized sleeps.
+- Synchronous stream callback: no channel or background stderr writer exists, so
+  callback write speed is part of provider progress; the direct controlled-writer
+  test verifies I/O status 1, prefix preservation, spinner cleanup, and skipped
+  completion actions.
+- Mandatory completion marker: `[DONE]` is a deliberate compatibility boundary.
+  Clean EOF is a network failure with status 3 even after valid content, which
+  prevents partial commands from being treated as complete or executed.
+- Buffered reasoning: verbose reasoning is intentionally delayed until successful
+  completion; the E2E release gate proves command stdout is progressive while
+  reasoning remains absent until the stream is complete.
+- First-event timing and connection close: elapsed time starts before decoding at
+  the first non-DONE event and ends at `[DONE]`; the held-connection scenario
+  proves the client does not wait for a server close.
+- Exact-once output: content chunks are written once and the final aggregate is
+  never reprinted; raw-terminal and piped scenarios count generated and execution
+  lines separately.

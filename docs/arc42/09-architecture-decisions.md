@@ -20,6 +20,7 @@ options, the decision outcome, and consequences.
 | ADR-0012 | Structured widget composition for terminal setup views | [docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md](../adr/0012-structured-widget-composition-for-terminal-setup-views.md) |
 | ADR-0013 | Shared five-page setup wizard | [docs/adr/0013-shared-five-page-setup-wizard.md](../adr/0013-shared-five-page-setup-wizard.md) |
 | ADR-0014 | Independent catalog source and provider confirmation boundary | [docs/adr/0014-independent-catalog-source-and-provider-confirmation.md](../adr/0014-independent-catalog-source-and-provider-confirmation.md) |
+| ADR-0015 | Synchronous stream callback and completion boundary | [docs/adr/0015-synchronous-stream-callback-and-completion-boundary.md](../adr/0015-synchronous-stream-callback-and-completion-boundary.md) |
 
 ## ADR-0011 summary
 
@@ -64,3 +65,15 @@ places provider persistence immediately after valid credential confirmation.
 The decision preserves raw credential sources, makes LiteLLM authentication
 optional, and lets catalog failure or later cancellation preserve a confirmed
 provider without changing tiers or sending the original request.
+
+## ADR-0015 summary
+
+ADR-0015 refines the existing streaming-first decision for the one-consumer CLI.
+The provider uses a buffered blocking reader and a synchronous content callback,
+with no worker channel or incremental reasoning output. Command chunks are
+flushed once, reasoning is buffered until successful `[DONE]` completion and is
+printed only under `-v`, and the final aggregate is not printed again. `[DONE]`
+is mandatory; truncation and read failures preserve visible content but skip
+metadata and execution, while output write/flush failures use the existing I/O
+status. Completion timing begins at the first non-DONE data event and does not
+wait for a post-DONE connection close.

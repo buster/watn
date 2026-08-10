@@ -4,15 +4,21 @@
 |---|---|
 | Provider | An LLM API service (e.g. OpenAI) or any OpenAI-compatible endpoint accepting `/v1/chat/completions` |
 | Tier | A named difficulty level (`small`, `normal`, `thinking`) mapped to a concrete model ID in config |
-| Streaming | Receiving the LLM response token by token over SSE as it is generated |
+| Streaming | Receiving complete LLM response events over SSE as they are generated and flushing command content through the CLI sink |
 | SSE | Server-Sent Events — HTTP streaming protocol for progressive token delivery |
+| Content event | A complete, valid SSE JSON event containing a non-empty command delta; it is the only event sent to the incremental CLI output sink |
+| Stream sink | The synchronous CLI callback that writes and flushes command content; it is not a worker channel and does not render reasoning |
+| DONE marker | The exact SSE data payload `[DONE]` that is required for successful stream completion |
+| Truncated stream | A provider response that reaches EOF or a read failure before the DONE marker; visible content is preserved but the result is a network error |
 | XDG | XDG Base Directory Specification — standard for config (`~/.config`), data (`~/.local/share`), and cache (`~/.cache`) paths |
 | LiteLLM | A proxy that exposes multiple LLM providers behind a single OpenAI-compatible API and provides a `/models` endpoint for discovery |
 | Raw output | Plain text without ANSI escape codes; suitable for scripting and pipes |
 | TTY detection | Runtime check of whether stdin is a terminal (interactive) or a pipe (scripting); automatic onboarding requires an implicit selection and a TTY |
-| Tokens/second | Completion tokens divided by wall-clock seconds from first to last SSE chunk |
+| Tokens/second | Completion tokens divided by wall-clock seconds from the first non-DONE SSE data event, before decoding, to the DONE marker |
 | Pricing | Per-model cost configuration ($/1M input tokens, $/1M output tokens) stored in config |
-| Reasoning | Chain-of-thought or step-by-step explanation produced by the LLM alongside the final answer. Exposed via the API's `reasoning` field in the streaming delta. Displayed on stderr when `-v`/`--verbose` is set. |
+| Reasoning | Explanation produced by the LLM alongside the final answer. Accepted from `reasoning` or `reasoning_content`, buffered in the provider aggregate, and displayed on stderr only after successful completion when `-v`/`--verbose` is set |
+| Buffered reasoning | Provider-collected reasoning that is deliberately not emitted during the content stream and is discarded from user-visible output when the stream fails |
+| Partial output | Command content already flushed before a provider or output failure; it remains visible but is never treated as a successful executable result |
 | Autosuggest picker | Raw-terminal input loop that updates a suggestion list as the user types; replaces the static scrollable list for model tier assignment |
 | SettingsDialog | Ratatui keyboard-driven dialog that walks the small/normal/thinking levels in a guided sequence, showing the filter, the highlighted model list, and a reasoning-strength selector per level |
 | Reasoning strength | Graduated per-level setting (`off`, `low`, `minimal`, `medium`, `high`) controlling the `reasoning_effort` sent on that tier's requests; `off` sends no field |

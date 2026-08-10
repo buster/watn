@@ -10,7 +10,7 @@ Top requirements:
 1. Ask a question and receive a copy-pasteable shell command
 2. Three model tiers (small/fast via `-1`, normal via `-2`, thinking via `-3`)
 3. The thinking tier sends a reasoning-effort signal to the API
-4. A `-v`/`--verbose` flag prints the model's reasoning content to stderr
+4. A `-v`/`--verbose` flag prints the model's buffered reasoning content to stderr after successful completion
 5. Optional execution with user confirmation (`-x` prompts "Execute now? [Y/n]")
 6. Model discovery via optional LiteLLM endpoint (`watn models` interactive)
 7. Layered configuration: CLI flags > env vars > user config > built-in defaults
@@ -23,6 +23,9 @@ Top requirements:
 14. Provider confirmation must survive catalog failure without changing unconfirmed model tiers or sending the original question
 15. Reasoning defaults and persisted values must resolve consistently across interactive and non-interactive model selection
 16. Overlapping model searches must leave the newest result visible and clean up older search work
+17. Generated command content must become visible and flushed before a delayed provider stream completes
+18. Only an SSE stream terminated by `[DONE]` succeeds; truncated or failed streams preserve visible output and never execute it
+19. Command-output write failures must retain the visible prefix, clean up progress, and use the existing I/O status without success metadata
 
 See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 
@@ -34,9 +37,10 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 | 2 | Flexibility | Any OpenAI-compatible API; any model; model tier assignment |
 | 3 | Portability | Single static binary, no runtime dependencies beyond the OS |
 | 4 | Security | Prefer environment-backed credentials, mask pasted credentials, enforce private config permissions, and keep resolved secrets out of diagnostics |
-| 5 | Observability | Model name, tokens/second, cost (when priced), and reasoning content (when verbose) printed per response; exit codes for scripting |
+| 5 | Observability | Model name, tokens/second, cost (when priced), and buffered reasoning (when verbose after success) printed per response; exit codes for scripting |
 | 6 | Test isolation | Loopback transport overrides are available only to debug test-support binaries and cannot redirect release or normal invocations |
 | 7 | Correctness | Catalog source, credential-source, setup-save, reasoning, and stale-search policies are shared across all model-discovery paths |
+| 8 | Responsiveness and recovery | Incremental content, deterministic completion, visible partial prefixes, and mapped stream/I/O failures must remain observable and safe |
 
 ## Stakeholders
 

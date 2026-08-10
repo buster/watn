@@ -4,7 +4,9 @@
 
 - OpenAPI-compatible wire protocol as the single provider integration point
 - Three-tier model dispatch with user-configurable model assignment
-- Streaming-first: always request SSE, render tokens progressively
+- Streaming-first: always request SSE, parse through a buffered blocking reader, and render command content progressively through a synchronous callback with no channel
+- Completion is strict: `[DONE]` is mandatory; EOF without it preserves visible content but is a network failure
+- Reasoning is buffered in the provider aggregate and printed only after successful completion when `-v` is active; it is never streamed to stderr
 - Layered XDG configuration with clear precedence (CLI > env > user config > defaults)
 - Optionally query LiteLLM endpoint for model discovery and interactive tier selection
 - TTY-gated provider onboarding in a ratatui terminal flow, with OpenRouter as the default endpoint and `custom` as the fixed non-OpenRouter name
@@ -27,7 +29,7 @@
 |---|---|---|
 | Language | Rust (latest stable) | Single binary, zero-cost streaming, strong typing for config |
 | CLI parsing | clap v4 | Derive macros, `-1`/`-2`/`-3` flag groups, subcommand dispatch |
-| HTTP client | reqwest (blocking) | Blocking streaming SSE, TLS; chunks piped through mpsc channel for progressive rendering |
+| HTTP client | reqwest (blocking) | Blocking SSE with a buffered reader and synchronous content callback for progressive rendering; no worker channel |
 | Config format | TOML via `toml` crate | Rust ecosystem standard |
 | Terminal interaction | dialoguer (existing non-TTY model prompts), ratatui/crossterm widgets (shared setup wizard) | One TTY-only wizard renders URL, API key, and three model pages with `Block`, `Tabs`, `Paragraph`, `Table`, and `Scrollbar`; command entry points choose the starting page |
 | Filter matching | Per-word, order-independent substring over model id | "dee flash" matches "DeepSeek V4 Flash"; each word must appear anywhere in the id, any order |
@@ -44,6 +46,7 @@
 | Usability | Default tier produces command in one invocation; execution confirmation is a single Enter |
 | Flexibility | OpenAI-compatible wire protocol; model tiers configurable; LiteLLM discovery optional |
 | Portability | Single Rust binary; no runtime deps |
-| Observability | Model name, tok/s, cost printed per response; exit codes 0/1/2/3/130 |
+| Observability | Model name, tok/s, cost printed after `[DONE]`; buffered reasoning printed only under `-v` after success; exit codes 0/1/2/3/130 |
+| Recovery | Visible content survives network/truncation failures; output I/O failures retain the prefix, clean up progress, omit metadata and execution, and use status 1 |
 | First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
 | Transport isolation | The configured endpoint remains the source for readiness, persistence, and display; only debug test-support outbound requests may use a non-empty override, with missing/whitespace values falling back |

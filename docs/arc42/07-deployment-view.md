@@ -24,3 +24,10 @@ receives only these two absolute paths and never discovers or reuses
 `target/debug/watn`. Release-profile runtime verification is deferred to
 `release-truth-and-repository-cleanup`; product release deployment remains the
 single release binary described above.
+
+The incremental SSE change does not add a production service, sidecar, runtime
+dependency, or deployment artifact. Verification now deploys the child binary
+against a loopback streaming twin that can flush content, hold a later event,
+send `[DONE]` without closing immediately, close without `[DONE]`, or reset the
+connection. The twin and its release gates exist only in the test process; the
+installed production binary continues to use the configured provider endpoint.

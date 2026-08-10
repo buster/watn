@@ -15,16 +15,16 @@ sequenceDiagram
     User->>CLI: watn "find files modified today"
     CLI->>Config: load config (layered merge)
     Config-->>CLI: resolved Config (tier: small -> gpt-4o-mini)
-    CLI->>Prov: chat_completions(messages, options{model: "gpt-4o-mini"})
+    CLI->>Prov: chat_completions(messages, options{model: "gpt-4o-mini"}, content sink)
     Prov->>API: POST /v1/chat/completions (stream: true)
-    API-->>Prov: SSE stream of chunks
-    loop Each chunk
-        Prov-->>CLI: StreamChunk { content }
-        CLI->>User: token (raw text - default tier is for commands)
+    API-->>Prov: SSE stream of events
+    loop Each complete content event
+        Prov-->>CLI: content callback
+        CLI->>User: flushed command content (raw text)
     end
-    API-->>Prov: final chunk with usage
-    Prov-->>CLI: finish_reason, usage
-    CLI->>CLI: compute tokens/sec from wall clock
+    API-->>Prov: usage event and [DONE]
+    Prov-->>CLI: final aggregate after [DONE]
+    CLI->>CLI: compute tokens/sec from first data event to [DONE]
     CLI->>CLI: compute cost (if pricing configured)
     CLI-->>User: metadata (model, tok/s, cost)
     CLI-->>User: exit 0
@@ -34,11 +34,14 @@ sequenceDiagram
 1. CLI parses args, defaults to tier `-1` (small/fast)
 2. Config resolves selected tier to model name
 3. Provider sends POST with `stream: true`
-4. Provider reads SSE chunks, pushes each onto a channel
-5. CLI reads channel and writes tokens to stdout
-6. After stream ends, compute tok/s from elapsed time and usage
-7. Print metadata: model name, tokens/sec, cost (if pricing configured)
-8. Exit 0
+4. Provider reads complete SSE events through a buffered reader and invokes the
+   synchronous content callback; there is no channel
+5. The callback writes and flushes each content delta once, finishing the
+   spinner on first content
+6. After `[DONE]`, compute tok/s from the first data event to the completion
+   marker and use authoritative final usage/model values
+7. Print metadata: response model, tokens/sec, cost (if pricing configured)
+8. Exit 0; the command is not printed again from the final aggregate
 
 ## Scenario: Ask with execution (`-x`)
 
@@ -55,9 +58,9 @@ sequenceDiagram
     User->>CLI: watn -x "echo hello"
     CLI->>Prov: chat_completions(...)
     Prov->>API: POST /v1/chat/completions
-    API-->>Prov: streaming response
-    Prov-->>CLI: chunks
-    CLI-->>User: command: echo hello
+    API-->>Prov: streaming response and [DONE]
+    Prov-->>CLI: content callbacks, then final aggregate
+    CLI-->>User: flushed command: echo hello
     CLI->>User: "Execute now? [Y/n]"
     User->>CLI: Enter (or y)
     CLI->>Shell: sh -c "echo hello"
@@ -67,11 +70,12 @@ sequenceDiagram
 
 **Steps:**
 1. CLI detects `-x` flag
-2. Normal question flow executes (get command from LLM)
-3. CLI prints the command, then prompts "Execute now? [Y/n]" to stderr
+2. Normal question flow streams command content and requires `[DONE]`.
+3. After successful completion, the CLI terminates the streamed line and prompts
+   "Execute now? [Y/n]" to stderr without printing the aggregate a second time
 4. Reads one line from stdin
 5. Empty line or `y`/`Y`: executes via `sh -c <cmd>` with inherited stdio
-6. `n`/`N`: exits 0 without executing
+6. `n`/`N`: exits 0 without executing; any stream or output failure skips the prompt
 
 ## Scenario: Isolated debug test transport
 
@@ -154,17 +158,17 @@ sequenceDiagram
     CLI->>Config: load config (layered merge)
     Config-->>CLI: resolved Config (tier: thinking -> o3-mini)
     CLI->>CLI: reasoning_effort from [tiers.reasoning] (thinking -> high by default), verbose = true
-    CLI->>Prov: chat_completions(messages, options{model, reasoning_effort: "high"})
+    CLI->>Prov: chat_completions(messages, options{model, reasoning_effort: "high"}, content sink)
     Prov->>API: POST /v1/chat/completions (body includes reasoning_effort: "high")
     API-->>Prov: SSE stream of chunks with content + reasoning fields
-    loop Each chunk
-        Prov-->>CLI: extract content + reasoning from delta
+    loop Each complete content event
+        Prov-->>CLI: content callback; accumulate reasoning privately
     end
-    API-->>Prov: final chunk with usage
+    API-->>Prov: usage event and [DONE]
     Prov-->>CLI: StreamingResponse { full_content, reasoning_content, usage }
-    CLI->>CLI: compute tokens/sec, cost
-    CLI-->>User: command suggestion (stdout)
-    CLI-->>User: metadata (model, tok/s, cost) + reasoning (stderr)
+    CLI->>CLI: compute tokens/sec, cost, and finish command line
+    CLI-->>User: command content (stdout, already streamed)
+    CLI-->>User: buffered reasoning and metadata (stderr)
     CLI-->>User: exit 0
 ```
 
@@ -174,11 +178,14 @@ sequenceDiagram
 3. CLI resolves `reasoning_effort` from the tier's configured strength (default
    "high" for thinking when unset) and sets `verbose = true`; builds the POST body with `reasoning_effort`
 4. Provider builds POST body with `reasoning_effort: "high"` in addition to standard fields
-5. Provider reads SSE chunks, extracting both `delta["content"]` and `delta["reasoning"]`
-6. Content is accumulated into `full_content` as before
-7. Reasoning is accumulated into `reasoning_content`
-8. After stream ends, compute tok/s from elapsed time and usage
-9. Command output printed to stdout; metadata + reasoning content printed to stderr
+5. Provider reads SSE events, invokes the content sink, and extracts
+   `delta["reasoning"]` or `delta["reasoning_content"]` into its private aggregate
+6. Content is accumulated into `full_content` and flushed to stdout once per delta
+7. Reasoning is not written to stderr while the stream is active
+8. After `[DONE]`, compute tok/s from the first data event to the marker and use
+   final usage/model values
+9. When `-v` is active, print buffered reasoning to stderr, then final metadata;
+   on failure, print neither
 
 ## Scenario: Keyboard-driven model settings dialog
 
@@ -473,3 +480,97 @@ construction. Search workers receive monotonically increasing generations; a
 late worker may finish its HTTP request but cannot apply its result after a
 newer generation has been applied. The wizard joins or discards workers before
 returning to the caller.
+
+## Scenario: Completion marker and first-event timing
+
+The provider can send `[DONE]` and keep its HTTP connection open. Watn completes
+from the marker rather than waiting for the server-side close. The elapsed-time
+clock starts at the first non-DONE data line, before decoding, and ends at the
+marker.
+
+```mermaid
+sequenceDiagram
+    participant CLI as watn CLI
+    participant Prov as Provider
+    participant API as LLM API
+    participant User as User
+
+    CLI->>Prov: request with content sink
+    Prov->>API: POST /v1/chat/completions
+    API-->>Prov: first data line
+    Prov->>Prov: set first_event_at before JSON decode
+    API-->>Prov: content event
+    Prov-->>CLI: content callback
+    CLI-->>User: flushed command prefix; spinner cleared
+    API-->>Prov: usage-only event (choices empty)
+    API-->>Prov: [DONE]
+    Prov-->>CLI: final model, usage, reasoning, elapsed
+    CLI-->>User: final metadata and optional buffered reasoning
+    CLI-->>User: exit 0 before API closes connection
+```
+
+The response model and usage are read at the top level of every valid event.
+Thus a choices-empty usage event can select the response model for metadata and
+pricing. A later usage event replaces earlier usage. The final aggregate command
+is used for trimming and optional execution, not rendered a second time.
+
+## Scenario: Truncated or failed provider stream
+
+Valid content remains visible when a provider closes without `[DONE]` or resets
+the connection after a content event. Both cases finish the spinner and report a
+network error with status 3. Neither prints final success metadata or enters
+execution confirmation.
+
+```mermaid
+sequenceDiagram
+    participant CLI as watn CLI
+    participant Spinner
+    participant Prov as Provider
+    participant API as LLM API
+    participant User as User
+
+    CLI->>Spinner: start
+    CLI->>Prov: request with content sink
+    Prov->>API: POST /v1/chat/completions
+    API-->>Prov: valid content event
+    Prov-->>CLI: content callback
+    CLI-->>User: flushed visible prefix
+    API--xProv: clean EOF without [DONE] or connection reset
+    Prov-->>CLI: NetworkError
+    CLI->>Spinner: finish and clear
+    CLI-->>User: preserve prefix and print network error
+    CLI-->>User: omit metadata and execute prompt; exit 3
+```
+
+Malformed nonessential data events take a different path: the provider ignores
+the malformed event, continues reading, and can still expose later valid content
+before `[DONE]`.
+
+## Scenario: Output failure during streaming
+
+The callback owns stdout writes and flushes. If the output sink fails after a
+prefix is visible, the provider stops through the existing I/O error path.
+
+```mermaid
+sequenceDiagram
+    participant CLI as watn CLI
+    participant Spinner
+    participant Prov as Provider
+    participant Out as Output sink
+    participant User as User
+
+    CLI->>Spinner: start
+    Prov-->>CLI: first content callback
+    CLI->>Out: write and flush prefix
+    Out-->>CLI: success
+    Prov-->>CLI: next content callback
+    CLI->>Out: write or flush next chunk
+    Out-->>CLI: I/O error
+    CLI->>Spinner: finish and clear
+    CLI-->>User: preserve prefix and report I/O error
+    CLI-->>User: omit metadata and execution; exit 1
+```
+
+The direct output-writer test observes the prefix, status 1, spinner lifecycle,
+absence of final metadata, and absence of the execute prompt without relying on
+a platform-specific closed-pipe behavior.

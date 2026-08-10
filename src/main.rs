@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use std::io::IsTerminal;
+use std::io::{self, IsTerminal, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use watn::config::{self, load_config, resolve_model, resolve_provider};
@@ -8,7 +8,7 @@ use watn::error::exit_code;
 use watn::output::render;
 use watn::provider::openai_compat::OpenAICompatibleProvider;
 use watn::provider::registry::ProviderRegistry;
-use watn::provider::{Message, RequestOptions};
+use watn::provider::{Message, RequestOptions, StreamEvent};
 use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
 
 #[derive(clap::Parser)]
@@ -234,11 +234,57 @@ fn main() {
     })
     .expect("install SIGINT handler");
 
-    let spinner = watn::output::spinner::Spinner::start(&model);
-    match provider.chat_completions_streaming(&messages, &options) {
+    let mut spinner = Some(watn::output::spinner::Spinner::start(&model));
+    let mut content_emitted = false;
+    let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
+        match event {
+            StreamEvent::Content(content) if !content.is_empty() => {
+                if !content_emitted {
+                    if let Some(active_spinner) = spinner.take() {
+                        active_spinner.finish();
+                    }
+                    content_emitted = true;
+                }
+
+                let mut stdout = io::stdout();
+                stdout
+                    .write_all(content.as_bytes())
+                    .map_err(watn::error::Error::IoError)?;
+                stdout.flush().map_err(watn::error::Error::IoError)?;
+            }
+            StreamEvent::Content(_) => {}
+        }
+        Ok(())
+    };
+
+    let stream_result = provider.chat_completions_streaming(&messages, &options, &mut emit_content);
+    drop(emit_content);
+
+    match stream_result {
         Ok(response) => {
-            spinner.finish();
-            let cost = config.pricing.get(&model).map(|p| {
+            if let Some(active_spinner) = spinner.take() {
+                active_spinner.finish();
+            }
+
+            if let Err(error) = render::finish_streamed_command(content_emitted) {
+                let error = watn::error::Error::IoError(error);
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
+            }
+
+            if cli.verbose {
+                if let Some(ref reasoning) = response.reasoning_content {
+                    if !reasoning.trim().is_empty() {
+                        if let Err(error) = render::print_reasoning(reasoning) {
+                            let error = watn::error::Error::IoError(error);
+                            eprintln!("{}", error);
+                            std::process::exit(exit_code(&error));
+                        }
+                    }
+                }
+            }
+
+            let cost = config.pricing.get(&response.model).map(|p| {
                 let input_cost = p.input
                     * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
                     / 1_000_000.0;
@@ -264,15 +310,11 @@ fn main() {
 
             let command_text = response.full_content.trim().to_string();
 
-            if cli.verbose {
-                if let Some(ref reasoning) = response.reasoning_content {
-                    if !reasoning.trim().is_empty() {
-                        eprintln!("reasoning: {}", reasoning.trim());
-                    }
-                }
+            if let Err(error) = render::print_metadata(&response.model, tok_s, cost, elapsed) {
+                let error = watn::error::Error::IoError(error);
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
             }
-
-            render::print_response(&command_text, &response.model, tok_s, cost, elapsed);
 
             if cli.execute
                 && !command_text.is_empty()
@@ -285,7 +327,12 @@ fn main() {
             }
         }
         Err(e) => {
-            spinner.finish();
+            if let Some(active_spinner) = spinner.take() {
+                active_spinner.finish();
+            }
+            if content_emitted {
+                let _ = render::finish_streamed_command(true);
+            }
             let code = exit_code(&e);
             eprintln!("{}", e);
             std::process::exit(code);

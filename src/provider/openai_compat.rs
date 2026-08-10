@@ -1,8 +1,8 @@
-use std::io::Read;
+use std::io::{BufRead, BufReader};
 use std::time::{Duration, Instant};
 
 use crate::error::Error;
-use crate::provider::{Message, Provider, RequestOptions, StreamingResponse, TokenUsage};
+use crate::provider::{Message, Provider, RequestOptions, StreamEvent, StreamingResponse, TokenUsage};
 
 pub struct OpenAICompatibleProvider {
     pub endpoint: String,
@@ -34,8 +34,8 @@ impl Provider for OpenAICompatibleProvider {
         &self,
         messages: &[Message],
         options: &RequestOptions,
+        sink: &mut dyn FnMut(StreamEvent) -> Result<(), Error>,
     ) -> Result<StreamingResponse, Error> {
-        let start = Instant::now();
         let url = chat_completions_url(&self.endpoint);
 
         let mut body = serde_json::json!({
@@ -95,53 +95,76 @@ impl Provider for OpenAICompatibleProvider {
         let mut final_usage = None;
         let mut response_model = options.model.clone();
 
-        let mut buf = Vec::new();
-        response
-            .bytes()
-            .map_err(|e| Error::NetworkError(e.to_string()))?
-            .as_ref()
-            .read_to_end(&mut buf)
-            .map_err(|e| Error::NetworkError(e.to_string()))?;
+        let mut reader = BufReader::new(response);
+        let mut line = String::new();
+        let mut first_event_at = None;
+        let mut completed = false;
 
-        let text = String::from_utf8_lossy(&buf);
-        for line in text.lines() {
-            let line = line.trim();
-            if !line.starts_with("data: ") {
-                continue;
+        loop {
+            line.clear();
+            let bytes_read = reader
+                .read_line(&mut line)
+                .map_err(|e| Error::NetworkError(e.to_string()))?;
+            if bytes_read == 0 {
+                break;
             }
-            let data = &line[6..];
+
+            let line = line.trim_end_matches(['\r', '\n']);
+            let Some(data) = line.strip_prefix("data:") else {
+                continue;
+            };
+            let data = data.strip_prefix(' ').unwrap_or(data).trim();
             if data == "[DONE]" {
-                continue;
+                completed = true;
+                break;
             }
-            if let Ok(chunk) = serde_json::from_str::<serde_json::Value>(data) {
-                if let Some(choices) = chunk["choices"].as_array() {
-                    for choice in choices {
-                        let delta = &choice["delta"];
-                        if let Some(content) = delta["content"].as_str() {
+
+            first_event_at.get_or_insert_with(Instant::now);
+
+            let Ok(chunk) = serde_json::from_str::<serde_json::Value>(data) else {
+                continue;
+            };
+
+            if let Some(model) = chunk["model"].as_str() {
+                response_model = model.to_string();
+            }
+
+            if let Some(usage) = chunk["usage"].as_object() {
+                final_usage = Some(TokenUsage {
+                    prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
+                    completion_tokens: usage["completion_tokens"].as_u64().unwrap_or(0) as u32,
+                });
+            }
+
+            if let Some(choices) = chunk["choices"].as_array() {
+                for choice in choices {
+                    let delta = &choice["delta"];
+                    if let Some(content) = delta["content"].as_str() {
+                        if !content.is_empty() {
                             full_content.push_str(content);
+                            sink(StreamEvent::Content(content.to_string()))?;
                         }
+                    }
 
-                        if let Some(reasoning) = delta["reasoning"].as_str() {
-                            reasoning_content.push_str(reasoning);
-                        }
-
-                        if let Some(model) = chunk["model"].as_str() {
-                            response_model = model.to_string();
-                        }
-
-                        if let Some(usage) = chunk["usage"].as_object() {
-                            final_usage = Some(TokenUsage {
-                                prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
-                                completion_tokens: usage["completion_tokens"].as_u64().unwrap_or(0)
-                                    as u32,
-                            });
-                        }
+                    if let Some(reasoning) = delta["reasoning"]
+                        .as_str()
+                        .or_else(|| delta["reasoning_content"].as_str())
+                    {
+                        reasoning_content.push_str(reasoning);
                     }
                 }
             }
         }
 
-        let elapsed_secs = start.elapsed().as_secs_f64();
+        if !completed {
+            return Err(Error::NetworkError(
+                "stream ended before [DONE]".to_string(),
+            ));
+        }
+
+        let elapsed_secs = first_event_at
+            .map(|started| started.elapsed().as_secs_f64())
+            .unwrap_or(0.0);
 
         Ok(StreamingResponse {
             final_usage,

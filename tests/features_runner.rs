@@ -63,6 +63,7 @@ pub struct WatnWorld {
     pub search_mock_ids: Vec<usize>,
     pub search_query_delays: HashMap<String, u64>,
     pub transport: crate::steps::TransportState,
+    pub streaming: crate::steps::incremental_sse_rendering_steps::StreamingState,
 }
 
 impl Drop for WatnWorld {
