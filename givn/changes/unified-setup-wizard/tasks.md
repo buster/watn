@@ -101,7 +101,8 @@
   boundaries, search debounce/stale results, and non-TTY `--set-*` behavior.
   ```text
   command: `cargo test --test features_runner -- --name 'Models command opens the shared wizard on Small Model'`
-  output: 1 scenario passed, 8 steps passed after simplifying model reasoning-option construction without changing behavior.
+  output: 1 scenario passed, 8 steps passed after simplifying model reasoning-option construction and removing the obsolete unreachable model dialog path.
+  follow-up files: `src/models/dialog.rs`, `src/models/mod.rs`, `Cargo.toml`, `Cargo.lock`
   ```
 - [x] COMMIT: `eababb3` — feat(unified-setup-wizard): Models command opens the shared wizard on Small Model
   ```text
@@ -132,25 +133,29 @@
   command: `cargo test --test features_runner -- --name 'Escape asks whether to save or discard current setup'`
   output: 1 scenario passed, 6 steps passed after adding an explicit assertion for the discard cancellation status.
   ```
-- [ ] COMMIT: record one atomic scenario commit hash and message here:
+- [x] COMMIT: `a590670` — feat(unified-setup-wizard): Escape asks whether to save or discard current setup
   ```text
-  commit: pending; functional assertion and evidence are committed in the next atomic commit
+  commit: a590670
   ```
 
 ## Final Verification
 
-- [ ] Run `givn lint --change unified-setup-wizard`; no WIP findings remain and
+- [x] Run `givn lint --change unified-setup-wizard`; no WIP findings remain and
   all `@e2e` tags are preserved.
-- [ ] Run regular verification and record feature/scenario/step counts:
   ```text
-  command:
-  output:
+  command: `givn lint --change unified-setup-wizard`
+  output: givn lint: 2 file(s) checked — clean
   ```
-- [ ] Run E2E verification and record a strictly smaller filtered count than
+- [x] Run regular verification and record feature/scenario/step counts:
+  ```text
+  command: `cargo test --test features_runner -- --tags 'not @wip and not @e2e'`
+  output: 8 features, 43 scenarios passed, 234 steps passed
+  ```
+- [x] Run E2E verification and record a strictly smaller filtered count than
   regular verification:
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --tags '@e2e and not @wip'`
+  output: 11 features, 40 scenarios passed, 246 steps passed; strictly smaller than the regular 43-scenario run
   ```
 - [ ] Run `givn check review --change unified-setup-wizard` after completing
   the review artifact.

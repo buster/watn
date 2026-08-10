@@ -2,13 +2,10 @@ pub mod dialog;
 pub mod list;
 pub mod picker;
 
-use dialoguer::Select;
-
 use crate::config::{resolve_provider, save_config};
 use crate::config::types::ModelTiers;
 use crate::error::Error;
-use crate::models::dialog::{ReasoningStrength, SettingsDialog};
-use crate::provider::setup::{ModelSetupResult, SetupCancellation};
+use crate::provider::setup::ModelSetupResult;
 use list::{fetch_models, fetch_models_page};
 use std::io::IsTerminal;
 
@@ -101,56 +98,19 @@ pub fn run_models_result(
         ));
     }
 
-    let small;
-    let normal;
-    let thinking;
-    let reasoning: [String; 3];
-
-    if std::io::stdin().is_terminal() {
-        // Keyboard-driven dialog (ratatui) covering all three levels in a
-        // guided sequence, each with a model pick + reasoning strength.
-        let parse = |r: &Option<String>| {
-            r.as_deref()
-                .and_then(ReasoningStrength::parse)
-                .unwrap_or(ReasoningStrength::Off)
-        };
-        let initial = [
-            parse(&config.tiers.reasoning.small),
-            parse(&config.tiers.reasoning.normal),
-            parse(&config.tiers.reasoning.thinking),
-        ];
-        let dialog = SettingsDialog::new(endpoint, api_key.clone(), models.clone(), initial);
-        match dialog.run() {
-            Ok(choices) => {
-                small = choices[0].model.clone();
-                normal = choices[1].model.clone();
-                thinking = choices[2].model.clone();
-                reasoning = [
-                    choices[0].reasoning.as_str().to_string(),
-                    choices[1].reasoning.as_str().to_string(),
-                    choices[2].reasoning.as_str().to_string(),
-                ];
-            }
-            Err(error) if error.to_string().contains("interrupted") => {
-                return ModelSetupResult::Cancelled(SetupCancellation::CtrlC);
-            }
-            Err(error) => return ModelSetupResult::Failed(error),
-        }
-    } else {
-        small = match select_model(&models, "small") {
-            Ok(model) => model.clone(),
-            Err(error) => return ModelSetupResult::Failed(error),
-        };
-        normal = match select_model(&models, "normal") {
-            Ok(model) => model.clone(),
-            Err(error) => return ModelSetupResult::Failed(error),
-        };
-        thinking = match select_model(&models, "thinking") {
-            Ok(model) => model.clone(),
-            Err(error) => return ModelSetupResult::Failed(error),
-        };
-        reasoning = Default::default();
-    }
+    let small = match select_model(&models, "small") {
+        Ok(model) => model.clone(),
+        Err(error) => return ModelSetupResult::Failed(error),
+    };
+    let normal = match select_model(&models, "normal") {
+        Ok(model) => model.clone(),
+        Err(error) => return ModelSetupResult::Failed(error),
+    };
+    let thinking = match select_model(&models, "thinking") {
+        Ok(model) => model.clone(),
+        Err(error) => return ModelSetupResult::Failed(error),
+    };
+    let reasoning: [String; 3] = Default::default();
 
     let mut updated = config.clone();
     updated.tiers.reasoning = crate::config::types::TierReasoning {
@@ -207,18 +167,7 @@ fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> Result<&'a li
         .map(format_model_entry)
         .collect();
 
-    let prompt = format!("Select a model for the {} tier:", tier);
-
-    let selection = if std::io::stdin().is_terminal() {
-        Select::new()
-            .with_prompt(&prompt)
-            .items(&selections)
-            .default(0)
-            .interact()
-            .map_err(|_| Error::IoError(std::io::Error::other("failed to read selection")))?
-    } else {
-        select_model_non_interactive(&selections, tier)?
-    };
+    let selection = select_model_non_interactive(&selections, tier)?;
 
     Ok(&models[selection])
 }
