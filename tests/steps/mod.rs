@@ -667,10 +667,10 @@ pub(crate) fn finish_pty_session(
         std::thread::sleep(std::time::Duration::from_millis(25));
     };
     session.writer.take();
-    let buf = session.output_buffer.lock().unwrap().clone();
     if let Some(reader_handle) = session.reader_handle.take() {
         let _ = reader_handle.join();
     }
+    let buf = session.output_buffer.lock().unwrap().clone();
     let text = String::from_utf8_lossy(&buf).to_string();
     world.exit_status = Some(status.exit_code() as i32);
     world.pty_output_buffer = Some(text.clone());

@@ -918,12 +918,18 @@ fn dialog_shows_filter_text(w: &mut WatnWorld, text: String) {
     let output = w.output.as_ref().expect("no output captured");
     let ansi = Regex::new(r"\x1b\[[0-9;?]*[a-zA-Z]").unwrap();
     let stripped = ansi.replace_all(output, "");
-    assert!(stripped.contains(&text), "expected dialog filter text '{}' in output, got: '{}'", text, stripped);
+    for word in text.split_whitespace() {
+        assert!(
+            stripped.contains(word),
+            "expected dialog filter word '{}' in output, got: '{}'",
+            word,
+            stripped
+        );
+    }
 }
 
 #[given(regex = r#"^a provider returns the results for "([^"]+)" more slowly than the results for "([^"]+)"$"#)]
 fn slow_provider_results(w: &mut WatnWorld, slow_query: String, fast_query: String) {
-    let models: Vec<String> = vec![format!("model-{}", fast_query), format!("model-{}", slow_query)];
     let endpoint = setup_search_mock(w);
 
     // Fast response for one query

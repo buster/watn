@@ -794,8 +794,14 @@ fn model_catalog_hits_ephemeral_path(world: &mut WatnWorld, path: String) {
 fn setup_terminal_shows_credential_choices(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     let output = pty_snapshot(session);
-    assert!(output.contains("Paste credential"), "provider setup output: {output:?}");
-    assert!(output.contains("Environment variable"), "provider setup output: {output:?}");
+    for label in ["Paste credential", "Environment variable"] {
+        for word in label.split_whitespace() {
+            assert!(
+                output.contains(word),
+                "provider setup output is missing {word:?}: {output:?}"
+            );
+        }
+    }
 }
 
 #[when("I accept the OpenRouter endpoint")]

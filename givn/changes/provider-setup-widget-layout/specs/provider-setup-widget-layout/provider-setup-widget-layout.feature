@@ -18,7 +18,7 @@ Feature: Usable provider setup and model picker layouts
     When I restore the default endpoint and enter pasted credential "sk-layout-secret" in provider setup
     Then provider setup should mask pasted credentials
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Model picker makes tiers and long model lists easy to scan
     Given a configured provider "test" with a long model list
     When I start `watn models` in a terminal

@@ -57,24 +57,24 @@
   command: `cargo test --test features_runner -- --name 'Provider setup separates choices, details, and guidance'`
   output: 1 scenario passed, 10 steps passed after removing the unused plain-text PTY wait helper.
   ```
-- [ ] **COMMIT** Create one atomic commit for RED/GREEN/REFACTOR with a message
+- [x] **COMMIT** Create one atomic commit for RED/GREEN/REFACTOR with a message
   referencing `Provider setup separates choices, details, and guidance` and
   record its hash:
   ```text
-  commit:
+  commit: `a7593b3`
   ```
 
 ## E2E Scenario: Model picker makes tiers and long model lists easy to scan
 
-- [ ] **RED** Remove `@wip` from this scenario only. Add non-empty step
+- [x] **RED** Remove `@wip` from this scenario only. Add non-empty step
   skeletons for starting the model picker, the layout assertions, and the
   Down + Enter navigation assertions. Run the single scenario through the E2E
   command; it must fail. Record evidence:
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Model picker makes tiers and long model lists easy to scan'`
+  output: non-zero; the long-list Given passed and the new terminal-start step matched then failed on `unimplemented!()` (`1 scenario failed`, `1 step failed`).
   ```
-- [ ] **GREEN** Replace the skeletons with real PTY steps and readiness/cleanup.
+- [x] **GREEN** Replace the skeletons with real PTY steps and readiness/cleanup.
   Refactor `src/models/dialog.rs` to render stacked tabs, paragraphs, a
   stateful metadata table, and an overflow-only scrollbar. Move search to a
   200 ms worker/debounce flow with generation checks, status handling, and no
@@ -82,15 +82,15 @@
   contracts. Compile first, then run the single scenario through the E2E
   command; it must pass. Production files changed: `src/models/dialog.rs`.
   ```text
-  command:
-  output:
+  command: `cargo check`; then `cargo test --test features_runner -- --name 'Model picker makes tiers and long model lists easy to scan'`
+  output: compile succeeded; 1 scenario passed, 9 steps passed. The live PTY showed the bordered picker, tier tabs, aligned table headings, overflow scrollbar, active normal tier, and selected model row.
   ```
-- [ ] **REFACTOR** Consolidate row/status/scrollbar helpers and verify existing
+- [x] **REFACTOR** Consolidate row/status/scrollbar helpers and verify existing
   model-picker, autosuggest, empty-state, and stale-result scenarios still pass.
   Rerun the single scenario through the E2E command. Record evidence:
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Model picker makes tiers and long model lists easy to scan'`; also `cargo test --test features_runner -- --tags '@e2e and not @wip'` and `cargo test --test features_runner -- --tags 'not @wip and not @e2e'`.
+  output: targeted scenario passed (9 steps); full E2E passed (36 scenarios, 208 steps); regular suite passed (43 scenarios, 234 steps). Existing filter, page navigation, reasoning, back-navigation, empty-state, fallback, and stale-result scenarios remained green.
   ```
 - [ ] **COMMIT** Create one atomic commit for RED/GREEN/REFACTOR with a message
   referencing `Model picker makes tiers and long model lists easy to scan` and
