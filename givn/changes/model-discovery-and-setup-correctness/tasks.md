@@ -310,7 +310,7 @@
 - Scenario-count evidence:
   ```text
   verify.command count: 56 scenarios, 303 steps (all passed at the current non-E2E scope).
-  verify.e2e_command count: 43 scenarios, 273 steps in the full repository E2E scope; strictly smaller than the full suite.
+  verify.e2e_command count: 52 scenarios, 346 steps in the full repository E2E scope; strictly smaller than the full suite.
   ```
 
 ## E2E Scenario 1: Interactive Model Discovery Preserves an OpenRouter Environment Credential
@@ -483,7 +483,7 @@
 - [x] Run the complete configured `verify.e2e_command`; paste output and confirm zero exit.
 - Full e2e verification output:
   ```text
-  Exit 0: `16 features`, `50 scenarios (50 passed)`, `333 steps (333 passed)`.
+  Exit 0: `16 features`, `52 scenarios (52 passed)`, `346 steps (346 passed)`.
   ```
 - [x] Run `givn lint --change model-discovery-and-setup-correctness` if needed for static feature validation; paste output.
 - Lint output:
