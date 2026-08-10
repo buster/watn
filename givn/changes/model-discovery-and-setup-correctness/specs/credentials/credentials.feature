@@ -5,7 +5,7 @@
 @givn.delta @credential-sources
 Feature: Credential source preservation during model discovery
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Interactive model discovery preserves an OpenRouter environment credential
     Given no config file exists
     And environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
@@ -21,7 +21,7 @@ Feature: Credential source preservation during model discovery
     And the config file should not contain "sk-or-v1-test"
     And the config file should contain small tier "model-small", middle tier "model-normal", and large tier "model-thinking"
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A literal saved credential is authoritative over environment fallback
     Given a configured provider "custom" with endpoint "https://llm.example.com/v1"
     And its saved api_key is "sk-saved-literal"

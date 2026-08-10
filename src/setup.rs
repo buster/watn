@@ -223,6 +223,10 @@ impl SetupWizard {
                 value[2..value.len() - 1].to_string(),
             ),
             Some(value) => (CredentialStorage::Configuration, value.to_string()),
+            None if provider.endpoint == OPENROUTER_ENDPOINT => (
+                CredentialStorage::Environment,
+                suggested_api_key_env(&provider.endpoint).to_string(),
+            ),
             None => (CredentialStorage::Configuration, String::new()),
         };
         let first_page = match entry {
