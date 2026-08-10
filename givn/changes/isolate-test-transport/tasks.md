@@ -35,30 +35,35 @@
 
 ## Scenario: Provider readiness ignores the test routing setting
 
-- [ ] RED: Remove `@wip` from this scenario, add the non-E2E step bindings with
+- [x] RED: Remove `@wip` from this scenario, add the non-E2E step bindings with
   real `unimplemented!()` stubs, and run only:
   ```text
   WATN_DEFAULT_DEBUG_BIN=... WATN_TEST_SUPPORT_DEBUG_BIN=... WATN_DEFAULT_RELEASE_BIN=... WATN_TEST_SUPPORT_RELEASE_BIN=... cargo test --test features_runner --features test-support -- --name "Provider readiness ignores the test routing setting"
   ```
-  Expected result: non-zero exit. Evidence: pending.
-- [ ] GREEN: Implement the readiness setup and assertions. Confirm readiness
+  Expected result: non-zero exit. Evidence: the runner matched the stub and
+  exited non-zero with `Step panicked ... not implemented` and `1 step failed`.
+- [x] GREEN: Implement the readiness setup and assertions. Confirm readiness
   uses the configured provider record, ignores the competing route, starts no
   HTTP request, and preserves the configured endpoint. Production files:
   `src/provider/transport.rs` only if the transport boundary is needed by the
   assertion; otherwise investigate before claiming GREEN. Test files:
-  `tests/steps/transport_steps.rs` and shared world state as required. Run the
-  same targeted command and record passing output. Evidence: pending.
-- [ ] REFACTOR: Remove duplication in the transport fixture/assertion helpers
-  without changing behavior. Run the targeted command again. Evidence: pending.
-- [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Provider readiness ignores the test routing setting`. Commit hash: pending.
+  `tests/steps/transport_steps.rs` and shared world state as required. The
+  transport boundary was implemented in `src/provider/transport.rs`; the
+  readiness scenario uses the existing provider readiness path. Targeted run:
+  1 scenario, 6 steps passed.
+- [x] REFACTOR: Remove duplication in the transport fixture/assertion helpers
+  without changing behavior. The targeted rerun passed with 1 scenario and 6
+  steps.
+- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
+  `Provider readiness ignores the test routing setting`. Commit hash: `e0dd980`.
 
 ## Scenario: Normal release requests ignore test routing settings
 
-- [ ] RED: Remove `@wip` from this scenario, bind every step with real stubs,
+- [x] RED: Remove `@wip` from this scenario, bind every step with real stubs,
   and run only the scenario through the e2e command. Expected result: non-zero
-  exit. Evidence: pending.
-- [ ] GREEN: Build and select the explicit default-feature release and
+  exit. Evidence: the runner matched the `run_release_binaries` stub and
+  exited non-zero with `Step panicked ... not implemented` and `1 step failed`.
+- [x] GREEN: Build and select the explicit default-feature release and
   test-support release binaries. Implement separate configured and competing
   loopback twins. Assert both release binaries use the configured full URL,
   method/path, exact Authorization header, response source, request counts,
@@ -66,13 +71,15 @@
   `src/provider/transport.rs`. Test files: `givn/commands.yaml`,
   `tests/features_runner.rs`, `tests/steps/transport_steps.rs`, and any
   concrete shared test-state file required by the reviewed design. Run only
-  this scenario through verify-e2e and record passing output. Evidence:
-  pending.
-- [ ] REFACTOR: Make binary-path and server cleanup deterministic, remove
-  catch-all mock matchers, and rerun this scenario through verify-e2e. Evidence:
-  pending.
-- [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Normal release requests ignore test routing settings`. Commit hash: pending.
+  this scenario through verify-e2e and record passing output. Evidence: the
+  explicit four-binary build matrix completed; targeted run passed with 1
+  scenario and 10 steps.
+- [x] REFACTOR: Make binary-path and server cleanup deterministic, remove
+  catch-all mock matchers, and rerun this scenario through verify-e2e. The
+  formatted targeted rerun passed with 1 scenario and 10 steps.
+- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
+  `Normal release requests ignore test routing settings`. Commit hash: pending
+  until commit creation.
 
 ## Scenario: Test-support requests use isolated routing without changing saved configuration
 

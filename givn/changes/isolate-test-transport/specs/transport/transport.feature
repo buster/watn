@@ -6,7 +6,7 @@
 @givn.delta @transport
 Feature: Isolated test transport
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Normal release requests ignore test routing settings
     Given a reachable local configured provider twin returns "configured-response" for POST "/v1/chat/completions"
     And the configured provider has api key "sk-configured" and default model "test-model"
