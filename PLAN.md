@@ -3,26 +3,21 @@
 Handoff snapshot: 2026-08-10
 
 This file is the working handoff for the next agent. It describes the current
-repository state, the decisions already made, the exact verification commands,
-and the remaining implementation work.
+repository state, the decisions already made, and the remaining implementation
+work.
 
 ## Current Repository State
 
-- Repository: `/home/sebastian/projects/watn`
+- Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree before this handoff edit: clean
-- Current worktree: only the intentional uncommitted `PLAN.md` update
-- Tracking branch: `origin/main`
-- Local branch state: 6 commits ahead of `origin/main`
-- Push state: the six commits have not been pushed
-- Active givn change: `isolate-test-transport`
-- Active change status: 24/25 tasks complete
-- Active change review artifact: not yet created
-- Active change archive state: not archived
+- Worktree: clean before this plan update
+- Remote/upstream: none configured
+- Active givn change: none
+- Archived transport work: `isolate-test-transport`
 - Current package version: `0.1.2` in `Cargo.toml`
 - Current CLI version: still hardcoded as `0.1.0` in `src/main.rs`
 
-Do not push unless explicitly requested. Do not amend the existing commits.
+Do not amend existing commits. Configure a remote before attempting to push.
 
 ## Required Session Start
 
@@ -30,12 +25,6 @@ Run this before exploring or editing:
 
 ```text
 givn instructions
-```
-
-For the active change, run:
-
-```text
-givn status --change isolate-test-transport
 ```
 
 The project uses givn. The required lifecycle is:
@@ -48,24 +37,6 @@ Keep exactly one active change. Complete one scenario at a time. Use RED,
 GREEN, REFACTOR, and one atomic scenario commit. Record the commit hash in
 `tasks.md` immediately after the scenario commit. Do not batch-check task
 boxes.
-
-## Existing Commits
-
-The current local branch contains these commits for the first change:
-
-| Commit | Meaning | Status |
-|---|---|---|
-| `e0dd980` | Provider readiness ignores test routing setting | Current scenario commit |
-| `0554516` | Initial release-scoped transport scenario | Superseded by `93b0343`; do not treat its release matrix as current design |
-| `16692a8` | Debug test-support routing uses isolated provider | Current scenario commit |
-| `93b0343` | Corrected normal scenario to debug-only and shared-cache binaries | Current scenario commit |
-| `2df8266` | Missing and whitespace override fallback | Current scenario commit |
-| `3d7282a` | Clippy cleanup and final verification evidence | Current follow-up commit |
-
-The relevant current implementation is represented by `93b0343`, `2df8266`,
-and `3d7282a`. Commit `0554516` remains in history but its release-focused
-scenario was deliberately replaced after the user requested an efficient
-debug-first implementation.
 
 ## Baseline Contracts
 
@@ -88,182 +59,9 @@ through a reviewed proposal and specification:
 - A missing saved environment reference is an authentication error and does
   not fall through to another environment variable.
 
-## Change 1: Isolate Test Transport
-
-### Status
-
-Production and debug test coverage are implemented. The active change is not
-archived because one verification task remains unchecked and `review.md` has
-not been written.
-
-The remaining unchecked task is the repository-wide formatting command:
-
-```text
-cargo fmt --all -- --check
-```
-
-It currently fails because of pre-existing formatting drift in unrelated test
-step files. The current change did not mass-format those files because doing so
-would add unrelated formatting noise. The other final checks pass.
-
-The release-profile runtime test is intentionally deferred to
-`release-truth-and-repository-cleanup`. The production source guard is already
-strong enough to compile the override branch only for
-`test-support + debug_assertions`.
-
-### Implemented Production Changes
-
-- `Cargo.toml` declares:
-
-  ```toml
-  [features]
-  default = []
-  test-support = []
-  ```
-
-- `src/provider/transport.rs` reads `WATN_TEST_ENDPOINT_OVERRIDE` only under:
-
-  ```rust
-  #[cfg(all(feature = "test-support", debug_assertions))]
-  ```
-
-- The negated compile-time branch returns the configured endpoint for normal
-  debug builds and all release-profile builds.
-- URL construction remains separate from configuration loading, persistence,
-  readiness, and endpoint display.
-- Unit coverage exists for the debug test-support override, whitespace fallback,
-  and default-feature override isolation.
-
-### Implemented Test Harness Changes
-
-- `tests/steps/transport_steps.rs` owns a concrete `TransportState`.
-- Configured, competing, and isolated loopback provider twins are separate
-  `httpmock` servers.
-- Provider fixtures include a reachable `/v1` endpoint, an exact API key, and a
-  default model so requests reach the provider path under test.
-- Chat mocks match exact method, path, and Authorization header.
-- Assertions verify response source, exact request counts, configured endpoint
-  persistence, and absence of the isolated endpoint from TOML.
-- `tests/steps/mod.rs::binary_from_env` requires an explicit binary path. It
-  does not fall back to `target/debug/watn`.
-- Existing child-process setup uses `WATN_TEST_SUPPORT_DEBUG_BIN`.
-- Transport scenarios use these explicit variables:
-
-  ```text
-  WATN_DEFAULT_DEBUG_BIN
-  WATN_TEST_SUPPORT_DEBUG_BIN
-  ```
-
-### Current Debug Bootstrap
-
-The current `givn/commands.yaml` verify commands use one shared Cargo target
-cache and copy the two resulting debug binaries to unique temporary paths:
-
-```text
-root=$(mktemp -d /tmp/watn-transport.XXXXXX) &&
-trap 'rm -rf "$root"' EXIT &&
-cargo build --bin watn &&
-cp target/debug/watn "$root/default-debug" &&
-cargo build --features test-support --bin watn &&
-cp target/debug/watn "$root/test-support-debug" &&
-WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
-WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
-cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
-```
-
-The E2E command is the same bootstrap with:
-
-```text
---tags '@e2e and not @wip'
-```
-
-Do not reintroduce one `--target-dir` per feature/profile combination. That
-caused every dependency to be rebuilt repeatedly and consumed approximately
-16 GB in temporary directories. Temporary copy paths are sufficient to avoid
-stale or overwritten child binaries.
-
-### Current Scenarios
-
-The active delta is:
-
-```text
-givn/changes/isolate-test-transport/specs/transport/transport.feature
-```
-
-It contains four scenarios:
-
-- `Normal debug requests ignore test routing settings`
-  - Runs only the default-feature debug binary with a non-empty override.
-  - Requires the configured twin to receive the request.
-  - Requires the competing twin to receive zero requests.
-- `Test-support requests use isolated routing without changing saved configuration`
-  - Runs the debug test-support binary with an isolated endpoint override.
-  - Requires the isolated response and exact Authorization header.
-  - Requires the configured endpoint to remain in persisted TOML.
-- `Missing or whitespace test overrides fall back to the configured provider`
-  - Runs the debug test-support binary twice in one parser-safe scenario.
-  - The first child has no override.
-  - The second child has a whitespace override.
-  - Both must use the configured provider; aggregate configured hits must equal
-    two and competing hits must equal zero.
-- `Provider readiness ignores the test routing setting`
-  - Is a non-E2E local readiness contract.
-  - It proves readiness remains true and makes no network request.
-
-The custom Cucumber parser in this repository does not substitute Scenario
-Outline example placeholders reliably. Do not change the fallback scenario
-back to a Scenario Outline. The explicit two-child invocation is intentional.
-
-### First Change Verification Evidence
-
-- `givn lint --change isolate-test-transport`: clean, 1 file checked, 0
-  findings.
-- Debug non-E2E verify command: 9 features, 44 scenarios, 240 steps passed.
-- Debug E2E verify command: 11 features, 42 scenarios, 267 steps passed.
-- `cargo test --all-targets --features test-support` with explicit copied
-  binary paths: 15 unit tests and 86 scenarios passed.
-- `cargo clippy --all-targets --all-features -- -D warnings`: passed.
-- `cargo check --all-targets`: passed.
-- `cargo test --doc`: passed, no doctests.
-- `cargo build --release`: passed once as a compile check.
-- `git diff --check`: passed.
-- `cargo fmt --all -- --check`: failed on pre-existing repository-wide drift.
-
-### Finish The First Change
-
-The next agent should:
-
-1. Run `givn instructions review --change isolate-test-transport`.
-2. Run the required fabrication and coverage review. Do not claim coverage
-   validity from the current stale coverage commands without fixing their
-   explicit binary environment first.
-3. Decide whether the pre-existing rustfmt drift is fixed globally or recorded
-   as a known repository blocker. Do not silently format unrelated files.
-4. If review passes, run the archive workflow:
-
-   ```text
-   givn archive --change isolate-test-transport
-   ```
-
-5. Confirm the archive preserves the scenario commits and the final `tasks.md`
-   evidence.
-
-### First Change Scope Corrections
-
-The original review report grouped two items under transport isolation that are
-now intentionally owned by the next change:
-
-- Stale-search concurrency belongs to model discovery and setup correctness.
-- Exact LiteLLM model-discovery routing belongs to model discovery and setup
-  correctness. The permanent provider scenario currently has a step that only
-  checks mock hit count and ignores the expected URL; that remains to be fixed.
-
-Do not expand the first change again to include those items.
-
 ## Change 2: Model Discovery and Setup Correctness
 
-Create this as the next active givn change only after the first change is
-reviewed and archived:
+Create this as the next active givn change:
 
 ```text
 givn new model-discovery-and-setup-correctness
@@ -525,8 +323,8 @@ Create after change 3 is archived:
 givn new release-truth-and-repository-cleanup
 ```
 
-This covers findings 9 and 10, documentation drift, coverage command repair,
-and remaining dead-code candidates.
+This covers findings 9 and 10, documentation drift, and remaining dead-code
+candidates.
 
 ### Version
 
@@ -561,21 +359,6 @@ Update the active Arc42 and README claims for:
 - Historical status of archived Arc42 snapshots.
 - One authoritative coverage command and current measured values.
 
-### Coverage Commands
-
-The current `coverage` commands in `givn/commands.yaml` still invoke
-`cargo llvm-cov` without exporting the explicit binary copy paths now required
-by `tests/steps/mod.rs`. Fix this before relying on coverage:
-
-- Build instrumented default and test-support debug copies in the shared target
-  cache.
-- Export `WATN_DEFAULT_DEBUG_BIN` and `WATN_TEST_SUPPORT_DEBUG_BIN` to those
-  copies during the Cucumber run.
-- Use collision-safe `LLVM_PROFILE_FILE` paths for the runner and child CLI.
-- Confirm a known production path has non-zero coverage.
-- Do not report stable-toolchain branch coverage as meaningful when it emits a
-  `0/0` denominator.
-
 ### Dead Code And Hygiene
 
 - Keep `LiteLLMConfig` after adding its production consumer.
@@ -590,67 +373,281 @@ by `tests/steps/mod.rs`. Fix this before relying on coverage:
 - Decide separately whether to format the entire repository. Avoid mixing a
   repository-wide rustfmt rewrite into behavioral commits.
 
-## Verification Commands
+## Additional Planned Work
 
-### Debug Change Commands
+### 4. Watn Bash, Zsh, And Fish Completions Through Clap
 
-Use the current shared-cache bootstrap. Do not use four isolated target dirs:
-
-```text
-root=$(mktemp -d /tmp/watn-transport.XXXXXX) &&
-trap 'rm -rf "$root"' EXIT &&
-cargo build --bin watn &&
-cp target/debug/watn "$root/default-debug" &&
-cargo build --features test-support --bin watn &&
-cp target/debug/watn "$root/test-support-debug" &&
-WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
-WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
-cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
-```
+Create this as a separate givn change after the release/documentation cleanup
+unless reprioritized:
 
 ```text
-root=$(mktemp -d /tmp/watn-transport.XXXXXX) &&
-trap 'rm -rf "$root"' EXIT &&
-cargo build --bin watn &&
-cp target/debug/watn "$root/default-debug" &&
-cargo build --features test-support --bin watn &&
-cp target/debug/watn "$root/test-support-debug" &&
-WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
-WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
-cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip'
+givn new shell-completions
 ```
 
-For `cargo test --all-targets`, export the same two binary paths. Running it
-without those variables now fails intentionally because stale binary discovery
-is prohibited.
+Add a `watn completions <shell>` command backed by Clap completion generation.
+The supported shell values are `bash`, `zsh`, and `fish`. The command writes
+only the generated completion script to stdout, does not load configuration,
+does not contact a provider, and reports an unsupported shell as a normal CLI
+error. Do not hand-maintain shell completion scripts when Clap can generate
+them from the authoritative command tree.
 
-### Static Checks
+Required behavior:
+
+- Completion output includes the current commands, flags, subcommands, and
+  value suggestions exposed by the Clap CLI.
+- Bash, Zsh, and Fish output is deterministic for a fixed CLI definition.
+- `watn completions --help` documents the supported shells and output purpose.
+- Completion generation does not write files or modify shell configuration.
+- The command uses the package's actual CLI metadata and does not duplicate
+  command names in a second registry.
+
+Required tests:
+
+- `watn completions bash` exits successfully and emits Bash completion syntax.
+- `watn completions zsh` exits successfully and emits Zsh completion syntax.
+- `watn completions fish` exits successfully and emits Fish completion syntax.
+- An unsupported shell returns a non-zero status with actionable guidance.
+- The generated output contains the current setup, provider, models, and
+  completion command options.
+- Existing command behavior and stdout/stderr contracts remain unchanged.
+
+The implementation should use the repository's existing CLI test and Gherkin
+fixture conventions. If a completion dependency is required, keep it limited
+to completion generation and verify that the generated scripts are sourced by
+the intended shell versions.
+
+### 5. Interactive Shell Shortcut For Watn
+
+Create this as a separate givn change after shell completions, unless the
+implementation order is deliberately changed through a reviewed proposal:
 
 ```text
-cargo check --all-targets
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --doc
-cargo build --release
-git diff --check
+givn new interactive-shell-shortcut
 ```
 
-Run `cargo fmt --all -- --check` and classify the result. Current known result:
-it fails on unrelated pre-existing test formatting drift.
+#### Overview
 
-### Release Verification Later
+Extend the existing multi-step `watn setup` wizard with an optional step that
+installs a shell key binding. The default binding is Ctrl-W. It reads the
+entire current shell command-line buffer, passes that buffer to `watn` as one
+quoted question, and replaces the current buffer with the generated command.
+The generated command is inserted but never executed automatically.
 
-The next release-focused change should run once, not as part of every debug
-scenario:
+Example:
 
 ```text
-cargo build --release
-cargo build --release --features test-support
-file target/release/watn
-ldd target/release/watn
+$ find all images<Ctrl-W>
+$ find . -type f \( -iname '*.jpg' -o -iname '*.png' \)
 ```
 
-The release feature build must still ignore `WATN_TEST_ENDPOINT_OVERRIDE` due
-to `debug_assertions` being false.
+The user can inspect or edit the replacement before pressing Enter.
+
+#### Setup Flow
+
+Add the following optional flow to the existing setup wizard:
+
+1. Ask: `Configure a shell shortcut for generating commands with watn?`
+2. If enabled, show a multi-select list containing Bash, Zsh, and Fish.
+3. Preselect shells detected from the current environment when appropriate,
+   without preventing selection of any supported shell.
+4. Allow zero, one, or multiple selected shells.
+5. Install the selected shell configuration.
+6. Report modified files and shell-specific reload instructions.
+
+If the user declines or selects no shells, leave shell configuration untouched
+and continue setup. The shell choice is independent of the user's default
+shell; users may select shells that are not currently running.
+
+#### Shortcut Contract
+
+For every selected shell, the generated widget must:
+
+- Read the complete current command-line buffer.
+- Avoid invoking `watn` for empty input, or otherwise leave the line unchanged.
+- Invoke `watn "$question"` with quoted expansion so the entire buffer is one
+  question.
+- Capture the generated command without evaluating it.
+- Replace the current buffer only when `watn` succeeds and output is non-empty.
+- Move the cursor to the end of the replacement.
+- Redisplay the prompt.
+- Preserve the original input when `watn` fails or produces no output.
+- Never execute the generated command automatically.
+- Normalize trailing newlines so the inserted value remains a single command
+  line.
+- Keep stderr visible or handle it consistently with the existing CLI output
+  contract.
+
+#### Bash Implementation
+
+Install a function and Readline binding using the current line and cursor:
+
+```bash
+# >>> watn shell shortcut >>>
+_watn_widget() {
+    local question=$READLINE_LINE
+    local result
+
+    if result=$(watn "$question") && [[ -n "$result" ]]; then
+        READLINE_LINE=$result
+        READLINE_POINT=${#READLINE_LINE}
+    fi
+}
+
+bind -x '"\C-w":_watn_widget'
+# <<< watn shell shortcut <<<
+```
+
+Bash-specific requirements:
+
+- Use `READLINE_LINE` for the current buffer.
+- Use `READLINE_POINT` to position the cursor.
+- Register the function with `bind -x`.
+- Load the binding when the shell starts.
+- Explicitly document that the selected shell's existing Ctrl-W binding is
+  overridden, or preserve it if the project decides that is required.
+
+#### Zsh Implementation
+
+Install a ZLE widget and binding:
+
+```zsh
+# >>> watn shell shortcut >>>
+_watn_widget() {
+    local question=$BUFFER
+    local result
+
+    if result=$(watn "$question") && [[ -n "$result" ]]; then
+        BUFFER=$result
+        CURSOR=${#BUFFER}
+    fi
+
+    zle redisplay
+}
+
+zle -N _watn_widget
+bindkey '^W' _watn_widget
+# <<< watn shell shortcut <<<
+```
+
+Zsh-specific requirements:
+
+- Use `$BUFFER` for the current line.
+- Set `$CURSOR` after replacement.
+- Register the widget using `zle -N`.
+- Bind the widget using `bindkey`.
+- Bind the default map and, when applicable, `viins` as well:
+  `bindkey -M viins '^W' _watn_widget`.
+
+#### Fish Implementation
+
+Install a Fish function and binding:
+
+```fish
+# >>> watn shell shortcut >>>
+function _watn_widget
+    set -l question (commandline)
+    set -l result (watn "$question" | string collect)
+    set -l status_code $pipestatus[1]
+
+    if test $status_code -eq 0; and test -n "$result"
+        commandline -r -- "$result"
+    end
+
+    commandline -f repaint
+end
+
+bind \cw _watn_widget
+# <<< watn shell shortcut <<<
+```
+
+Fish-specific requirements:
+
+- Use `commandline` to read the current buffer.
+- Use `commandline -r -- "$result"` to replace it.
+- Repaint after the command completes.
+- Preserve the original line on failure or empty output.
+- Bind Ctrl-W in the appropriate default mode; support insert mode if the
+  project's Fish configuration conventions require it.
+
+#### Configuration Installation
+
+Follow existing setup conventions for prompt rendering, multi-select inputs,
+configuration discovery, status output, error handling, and generated blocks.
+The typical target files are:
+
+| Shell | Typical configuration file |
+|---|---|
+| Bash | `~/.bashrc` |
+| Zsh | `~/.zshrc` |
+| Fish | `~/.config/fish/config.fish` |
+
+The installer must:
+
+- Use existing shell and configuration path detection when available instead of
+  hard-coded assumptions.
+- Create missing parent directories, especially for Fish.
+- Append a clearly delimited shell-appropriate generated block.
+- Use the markers `# >>> watn shell shortcut >>>` and
+  `# <<< watn shell shortcut <<<`.
+- Replace an existing exact generated block rather than append a duplicate.
+- Preserve unrelated user configuration.
+- Define the behavior for manually customized content inside an existing
+  marked block; the preferred default is replacing only exact generated-marker
+  blocks, with confirmation if the project chooses to preserve custom edits.
+- Fail clearly when a target file cannot be read or written.
+- Ideally create a backup before modifying an existing file, following any
+  existing repository backup convention.
+- Use the installed `watn` executable resolved naturally from the user's PATH;
+  never embed a development-time or repository-local executable path.
+
+#### Setup Edge Cases And Runtime Reporting
+
+- Running setup twice is idempotent.
+- Declining the shortcut makes no shell-file changes.
+- Selecting no shells makes no shell-file changes.
+- Selecting multiple shells updates each selected file independently.
+- Existing Ctrl-W behavior is overridden only for selected shells.
+- Empty input, non-zero `watn` status, and empty output preserve the original
+  buffer.
+- Generated output is inserted as text and is never shell-evaluated during
+  replacement.
+- Report each modified file and how to reload it. Examples:
+
+```text
+Configured Bash in ~/.bashrc.
+Run: source ~/.bashrc
+
+Configured Zsh in ~/.zshrc.
+Run: source ~/.zshrc
+
+Configured Fish in ~/.config/fish/config.fish.
+Run: source ~/.config/fish/config.fish
+```
+
+It is also valid to state that the shortcut becomes available in newly
+started shells.
+
+#### Required Tests
+
+Use temporary HOME/XDG-style directories and shell fixture files so tests do
+not modify a developer's real configuration. Cover:
+
+- Declining the wizard step leaves all shell files byte-for-byte unchanged.
+- Zero, one, and multiple shell selections behave correctly.
+- Environment-based preselection does not restrict manual selection.
+- Missing parent directories are created only when installation is selected.
+- Bash, Zsh, and Fish blocks contain their required widget APIs and bindings.
+- Repeated setup replaces or preserves the generated block without duplicates.
+- Unrelated user configuration remains byte-for-byte unchanged.
+- Read/write failures produce actionable errors.
+- A successful widget replaces the line, moves the cursor, repaints, and does
+  not execute the generated command.
+- A failed or empty `watn` result preserves the original line.
+- The complete input is passed as one quoted question, including spaces and
+  shell metacharacters.
+- Trailing output newlines are normalized consistently.
+- Reload instructions identify the exact modified file for every selected
+  shell.
 
 ## Handoff Rules
 
