@@ -94,19 +94,25 @@
   Normalized documentation whitespace for stable assertions and reran: 1
   feature, 1 scenario, 4 steps passed.
   ```
-- [x] COMMIT: `[pending hash]` - `docs(release-truth-and-repository-cleanup): Active documentation distinguishes archived historical snapshots`
+- [x] COMMIT: `fe5cfa8` - `docs(release-truth-and-repository-cleanup): Active documentation distinguishes archived historical snapshots`
 
 ## Hygiene Verification
 
-- [ ] Confirm repository-wide searches before cleanup: remove `_config` from
+- [x] Confirm repository-wide searches before cleanup: remove `_config` from
   `build_registry`, retain public `ProviderRegistry` and setup result wrappers,
   remove only write-only `WatnWorld` fields, and remove obsolete helper names
   only when no active consumer remains. Compile and run the full feature suite
   after each cleanup group. Record every retained public item and why.
   ```text
-  Search/compile/runner evidence: [output]
+  Search evidence: `ProviderRegistry`, `ProviderSetupResult`, and public setup
+  wrappers still have current consumers or unknown external-consumer risk and
+  were retained. `WatnWorld` fields removed as write-only: `config_content`,
+  `executed_command`, `stdin_input`, and `last_request_body`. Obsolete active
+  documentation names are absent. `_config` was removed from `build_registry`.
+  `cargo check --all-targets`, clippy, and `./run-tests.sh` passed with 15
+  features, 65 scenarios, and 364 steps.
   ```
-- [ ] COMMIT: `[hash]` - `refactor(release-truth-and-repository-cleanup): remove confirmed dead repository code`
+- [ ] COMMIT: `[pending hash]` - `refactor(release-truth-and-repository-cleanup): remove confirmed dead repository code`
 
 ## E2E Setup
 

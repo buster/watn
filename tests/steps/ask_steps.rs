@@ -142,7 +142,7 @@ fn configured_default_provider_with_model(w: &mut WatnWorld, provider: String, m
 
 #[given("no arguments and no stdin")]
 fn no_args_no_stdin(w: &mut WatnWorld) {
-    w.stdin_input = Some(String::new());
+    assert!(w.output.is_none() && w.stderr_output.is_none());
 }
 
 #[given(regex = r#"^pricing configured at "\$2\.50/1M input tokens" per model$"#)]
@@ -658,9 +658,11 @@ fn api_request_not_include_reasoning(w: &mut WatnWorld) {
 #[then("the output should contain a version number")]
 fn output_contains_version(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
+    let expected = env!("CARGO_PKG_VERSION");
     assert!(
-        out.contains("0.1.0"),
-        "expected output to contain version '0.1.0', got: '{}'",
+        out.contains(expected),
+        "expected output to contain package version '{}', got: '{}'",
+        expected,
         out
     );
 }

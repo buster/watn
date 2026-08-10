@@ -140,7 +140,6 @@ fn provider_setup_accepts_pasted_credential(world: &mut WatnWorld, credential: S
     world
         .pending_config
         .insert("provider_name".to_string(), draft.name.clone());
-    world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
 }
 
 fn save_environment_draft(world: &mut WatnWorld, name: String) {
@@ -156,7 +155,6 @@ fn save_environment_draft(world: &mut WatnWorld, name: String) {
     world
         .pending_config
         .insert("provider_name".to_string(), draft.name.clone());
-    world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
 }
 
 #[then(regex = r#"^provider setup should suggest environment variable \"([^\"]+)\"$"#)]
@@ -592,7 +590,6 @@ fn automatic_onboarding_saves_provider(world: &mut WatnWorld, endpoint: String, 
     world
         .pending_config
         .insert("provider_name".to_string(), draft.name);
-    world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
 }
 
 #[when(
