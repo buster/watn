@@ -1,12 +1,12 @@
 use crate::error::Error;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use crossterm::{cursor, terminal, QueueableCommand};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
-    widgets::Paragraph,
+    style::{Color, Modifier, Style},
+    text::Line,
+    widgets::{Block, Cell, List, ListItem, ListState, Paragraph, Row, Table, Wrap},
 };
-use std::io::Write;
 use std::time::Duration;
 
 pub const OPENROUTER_ENDPOINT: &str = "https://openrouter.ai/api/v1";
@@ -204,8 +204,15 @@ fn draw_setup(
     env_name: &str,
     validation: &str,
 ) {
-    let areas = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(frame.area());
-    frame.render_widget(Paragraph::new("Provider setup"), areas[0]);
+    let panel = Block::bordered().title("Provider setup");
+    let areas = Layout::vertical([
+        Constraint::Length(5),
+        Constraint::Min(7),
+        Constraint::Length(6),
+    ])
+    .split(panel.inner(frame.area()));
+    frame.render_widget(panel, frame.area());
+
     let credential = match source {
         CredentialSource::Paste => "Paste credential",
         CredentialSource::Environment => "Environment variable",
@@ -221,16 +228,53 @@ fn draw_setup(
         SetupStage::Review => "Review provider configuration (Enter to save)",
         SetupStage::Confirmed => "Provider configuration confirmed",
     };
-    let text = format!(
-        "OpenAI-compatible endpoint:\n{endpoint}\n\nCredential choices: [p] Paste credential [e] Environment variable\n{stage_hint}\nSelected: {credential}\n{value_display}\n\n{validation}"
-    );
-    frame.render_widget(Paragraph::new(text), areas[1]);
 
-    let mut stdout = std::io::stdout().lock();
-    let _ = stdout.queue(cursor::MoveTo(0, 4));
-    let _ = stdout.queue(terminal::Clear(terminal::ClearType::CurrentLine));
-    let _ = writeln!(stdout, "Credential choices: [p] Paste credential [e] Environment variable");
-    let _ = stdout.flush();
+    let source_items = vec![
+        ListItem::new(Line::from("Paste credential [p]")),
+        ListItem::new(Line::from("Environment variable [e]")),
+    ];
+    let mut source_state = ListState::default();
+    source_state.select(Some(match source {
+        CredentialSource::Paste => 0,
+        CredentialSource::Environment => 1,
+    }));
+    let source_list = List::new(source_items)
+        .block(Block::bordered().title("Credential source"))
+        .highlight_style(
+            Style::default()
+                .bg(Color::Cyan)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol("> ");
+    frame.render_stateful_widget(source_list, areas[0], &mut source_state);
+
+    let details = Table::new(
+        [
+            Row::new([Cell::from("Endpoint"), Cell::from(endpoint)]),
+            Row::new([Cell::from("Credential"), Cell::from(credential)]),
+            Row::new([Cell::from("Value"), Cell::from(value_display)]),
+        ],
+        [Constraint::Length(16), Constraint::Min(1)],
+    )
+    .header(Row::new([Cell::from("Field"), Cell::from("Current value")]).style(
+        Style::default().add_modifier(Modifier::BOLD),
+    ))
+    .block(Block::bordered().title("Provider details"));
+    frame.render_widget(details, areas[1]);
+
+    let guidance = format!(
+        "OpenAI-compatible endpoint\n{stage_hint}\nSelected source: {credential}{validation}",
+        validation = if validation.is_empty() {
+            String::new()
+        } else {
+            format!("\nValidation: {validation}")
+        },
+    );
+    let guidance = Paragraph::new(guidance)
+        .block(Block::bordered().title("Guidance"))
+        .wrap(Wrap { trim: true });
+    frame.render_widget(guidance, areas[2]);
 }
 
 pub fn normalize_endpoint(endpoint: &str) -> Result<String, Error> {

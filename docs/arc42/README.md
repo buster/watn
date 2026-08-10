@@ -5,7 +5,9 @@ Maintained by the `arc42-docs` givn artifact — updated with each change via `g
 
 The current architecture includes TTY-gated provider onboarding through
 `watn provider`, environment-backed credentials, and automatic first-use
-provider/model setup that stops before the original request.
+provider/model setup that stops before the original request. The setup flows use
+structured Ratatui widgets so choices, metadata, status, tier tabs, and long
+catalog position remain visible in the terminal.
 
 | Chapter | File | Description |
 |---|---|---|

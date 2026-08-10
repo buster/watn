@@ -148,10 +148,11 @@ scripting).
 ## Model interaction modes
 
 The current model settings dialog uses ratatui and crossterm when stdin is a
-TTY. It reads terminal events through crossterm, renders the filter and model
-list with ratatui widgets, and restores the terminal before returning a typed
-result. The existing dialoguer path remains available for explicit non-dialog
-model selection.
+TTY. It reads terminal events through crossterm, renders a bordered picker with
+tier tabs, filter/status paragraphs, an aligned metadata table, and a stateful
+scrollbar, then restores the terminal before returning a typed result. The
+existing dialoguer path remains available for explicit non-dialog model
+selection.
 
 ## Keyboard-driven model settings dialog
 
@@ -159,8 +160,10 @@ The interactive `watn models` flow (TTY stdin) runs a ratatui-based
 `SettingsDialog` for the three-tier selection sequence. It renders a
 two-pane view using ratatui's `List`/`ListState` and `Layout`:
 
-- A filter line that always shows the current filter text.
-- The matching model list with the current selection highlighted.
+- A bordered picker with tabs for the small, normal, and thinking tiers.
+- A filter paragraph that always shows the current filter text.
+- An aligned model table with the current selection highlighted.
+- A scrollbar showing position when the catalog exceeds the available rows.
 - A reasoning-strength selector (off, low, medium, high) for the current level.
 - A status line for the empty state or the unsupported-search notice.
 
@@ -183,13 +186,14 @@ local rule over the models already fetched.
 ## Keyboard-driven provider setup
 
 The `watn provider` command uses a ratatui/crossterm state machine with endpoint,
-credential-source, credential-value, and review states. Enter advances or
-confirms; Escape and Ctrl-C cancel. The terminal is restored on success,
-validation failure, and cancellation. The automatic first-use path invokes this
-dialog and the model settings dialog in the same process. A successful
-automatic flow stops after model selection; it does not send or resume the
-original question. A model cancellation or failure preserves the saved
-provider and stops the flow.
+credential-source, credential-value, and review states. Its frame is bordered
+and separates the credential source list, aligned provider-details table, and
+guidance/status paragraph. Enter advances or confirms; Escape and Ctrl-C cancel.
+The terminal is restored on success, validation failure, and cancellation. The
+automatic first-use path invokes this dialog and the model settings dialog in
+the same process. A successful automatic flow stops after model selection; it
+does not send or resume the original question. A model cancellation or failure
+preserves the saved provider and stops the flow.
 
 The stale-result guard uses `Arc<AtomicU64>` as a generation counter. Each
 filter change increments the counter before dispatching a search; the worker

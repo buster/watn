@@ -1,8 +1,10 @@
 pub mod ask_steps;
 pub mod config_steps;
 pub mod models_steps;
+pub mod model_picker_layout_steps;
 pub mod providers_steps;
 pub mod provider_setup_steps;
+pub mod provider_setup_layout_steps;
 
 use std::path::PathBuf;
 
@@ -535,6 +537,7 @@ pub(crate) struct PtySession {
     pub child: Box<dyn portable_pty::Child + Send + Sync>,
     pub writer: Option<Box<dyn Write + Send>>,
     pub output_buffer: Arc<Mutex<Vec<u8>>>,
+    pub reader_handle: Option<std::thread::JoinHandle<()>>,
     pub finished: bool,
 }
 
@@ -583,7 +586,7 @@ pub(crate) fn start_pty_session(
     }
     cmd.env("TERM", "xterm-256color");
 
-    let mut child = pair.slave.spawn_command(cmd).expect("spawn pty command");
+    let child = pair.slave.spawn_command(cmd).expect("spawn pty command");
     drop(pair.slave);
 
     let mut reader = pair.master.try_clone_reader().expect("pty reader");
@@ -591,7 +594,7 @@ pub(crate) fn start_pty_session(
 
     let output_buffer = Arc::new(Mutex::new(Vec::new()));
     let reader_buffer = Arc::clone(&output_buffer);
-    std::thread::spawn(move || {
+    let reader_handle = std::thread::spawn(move || {
         let mut tmp = [0u8; 1024];
         loop {
             match reader.read(&mut tmp) {
@@ -607,6 +610,7 @@ pub(crate) fn start_pty_session(
         child,
         writer: Some(writer),
         output_buffer,
+        reader_handle: Some(reader_handle),
         finished: false,
     }
 }
@@ -620,6 +624,29 @@ pub(crate) fn pty_write(session: &mut PtySession, seq: &str) {
 
 pub(crate) fn pty_snapshot(session: &PtySession) -> String {
     String::from_utf8_lossy(&session.output_buffer.lock().unwrap()).to_string()
+}
+
+pub(crate) fn pty_wait_for_label(session: &PtySession, label: &str) -> String {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = pty_snapshot(session);
+        if label.split_whitespace().all(|word| output.contains(word)) {
+            return output;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("PTY did not render label {label:?}; output: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
+pub(crate) fn cleanup_pty_session(mut session: PtySession) {
+    let _ = session.child.kill();
+    let _ = session.child.wait();
+    session.writer.take();
+    if let Some(reader_handle) = session.reader_handle.take() {
+        let _ = reader_handle.join();
+    }
 }
 
 /// Wait for the PTY child to exit, collect its output into the world, and
@@ -641,6 +668,9 @@ pub(crate) fn finish_pty_session(
     };
     session.writer.take();
     let buf = session.output_buffer.lock().unwrap().clone();
+    if let Some(reader_handle) = session.reader_handle.take() {
+        let _ = reader_handle.join();
+    }
     let text = String::from_utf8_lossy(&buf).to_string();
     world.exit_status = Some(status.exit_code() as i32);
     world.pty_output_buffer = Some(text.clone());

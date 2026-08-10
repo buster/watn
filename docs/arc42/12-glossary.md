@@ -30,3 +30,9 @@
 | Setup result | A typed provider/model outcome: configured or saved, cancelled by Escape/Ctrl-C, or failed without lower-level process exit |
 | Ephemeral transport override | A test-only endpoint selected when HTTP clients are constructed; it is not persisted and is not used for readiness |
 | Automatic setup completion | Successful first-use provider and model setup that exits after tier selection without sending the original question |
+| Widget | A Ratatui-rendered terminal region with its own layout, border, selection, or text responsibility |
+| Tier tabs | The visible small, normal, and thinking labels showing which model-assignment level is active |
+| Model table | The aligned model catalog showing model identity and available metadata in columns |
+| Scrollbar | The terminal indicator showing the current position within an overflowing model catalog |
+| Debounced search | A search started only after the user has stopped changing the filter for the configured short interval |
+| Search generation | The monotonically increasing query identifier used to reject stale model-search results |

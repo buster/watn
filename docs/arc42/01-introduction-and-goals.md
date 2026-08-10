@@ -16,6 +16,7 @@ Top 9 requirements:
 7. Layered configuration: CLI flags > env vars > user config > built-in defaults
 8. Auto-init template: first run writes a commented-out config file to the standard XDG path
 9. TTY-gated provider onboarding with OpenRouter defaults, environment-backed credentials, and automatic first-use model setup that stops before the original request
+10. Structured terminal setup views make credential-source choices, provider details, model tiers, and long model catalogs scannable
 
 See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 
@@ -23,7 +24,7 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 
 | Priority | Quality attribute | Motivation |
 |---|---|---|
-| 1 | Usability | One-shot shell command generation; confirmation-prompted execution |
+| 1 | Usability | One-shot shell command generation; confirmation-prompted execution; scannable interactive setup views |
 | 2 | Flexibility | Any OpenAI-compatible API; any model; model tier assignment |
 | 3 | Portability | Single static binary, no runtime dependencies beyond the OS |
 | 4 | Security | Prefer environment-backed credentials, mask pasted credentials, enforce private config permissions, and keep resolved secrets out of diagnostics |

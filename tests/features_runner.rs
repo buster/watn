@@ -73,6 +73,9 @@ pub struct WatnWorld {
 
 impl Drop for WatnWorld {
     fn drop(&mut self) {
+        if let Some(session) = self.pty_session.take() {
+            crate::steps::cleanup_pty_session(session);
+        }
         for name in self.env_vars.keys() {
             std::env::remove_var(name);
         }

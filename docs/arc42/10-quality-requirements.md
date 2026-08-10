@@ -8,6 +8,8 @@
 - **Onboarding** — A first-time TTY user can reach model setup without learning TOML, while non-TTY use remains actionable and script-safe
   - QS-011: Provider setup offers a usable OpenRouter default
   - QS-012: Missing provider automatically chains into model setup
+  - QS-019: Setup information is separated into scannable terminal regions
+  - QS-020: Background model search keeps the newest query authoritative
 - **Flexibility** — Provider-agnostic, config-driven, model tiering
   - QS-003: Custom OpenAI-compatible provider
   - QS-004: Model tier assignment via config
@@ -46,3 +48,5 @@
 | QS-016 | Onboarding | User runs first use without a TTY and without a ready implicit provider | Exit 1; stderr names `watn provider` and the config path; no ratatui, `/models`, or chat request starts |
 | QS-017 | Onboarding | Provider setup succeeds but model setup is cancelled or fails | Provider remains saved, onboarding stops, and the original chat request is not sent; Escape is 1 and Ctrl-C is 130 |
 | QS-018 | Flexibility | A saved `[providers.openrouter]` entry exists | Its endpoint and credential representation take precedence over the built-in OpenRouter fallback |
+| QS-019 | Onboarding / Usability | User opens provider or model setup in a terminal | Provider setup exposes a titled border, selectable credential list, aligned detail rows, and guidance paragraph; model setup exposes a titled border, three tier tabs, aligned model columns, and a scrollbar for an overflowing catalog |
+| QS-020 | Usability / Responsiveness | User changes the model filter while a provider search is delayed | The UI remains able to redraw and accept input; after the debounce only the newest query's results are applied, and an older result cannot replace them |

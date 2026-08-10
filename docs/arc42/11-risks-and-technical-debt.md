@@ -22,6 +22,8 @@
 | R-016 | Fixed `openrouter` and `custom` names can collide with manually maintained entries | Medium | High | Replace only the selected fixed entry, preserve unrelated providers and config, and document the intentional collision before implementation |
 | R-017 | Direct config writes are not atomic and may be interrupted | Low | High | Keep the existing direct-write mechanism as the explicit constraint, enforce mode `0600` after every save, and do not promise temp-file/rename semantics |
 | R-018 | The ephemeral E2E transport override could leak into persistence/readiness or cover only one request path | Medium | High | Apply it only at HTTP construction, never consult it during readiness, assert the exact persisted OpenRouter endpoint, and cover both `/models` and `/chat/completions` |
+| R-019 | Structured columns and multiple regions can become cramped or unreadable on small terminals | Medium | Medium | Use Ratatui layout constraints, truncation-safe cells, wrapped paragraphs, and PTY coverage at the supported test size; keep keyboard flow independent of visual width |
+| R-020 | Debounced worker results can race with user input or outlive the dialog | Medium | Medium | Increment a generation for every query change, check it before and after the debounce, apply results only through the event loop, ignore Enter while pending, and reap the dialog before exit |
 
 ## Technical debt
 
@@ -56,3 +58,10 @@ The following consequences are accepted and mitigated explicitly:
 - Test transport seam: the override is ephemeral, construction-time only, and
   verified on both required HTTP paths without changing readiness or persisted
   endpoint values.
+- Widget layout width: the native widget composition improves scanning on the
+  supported terminal size but cannot guarantee every column remains spacious on
+  a very narrow terminal; constraints and wrapped guidance limit the damage.
+- Search worker lifecycle: asynchronous search adds timing and channel state;
+  the generation guard and event-loop ownership of applied results prevent stale
+  rows from replacing current input, while cleanup prevents detached test
+  processes from leaking.

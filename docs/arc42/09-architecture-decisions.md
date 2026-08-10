@@ -17,6 +17,7 @@ options, the decision outcome, and consequences.
 | ADR-0009 | Server-side filtering for paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
 | ADR-0010 | Keyboard-driven dialog for model and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |
 | ADR-0011 | Interactive provider onboarding with environment-backed credentials | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
+| ADR-0012 | Structured widget composition for terminal setup views | [docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md](../adr/0012-structured-widget-composition-for-terminal-setup-views.md) |
 
 ## ADR-0011 summary
 
@@ -39,3 +40,12 @@ preservation, saved credential precedence, direct-write `0600` enforcement
 without an atomic rename promise, typed cancellation, no-resume automatic
 completion, and the ephemeral E2E HTTP construction override for both
 `/models` and `/chat/completions`.
+
+## ADR-0012 summary
+
+ADR-0012 chooses native Ratatui widget composition for the existing provider and
+model setup flows. Borders establish the screen boundary, lists and tabs expose
+selection context, tables align provider/model metadata, paragraphs carry
+guidance and status, and a scrollbar makes long model catalogs navigable. The
+decision preserves the existing event loop and state transitions while removing
+direct raw cursor output from these renderers.

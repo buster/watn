@@ -128,7 +128,7 @@ sequenceDiagram
     participant Config as Config
 
     User->>Dialog: runs `watn models` (TTY)
-    Dialog->>Dialog: show small level: filter, list, reasoning selector
+    Dialog->>Dialog: show bordered model picker: small tab, filter, table, scrollbar, reasoning selector
     User->>Dialog: types "dee flash"
     Dialog->>Worker: spawn: per-word local/remote match (gen=N)
     API-->>Worker: matching models
@@ -146,7 +146,8 @@ sequenceDiagram
 ```
 
 **Steps:**
-1. Dialog opens on the small level with filter, model list, reasoning selector.
+1. Dialog opens on the small level with a border, active tier tab, filter paragraph,
+   aligned model table, scrollbar when needed, and reasoning selector.
 2. Keystrokes update the visible filter; results match per-word,
    order-independent and are debounced with a stale-result guard.
 3. Arrow/page keys move selection; Enter accepts the model and advances to the
@@ -265,7 +266,7 @@ sequenceDiagram
         CLI-->>User: actionable `watn provider` and config-path guidance
         CLI-->>User: exit 1; no ratatui and no network request
     else stdin is a TTY
-        CLI->>Setup: open ratatui provider flow
+        CLI->>Setup: open bordered ratatui provider flow
         User->>Setup: accept OpenRouter endpoint and enter credential source
         Setup->>Config: save endpoint and literal or `${VARIABLE}` credential
         CLI->>Models: start existing model setup in-process
@@ -304,7 +305,7 @@ sequenceDiagram
 
     User->>CLI: watn provider
     CLI->>Setup: open ratatui provider flow
-    Setup-->>User: OpenRouter endpoint default and credential-source choices
+    Setup-->>User: bordered source list, aligned provider details, and guidance paragraph
     User->>Setup: accept or edit endpoint; choose literal or environment source
     Setup->>Config: save default provider and credential representation
     Config-->>Setup: save result
