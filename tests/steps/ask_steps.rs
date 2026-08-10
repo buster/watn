@@ -975,7 +975,7 @@ fn later_result_does_not_replace(w: &mut WatnWorld, query: String) {
 fn provider_no_search_support(w: &mut WatnWorld) {
     let endpoint = setup_search_mock(w);
     // Register a mock that returns 501 for any search query
-    let server = w.mock_server.0.as_ref().unwrap().clone();
+    let server = w.mock_server.0.as_ref().unwrap();
     let mock = server.mock(move |when, then| {
         when.method(httpmock::Method::GET)
             .path("/models")
@@ -995,7 +995,7 @@ fn provider_no_search_support_with_models(w: &mut WatnWorld, m1: String, m2: Str
     let m1c = m1.trim_matches('"').to_string();
     let m2c = m2.trim_matches('"').to_string();
     // Register a mock that returns 501 for any search query
-    let server = w.mock_server.0.as_ref().unwrap().clone();
+    let server = w.mock_server.0.as_ref().unwrap();
     let mock = server.mock(move |when, then| {
         when.method(httpmock::Method::GET)
             .path("/models")

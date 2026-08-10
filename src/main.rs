@@ -255,13 +255,14 @@ fn main() {
 
             render::print_response(&command_text, &response.model, tok_s, cost, elapsed);
 
-            if cli.execute && !command_text.is_empty() {
-                if matches!(
+            if cli.execute
+                && !command_text.is_empty()
+                && matches!(
                     watn::exec::prompt_and_execute(&command_text),
                     watn::exec::PromptResult::Interrupted
-                ) {
-                    std::process::exit(130);
-                }
+                )
+            {
+                std::process::exit(130);
             }
         }
         Err(e) => {

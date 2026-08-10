@@ -41,7 +41,7 @@ pub struct SetupWizardResult {
 
 #[derive(Debug)]
 pub enum SetupWizardOutcome {
-    Saved(SetupWizardResult),
+    Saved(Box<SetupWizardResult>),
     Cancelled(SetupCancellation),
 }
 
@@ -355,7 +355,7 @@ impl SetupWizard {
             }
             KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
                 match self.result() {
-                    Ok(result) => Ok(Some(SetupWizardOutcome::Saved(result))),
+                    Ok(result) => Ok(Some(SetupWizardOutcome::Saved(Box::new(result)))),
                     Err(error) => {
                         self.save_prompt = false;
                         self.validation = error.to_string();
@@ -439,7 +439,7 @@ impl SetupWizard {
             }
         }
         if self.page == self.last_page {
-            return Ok(Some(SetupWizardOutcome::Saved(self.result()?)));
+            return Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))));
         }
         if let Some(next) = self.page.next() {
             if next >= self.first_page && next <= self.last_page {
@@ -485,9 +485,8 @@ impl SetupWizard {
         match self.page {
             SetupPage::Url => {
                 self.endpoint = crate::provider::setup::normalize_endpoint(&self.endpoint)
-                    .map_err(|error| {
+                    .inspect_err(|error| {
                         self.validation = error.to_string();
-                        error
                     })?;
                 if self.storage == CredentialStorage::Environment
                     && self.credential_input.is_empty()
@@ -561,16 +560,16 @@ impl SetupWizard {
                     self.credential_input.pop();
                 }
             }
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel => {
-                if self.model_focus == ModelFocus::Table {
-                    let Some(slot) = self.page.model_slot() else { return };
-                    if let Some(character) = character {
-                        self.queries[slot].push(character);
-                    } else {
-                        self.queries[slot].pop();
-                    }
-                    self.search(slot);
+            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel
+                if self.model_focus == ModelFocus::Table =>
+            {
+                let Some(slot) = self.page.model_slot() else { return };
+                if let Some(character) = character {
+                    self.queries[slot].push(character);
+                } else {
+                    self.queries[slot].pop();
                 }
+                self.search(slot);
             }
             _ => {}
         }
@@ -641,9 +640,8 @@ impl SetupWizard {
     }
 
     fn load_catalog(&mut self) -> Result<(), Error> {
-        let key = self.request_credential().map_err(|error| {
+        let key = self.request_credential().inspect_err(|error| {
             self.validation = error.to_string();
-            error
         })?;
         let models = match fetch_models_page(&self.endpoint, 1, 50, Some(&key)) {
             Ok(models) if !models.is_empty() => models,

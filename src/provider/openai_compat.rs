@@ -139,7 +139,6 @@ impl Provider for OpenAICompatibleProvider {
                                     .as_u64()
                                     .unwrap_or(0)
                                     as u32,
-                                total_tokens: usage["total_tokens"].as_u64().unwrap_or(0) as u32,
                             });
                         }
                     }
@@ -150,7 +149,6 @@ impl Provider for OpenAICompatibleProvider {
         let elapsed_secs = start.elapsed().as_secs_f64();
 
         Ok(StreamingResponse {
-            chunks: Vec::new(),
             final_usage,
             model: response_model,
             full_content,

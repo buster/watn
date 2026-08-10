@@ -823,7 +823,7 @@ fn choose_environment_credential_terminal(world: &mut WatnWorld, variable: Strin
     assert_eq!(variable, "OPENROUTER_API_KEY");
     let session = world.pty_session.take().expect("provider PTY session");
     let mut session = session;
-    pty_write(&mut session, &format!("e\r\r\r"));
+    pty_write(&mut session, "e\r\r\r");
     finish_pty_session(world, session);
 }
 

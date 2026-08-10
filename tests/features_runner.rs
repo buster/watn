@@ -5,7 +5,6 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
 use watn::models::list::ModelEntry;
-use watn::models::picker;
 
 use cucumber::gherkin::{Feature, GherkinEnv};
 use cucumber::parser::{self, Parser};
@@ -16,17 +15,12 @@ use futures::stream;
 
 pub mod steps;
 
+#[derive(Default)]
 pub struct MockServerWrap(pub Option<httpmock::MockServer>, pub Option<usize>);
 
 impl fmt::Debug for MockServerWrap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("MockServerWrap").finish()
-    }
-}
-
-impl Default for MockServerWrap {
-    fn default() -> Self {
-        Self(None, None)
     }
 }
 
@@ -39,8 +33,7 @@ pub struct WatnWorld {
     pub pending_config: HashMap<String, String>,
     pub raw_config: Option<String>,
     pub output: Option<String>,
-    pub pty_output_buffer: Option<String>,
-    pub pty_session: Option<crate::steps::PtySession>,
+    pub(crate) pty_session: Option<crate::steps::PtySession>,
     pub stderr_output: Option<String>,
     pub exit_status: Option<i32>,
     pub executed_command: Option<String>,
@@ -107,7 +100,7 @@ fn collect_features(dir: &Path) -> Vec<PathBuf> {
                     stack.push(entry.path());
                 }
             }
-        } else if path.extension().map_or(false, |e| e == "feature") {
+        } else if path.extension().is_some_and(|e| e == "feature") {
             files.push(path);
         }
     }
@@ -131,13 +124,13 @@ impl Parser<Vec<PathBuf>> for VecParser {
         input.sort();
         let features: Vec<_> = input
             .into_iter()
-            .filter_map(|path| {
-                let env = GherkinEnv::default();
-                match Feature::parse_path(&path, env) {
-                    Ok(feature) => Some(Ok(feature)),
-                    Err(e) => Some(Err(parser::Error::Parsing(Arc::new(e)))),
-                }
-            })
+        .map(|path| {
+            let env = GherkinEnv::default();
+            match Feature::parse_path(&path, env) {
+                Ok(feature) => Ok(feature),
+                Err(e) => Err(parser::Error::Parsing(Arc::new(e))),
+            }
+        })
             .collect();
         stream::iter(features)
     }

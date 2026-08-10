@@ -93,7 +93,7 @@ pub struct ProviderConfig {
     pub default_model: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ModelTiers {
     pub small: Option<String>,
     pub normal: Option<String>,
@@ -102,32 +102,11 @@ pub struct ModelTiers {
     pub reasoning: TierReasoning,
 }
 
-impl Default for ModelTiers {
-    fn default() -> Self {
-        Self {
-            small: None,
-            normal: None,
-            thinking: None,
-            reasoning: TierReasoning::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct TierReasoning {
     pub small: Option<String>,
     pub normal: Option<String>,
     pub thinking: Option<String>,
-}
-
-impl Default for TierReasoning {
-    fn default() -> Self {
-        Self {
-            small: None,
-            normal: None,
-            thinking: None,
-        }
-    }
 }
 
 impl TierReasoning {
@@ -165,16 +144,6 @@ pub struct ModelPricing {
 pub struct LiteLLMConfig {
     pub endpoint: String,
     pub api_key: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct ResolvedConfig {
-    pub provider: String,
-    pub model: String,
-    pub endpoint: String,
-    pub api_key: Option<String>,
-    pub pricing: Option<ModelPricing>,
 }
 
 #[cfg(test)]

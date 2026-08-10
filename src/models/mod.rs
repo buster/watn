@@ -53,10 +53,7 @@ pub fn run_models_result(
     };
 
     let endpoint = provider_config.endpoint.clone();
-    let api_key = match crate::config::get_provider_api_key(provider_name, &provider_config) {
-        Ok(k) => Some(k),
-        Err(_) => None,
-    };
+    let api_key = crate::config::get_provider_api_key(provider_name, &provider_config).ok();
 
     if std::io::stdin().is_terminal() {
         return match crate::setup::run_with_config(&config, crate::setup::SetupEntryPoint::Models) {
