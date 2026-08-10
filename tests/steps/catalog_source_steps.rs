@@ -177,6 +177,41 @@ fn litellm_models(world: &mut WatnWorld, values: String) {
     world.models_mock_id = Some(mock.id);
 }
 
+#[given(regex = r##"^the provider chat endpoint returns "([^"]+)"$"##)]
+fn provider_chat_endpoint(world: &mut WatnWorld, output: String) {
+    world.pending_mock_model = Some("custom-model".into());
+    world.pending_mock_output = Some(output);
+    world.pending_mock_usage = Some(false);
+}
+
+#[when(regex = r##"^I run `watn models` and select "([^"]+)" for the small tier$"##)]
+fn select_small_only(world: &mut WatnWorld, _model: String) {
+    crate::steps::run_binary_with_state(world, &["models"], Some("0\n0\n0\n"));
+}
+
+#[then("the chat request should use the provider endpoint")]
+fn chat_provider_endpoint(world: &mut WatnWorld) {
+    assert!(world
+        .output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("provider-response"));
+    assert!(world
+        .raw_config
+        .as_deref()
+        .unwrap_or_default()
+        .contains("provider.invalid"));
+}
+
+#[then("the chat request should not use the LiteLLM endpoint")]
+fn chat_not_litellm(world: &mut WatnWorld) {
+    assert!(world
+        .raw_config
+        .as_deref()
+        .unwrap_or_default()
+        .contains("[litellm]"));
+}
+
 #[then("the model catalog request should use the LiteLLM endpoint")]
 fn litellm_request_used(world: &mut WatnWorld) {
     assert_eq!(

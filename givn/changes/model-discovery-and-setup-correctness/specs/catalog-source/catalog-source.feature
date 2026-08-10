@@ -34,7 +34,7 @@ Feature: Catalog source resolution
     Then the model catalog request should use the provider endpoint
     And the model catalog request should include Authorization exactly "Bearer sk-provider-key"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: LiteLLM discovery does not replace the active chat provider
     Given a provider "custom" with a separate LiteLLM catalog endpoint
     And the LiteLLM catalog has no api key

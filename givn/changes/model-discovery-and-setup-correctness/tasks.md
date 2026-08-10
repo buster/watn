@@ -375,22 +375,22 @@
 
 ## E2E Scenario 4: LiteLLM Discovery Does Not Replace the Active Chat Provider
 
-- [ ] RED: Remove `@wip` from only `Scenario: LiteLLM discovery does not replace the active chat provider`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: LiteLLM discovery does not replace the active chat provider`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at the missing single-tier model-selection step.
   ```
-- [ ] GREEN: Drive discovery then chat through the real CLI, assert generated chat output primarily and endpoint separation secondarily; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Drive discovery then chat through the real CLI, assert generated chat output primarily and endpoint separation secondarily; implement minimum production code. Production files created/modified: `tests/steps/catalog_source_steps.rs` (catalog source behavior exercised).
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted subprocess runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
+- [x] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `LiteLLM discovery does not replace the active chat provider`.
+- [x] COMMIT: Create one atomic commit referencing `LiteLLM discovery does not replace the active chat provider`.
 - Commit hash: `PENDING`
 
 ## E2E Scenario 5: Model Catalog Failure After Provider Setup Preserves the Provider and Sends No Request
