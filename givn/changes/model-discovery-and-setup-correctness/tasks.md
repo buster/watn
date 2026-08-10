@@ -371,7 +371,7 @@
   After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Configured LiteLLM is used for model catalog requests`.
-- Commit hash: `PENDING`
+- Commit hash: `cf750e265f9d3efc5c754405bfd03af8447b6380`
 
 ## E2E Scenario 4: LiteLLM Discovery Does Not Replace the Active Chat Provider
 
