@@ -89,7 +89,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Provider-specific environment fallback precedes generic fallback`.
-- Commit hash: `PENDING`
+- Commit hash: `317ea09686e4d73f9d2215d3318543e1123e01ef`
 
 ## Non-E2E Scenario 3: LiteLLM Discovery Without a Key Sends No Authorization Header
 
