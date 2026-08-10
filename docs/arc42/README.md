@@ -8,6 +8,8 @@ The current architecture includes TTY-gated provider onboarding through
 provider/model setup that stops before the original request. The setup flows use
 structured Ratatui widgets so choices, metadata, status, tier tabs, and long
 catalog position remain visible in the terminal.
+Provider and model onboarding now share a five-page setup wizard with explicit
+page, cursor, and save/discard state.
 
 | Chapter | File | Description |
 |---|---|---|

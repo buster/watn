@@ -122,39 +122,39 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant User as User
-    participant Dialog as SettingsDialog
+    participant Dialog as Setup Wizard
     participant Worker as Search worker (thread)
     participant API as Provider API
     participant Config as Config
 
     User->>Dialog: runs `watn models` (TTY)
-    Dialog->>Dialog: show bordered model picker: small tab, filter, table, scrollbar, reasoning selector
+    Dialog->>Dialog: show five tabs with Small Model active, page position, and cursor
     User->>Dialog: types "dee flash"
     Dialog->>Worker: spawn: per-word local/remote match (gen=N)
     API-->>Worker: matching models
     Worker->>Dialog: newest result wins → update suggestions
-    User->>Dialog: ↓ (select), Tab (reasoning low)
-    User->>Dialog: Enter (confirm small, advance to normal)
+    User->>Dialog: ↓ (select), `r` (reasoning low)
+    User->>Dialog: Enter or Tab (confirm small, advance to Middle Model)
     loop normal, thinking
-        User->>Dialog: pick model + reasoning, Enter to advance
+        User->>Dialog: pick model, Enter or Tab to advance
     end
-    User->>Dialog: Escape → back to previous level
-    User->>Dialog: change previous level selection
-    User->>Dialog: confirm on final level
+    User->>Dialog: Shift-Tab → previous page
+    User->>Dialog: Escape → save/discard prompt
     Dialog->>Config: persist [tiers] + [tiers.reasoning]
     Dialog-->>User: "Tiers configured: ..."
 ```
 
 **Steps:**
-1. Dialog opens on the small level with a border, active tier tab, filter paragraph,
-   aligned model table, scrollbar when needed, and reasoning selector.
+1. The wizard opens on the Small Model page with five tabs, a border, filter
+   paragraph, aligned model table, visible selected-row cursor, and scrollbar
+   when needed.
 2. Keystrokes update the visible filter; results match per-word,
    order-independent and are debounced with a stale-result guard.
-3. Arrow/page keys move selection; Enter accepts the model and advances to the
-   next level; Escape returns to the previous level.
-4. Tab cycles reasoning strength (off/low/medium/high) for the current level.
-5. Confirming on the thinking level persists per-level model and reasoning
-   choices to config and prints confirmation.
+3. Arrow/page keys move selection; Enter and Tab accept/advance; Shift-Tab
+   returns to the previous page.
+4. `r` cycles reasoning strength (off/low/medium/high) on a model page.
+5. Escape opens a save/discard prompt; saving persists the provider and all
+   completed model choices.
 
 ## Scenario: Model exploration
 
@@ -192,37 +192,39 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant User as User
-    participant Picker as ModelPicker
+    participant Picker as Setup Wizard model page
     participant Worker as Search worker (thread)
     participant API as Provider API
 
     User->>Picker: types "o3"
     Picker->>Picker: increment generation counter
     Picker->>Worker: spawn: GET /models?search=o3 (gen=N)
-    Picker-->>User: render spinner + previous suggestions
+    Picker-->>User: render active model tab, spinner, and previous suggestions
     API-->>Worker: { data: [{id:"o3-mini"}, {id:"o3-pro"}] }
     Worker->>Picker: check generation == N → update suggestions
-    Picker-->>User: render "o3-mini", "o3-pro" with cursor
+    Picker-->>User: render table rows with visible selected cursor
     User->>Picker: ↓ (arrow down)
     Picker-->>User: move cursor to "o3-pro"
     User->>Picker: Enter
-    Picker-->>User: selection confirmed, advance to next tier
+    Picker-->>User: selection confirmed, advance to next wizard page
 ```
 
 **Steps:**
-1. Picker enters raw terminal mode.
+1. The setup wizard enters raw terminal mode and shows the active page/tab.
 2. Keystrokes append to or remove from the live query string.
 3. Each change bumps an `Arc<AtomicU64>` generation counter and spawns a
    blocking worker thread that calls `GET /models?search=<query>`.
 4. Worker thread captures the generation at spawn time. On response, if the
    generation has advanced, the result is discarded (stale-result guard).
 5. Valid results update the suggestion list; the terminal is repainted.
-6. Arrow keys move a highlight cursor; Enter confirms the selection.
-7. Escape clears the query and restores the first-page default list.
+6. Arrow keys move the table cursor; Ctrl-R toggles reasoning focus and
+   Up/Down chooses one of the current model's supported efforts.
+7. Enter or Tab confirms the selection and advances; Shift-Tab returns;
+   Escape opens save/discard rather than clearing the query.
 8. A 4xx/5xx on a non-empty search shows "Model search is not supported by
    this provider" and retains the previous suggestions.
-9. After selection, the picker restores cooked terminal mode and returns
-   the chosen `ModelEntry` to `run_models`.
+9. After final selection or save/discard, the wizard restores cooked terminal
+   mode and returns provider/completed model drafts to the caller.
 
 ## Scenario: Config loading
 
@@ -254,9 +256,8 @@ provider credential environment variable and provider selection is implicit.
 sequenceDiagram
     participant User as User
     participant CLI as watn CLI
-    participant Setup as Provider Setup
+    participant Setup as Setup Wizard
     participant Config as Config
-    participant Models as Model Setup
     participant Twin as OpenAI-compatible endpoint
 
     User->>CLI: watn "hello"
@@ -266,14 +267,12 @@ sequenceDiagram
         CLI-->>User: actionable `watn provider` and config-path guidance
         CLI-->>User: exit 1; no ratatui and no network request
     else stdin is a TTY
-        CLI->>Setup: open bordered ratatui provider flow
-        User->>Setup: accept OpenRouter endpoint and enter credential source
-        Setup->>Config: save endpoint and literal or `${VARIABLE}` credential
-        CLI->>Models: start existing model setup in-process
-        Models->>Twin: GET /models
-        Twin-->>Models: model catalog
-        User->>Models: select small, normal, and thinking models
-        Models->>Config: save tier assignments
+        CLI->>Setup: open five-page setup wizard
+        User->>Setup: enter endpoint and choose credential storage
+        Setup->>Twin: GET /models
+        Twin-->>Setup: model catalog
+        User->>Setup: select small, middle, and large models
+        Setup->>Config: save provider and completed tier assignments
         CLI-->>User: setup complete; exit 0
         Note over CLI: original question is not sent; user reruns it
     end
@@ -284,11 +283,12 @@ sequenceDiagram
    variables; do not use a network probe for readiness.
 2. If stdin is not a TTY, print actionable setup guidance and exit 1 without
    initializing ratatui.
-3. If stdin is a TTY, open the provider setup dialog when no implicit provider
-   is ready.
+3. If stdin is a TTY, open the shared setup wizard when no implicit provider is
+   ready.
 4. Save the endpoint and either the literal credential or the `${VARIABLE}`
    reference without printing the resolved secret.
-5. Invoke the existing model setup function in the same process and terminal.
+5. Discover models and walk the three model pages in the same process and
+   terminal.
 6. Save all three model tiers and exit successfully. Do not send or resume the
    original question.
 
@@ -305,7 +305,7 @@ sequenceDiagram
 
     User->>CLI: watn provider
     CLI->>Setup: open ratatui provider flow
-    Setup-->>User: bordered source list, aligned provider details, and guidance paragraph
+    Setup-->>User: URL tab, compatibility explanation, and visible cursor
     User->>Setup: accept or edit endpoint; choose literal or environment source
     Setup->>Config: save default provider and credential representation
     Config-->>Setup: save result
@@ -317,3 +317,30 @@ The explicit command ends after provider configuration. It does not invoke
 model setup; only the automatic first-use TTY path performs that chain. An
 explicit `--provider` or `WATN_PROVIDER` selection never enters automatic
 onboarding and retains normal unknown-provider and missing-key errors.
+
+## Scenario: Unified setup wizard
+
+**Trigger:** User runs `watn setup` from a terminal.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Wizard as Setup Wizard
+    participant Catalog as Provider model catalog
+    participant Config as Config
+
+    User->>Wizard: watn setup
+    Wizard-->>User: URL tab, compatibility explanation, cursor
+    User->>Wizard: Enter endpoint
+    Wizard-->>User: API key tab and storage choice
+    User->>Wizard: choose configuration or environment reference
+    Wizard->>Catalog: GET /models after valid provider credentials
+    Catalog-->>Wizard: model rows
+    loop Small, Middle, Large Model pages
+        Wizard-->>User: active tab, table, selected row, cursor/page position
+        User->>Wizard: Enter or Tab
+    end
+    User->>Wizard: save confirmation
+    Wizard->>Config: persist provider and completed tiers
+    Wizard-->>User: saved setup result
+```

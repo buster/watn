@@ -61,6 +61,32 @@ pub fn run_models_result(
         Err(_) => None,
     };
 
+    if std::io::stdin().is_terminal() {
+        return match crate::setup::run_with_config(&config, crate::setup::SetupEntryPoint::Models) {
+            Ok(crate::setup::SetupWizardOutcome::Saved(result)) => {
+                let mut updated = config.clone();
+                match crate::setup::apply_result(&mut updated, &result) {
+                    Ok(()) => {
+                        if result.choices.iter().all(Option::is_some) {
+                            println!(
+                                "Tiers configured: small={}, normal={}, thinking={}",
+                                result.choices[0].as_ref().unwrap().model.id,
+                                result.choices[1].as_ref().unwrap().model.id,
+                                result.choices[2].as_ref().unwrap().model.id
+                            );
+                        }
+                        ModelSetupResult::Saved
+                    }
+                    Err(error) => ModelSetupResult::Failed(error),
+                }
+            }
+            Ok(crate::setup::SetupWizardOutcome::Cancelled(cancellation)) => {
+                ModelSetupResult::Cancelled(cancellation)
+            }
+            Err(error) => ModelSetupResult::Failed(error),
+        };
+    }
+
     let models = match fetch_models_page(&endpoint, 1, 50, api_key.as_deref()) {
         Ok(m) if !m.is_empty() => m,
         _ => match fetch_models(&endpoint, api_key.as_deref()) {

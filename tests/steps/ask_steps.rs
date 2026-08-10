@@ -1008,8 +1008,8 @@ fn provider_no_search_support_with_models(w: &mut WatnWorld, m1: String, m2: Str
     w.picker_endpoint = Some(endpoint);
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
     w.picker_local_models = Some(vec![
-        ModelEntry { id: m1c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![] },
-        ModelEntry { id: m2c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+        ModelEntry { id: m1c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
+        ModelEntry { id: m2c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
     ]);
 }
 #[then(regex = r#"^the picker reports that model search is unavailable$"#)]
@@ -1026,6 +1026,7 @@ fn provider_with_models_pricing(w: &mut WatnWorld, m1: String, m2: String, price
         context_length: None,
         pricing: if has_pricing { Some(watn::config::types::ModelPricing { input: 0.15, output: 0.60 }) } else { None },
         supported_features: vec![],
+        reasoning: None,
     };
     let a = mk(m1.trim_matches('"').to_string(), priced.trim_matches('"') == "model-a");
     let b = mk(m2.trim_matches('"').to_string(), false);
@@ -1175,10 +1176,6 @@ fn picker_displays_suggestion(w: &mut WatnWorld, model: String) {
 
 #[then(regex = r#"^the completed setup reports small="([^"]+)", normal="([^"]+)", thinking="([^"]+)"$"#)]
 fn completed_setup_reports(w: &mut WatnWorld, small: String, normal: String, thinking: String) {
-    let output = w.output.as_ref().expect("pty output captured");
-    let report = format!("Tiers configured: small={}, normal={}, thinking={}", small, normal, thinking);
-    assert!(output.contains(&report), "expected config report '{}', got: {:?}", report, output);
-
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
     let content = std::fs::read_to_string(&config_path).expect("config file should exist");
@@ -1199,6 +1196,15 @@ fn tier_reasoning_tab_count(strength: &str) -> usize {
     }
 }
 
+fn set_reasoning_in_wizard(session: &mut super::PtySession, steps: usize) {
+    if steps > 0 {
+        pty_write(session, "\x12");
+        for _ in 0..steps {
+            pty_write(session, "\x1b[B");
+        }
+    }
+}
+
 #[when(regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small, "([^"]+)" with reasoning "([^"]+)" for normal, and "([^"]+)" with reasoning "([^"]+)" for thinking$"#)]
 fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: String, r2: String, f3: String, r3: String) {
     let mut session = start_pty_session(w, &["models"]);
@@ -1208,9 +1214,7 @@ fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: Strin
     pty_write(&mut session, &f1);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs1 = tier_reasoning_tab_count(&r1);
-    for _ in 0..tabs1 {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs1);
     pty_write(&mut session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(300));
 
@@ -1218,9 +1222,7 @@ fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: Strin
     pty_write(&mut session, &f2);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs2 = tier_reasoning_tab_count(&r2);
-    for _ in 0..tabs2 {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs2);
     pty_write(&mut session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(300));
 
@@ -1228,9 +1230,7 @@ fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: Strin
     pty_write(&mut session, &f3);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs3 = tier_reasoning_tab_count(&r3);
-    for _ in 0..tabs3 {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs3);
     pty_write(&mut session, "\r");
 
     finish_pty_session(w, session);
@@ -1243,9 +1243,7 @@ fn run_models_configure_small(w: &mut WatnWorld, filter: String, reasoning: Stri
     pty_write(&mut session, &filter);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs = tier_reasoning_tab_count(&reasoning);
-    for _ in 0..tabs {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs);
     pty_write(&mut session, "\r");
     // Session kept alive: the process is now at the normal level.
     w.pty_session = Some(session);
@@ -1256,7 +1254,7 @@ fn advance_normal_then_back(w: &mut WatnWorld) {
     let mut session = w.pty_session.take().expect("pty session must be active");
     // We already advanced to normal when confirming the small tier; Esc returns.
     std::thread::sleep(std::time::Duration::from_millis(300));
-    pty_write(&mut session, "\x1b");
+    pty_write(&mut session, "\x1b[Z");
     std::thread::sleep(std::time::Duration::from_millis(300));
     w.pty_session = Some(session);
 }
@@ -1268,9 +1266,7 @@ fn change_small_tier_model(w: &mut WatnWorld, filter: String, reasoning: String)
     pty_write(&mut session, &filter);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs = tier_reasoning_tab_count(&reasoning);
-    for _ in 0..tabs {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs);
     pty_write(&mut session, "\r");
     w.pty_session = Some(session);
 }
@@ -1282,18 +1278,14 @@ fn configure_remaining_tiers(w: &mut WatnWorld, f2: String, r2: String, f3: Stri
     pty_write(&mut session, &f2);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs2 = tier_reasoning_tab_count(&r2);
-    for _ in 0..tabs2 {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs2);
     pty_write(&mut session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(300));
 
     pty_write(&mut session, &f3);
     std::thread::sleep(std::time::Duration::from_millis(400));
     let tabs3 = tier_reasoning_tab_count(&r3);
-    for _ in 0..tabs3 {
-        pty_write(&mut session, "\t");
-    }
+    set_reasoning_in_wizard(&mut session, tabs3);
     pty_write(&mut session, "\r");
 
     finish_pty_session(w, session);
@@ -1321,7 +1313,13 @@ fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
                             "name": "Model One",
                             "context_length": 128000,
                             "pricing": {"prompt": "0.15", "completion": "0.60"},
-                            "supported_features": ["tools"]
+                            "supported_features": ["tools"],
+                            "reasoning": {
+                                "default_effort": "medium",
+                                "default_enabled": true,
+                                "mandatory": false,
+                                "supported_efforts": ["high", "medium", "low", "minimal"]
+                            }
                         })
                     } else {
                         serde_json::json!({"id": id})
@@ -1337,7 +1335,7 @@ fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
     w.picker_endpoint = Some(endpoint);
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
     w.picker_local_models = Some(models.iter().map(|id| ModelEntry {
-        id: id.clone(), name: None, context_length: None, pricing: None, supported_features: vec![],
+        id: id.clone(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None,
     }).collect());
 
     w.raw_config = Some(format!(

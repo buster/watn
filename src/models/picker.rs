@@ -53,10 +53,10 @@ mod tests {
     #[test]
     fn test_local_filter_matches_substring() {
         let models = vec![
-            ModelEntry { id: "gpt-4o-mini".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
-            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
-            ModelEntry { id: "o3-mini".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
-            ModelEntry { id: "o3-pro".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+            ModelEntry { id: "gpt-4o-mini".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
+            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
+            ModelEntry { id: "o3-mini".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
+            ModelEntry { id: "o3-pro".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
         ];
 
         let filtered = local_filter(&models, "gpt");
@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn test_local_filter_case_insensitive() {
         let models = vec![
-            ModelEntry { id: "GPT-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+            ModelEntry { id: "GPT-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
         ];
 
         let filtered = local_filter(&models, "gpt");
@@ -78,7 +78,7 @@ mod tests {
     #[test]
     fn test_local_filter_no_match() {
         let models = vec![
-            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
         ];
 
         let filtered = local_filter(&models, "claude");
@@ -88,8 +88,8 @@ mod tests {
     #[test]
     fn test_local_filter_empty_query_returns_all() {
         let models = vec![
-            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
-            ModelEntry { id: "o3-mini".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
+            ModelEntry { id: "o3-mini".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
         ];
 
         let filtered = local_filter(&models, "");
@@ -147,7 +147,7 @@ mod tests {
         let gen = Arc::new(AtomicU64::new(0));
         let current = gen.fetch_add(1, Ordering::SeqCst) + 1;
         let all_models = vec![
-            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![] },
+            ModelEntry { id: "gpt-4o".into(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
         ];
         let (results, error, no_results) =
             execute_search(&endpoint, None, "gpt", &all_models, &gen, current).unwrap();

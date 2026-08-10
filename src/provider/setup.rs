@@ -47,7 +47,7 @@ pub enum ModelSetupResult {
 
 pub fn print_setup_guidance() {
     eprintln!(
-        "No provider is configured. Run `watn provider` in a terminal or edit ~/.config/watn/config.toml."
+        "No provider is configured. Run `watn setup` (or `watn provider`) in a terminal or edit ~/.config/watn/config.toml."
     );
 }
 

@@ -4,3 +4,4 @@ pub mod exec;
 pub mod models;
 pub mod output;
 pub mod provider;
+pub mod setup;

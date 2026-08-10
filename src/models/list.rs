@@ -8,6 +8,15 @@ pub struct ModelEntry {
     pub context_length: Option<u64>,
     pub pricing: Option<ModelPricing>,
     pub supported_features: Vec<String>,
+    pub reasoning: Option<ModelReasoning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelReasoning {
+    pub default_effort: Option<String>,
+    pub default_enabled: bool,
+    pub mandatory: bool,
+    pub supported_efforts: Vec<String>,
 }
 
 pub fn models_url(endpoint: &str) -> String {
@@ -111,6 +120,7 @@ pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEn
                 context_length,
                 pricing,
                 supported_features,
+                reasoning: parse_reasoning(item.get("reasoning")),
             }
         })
         .collect();
@@ -284,6 +294,7 @@ fn parse_model_data(data: &[serde_json::Value]) -> Vec<ModelEntry> {
                 context_length,
                 pricing,
                 supported_features,
+                reasoning: parse_reasoning(item.get("reasoning")),
             }
         })
         .collect()
@@ -296,4 +307,33 @@ fn parse_pricing_value(val: Option<&serde_json::Value>) -> f64 {
             .unwrap_or(0.0),
         None => 0.0,
     }
+}
+
+fn parse_reasoning(value: Option<&serde_json::Value>) -> Option<ModelReasoning> {
+    let object = value?.as_object()?;
+    let supported_efforts = object
+        .get("supported_efforts")
+        .and_then(serde_json::Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(|value| value.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    Some(ModelReasoning {
+        default_effort: object
+            .get("default_effort")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_string),
+        default_enabled: object
+            .get("default_enabled")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        mandatory: object
+            .get("mandatory")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        supported_efforts,
+    })
 }

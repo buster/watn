@@ -5,6 +5,7 @@ pub mod model_picker_layout_steps;
 pub mod providers_steps;
 pub mod provider_setup_steps;
 pub mod provider_setup_layout_steps;
+pub mod setup_wizard_steps;
 
 use std::path::PathBuf;
 

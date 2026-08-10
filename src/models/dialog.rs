@@ -26,14 +26,16 @@ use super::picker::execute_search;
 pub enum ReasoningStrength {
     Off,
     Low,
+    Minimal,
     Medium,
     High,
 }
 
 impl ReasoningStrength {
-    pub const ALL: [ReasoningStrength; 4] = [
+    pub const ALL: [ReasoningStrength; 5] = [
         ReasoningStrength::Off,
         ReasoningStrength::Low,
+        ReasoningStrength::Minimal,
         ReasoningStrength::Medium,
         ReasoningStrength::High,
     ];
@@ -42,6 +44,7 @@ impl ReasoningStrength {
         match self {
             ReasoningStrength::Off => "off",
             ReasoningStrength::Low => "low",
+            ReasoningStrength::Minimal => "minimal",
             ReasoningStrength::Medium => "medium",
             ReasoningStrength::High => "high",
         }
@@ -54,7 +57,8 @@ impl ReasoningStrength {
     fn next(&self) -> ReasoningStrength {
         match self {
             ReasoningStrength::Off => ReasoningStrength::Low,
-            ReasoningStrength::Low => ReasoningStrength::Medium,
+            ReasoningStrength::Low => ReasoningStrength::Minimal,
+            ReasoningStrength::Minimal => ReasoningStrength::Medium,
             ReasoningStrength::Medium => ReasoningStrength::High,
             ReasoningStrength::High => ReasoningStrength::Off,
         }
@@ -271,9 +275,10 @@ impl SettingsDialog {
         let empty = || ModelEntry {
             id: String::new(),
             name: None,
-            context_length: None,
-            pricing: None,
-            supported_features: vec![],
+        context_length: None,
+        pricing: None,
+        supported_features: vec![],
+        reasoning: None,
         };
 
         let choices: [LevelChoice; 3] = std::array::from_fn(|i| LevelChoice {
@@ -380,6 +385,7 @@ impl SettingsDialog {
                     context_length: None,
                     pricing: None,
                     supported_features: vec![],
+                    reasoning: None,
                 })
         } else if !all_models.is_empty() {
             all_models[0].clone()
@@ -390,6 +396,7 @@ impl SettingsDialog {
                 context_length: None,
                 pricing: None,
                 supported_features: vec![],
+                reasoning: None,
             }
         }
     }

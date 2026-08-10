@@ -8,6 +8,7 @@ graph TB
     Config["Config<br/>(layered merge)"]
     Provider["Provider<br/>(trait + adapters)"]
     Setup["Provider Setup<br/>(ratatui onboarding)"]
+    Wizard["Setup Wizard<br/>(five pages)"]
     Output["Output<br/>(metadata + command)"]
     Models["Models<br/>(explorer)"]
     Exec["Exec<br/>(command execution)"]
@@ -22,6 +23,9 @@ graph TB
     Models --> Config
     Setup --> Config
     Setup --> Models
+    Setup --> Wizard
+    Wizard --> Config
+    Wizard --> Models
     Exec --> Config
 ```
 
@@ -31,6 +35,7 @@ graph TB
 | Config | Load and merge from built-in defaults, user config file, env, CLI |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
+| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, and save/discard prompt; return provider and completed model drafts without writing configuration |
 | Output | Format response with metadata header (model, tok/s, cost) + command body |
 | Models | Query the provider `/models` endpoint; interactive tier selection via the existing dialoguer/ratatui paths; return a typed setup result and persist tiers through the direct config writer |
 | Exec | Print command, prompt confirmation, invoke `sh -c` if confirmed |
@@ -67,7 +72,7 @@ graph TB
 | Element | Responsibility |
 |---|---|
 | `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response |
-| `SettingsDialog` | Ratatui keyboard-driven dialog: walks small/normal/thinking in a guided sequence; per level shows filter paragraphs, active tier tabs, a highlighted metadata table, reasoning strength, and a scrollbar for overflow; arrow/page keys browse, Enter advances, Escape goes back, confirm persists choices |
+| `SettingsDialog` | Supplies model-selection domain types and search behavior used by the shared Setup Wizard; the wizard owns the page event loop and persistence boundary |
 | `ModelPicker` | Shared model-search and local-filter logic used by the dialog and test seam; remote search results use a stale-result guard |
 | `TierSelector` | Fallback interactive prompts for non-dialog paths |
 | `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths through the existing direct writer, enforcing Unix mode `0600` after every save |

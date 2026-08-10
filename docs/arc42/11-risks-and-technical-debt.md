@@ -24,6 +24,9 @@
 | R-018 | The ephemeral E2E transport override could leak into persistence/readiness or cover only one request path | Medium | High | Apply it only at HTTP construction, never consult it during readiness, assert the exact persisted OpenRouter endpoint, and cover both `/models` and `/chat/completions` |
 | R-019 | Structured columns and multiple regions can become cramped or unreadable on small terminals | Medium | Medium | Use Ratatui layout constraints, truncation-safe cells, wrapped paragraphs, and PTY coverage at the supported test size; keep keyboard flow independent of visual width |
 | R-020 | Debounced worker results can race with user input or outlive the dialog | Medium | Medium | Increment a generation for every query change, check it before and after the debounce, apply results only through the event loop, ignore Enter while pending, and reap the dialog before exit |
+| R-021 | A shared wizard can make a partial save ambiguous when the user leaves before model selection is complete | Medium | Medium | Keep provider and completed model choices separate in the runtime result, validate before Save, and write only completed sections while Discard performs no write |
+| R-022 | Migrating Tab and Escape changes can surprise users of the existing model dialog | Medium | Medium | Keep Shift-Tab as the explicit back-page key, make Ctrl-R reasoning focus visible, migrate permanent scenarios, and retain command-specific entry points |
+| R-023 | `watn models` and `watn provider` can start the shared wizard with stale or incomplete page state | Medium | Medium | Seed endpoint, credential storage, current tier selections, and model-specific reasoning from the loaded config; define and test each entry point's initial/final page range |
 
 ## Technical debt
 
@@ -65,3 +68,6 @@ The following consequences are accepted and mitigated explicitly:
   the generation guard and event-loop ownership of applied results prevent stale
   rows from replacing current input, while cleanup prevents detached test
   processes from leaking.
+- Partial wizard saves: a user can leave after credentials but before all
+  model pages; the caller persists the valid provider and only completed tier
+  assignments, leaving uncompleted tiers unchanged.

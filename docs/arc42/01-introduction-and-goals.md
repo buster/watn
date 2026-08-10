@@ -17,6 +17,7 @@ Top 9 requirements:
 8. Auto-init template: first run writes a commented-out config file to the standard XDG path
 9. TTY-gated provider onboarding with OpenRouter defaults, environment-backed credentials, and automatic first-use model setup that stops before the original request
 10. Structured terminal setup views make credential-source choices, provider details, model tiers, and long model catalogs scannable
+11. One setup wizard makes the current page, editable line, cursor, and save/discard state explicit
 
 See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 

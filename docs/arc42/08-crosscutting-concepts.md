@@ -156,13 +156,15 @@ selection.
 
 ## Keyboard-driven model settings dialog
 
-The interactive `watn models` flow (TTY stdin) runs a ratatui-based
-`SettingsDialog` for the three-tier selection sequence. It renders a
-two-pane view using ratatui's `List`/`ListState` and `Layout`:
+The interactive `watn setup`, `watn provider`, and `watn models` flows (TTY
+stdin) share a ratatui-based setup wizard. It renders one bordered page at a
+time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
 
-- A bordered picker with tabs for the small, normal, and thinking tiers.
-- A filter paragraph that always shows the current filter text.
-- An aligned model table with the current selection highlighted.
+- The active page and `Page n of 5` position.
+- A visible block cursor on the active editable line.
+- A filter paragraph and aligned model table on each model page.
+- Model-specific reasoning options derived from the catalog's supported efforts,
+  default effort, enabled flag, and mandatory flag.
 - A scrollbar showing position when the catalog exceeds the available rows.
 - A reasoning-strength selector (off, low, medium, high) for the current level.
 - A status line for the empty state or the unsupported-search notice.
@@ -171,9 +173,12 @@ Key bindings:
 - Up/Down arrows: move selection through the list.
 - PageUp/PageDown: move selection a page at a time.
 - Printable characters / Backspace: update the filter.
-- Tab: cycle reasoning strength.
-- Enter: accept the highlighted model and advance to the next level.
-- Escape: return to the previous level (not on the first level).
+- Tab: advance to the next wizard page.
+- Shift-Tab: return to the previous wizard page.
+- Enter: accept the current input/model and advance.
+- Ctrl-R: toggle focus between the model table and model-specific reasoning;
+  Up/Down changes the selected supported effort while reasoning is focused.
+- Escape: open the save/discard prompt.
 - Ctrl-C: return an interrupted typed result (terminal restored before status
   130 is applied by the caller).
 
@@ -181,19 +186,23 @@ Filter matching is per-word and order-independent against the model id: the
 query is split on whitespace and every word must appear (case-insensitive)
 anywhere in the id, in any order ("dee flash" matches "DeepSeek V4 Flash").
 When the provider cannot be searched remotely, matching falls back to this
-local rule over the models already fetched.
+local rule over the models already fetched. Reasoning choices are then derived
+per model: mandatory models cannot choose `off`, disabled models offer `off`,
+and supported efforts are limited to the catalog response. A model change
+resets the tier's reasoning choice to that model's default or first valid
+effort.
 
 ## Keyboard-driven provider setup
 
-The `watn provider` command uses a ratatui/crossterm state machine with endpoint,
-credential-source, credential-value, and review states. Its frame is bordered
-and separates the credential source list, aligned provider-details table, and
-guidance/status paragraph. Enter advances or confirms; Escape and Ctrl-C cancel.
-The terminal is restored on success, validation failure, and cancellation. The
-automatic first-use path invokes this dialog and the model settings dialog in
-the same process. A successful automatic flow stops after model selection; it
-does not send or resume the original question. A model cancellation or failure
-preserves the saved provider and stops the flow.
+The shared setup wizard uses URL, API key, Small Model, Middle Model, and Large
+Model pages. URL input explains OpenAI/LiteLLM compatibility. API key input
+first selects configuration storage or an environment reference, then asks for
+the corresponding value. Model pages use the same searchable table and visible
+cursor. `watn provider` starts at URL and ends after API key; `watn models`
+starts at Small Model; `watn setup` and automatic first use traverse all pages.
+Escape asks whether to save current valid settings or discard them. The
+terminal is restored on success, validation failure, save/discard, and
+cancellation.
 
 The stale-result guard uses `Arc<AtomicU64>` as a generation counter. Each
 filter change increments the counter before dispatching a search; the worker

@@ -26,7 +26,7 @@ graph TB
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); endpoint and credential-source choices in the bordered `watn provider` setup view; keyboard input in the bordered model settings view (arrows, PageUp/PageDown, Enter, Escape, Tab) | Shell command + metadata (model, tok/s, cost); structured provider setup with credential-source list, detail rows, and guidance; model-tier tabs with aligned model columns and overflow position; saved provider setup; actionable non-TTY setup guidance; or confirmation prompt |
+| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); page navigation and editing in the shared `watn setup` wizard; `watn models` model-page entry | Shell command + metadata (model, tok/s, cost); five-page setup wizard with visible tabs, cursor, provider credential choice, model tables, and save/discard prompt; saved provider/tier setup; actionable non-TTY setup guidance; or confirmation prompt |
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions` |
 | LiteLLM (optional) | Endpoint URL (config), search query (typed by user) | HTTP GET to `/models`, HTTP GET to `/models?search=...` |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |

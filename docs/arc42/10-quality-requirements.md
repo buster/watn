@@ -10,6 +10,8 @@
   - QS-012: Missing provider automatically chains into model setup
   - QS-019: Setup information is separated into scannable terminal regions
   - QS-020: Background model search keeps the newest query authoritative
+  - QS-021: The setup wizard makes the active page and cursor explicit
+  - QS-022: Provider and model setup share one page sequence
 - **Flexibility** — Provider-agnostic, config-driven, model tiering
   - QS-003: Custom OpenAI-compatible provider
   - QS-004: Model tier assignment via config
@@ -50,3 +52,5 @@
 | QS-018 | Flexibility | A saved `[providers.openrouter]` entry exists | Its endpoint and credential representation take precedence over the built-in OpenRouter fallback |
 | QS-019 | Onboarding / Usability | User opens provider or model setup in a terminal | Provider setup exposes a titled border, selectable credential list, aligned detail rows, and guidance paragraph; model setup exposes a titled border, three tier tabs, aligned model columns, and a scrollbar for an overflowing catalog |
 | QS-020 | Usability / Responsiveness | User changes the model filter while a provider search is delayed | The UI remains able to redraw and accept input; after the debounce only the newest query's results are applied, and an older result cannot replace them |
+| QS-021 | Onboarding / Usability | User opens setup and edits a page | The active tab, page number, prompt, and visible cursor identify exactly what is being edited |
+| QS-022 | Onboarding / Usability | User advances through setup | URL, API key, Small Model, Middle Model, and Large Model appear as one ordered wizard; Enter/Tab advances, Shift-Tab returns, and Escape presents save/discard |

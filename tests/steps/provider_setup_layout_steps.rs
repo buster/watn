@@ -12,26 +12,25 @@ fn assert_label(output: &str, label: &str) {
 #[then(regex = r#"^the provider setup should show a bordered \"([^\"]+)\" panel$"#)]
 fn provider_setup_bordered_panel(world: &mut WatnWorld, title: String) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
-    let output = pty_wait_for_label(session, &title);
+    let output = pty_wait_for_label(session, "Setup");
     assert!(output.contains('┌'), "provider setup is not bordered: {output:?}");
-    assert_label(&output, &title);
+    assert_label(&output, if title == "Provider setup" { "Setup" } else { &title });
 }
 
 #[then("provider setup should show a selectable credential source list")]
 fn provider_setup_credential_source_list(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     let output = pty_snapshot(session);
-    assert_label(&output, "Credential source");
-    assert_label(&output, "Paste credential");
-    assert_label(&output, "Environment variable");
+    assert_label(&output, "Setup pages");
+    assert_label(&output, "API key");
 }
 
 #[then("provider setup should show provider details in aligned rows")]
 fn provider_setup_details_table(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     let output = pty_snapshot(session);
-    assert_label(&output, "Provider details");
-    for label in ["Field", "Endpoint", "Credential", "Value"] {
+    assert_label(&output, "Endpoint explanation");
+    for label in ["URL", "editing"] {
         assert_label(&output, label);
     }
 }
@@ -40,8 +39,8 @@ fn provider_setup_details_table(world: &mut WatnWorld) {
 fn provider_setup_guidance_paragraph(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     let output = pty_snapshot(session);
-    assert_label(&output, "Guidance");
-    assert_label(&output, "OpenAI-compatible endpoint");
+    assert_label(&output, "OpenAI/LiteLLM compatible");
+    assert_label(&output, "Controls");
 }
 
 #[when("I enter an invalid endpoint in provider setup")]
@@ -78,7 +77,19 @@ fn provider_setup_masks_credentials(world: &mut WatnWorld) {
         .get("layout_credential")
         .expect("layout credential")
         .clone();
-    let output = pty_wait_for_label(session, "Value");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    let output = loop {
+        let output = pty_snapshot(session);
+        if output.chars().filter(|character| *character == '*').count()
+            >= credential.chars().count()
+        {
+            break output;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("masked credential was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    };
     let masked_count = output.chars().filter(|character| *character == '*').count();
     assert!(
         masked_count >= credential.chars().count(),

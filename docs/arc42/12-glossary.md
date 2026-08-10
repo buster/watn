@@ -36,3 +36,7 @@
 | Scrollbar | The terminal indicator showing the current position within an overflowing model catalog |
 | Debounced search | A search started only after the user has stopped changing the filter for the configured short interval |
 | Search generation | The monotonically increasing query identifier used to reject stale model-search results |
+| Setup wizard | The shared five-page terminal flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
+| Setup page | One tab-selected step in the setup wizard; only the active page accepts editing input |
+| Visible cursor | The highlighted block marker showing where the next character or current selection is being edited |
+| Save/discard prompt | The Escape confirmation that persists valid current settings or abandons all unsaved changes |

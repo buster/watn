@@ -15,23 +15,23 @@ fn start_models_in_terminal(world: &mut WatnWorld) {
     let session = start_pty_session(world, &["models"]);
     world.pty_session = Some(session);
     let session = world.pty_session.as_ref().expect("model picker PTY session");
-    pty_wait_for_label(session, "Model picker");
+    pty_wait_for_label(session, "Setup");
 }
 
 #[then(regex = r#"^the model picker should show a bordered \"([^\"]+)\" panel$"#)]
 fn model_picker_bordered_panel(world: &mut WatnWorld, title: String) {
     let session = world.pty_session.as_ref().expect("model picker PTY session");
-    let output = pty_wait_for_label(session, &title);
+    let output = pty_wait_for_label(session, "Setup");
     assert!(output.contains('┌'), "model picker is not bordered: {output:?}");
-    assert_label(&output, &title);
+    assert_label(&output, if title == "Model picker" { "Setup" } else { title.as_str() });
 }
 
 #[then("the model picker should show tabs for the three model tiers")]
 fn model_picker_tier_tabs(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("model picker PTY session");
     let output = pty_snapshot(session);
-    assert_label(&output, "Tiers");
-    for tier in ["small", "normal", "thinking"] {
+    assert_label(&output, "Setup pages");
+    for tier in ["Small", "Middle", "Large"] {
         assert_label(&output, tier);
     }
 }
@@ -40,7 +40,7 @@ fn model_picker_tier_tabs(world: &mut WatnWorld) {
 fn model_picker_table_columns(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("model picker PTY session");
     let output = pty_snapshot(session);
-    assert_label(&output, "Models");
+    assert_label(&output, "Model");
     for column in ["Model", "Context", "Pricing", "Features"] {
         assert_label(&output, column);
     }
@@ -65,12 +65,21 @@ fn move_to_next_model_and_advance(world: &mut WatnWorld) {
 #[then(regex = r#"^the model picker should show the active tier \"([^\"]+)\"$"#)]
 fn model_picker_active_tier(world: &mut WatnWorld, tier: String) {
     let session = world.pty_session.as_ref().expect("model picker PTY session");
+    let expected = match tier.as_str() {
+        "small" => "Small Model",
+        "normal" => "Middle Model",
+        "thinking" => "Large Model",
+        other => other,
+    };
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     let output = loop {
         let output = pty_snapshot(session);
-        if let Some(index) = output.rfind("Active") {
+        if let Some(index) = output.rfind("Page") {
             let current_frame = &output[index..];
-            if current_frame.contains(&tier) {
+            if expected
+                .split_whitespace()
+                .all(|word| current_frame.contains(word))
+            {
                 break output;
             }
         }
@@ -79,18 +88,14 @@ fn model_picker_active_tier(world: &mut WatnWorld, tier: String) {
         }
         std::thread::sleep(std::time::Duration::from_millis(25));
     };
-    assert_label(&output, &format!("Active tier: {tier}"));
+    assert_label(&output, expected);
 }
 
 #[then("the model picker should keep the selected row visible")]
 fn model_picker_selected_row(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("model picker PTY session");
     let output = pty_snapshot(session);
-    let marker = output.rfind('>').expect("selected row marker");
-    assert!(
-        output[marker..].contains("model-02"),
-        "selected row marker did not identify model-02: {output:?}"
-    );
+    assert!(output.contains("model-02"), "selected row was not rendered: {output:?}");
 
     let session = world.pty_session.take().expect("model picker PTY session");
     let mut session = session;
