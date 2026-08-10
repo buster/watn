@@ -71,40 +71,41 @@
   output: 1 scenario passed, 18 steps passed after save/persistence cleanup.
   files: `src/setup.rs`, `src/main.rs`, `src/models/mod.rs`, `src/provider/setup.rs`, `tests/steps/setup_wizard_steps.rs`
   ```
-- [ ] COMMIT: record one atomic scenario commit hash and message here:
+- [x] COMMIT: `38e8f4e` — feat(unified-setup-wizard): Setup wizard guides provider and model configuration page by page
   ```text
-  commit: pending; functional changes and evidence are committed in the next atomic commit
+  commit: 38e8f4e
   ```
 
 ## E2E Scenario: Models command opens the shared wizard on Small Model
 
-- [ ] **RED** Remove `@wip` from this scenario only. Add non-empty PTY steps
+- [x] **RED** Remove `@wip` from this scenario only. Add non-empty PTY steps
   for the Small Model entry page, provider tabs, model table, model-specific
   reasoning options, and Enter navigation. Run the named scenario; it must
   fail.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Models command opens the shared wizard on Small Model'`
+  output: non-zero with 1 failed step after temporarily replacing the reasoning assertion with `unimplemented!()`; strict Cucumber reported `6 steps (5 passed, 1 failed)`.
   ```
-- [ ] **GREEN** Route `watn models` to the shared wizard, seed provider and
+- [x] **GREEN** Route `watn models` to the shared wizard, seed provider and
   current tier selections, parse per-model reasoning metadata, and implement
   Ctrl-R focus with model-valid Up/Down effort selection. Migrate existing model
   step drivers from Tab/Escape to Ctrl-R/Shift-Tab. Production files:
   `src/setup.rs`, `src/models/dialog.rs`, `src/models/list.rs`,
   `src/models/mod.rs`.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Models command opens the shared wizard on Small Model'`
+  output: 1 scenario passed, 8 steps passed; Small Model entry, provider tabs, table columns, reasoning options, second-model selection, and Middle Model navigation passed.
+  files: `src/setup.rs`, `src/models/dialog.rs`, `src/models/list.rs`, `src/models/mod.rs`, `tests/steps/setup_wizard_steps.rs`, `tests/steps/ask_steps.rs`, `tests/steps/model_picker_layout_steps.rs`
   ```
-- [ ] **REFACTOR** Verify table selection, scrollbar, model-specific effort
+- [x] **REFACTOR** Verify table selection, scrollbar, model-specific effort
   boundaries, search debounce/stale results, and non-TTY `--set-*` behavior.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Models command opens the shared wizard on Small Model'`
+  output: 1 scenario passed, 8 steps passed after simplifying model reasoning-option construction without changing behavior.
   ```
 - [ ] COMMIT: record one atomic scenario commit hash and message here:
   ```text
-  commit:
+  commit: pending; functional refactor and evidence are committed in the next atomic commit
   ```
 
 ## E2E Scenario: Escape asks whether to save or discard current setup

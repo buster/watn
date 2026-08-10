@@ -749,9 +749,7 @@ impl SetupWizard {
             ];
         };
         let mut options = Vec::new();
-        if !metadata.mandatory && !metadata.default_enabled {
-            options.push(ReasoningStrength::Off);
-        } else if !metadata.mandatory && metadata.default_enabled {
+        if !metadata.mandatory {
             options.push(ReasoningStrength::Off);
         }
         for effort in &metadata.supported_efforts {
