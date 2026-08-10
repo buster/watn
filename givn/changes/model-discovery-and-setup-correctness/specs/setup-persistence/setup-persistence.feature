@@ -18,16 +18,16 @@ Feature: Setup persistence boundaries
     And the config file should not contain selected tier assignments
     And no original chat completion request should be sent
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Cancelling before credential confirmation does not save a provider
     Given no config file exists
     When I start `watn setup` in a terminal
     And cancel setup before confirming the credential
     Then setup should exit with cancellation
-    And the output should contain "Save current settings"
+    And the setup wizard should ask whether to save current settings
     And the config file should not contain a provider entry for the attempted setup
 
-  @givn.added @wip
+  @givn.added @e2e
   Scenario: Cancelling after credential confirmation preserves the provider
     Given no config file exists
     When I confirm provider endpoint "https://llm.example.com/v1" and credential "sk-confirmed"
