@@ -229,7 +229,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Unknown persisted reasoning sends no reasoning request`.
-- Commit hash: `PENDING`
+- Commit hash: `e3f7aa1eb4fd6ddb31fc82a321ed55c93e438772`
 
 ## Non-E2E Scenario 10: Non-TTY Model Assignment Never Persists Empty Reasoning Values
 
