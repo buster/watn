@@ -153,22 +153,22 @@
 
 ## Non-E2E Scenario 6: A Disabled Model Default Selects Off Even When a Default Effort Is Present
 
-- [ ] RED: Remove `@wip` from only `Scenario: A disabled model default selects off even when a default effort is present`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: A disabled model default selects off even when a default effort is present`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101: Cucumber reported `1 scenario (1 failed)` at undefined reasoning metadata setup.
   ```
-- [ ] GREEN: Replace stubs with reasoning-policy assertions and minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with reasoning-policy assertions and minimum production code. Production files created/modified: `src/models/dialog.rs`, `tests/steps/reasoning_policy_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `3 steps (3 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
+- [x] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `3 steps (3 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `A disabled model default selects off even when a default effort is present`.
+- [x] COMMIT: Create one atomic commit referencing `A disabled model default selects off even when a default effort is present`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 7: Mandatory Reasoning Excludes Off
