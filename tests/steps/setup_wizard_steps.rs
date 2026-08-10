@@ -212,6 +212,7 @@ fn discard_current_setup(world: &mut WatnWorld) {
     std::thread::sleep(std::time::Duration::from_millis(100));
     let session = world.pty_session.take().expect("setup PTY session");
     finish_pty_session(world, session);
+    assert_eq!(world.exit_status, Some(1), "discard should cancel setup");
 }
 
 #[then(regex = r#"^the config file should contain small tier "([^"]+)", middle tier "([^"]+)", and large tier "([^"]+)"$"#)]

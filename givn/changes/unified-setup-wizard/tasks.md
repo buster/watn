@@ -103,37 +103,38 @@
   command: `cargo test --test features_runner -- --name 'Models command opens the shared wizard on Small Model'`
   output: 1 scenario passed, 8 steps passed after simplifying model reasoning-option construction without changing behavior.
   ```
-- [ ] COMMIT: record one atomic scenario commit hash and message here:
+- [x] COMMIT: `eababb3` — feat(unified-setup-wizard): Models command opens the shared wizard on Small Model
   ```text
-  commit: pending; functional refactor and evidence are committed in the next atomic commit
+  commit: eababb3
   ```
 
 ## E2E Scenario: Escape asks whether to save or discard current setup
 
-- [ ] **RED** Remove `@wip` from this scenario only. Add non-empty PTY steps
+- [x] **RED** Remove `@wip` from this scenario only. Add non-empty PTY steps
   for Escape, save prompt, discard, and unchanged-config assertions. Run the
   named scenario; it must fail.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Escape asks whether to save or discard current setup'`
+  output: non-zero with 1 failed step after temporarily replacing the save-prompt assertion with `unimplemented!()`; strict Cucumber reported `4 steps (3 passed, 1 failed)`.
   ```
-- [ ] **GREEN** Implement the save/discard state, inline invalid-save handling,
+- [x] **GREEN** Implement the save/discard state, inline invalid-save handling,
   no-write discard/Ctrl-C behavior, and caller-owned persistence of valid
   provider progress and completed tiers. Production files: `src/setup.rs`,
   `src/main.rs`.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Escape asks whether to save or discard current setup'`
+  output: 1 scenario passed, 6 steps passed; Escape opened the save prompt, discard exited with status 1, and the config remained byte-for-byte unchanged.
+  files: `src/setup.rs`, `src/main.rs`, `tests/steps/setup_wizard_steps.rs`
   ```
-- [ ] **REFACTOR** Verify Escape from URL, API key, and model pages, then rerun
+- [x] **REFACTOR** Verify Escape from URL, API key, and model pages, then rerun
   this scenario and the full E2E suite.
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --name 'Escape asks whether to save or discard current setup'`
+  output: 1 scenario passed, 6 steps passed after adding an explicit assertion for the discard cancellation status.
   ```
 - [ ] COMMIT: record one atomic scenario commit hash and message here:
   ```text
-  commit:
+  commit: pending; functional assertion and evidence are committed in the next atomic commit
   ```
 
 ## Final Verification
