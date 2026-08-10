@@ -400,3 +400,25 @@ fn wait_for_terminal_text(world: &WatnWorld, text: &str) {
         thread::sleep(Duration::from_millis(25));
     }
 }
+
+#[when(regex = r##"^I run `watn -x "([^"]*)"` with piped confirmation "([^"]*)"$"##)]
+fn piped_confirmation(world: &mut WatnWorld, question: String, confirmation: String) {
+    super::run_binary_with_state(world, &["-x", &question], Some(&confirmation));
+}
+
+#[then(regex = r##"^the generated command line "([^"]+)" appears exactly once on stdout$"##)]
+fn piped_command_once(world: &mut WatnWorld, command: String) {
+    let stdout = world.output.as_deref().expect("stdout was not captured");
+    let count = stdout.lines().filter(|line| line.trim() == command).count();
+    assert_eq!(
+        count, 1,
+        "expected one generated command line in {stdout:?}"
+    );
+}
+
+#[then(regex = r##"^the execution output line "([^"]+)" appears exactly once on stdout$"##)]
+fn piped_execution_once(world: &mut WatnWorld, output: String) {
+    let stdout = world.output.as_deref().expect("stdout was not captured");
+    let count = stdout.lines().filter(|line| line.trim() == output).count();
+    assert_eq!(count, 1, "expected one execution output line in {stdout:?}");
+}

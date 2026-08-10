@@ -113,7 +113,7 @@ Feature: Incremental provider output
     And the execution output line "raw-confirmed" appears exactly once
     And the exit status should be 0
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Piped confirmation remains available after streamed output
     Given a streaming provider emits content "printf piped-confirmed"
     When I run `watn -x "run the command"` with piped confirmation "y"

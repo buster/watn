@@ -4,6 +4,7 @@ use serde_json::json;
 use std::fmt;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -89,6 +90,7 @@ struct StreamingServer {
     endpoint: String,
     handle: Option<JoinHandle<()>>,
     release: Option<Arc<ReleaseGate>>,
+    stop: Arc<AtomicBool>,
 }
 
 #[derive(Default)]
@@ -124,6 +126,7 @@ impl fmt::Debug for StreamingServer {
 
 impl Drop for StreamingServer {
     fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
         if let Some(release) = &self.release {
             release.release();
         }
@@ -153,15 +156,29 @@ impl StreamingServer {
         initial_delay: Duration,
     ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
+        listener
+            .set_nonblocking(true)
+            .expect("set streaming provider listener mode");
         let address = listener
             .local_addr()
             .expect("read streaming provider address");
         let endpoint = format!("http://{}", address);
         let release = hold_after.map(|_| Arc::new(ReleaseGate::default()));
         let thread_release = release.clone();
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
         let handle = thread::spawn(move || {
-            let Ok((mut stream, _)) = listener.accept() else {
-                return;
+            let (mut stream, _) = loop {
+                match listener.accept() {
+                    Ok(connection) => break connection,
+                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                        if thread_stop.load(Ordering::Relaxed) {
+                            return;
+                        }
+                        thread::sleep(Duration::from_millis(5));
+                    }
+                    Err(_) => return,
+                }
             };
             read_request_headers(&mut stream);
 
@@ -210,6 +227,7 @@ impl StreamingServer {
             endpoint,
             handle: Some(handle),
             release,
+            stop,
         }
     }
 

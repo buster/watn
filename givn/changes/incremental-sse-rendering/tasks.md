@@ -293,24 +293,31 @@
 
 ## Scenario: Raw terminal confirmation happens after the complete command arrives
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
+- [x] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
   only it through `verify.e2e_command`. Expected non-zero result. Evidence:
   ```text
-  [paste targeted E2E output]
+  Targeted E2E command exited non-zero after matching the explicit
+  `command_provider_stub`; the runner reported `1 step failed` and Cargo
+  returned `error: test failed`.
   ```
-- [ ] GREEN: Drive `watn -x` in a real PTY, assert the generated command is
+- [x] GREEN: Drive `watn -x` in a real PTY, assert the generated command is
   visible and execution output absent before confirmation, send raw Enter, and
   assert generated and execution lines exactly once with status 0. Production
-  files: [list every file]. Test files: [list every file]. Targeted result:
+  files: none; the existing streamed output and confirmation production path
+  was exercised. Test files:
+  `tests/steps/incremental_sse_rendering_steps.rs` and
+  `tests/steps/incremental_sse_rendering_e2e_steps.rs`. Targeted result:
   ```text
-  [paste targeted E2E output]
+  1 feature, 1 scenario, 8 steps passed; raw Enter, pre-confirmation absence,
+  exact-once command, exact-once execution output, and status 0 were asserted.
   ```
-- [ ] REFACTOR: Keep raw-terminal confirmation distinct from piped stdin and
+- [x] REFACTOR: Keep raw-terminal confirmation distinct from piped stdin and
   preserve the complete-output-before-prompt invariant. Targeted rerun:
   ```text
-  [paste targeted E2E output]
+  Applied rustfmt and reran the targeted E2E command: 1 feature, 1 scenario,
+  8 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `test(e2e): Raw terminal confirmation happens after the complete command arrives`
+- [x] COMMIT: `fd86d25` - `test(e2e): Raw terminal confirmation happens after the complete command arrives`
 
 ## Scenario: Piped confirmation remains available after streamed output
 
