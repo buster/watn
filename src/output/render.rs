@@ -10,7 +10,6 @@ pub fn print_response(
         meta.push_str(&format!(" · ${:.4}", c));
     }
     meta.push_str(&format!(" · {:.1}s · ¯\\_(ツ)_/¯", elapsed_secs));
-    println!();
     println!("{}", command);
     println!();
     eprintln!("{}", meta);
