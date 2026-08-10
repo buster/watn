@@ -114,17 +114,27 @@
   rerun passed with 1 scenario and 10 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Missing or whitespace test overrides fall back to the configured provider`.
-  Commit hash: pending until commit creation.
+  Commit hash: `2df8266`.
 
 ## Final Change Verification
 
-- [ ] Remove all completed scenario `@wip` tags and run `givn lint --change isolate-test-transport`.
-- [ ] Run verify.command and record its scenario count and successful output.
-- [ ] Run verify.e2e_command and record its scenario count; prove it is a strict
-  subset of verify.command.
+- [x] Remove all completed scenario `@wip` tags and run `givn lint --change isolate-test-transport`.
+  Result: exit 0; 1 file checked, 0 findings.
+- [x] Run verify.command and record its scenario count and successful output.
+  Result: shared-cache two-build bootstrap; 9 features, 44 scenarios, 240
+  steps passed.
+- [x] Run verify.e2e_command and record its scenario count; prove it is a strict
+  subset of verify.command. Result: shared-cache two-build bootstrap; 11
+  features, 42 scenarios, 267 steps passed. The E2E count is strictly below
+  the 44-scenario verify count.
 - [ ] Run `cargo fmt --all -- --check`, `cargo check --all-targets`,
   `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-targets`,
   `cargo test --doc`, `cargo build --release`, and `git diff --check`.
-- [ ] Record that release-profile override verification is deferred to
+  Results: `cargo fmt --all -- --check` remains non-zero because of the
+  repository-wide pre-existing formatting drift in unrelated test files;
+  `cargo check --all-targets`, clippy with `-D warnings`, `cargo test
+  --all-targets` (15 unit tests plus 86 scenarios), `cargo test --doc`,
+  `cargo build --release`, and `git diff --check` pass.
+- [x] Record that release-profile override verification is deferred to
   `release-truth-and-repository-cleanup`; the source guard remains compiled and
   the later change owns the release smoke test.
