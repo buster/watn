@@ -40,7 +40,10 @@ The same ADR records the TTY/non-TTY boundary, explicit-provider error
 preservation, saved credential precedence, direct-write `0600` enforcement
 without an atomic rename promise, typed cancellation, no-resume automatic
 completion, and the ephemeral E2E HTTP construction override for both
-`/models` and `/chat/completions`.
+`/models` and `/chat/completions`. The transport refinement makes that override
+available only under `cfg(all(feature = "test-support", debug_assertions))` and
+requires isolated binary targets so a release binary with the feature enabled
+still uses the configured endpoint.
 
 ## ADR-0012 summary
 

@@ -62,6 +62,7 @@ pub struct WatnWorld {
     pub picker_generation: Option<Arc<AtomicU64>>,
     pub search_mock_ids: Vec<usize>,
     pub search_query_delays: HashMap<String, u64>,
+    pub transport: crate::steps::TransportState,
 }
 
 impl Drop for WatnWorld {

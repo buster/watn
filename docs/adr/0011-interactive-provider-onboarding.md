@@ -101,17 +101,24 @@ Unix mode `0600`. Atomic temp-file/rename behavior is not part of this decision.
 
 ## E2E Transport Boundary
 
-E2E tests pass an ephemeral test transport endpoint override at HTTP client or
-request construction time. The override is test-harness state, not a config
-field. It is never persisted and never consulted by readiness. Both model
-catalog construction for `/models` and chat construction for
-`/chat/completions` consume the override.
+E2E tests may pass an ephemeral endpoint override at outbound HTTP construction
+time. The override is test-harness state, not a config field. The only compiled
+branch that reads it is guarded by
+`cfg(all(feature = "test-support", debug_assertions))`. Therefore a
+default-feature release binary and a release binary built with `test-support`
+both use the configured endpoint.
 
-The E2E scenarios assert the persisted OpenRouter endpoint remains exactly
-`https://openrouter.ai/api/v1` while requests use the loopback digital twin.
-The provider-setup scenario covers `/chat/completions`; the automatic
-first-use scenario covers `/models` and asserts that no original chat request
-is sent after model selection.
+URL builders remain pure and receive the already resolved endpoint. The
+override is never consulted by configuration loading, readiness, persistence,
+or endpoint display. Missing or whitespace values fall back to the configured
+endpoint. Touched model requests and chat requests use separate loopback twins
+and assert exact full URL, method/path, request count, Authorization header,
+competing-server zero hits, response source, and unchanged persisted endpoint.
+
+Transport verification builds default-feature and test-support binaries for
+debug and release profiles in separate target directories. Absolute binary
+paths are passed to the subprocess harness; scenarios do not discover a stale
+`target/debug/watn` or build during execution.
 
 ## Consequences
 
@@ -144,13 +151,16 @@ is sent after model selection.
   collision is intentional.
 - **Bad:** direct writes do not provide an atomic temp-file/rename guarantee,
   so an interrupted write can leave incomplete configuration.
-- **Bad:** E2E coverage needs a test-only HTTP construction seam and assertions
-  that the ephemeral override is not persisted or used for readiness.
+- **Bad:** E2E coverage needs a test-only HTTP construction seam, a four-row
+  isolated build matrix, and exact twin assertions; the extra setup is
+  deliberate because a broad mock or stale binary would create false-green
+  transport tests.
 
 ## Confirmation
 
-Gherkin scenarios cover the two E2E inventory entries plus validation,
+Gherkin scenarios cover the three transport E2E inventory entries plus validation,
 credential precedence, saved OpenRouter endpoint precedence, fixed-name
 replacement, TTY gating, cancellation statuses, model failure preservation,
 direct-write permissions, and the explicit command boundary in
-`givn/changes/watn-provider/specs/provider-setup/provider-setup.feature`.
+`givn/changes/isolate-test-transport/specs/transport/transport.feature` and the
+permanent provider-setup specifications.

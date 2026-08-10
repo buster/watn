@@ -7,6 +7,7 @@ graph TB
     CLI["CLI<br/>(clap dispatch)"]
     Config["Config<br/>(layered merge)"]
     Provider["Provider<br/>(trait + adapters)"]
+    Transport["Transport boundary<br/>(configured endpoint / debug test override)"]
     Setup["Provider Setup<br/>(ratatui onboarding)"]
     Wizard["Setup Wizard<br/>(five pages)"]
     Output["Output<br/>(metadata + command)"]
@@ -15,6 +16,7 @@ graph TB
 
     CLI --> Config
     CLI --> Provider
+    Provider --> Transport
     CLI --> Setup
     CLI --> Output
     CLI --> Models
@@ -34,6 +36,7 @@ graph TB
 | CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
 | Config | Load and merge from built-in defaults, user config file, env, CLI |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait |
+| Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
 | Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, and save/discard prompt; return provider and completed model drafts without writing configuration |
 | Output | Format response with metadata header (model, tok/s, cost) + command body |
@@ -51,6 +54,9 @@ graph TB
 | `Provider` trait | Defines `chat_completions_streaming()` (SSE streaming) |
 | `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses SSE chunks (extracts both `content` and `reasoning` from delta) |
 | `ProviderRegistry` | Maps provider names (from config) to `Box<dyn Provider>` instances |
+
+The transport boundary is the only production endpoint-resolution seam. URL
+builders receive an effective endpoint and remain free of environment lookups.
 
 ### Config
 

@@ -6,7 +6,7 @@ This change introduces `watn`, a CLI tool for generating shell commands from
 LLMs. The tool is optimised for one-shot command generation with model tiering,
 optional execution with confirmation, and metadata output (model, speed, cost).
 
-Top 9 requirements:
+Top requirements:
 1. Ask a question and receive a copy-pasteable shell command
 2. Three model tiers (small/fast via `-1`, normal via `-2`, thinking via `-3`)
 3. The thinking tier sends a reasoning-effort signal to the API
@@ -18,6 +18,7 @@ Top 9 requirements:
 9. TTY-gated provider onboarding with OpenRouter defaults, environment-backed credentials, and automatic first-use model setup that stops before the original request
 10. Structured terminal setup views make credential-source choices, provider details, model tiers, and long model catalogs scannable
 11. One setup wizard makes the current page, editable line, cursor, and save/discard state explicit
+12. Test routing must be isolated from normal and release-profile binaries; configured endpoints, readiness, and persisted configuration remain authoritative
 
 See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 
@@ -30,6 +31,7 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 | 3 | Portability | Single static binary, no runtime dependencies beyond the OS |
 | 4 | Security | Prefer environment-backed credentials, mask pasted credentials, enforce private config permissions, and keep resolved secrets out of diagnostics |
 | 5 | Observability | Model name, tokens/second, cost (when priced), and reasoning content (when verbose) printed per response; exit codes for scripting |
+| 6 | Test isolation | Loopback transport overrides are available only to debug test-support binaries and cannot redirect release or normal invocations |
 
 ## Stakeholders
 
@@ -38,3 +40,4 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 | Developer (end user) | Ask for shell commands from terminal, copy or execute immediately |
 | Power user | Configure custom providers, model tiers, pricing for cost tracking |
 | CI/user | Pipe questions in, get clean output with exit codes and metadata
+| Test maintainer | Run deterministic local-provider scenarios without changing release-binary behavior or persisted user configuration |

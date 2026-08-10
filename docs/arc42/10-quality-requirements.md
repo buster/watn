@@ -9,9 +9,11 @@
   - QS-011: Provider setup offers a usable OpenRouter default
   - QS-012: Missing provider automatically chains into model setup
   - QS-019: Setup information is separated into scannable terminal regions
-  - QS-020: Background model search keeps the newest query authoritative
-  - QS-021: The setup wizard makes the active page and cursor explicit
-  - QS-022: Provider and model setup share one page sequence
+   - QS-020: Background model search keeps the newest query authoritative
+   - QS-021: The setup wizard makes the active page and cursor explicit
+   - QS-022: Provider and model setup share one page sequence
+   - QS-023: Test transport cannot redirect release-profile binaries
+   - QS-024: Test transport assertions identify the exact endpoint and credential
 - **Flexibility** — Provider-agnostic, config-driven, model tiering
   - QS-003: Custom OpenAI-compatible provider
   - QS-004: Model tier assignment via config
@@ -54,3 +56,7 @@
 | QS-020 | Usability / Responsiveness | User changes the model filter while a provider search is delayed | The UI remains able to redraw and accept input; after the debounce only the newest query's results are applied, and an older result cannot replace them |
 | QS-021 | Onboarding / Usability | User opens setup and edits a page | The active tab, page number, prompt, and visible cursor identify exactly what is being edited |
 | QS-022 | Onboarding / Usability | User advances through setup | URL, API key, Small Model, Middle Model, and Large Model appear as one ordered wizard; Enter/Tab advances, Shift-Tab returns, and Escape presents save/discard |
+| QS-023 | Security / Portability | A release binary is built with `test-support` and `WATN_TEST_ENDPOINT_OVERRIDE` points to a competing local twin | The configured endpoint receives the request; the competing twin receives exactly 0 requests; the binary contains no active override branch |
+| QS-024 | Security / Testability | A debug test-support request uses a local twin | The expected full URL and method/path are exact, request count is exactly 1, Authorization is exactly `Bearer sk-configured`, and the persisted configured endpoint is unchanged |
+| QS-025 | Security / Testability | The override is absent or whitespace | The configured endpoint receives exactly 1 request with the exact Authorization header; the competing endpoint receives exactly 0; persisted TOML is unchanged |
+| QS-026 | Correctness | Readiness is evaluated while a competing override is present | Readiness is true from configuration alone; both local twins receive exactly 0 requests |

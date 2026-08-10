@@ -73,6 +73,56 @@ sequenceDiagram
 5. Empty line or `y`/`Y`: executes via `sh -c <cmd>` with inherited stdio
 6. `n`/`N`: exits 0 without executing
 
+## Scenario: Isolated debug test transport
+
+**Trigger:** A test-support debug binary is run with a loopback endpoint
+override.
+
+```mermaid
+sequenceDiagram
+    participant Harness as Test harness
+    participant CLI as watn debug test-support binary
+    participant Config as Config
+    participant Transport as Transport boundary
+    participant ConfigTwin as Configured provider twin
+    participant TestTwin as Isolated provider twin
+
+    Harness->>ConfigTwin: start loopback twin at <base>/v1
+    Harness->>TestTwin: start loopback twin at <base>/v1
+    Harness->>Config: write configured endpoint, key, and default model
+    Harness->>CLI: set WATN_TEST_ENDPOINT_OVERRIDE=<test-twin>/v1
+    CLI->>Config: load configured provider
+    Config-->>CLI: configured endpoint and credential
+    CLI->>Transport: resolve outbound endpoint
+    Transport-->>CLI: test twin endpoint (debug + test-support only)
+    CLI->>TestTwin: POST /v1/chat/completions with Bearer key
+    TestTwin-->>CLI: configured test response
+    CLI-->>Harness: response and exit 0
+    Harness->>Config: read persisted TOML
+    Config-->>Harness: configured endpoint unchanged; override absent
+```
+
+The harness asserts the exact full URL, `POST /v1/chat/completions`, one hit on
+the isolated twin, zero hits on the configured competing twin, and the exact
+`Authorization: Bearer sk-configured` header. A release-profile binary with
+`test-support` enabled follows the configured-endpoint branch and is tested
+against the competing twin to prove the override is unavailable.
+
+## Scenario: Missing or whitespace override fallback
+
+The debug test-support binary is run once with the override absent and once
+with whitespace. In both flows the transport boundary returns the configured
+`<base>/v1` endpoint. The configured twin receives exactly one
+`POST /v1/chat/completions` with the exact Authorization header; the competing
+twin receives zero requests; and the persisted configured endpoint is exact.
+
+## Scenario: Readiness ignores transport override
+
+The readiness predicate resolves the configured provider and credential without
+constructing an HTTP URL. With a competing loopback override present, it
+returns ready and both local twins receive zero requests. The configured
+endpoint in the provider record is unchanged.
+
 ## Scenario: Ask with thinking tier and verbose flag
 
 **Trigger:** User runs `watn -3 -v "design a distributed queue"`.

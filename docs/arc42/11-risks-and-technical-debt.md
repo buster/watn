@@ -21,12 +21,15 @@
 | R-015 | Successful automatic setup does not resume the original request | Medium | Low | Exit clearly after model selection, assert no chat request was sent, and document that the user reruns the original question |
 | R-016 | Fixed `openrouter` and `custom` names can collide with manually maintained entries | Medium | High | Replace only the selected fixed entry, preserve unrelated providers and config, and document the intentional collision before implementation |
 | R-017 | Direct config writes are not atomic and may be interrupted | Low | High | Keep the existing direct-write mechanism as the explicit constraint, enforce mode `0600` after every save, and do not promise temp-file/rename semantics |
-| R-018 | The ephemeral E2E transport override could leak into persistence/readiness or cover only one request path | Medium | High | Apply it only at HTTP construction, never consult it during readiness, assert the exact persisted OpenRouter endpoint, and cover both `/models` and `/chat/completions` |
+| R-018 | The ephemeral E2E transport override could leak into persistence/readiness or cover only one request path | Medium | High | Apply it only at HTTP construction under the debug-plus-feature guard, never consult it during readiness, assert the exact persisted endpoint, and cover every touched `/models` and `/chat/completions` path |
 | R-019 | Structured columns and multiple regions can become cramped or unreadable on small terminals | Medium | Medium | Use Ratatui layout constraints, truncation-safe cells, wrapped paragraphs, and PTY coverage at the supported test size; keep keyboard flow independent of visual width |
 | R-020 | Debounced worker results can race with user input or outlive the dialog | Medium | Medium | Increment a generation for every query change, check it before and after the debounce, apply results only through the event loop, ignore Enter while pending, and reap the dialog before exit |
 | R-021 | A shared wizard can make a partial save ambiguous when the user leaves before model selection is complete | Medium | Medium | Keep provider and completed model choices separate in the runtime result, validate before Save, and write only completed sections while Discard performs no write |
 | R-022 | Migrating Tab and Escape changes can surprise users of the existing model dialog | Medium | Medium | Keep Shift-Tab as the explicit back-page key, make Ctrl-R reasoning focus visible, migrate permanent scenarios, and retain command-specific entry points |
 | R-023 | `watn models` and `watn provider` can start the shared wizard with stale or incomplete page state | Medium | Medium | Seed endpoint, credential storage, current tier selections, and model-specific reasoning from the loaded config; define and test each entry point's initial/final page range |
+| R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; build and run isolated default/release and feature/release binaries in the verification matrix |
+| R-025 | A stale or shared target directory could make transport tests execute the wrong binary | Medium | High | Build every matrix row before Cucumber in an isolated target directory, pass absolute paths to the harness, and fail before scenarios when a path is missing |
+| R-026 | Broad mocks could report a successful request from the wrong endpoint or credential | Medium | High | Use separate local twin servers and mocks matching exact method/path/Authorization; assert expected counts, competing zero hits, response source, and persisted endpoint |
 
 ## Technical debt
 
@@ -36,7 +39,7 @@
 | TD-002 | No input validation of shell commands before execution | Medium | User sees full command before confirming |
 | TD-003 | Crossterm terminal event behavior varies across terminal emulators | Low | Key bindings use standard sequences (arrows, backspace, enter, escape, ctrl-c); non-standard terminals may require `TERM` detection fallbacks |
 | TD-004 | Reasoning config parsing edge cases (unknown strength values read from an edited config) | Low | Parse leniently; only `off`/`low`/`medium`/`high` map to `reasoning_effort`, unknown values fall back to no reasoning |
-| TD-005 | E2E tests need a non-persisted endpoint override to exercise the default OpenRouter path without live network access | Medium | Keep the override test-only and ephemeral; assert the real persisted default URL before routing requests to the loopback digital twin |
+| TD-005 | E2E tests need a non-persisted endpoint override to exercise configured-provider paths without live network access | Medium | Keep the override behind the debug-plus-feature guard; use reachable loopback twins and explicit binary paths; assert the exact persisted configured URL before and after routing |
 
 ## ADR-0011 bad-consequence coverage
 
@@ -59,8 +62,16 @@ The following consequences are accepted and mitigated explicitly:
 - Direct-write interruption: no atomic rename guarantee is claimed; the risk is
   documented rather than hidden behind a false atomicity promise.
 - Test transport seam: the override is ephemeral, construction-time only, and
-  verified on both required HTTP paths without changing readiness or persisted
-  endpoint values.
+  verified on all touched HTTP paths without changing readiness or persisted
+  endpoint values. The compile-time guard also keeps it out of every release
+  profile, including release with `test-support` enabled.
+- Release/build isolation: the four build rows use distinct target directories
+  and absolute harness paths, so a stale debug executable cannot produce a
+  false-green result.
+- Exact transport evidence: separate local twins, exact method/path and
+  Authorization matchers, expected/competing request counts, response-source
+  checks, and raw TOML endpoint checks prevent a broad mock from hiding a route
+  or credential regression.
 - Widget layout width: the native widget composition improves scanning on the
   supported terminal size but cannot guarantee every column remains spacious on
   a very narrow terminal; constraints and wrapped guidance limit the damage.

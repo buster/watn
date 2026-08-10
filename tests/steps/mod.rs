@@ -6,6 +6,9 @@ pub mod providers_steps;
 pub mod provider_setup_steps;
 pub mod provider_setup_layout_steps;
 pub mod setup_wizard_steps;
+pub mod transport_steps;
+
+pub use transport_steps::TransportState;
 
 use std::path::PathBuf;
 
@@ -17,16 +20,15 @@ use crate::MockServerWrap;
 use std::io::{Read, Write};
 
 pub(crate) fn find_binary() -> PathBuf {
-    if let Some(binary) = std::env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent()?.parent().map(|dir| dir.join("watn")))
-        .filter(|path| path.is_file())
-    {
-        return binary;
-    }
+    binary_from_env("WATN_TEST_SUPPORT_DEBUG_BIN")
+}
 
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest_dir.join("target").join("debug").join("watn")
+pub(crate) fn binary_from_env(name: &str) -> PathBuf {
+    let path = std::env::var_os(name)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| panic!("{name} must point to a prebuilt watn binary"));
+    assert!(path.is_file(), "{name} does not point to a file: {}", path.display());
+    path
 }
 
 pub(crate) fn build_config(

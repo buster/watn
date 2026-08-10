@@ -28,7 +28,11 @@
 | First-run onboarding | The TTY-only automatic provider setup followed by model setup when an implicitly selected provider is not ready; successful setup ends before the original request |
 | Fixed provider name | The stable onboarding name `openrouter` for the normalized OpenRouter endpoint or `custom` for every other endpoint; reruns replace only that entry |
 | Setup result | A typed provider/model outcome: configured or saved, cancelled by Escape/Ctrl-C, or failed without lower-level process exit |
-| Ephemeral transport override | A test-only endpoint selected when HTTP clients are constructed; it is not persisted and is not used for readiness |
+| Ephemeral transport override | A non-empty endpoint selected at outbound HTTP construction only by a debug binary compiled with `test-support`; it is not persisted and is not used for readiness |
+| Test-support binary | A binary compiled with the opt-in `test-support` feature; only its debug profile may use the ephemeral transport override |
+| Release-profile binary | A binary built with a release profile; it never reads the test transport override, even when `test-support` is enabled |
+| Configured endpoint | The `<base>/v1` endpoint loaded from provider configuration and retained for readiness, display, and persistence |
+| Competing provider twin | A separate local mock server intentionally configured as the wrong destination so a redirected request is observable as a non-zero hit |
 | Automatic setup completion | Successful first-use provider and model setup that exits after tier selection without sending the original question |
 | Widget | A Ratatui-rendered terminal region with its own layout, border, selection, or text responsibility |
 | Tier tabs | The visible small, normal, and thinking labels showing which model-assignment level is active |

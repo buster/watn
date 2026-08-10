@@ -42,6 +42,26 @@ reference is authoritative. Only an absent `api_key` permits provider-specific
 fallback followed by generic `WATN_API_KEY`. Readiness never consults the
 ephemeral E2E transport override.
 
+## Transport isolation
+
+The endpoint override is a compile-time test capability, not a configuration
+setting. The only branch that may read `WATN_TEST_ENDPOINT_OVERRIDE` is guarded
+by `cfg(all(feature = "test-support", debug_assertions))`. The negated branch
+returns the configured endpoint for default-feature debug binaries, default
+release binaries, and release binaries built with `test-support`.
+
+The override is resolved only while constructing an outbound HTTP request. URL
+builders receive the effective endpoint and perform no environment lookup.
+Configuration loading, readiness, provider persistence, and endpoint display
+always retain the configured `<base>/v1` URL. A missing or whitespace override
+falls back to that URL in the debug test-support branch.
+
+Transport verification starts separate loopback twins and asserts full endpoint,
+method/path, exact request count, exact `Authorization: Bearer <key>`, competing
+server zero hits, response source, and unchanged persisted endpoint. Release
+verification includes `cargo build --release --features test-support` to prove
+the feature does not make the override available in a release-profile binary.
+
 Environment-backed credentials are persisted as complete references such as
 `${OPENROUTER_API_KEY}`. The resolver expands the reference for an outbound
 request, while the serializer preserves the reference.
@@ -239,9 +259,10 @@ The test helper `run_binary_pty`:
 4. Reads PTY output via non-blocking polling with a timeout.
 5. Populates `world.output` for Then-step assertions.
 
-The provider-setup PTY approach is scoped to exactly the two `@e2e` scenarios
-listed in the change's interaction inventory. The harness gives each scenario
-an ephemeral loopback HTTP transport override at HTTP construction time. The
-override covers both `/models` and `/chat/completions`, is never persisted, and
-is never used by readiness. The persisted OpenRouter endpoint remains exactly
-`https://openrouter.ai/api/v1` in the assertions.
+The provider-setup PTY approach remains scoped to its existing inventory. The
+transport change's three CLI `@e2e` scenarios use explicit subprocess binary
+paths and local loopback twins. Only the debug test-support binary receives an
+ephemeral HTTP construction override; default and all release-profile binaries
+use the configured endpoint. The override is never persisted and never used by
+readiness. The transport scenarios assert the exact captured configured
+loopback endpoint rather than a live or example provider URL.

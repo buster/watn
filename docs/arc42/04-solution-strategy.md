@@ -14,6 +14,8 @@
 - Direct config writes enforce Unix mode `0600`; no atomic temp-file/rename guarantee is made
 - Interactive setup uses native Ratatui widget composition rather than paragraph-flattened or hand-positioned terminal output
 - Provider and model onboarding share one page-based Ratatui wizard; commands select its initial and final page rather than owning separate event loops
+- Test transport is a compile-time debug capability: only `test-support` plus `debug_assertions` can read the endpoint override; release-profile builds use configured endpoints even when the feature is enabled
+- Verification builds default-feature and test-support binaries in isolated target directories and passes their absolute paths to the subprocess harness
 
 ## Technology choices
 
@@ -27,6 +29,7 @@
 | Filter matching | Per-word, order-independent substring over model id | "dee flash" matches "DeepSeek V4 Flash"; each word must appear anywhere in the id, any order |
 | Gherkin runner | cucumber-rs | Mature Rust cucumber implementation |
 | Pseudo-terminal testing | portable-pty | PTY-based E2E tests for the terminal dialog |
+| Transport verification | `httpmock` loopback twins plus explicit subprocess paths | Proves endpoint, path, request count, Authorization, competing-server, and persistence behavior without live providers |
 
 ## Approach to quality goals
 
@@ -37,3 +40,4 @@
 | Portability | Single Rust binary; no runtime deps |
 | Observability | Model name, tok/s, cost printed per response; exit codes 0/1/2/3/130 |
 | First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
+| Transport isolation | The configured endpoint remains the source for readiness, persistence, and display; only debug test-support outbound requests may use a non-empty override, with missing/whitespace values falling back |

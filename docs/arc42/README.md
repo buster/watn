@@ -10,6 +10,10 @@ structured Ratatui widgets so choices, metadata, status, tier tabs, and long
 catalog position remain visible in the terminal.
 Provider and model onboarding now share a five-page setup wizard with explicit
 page, cursor, and save/discard state.
+The outbound transport boundary keeps configured endpoints authoritative for
+normal and release-profile binaries; only a debug `test-support` binary may
+route requests to a loopback test twin, and that route is never persisted or
+used for readiness.
 
 | Chapter | File | Description |
 |---|---|---|
