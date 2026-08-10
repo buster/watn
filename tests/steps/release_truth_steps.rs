@@ -33,6 +33,15 @@ fn package_version(world: &mut crate::WatnWorld, version: String) {
     world.release_truth.package_version = Some(version);
 }
 
+#[then(expr = "the output should contain exactly the package version {string}")]
+fn output_contains_package_version(world: &mut crate::WatnWorld, version: String) {
+    let output = world.output.as_deref().expect("version output");
+    assert!(
+        output.contains(&version),
+        "expected package version {version:?}: {output:?}"
+    );
+}
+
 #[given("a release binary has been built for the current host")]
 fn release_binary(world: &mut crate::WatnWorld) {
     let status = Command::new("cargo")

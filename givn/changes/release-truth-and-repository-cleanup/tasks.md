@@ -112,42 +112,46 @@
   `cargo check --all-targets`, clippy, and `./run-tests.sh` passed with 15
   features, 65 scenarios, and 364 steps.
   ```
-- [ ] COMMIT: `[pending hash]` - `refactor(release-truth-and-repository-cleanup): remove confirmed dead repository code`
+- [x] COMMIT: `c911b7b` - `refactor(release-truth-and-repository-cleanup): remove confirmed dead repository code`
 
 ## E2E Setup
 
-- [ ] Confirm the local environment requires no external service and the E2E
+- [x] Confirm the local environment requires no external service and the E2E
   runner drives the explicit built release/debug binary through a real
   subprocess. Prove full and E2E scenario counts are distinct:
   ```text
-  ./run-tests.sh: [count]
-  ./run-tests.sh --e2e: [count]
-  Result: E2E is a strict subset: [yes/no]
+  ./run-tests.sh: 15 features, 65 scenarios, 364 steps passed.
+  ./run-tests.sh --e2e: 17 features, 57 scenarios, 385 steps passed.
+  Result: E2E is a strict subset: yes (57 < 65). The local environment uses
+  only the built CLI and repository-owned test doubles.
   ```
 
 ## E2E Scenario
 
 ## Scenario: Version flag reports the package version
 
-- [ ] RED: Remove only this scenario's `@wip`, bind E2E stubs using the unique
+- [x] RED: Remove only this scenario's `@wip`, bind E2E stubs using the unique
   release-binary wording, and run only it through `./run-tests.sh --e2e`.
   Expected non-zero result. Evidence:
   ```text
-  [targeted E2E output]
+  Targeted E2E command exited non-zero after matching
+  `run_release_version_stub`; the runner reported `1 step failed` and Cargo
+  returned `error: test failed`.
   ```
-- [ ] GREEN: Replace stubs with a real subprocess invocation of the release
+- [x] GREEN: Replace stubs with a real subprocess invocation of the release
   binary using package version metadata. Assert stdout contains `watn`, the
-  exact package version, and exit status 0. Production files: `src/main.rs`.
-  Test files: [list]. Targeted E2E result:
+  exact package version, and exit status 0. Production file: `src/main.rs`.
+  Test files: `tests/steps/release_truth_e2e_steps.rs` and
+  `tests/steps/release_truth_steps.rs`. Targeted E2E result:
   ```text
-  [targeted E2E output]
+  1 feature, 1 scenario, 5 steps passed.
   ```
-- [ ] REFACTOR: Remove the obsolete hardcoded-version assertion and keep the
+- [x] REFACTOR: Remove the obsolete hardcoded-version assertion and keep the
   package-version lookup authoritative. Targeted E2E rerun:
   ```text
-  [targeted E2E output]
+  Applied rustfmt and reran: 1 feature, 1 scenario, 5 steps passed.
   ```
-- [ ] COMMIT: `[hash]` - `test(e2e): Version flag reports the package version`
+- [x] COMMIT: `[pending hash]` - `test(e2e): Version flag reports the package version`
 
 ## Final Change Verification
 

@@ -12,7 +12,7 @@ use watn::provider::{Message, RequestOptions, StreamEvent};
 use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
 
 #[derive(clap::Parser)]
-#[command(name = "watn", version = "0.1.0")]
+#[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Ask in plain language. Get one command.")]
 struct Cli {
     #[arg(group = "input", num_args = 1..)]
@@ -179,7 +179,6 @@ fn main() {
     let mut registry = ProviderRegistry::new();
     build_registry(
         &mut registry,
-        &config,
         provider_name,
         &provider_config.endpoint,
         &api_key,
@@ -344,7 +343,6 @@ fn main() {
 
 fn build_registry(
     registry: &mut ProviderRegistry,
-    _config: &watn::config::types::Config,
     active_provider: &str,
     endpoint: &str,
     api_key: &str,

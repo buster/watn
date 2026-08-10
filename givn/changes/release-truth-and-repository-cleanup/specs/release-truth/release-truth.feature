@@ -4,7 +4,7 @@
 @givn.delta @release-truth
 Feature: Release truth and repository cleanup
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Version flag reports the package version
     Given the package version is "0.1.2"
     When I run the release binary with `--version`
