@@ -13,7 +13,9 @@ page, cursor, and save/discard state.
 The outbound transport boundary keeps configured endpoints authoritative for
 normal and release-profile binaries; only a debug `test-support` binary may
 route requests to a loopback test twin, and that route is never persisted or
-used for readiness.
+used for readiness. Debug transport verification uses two copied binaries from
+Cargo's shared target cache; release-profile runtime verification is deferred
+to `release-truth-and-repository-cleanup`.
 
 | Chapter | File | Description |
 |---|---|---|

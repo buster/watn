@@ -2,17 +2,14 @@
 
 ## Setup
 
-- [x] Configure the no-default `test-support` feature and the four isolated
-  debug/release binary paths from `design.md`; update `givn/commands.yaml` so
-  verify and verify-e2e build those paths before invoking the Cucumber runner.
+- [x] Configure the no-default `test-support` feature and the two explicit
+  debug binary copies from `design.md`; update `givn/commands.yaml` so verify
+  and verify-e2e reuse Cargo's shared target cache and copy both debug binaries
+  before invoking the Cucumber runner.
   Record the exact build and runner commands here:
   ```text
-  cargo build --bin watn --target-dir <root>/default-debug
-  cargo build --features test-support --bin watn --target-dir <root>/test-support-debug
-  cargo build --release --bin watn --target-dir <root>/default-release
-  cargo build --release --features test-support --bin watn --target-dir <root>/test-support-release
-  WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
-  WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip'
+  root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
+  root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip'
   ```
 - [x] Register `tests/steps/transport_steps.rs` as the transport capability
   step-definition module. New steps must use `unimplemented!()` until their
@@ -26,11 +23,10 @@
   Result: non-zero; the first matched stub panicked with `not implemented` and
   the runner reported `1 step failed`.
   ```
-- [x] Run `givn lint --change isolate-test-transport` and confirm that only
-  expected `@wip` findings remain.
+- [x] Run `givn lint --change isolate-test-transport` and confirm the corrected
+  feature file is clean.
   ```text
-  givn lint: 1 file(s) checked, 3 finding(s); all three findings are the
-  expected @wip transport E2E scenarios.
+  givn lint --change isolate-test-transport: exit 0; 1 file checked, 0 findings.
   ```
 
 ## Scenario: Provider readiness ignores the test routing setting
@@ -38,7 +34,7 @@
 - [x] RED: Remove `@wip` from this scenario, add the non-E2E step bindings with
   real `unimplemented!()` stubs, and run only:
   ```text
-  WATN_DEFAULT_DEBUG_BIN=... WATN_TEST_SUPPORT_DEBUG_BIN=... WATN_DEFAULT_RELEASE_BIN=... WATN_TEST_SUPPORT_RELEASE_BIN=... cargo test --test features_runner --features test-support -- --name "Provider readiness ignores the test routing setting"
+  WATN_DEFAULT_DEBUG_BIN=... WATN_TEST_SUPPORT_DEBUG_BIN=... cargo test --test features_runner --features test-support -- --name "Provider readiness ignores the test routing setting"
   ```
   Expected result: non-zero exit. Evidence: the runner matched the stub and
   exited non-zero with `Step panicked ... not implemented` and `1 step failed`.
@@ -57,29 +53,30 @@
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Provider readiness ignores the test routing setting`. Commit hash: `e0dd980`.
 
-## Scenario: Normal release requests ignore test routing settings
+## Scenario: Normal debug requests ignore test routing settings
 
 - [x] RED: Remove `@wip` from this scenario, bind every step with real stubs,
   and run only the scenario through the e2e command. Expected result: non-zero
-  exit. Evidence: the runner matched the `run_release_binaries` stub and
+  exit. Evidence: the runner matched the `run_default_debug_binary` stub and
   exited non-zero with `Step panicked ... not implemented` and `1 step failed`.
-- [x] GREEN: Build and select the explicit default-feature release and
-  test-support release binaries. Implement separate configured and competing
-  loopback twins. Assert both release binaries use the configured full URL,
+- [x] GREEN: Build and select the explicit default-feature debug copy using the
+  shared Cargo target cache. Implement separate configured and competing
+  loopback twins. Assert the debug binary uses the configured full URL,
   method/path, exact Authorization header, response source, request counts,
   and unchanged persisted endpoint. Production files: `Cargo.toml` and
   `src/provider/transport.rs`. Test files: `givn/commands.yaml`,
   `tests/features_runner.rs`, `tests/steps/transport_steps.rs`, and any
   concrete shared test-state file required by the reviewed design. Run only
   this scenario through verify-e2e and record passing output. Evidence: the
-  explicit four-binary build matrix completed; targeted run passed with 1
+  shared-cache two-build bootstrap completed; targeted run passed with 1
   scenario and 10 steps.
-- [x] REFACTOR: Make binary-path and server cleanup deterministic, remove
+- [x] REFACTOR: Make binary-copy and server cleanup deterministic, remove
   catch-all mock matchers, and rerun this scenario through verify-e2e. The
-  formatted targeted rerun passed with 1 scenario and 10 steps.
+  formatted shared-cache rerun passed with 1 scenario and 10 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Normal release requests ignore test routing settings`. Commit hash:
-  `0554516`.
+  `Normal debug requests ignore test routing settings`. Commit hash: pending
+  until commit creation. The earlier release-scoped implementation commit
+  `0554516` is superseded by this debug-scope correction.
 
 ## Scenario: Test-support requests use isolated routing without changing saved configuration
 
@@ -99,21 +96,21 @@
   scenario and 11 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Test-support requests use isolated routing without changing saved configuration`.
-  Commit hash: pending until commit creation.
+  Commit hash: `16692a8`.
 
 ## Scenario: Missing or whitespace test overrides fall back to the configured provider
 
-- [ ] RED: Remove `@wip` from this scenario outline, bind the outline steps
-  with real stubs, and run only the outline through verify-e2e. Expected result:
+- [ ] RED: Remove `@wip` from this scenario, bind the two-invocation steps with
+  real stubs, and run only the scenario through verify-e2e. Expected result:
   non-zero exit. Evidence: pending.
 - [ ] GREEN: Implement both `missing` and `whitespace` child environments.
-  Assert configured response, exact configured URL and path, exact
-  Authorization header, one configured hit, zero competing hits, and unchanged
-  TOML for both examples. Run only the outline through verify-e2e and record
-  passing output. Evidence: pending.
-- [ ] REFACTOR: Remove duplicated fallback setup while keeping both examples
-  independently observable. Rerun the outline through verify-e2e. Evidence:
-  pending.
+  Assert both configured responses, exact configured URL and path, exact
+  Authorization header, two configured hits, zero competing hits, and unchanged
+  TOML. Run only the scenario through verify-e2e and record passing output.
+  Evidence: pending.
+- [ ] REFACTOR: Remove duplicated fallback setup while keeping both child
+  invocations independently observable. Rerun the scenario through verify-e2e.
+  Evidence: pending.
 - [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Missing or whitespace test overrides fall back to the configured provider`.
   Commit hash: pending.
@@ -127,5 +124,6 @@
 - [ ] Run `cargo fmt --all -- --check`, `cargo check --all-targets`,
   `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-targets`,
   `cargo test --doc`, `cargo build --release`, and `git diff --check`.
-- [ ] Confirm default-feature and test-support release binaries both ignore the
-  override, and record the exact commands and results.
+- [ ] Record that release-profile override verification is deferred to
+  `release-truth-and-repository-cleanup`; the source guard remains compiled and
+  the later change owns the release smoke test.

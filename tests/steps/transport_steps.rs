@@ -223,16 +223,15 @@ fn run_transport_binary(world: &mut WatnWorld, binary_env: &str, override_endpoi
     });
 }
 
-#[when("I run the default-feature release binary and the test-support release binary with the override set to the competing twin")]
-fn run_release_binaries(world: &mut WatnWorld) {
+#[when("I run the default-feature debug binary with the override set to the competing twin")]
+fn run_default_debug_binary(world: &mut WatnWorld) {
     let endpoint = world
         .transport
         .competing_endpoint
         .as_deref()
         .expect("competing provider twin was not created")
         .to_string();
-    run_transport_binary(world, "WATN_DEFAULT_RELEASE_BIN", Some(&endpoint));
-    run_transport_binary(world, "WATN_TEST_SUPPORT_RELEASE_BIN", Some(&endpoint));
+    run_transport_binary(world, "WATN_DEFAULT_DEBUG_BIN", Some(&endpoint));
 }
 
 #[when("I run the test-support debug binary with the override set to the isolated twin")]
@@ -246,13 +245,12 @@ fn run_isolated_debug_binary(world: &mut WatnWorld) {
     run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", Some(&endpoint));
 }
 
-#[when(regex = r##"^I run the test-support debug binary with the override state "([^"]+)"$"##)]
-fn run_debug_binary_with_override_state(world: &mut WatnWorld, state: String) {
-    match state.as_str() {
-        "missing" => run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", None),
-        "whitespace" => run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", Some("   ")),
-        other => panic!("unknown transport override state: {other}"),
-    }
+#[when(
+    "I run the test-support debug binary once with no override and once with a whitespace override"
+)]
+fn run_debug_binary_with_fallback_states(world: &mut WatnWorld) {
+    run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", None);
+    run_transport_binary(world, "WATN_TEST_SUPPORT_DEBUG_BIN", Some("   "));
 }
 
 #[then(regex = r##"^each binary should exit successfully with output containing "([^"]+)"$"##)]
@@ -268,10 +266,27 @@ fn each_binary_output(world: &mut WatnWorld, response: String) {
         );
         assert!(
             invocation.stdout.contains(&response),
-            "stdout: {}",
+            "{} stdout: {}",
+            invocation.binary.display(),
             invocation.stdout
         );
     }
+}
+
+#[then(regex = r##"^the binary should exit successfully with output containing "([^"]+)"$"##)]
+fn binary_output(world: &mut WatnWorld, response: String) {
+    let invocation = world
+        .transport
+        .invocations
+        .first()
+        .expect("no transport invocation was recorded");
+    assert_eq!(invocation.status, Some(0), "{}", invocation.stderr);
+    assert!(
+        invocation.stdout.contains(&response),
+        "{} stdout: {}",
+        invocation.binary.display(),
+        invocation.stdout
+    );
 }
 
 #[then(
@@ -285,10 +300,26 @@ fn each_binary_configured_url(world: &mut WatnWorld, path: String) {
     assert_eq!(configured_mock_hits(world), 2);
 }
 
+#[then(
+    regex = r##"^the binary should request exactly the configured twin base URL plus "([^"]+)"$"##
+)]
+fn binary_configured_url(world: &mut WatnWorld, path: String) {
+    let expected = configured_server(world).url(&path);
+    let endpoint = configured_endpoint(world);
+    let suffix = path.strip_prefix("/v1").unwrap_or(&path);
+    assert_eq!(expected, format!("{endpoint}{suffix}"));
+}
+
 #[then(regex = r##"^each configured-twin request should be POST path "([^"]+)" exactly once$"##)]
 fn each_configured_request(world: &mut WatnWorld, path: String) {
     assert_eq!(Some(path), world.transport.configured_path.clone());
     assert_eq!(configured_mock_hits(world), 2);
+}
+
+#[then(regex = r##"^the configured-twin request should be POST path "([^\"]+)" exactly once$"##)]
+fn configured_request_once(world: &mut WatnWorld, path: String) {
+    assert_eq!(Some(path), world.transport.configured_path.clone());
+    assert_eq!(configured_mock_hits(world), 1);
 }
 
 #[then(regex = r##"^each configured-twin request should have Authorization exactly "([^"]+)"$"##)]
@@ -298,6 +329,15 @@ fn each_configured_authorization(world: &mut WatnWorld, authorization: String) {
         format!("Bearer {}", world.transport.api_key.as_deref().unwrap())
     );
     assert_eq!(configured_mock_hits(world), 2);
+}
+
+#[then(regex = r##"^the configured-twin request should have Authorization exactly "([^\"]+)"$"##)]
+fn configured_authorization_once(world: &mut WatnWorld, authorization: String) {
+    assert_eq!(
+        authorization,
+        format!("Bearer {}", world.transport.api_key.as_deref().unwrap())
+    );
+    assert_eq!(configured_mock_hits(world), 1);
 }
 
 #[then(
@@ -355,6 +395,40 @@ fn response_contains(world: &mut WatnWorld, response: String) {
         "stdout: {}",
         invocation.stdout
     );
+}
+
+#[then(regex = r##"^each fallback response should contain "([^"]+)"$"##)]
+fn each_fallback_response(world: &mut WatnWorld, response: String) {
+    assert_eq!(world.transport.invocations.len(), 2);
+    for invocation in &world.transport.invocations {
+        assert_eq!(invocation.status, Some(0), "{}", invocation.stderr);
+        assert!(
+            invocation.stdout.contains(&response),
+            "stdout: {}",
+            invocation.stdout
+        );
+    }
+}
+
+#[then(
+    regex = r##"^each fallback request should use exactly the configured twin base URL plus "([^"]+)"$"##
+)]
+fn each_fallback_request_url(world: &mut WatnWorld, path: String) {
+    let endpoint = configured_endpoint(world);
+    let suffix = path.strip_prefix("/v1").unwrap_or(&path);
+    assert_eq!(
+        configured_server(world).url(&path),
+        format!("{endpoint}{suffix}")
+    );
+}
+
+#[then(regex = r##"^each fallback request should have Authorization exactly "([^"]+)"$"##)]
+fn each_fallback_authorization(world: &mut WatnWorld, authorization: String) {
+    assert_eq!(
+        authorization,
+        format!("Bearer {}", world.transport.api_key.as_deref().unwrap())
+    );
+    assert_eq!(configured_mock_hits(world), 2);
 }
 
 #[then(

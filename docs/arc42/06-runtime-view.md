@@ -104,9 +104,24 @@ sequenceDiagram
 
 The harness asserts the exact full URL, `POST /v1/chat/completions`, one hit on
 the isolated twin, zero hits on the configured competing twin, and the exact
-`Authorization: Bearer sk-configured` header. A release-profile binary with
-`test-support` enabled follows the configured-endpoint branch and is tested
-against the competing twin to prove the override is unavailable.
+`Authorization: Bearer sk-configured` header. The source guard makes a
+release-profile binary with `test-support` use the configured-endpoint branch;
+runtime proof of that branch is deferred to
+`release-truth-and-repository-cleanup`.
+
+## Scenario: Normal debug requests ignore test routing
+
+The harness builds and copies both the default-feature debug binary and the
+debug `test-support` binary from Cargo's shared target cache. With a configured
+loopback provider twin and a separate competing twin selected by
+`WATN_TEST_ENDPOINT_OVERRIDE`, it invokes exactly one child: the copied
+default-feature debug binary. That child must request the configured
+`<base>/v1/chat/completions` URL with `Authorization: Bearer sk-configured`,
+return the configured response, and leave the competing twin at zero requests.
+The test-support debug copy is intentionally not invoked in this scenario; its
+override-honoring behavior is covered by the isolated-routing scenario. The
+single configured hit is asserted for this child rather than inferred from a
+two-child aggregate.
 
 ## Scenario: Missing or whitespace override fallback
 

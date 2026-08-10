@@ -33,4 +33,4 @@
 | Exit codes: 0=ok, 1=user, 2=API, 3=network, 130=SIGINT | Distinguish error categories for script consumption |
 | Provider readiness is local | First-run detection checks config and environment state without probing a live provider or consulting the E2E transport override |
 | Explicit provider selection preserves errors | `--provider` and `WATN_PROVIDER` never trigger onboarding; unknown-provider and missing-key errors remain observable |
-| Test binaries use isolated targets | Each feature/profile combination is built into its own target directory and the harness receives its absolute binary path; stale `target/debug/watn` discovery is not permitted |
+| Test binaries use explicit paths | The debug verification bootstrap builds the two required feature variants sequentially through Cargo's shared default target cache, copies each executable to a unique temporary path, and passes only those absolute paths to the harness; stale `target/debug/watn` discovery is not permitted |

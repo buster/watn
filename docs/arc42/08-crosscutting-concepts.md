@@ -57,10 +57,12 @@ always retain the configured `<base>/v1` URL. A missing or whitespace override
 falls back to that URL in the debug test-support branch.
 
 Transport verification starts separate loopback twins and asserts full endpoint,
-method/path, exact request count, exact `Authorization: Bearer <key>`, competing
-server zero hits, response source, and unchanged persisted endpoint. Release
-verification includes `cargo build --release --features test-support` to prove
-the feature does not make the override available in a release-profile binary.
+method/path, per-child and aggregate request counts, exact
+`Authorization: Bearer <key>`, competing server zero hits, response source, and
+unchanged persisted endpoint. The `cfg` guard keeps the override out of
+release-profile compilation; runtime verification with
+`cargo build --release --features test-support` is deferred to
+`release-truth-and-repository-cleanup`.
 
 Environment-backed credentials are persisted as complete references such as
 `${OPENROUTER_API_KEY}`. The resolver expands the reference for an outbound

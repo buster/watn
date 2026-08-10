@@ -15,7 +15,7 @@
 - Interactive setup uses native Ratatui widget composition rather than paragraph-flattened or hand-positioned terminal output
 - Provider and model onboarding share one page-based Ratatui wizard; commands select its initial and final page rather than owning separate event loops
 - Test transport is a compile-time debug capability: only `test-support` plus `debug_assertions` can read the endpoint override; release-profile builds use configured endpoints even when the feature is enabled
-- Verification builds default-feature and test-support binaries in isolated target directories and passes their absolute paths to the subprocess harness
+- Debug verification builds the default-feature and `test-support` binaries sequentially through Cargo's shared default target cache, copies them to unique temporary paths, and passes those absolute paths to the subprocess harness; release runtime verification is deferred to `release-truth-and-repository-cleanup`
 
 ## Technology choices
 

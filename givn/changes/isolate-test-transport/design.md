@@ -21,7 +21,9 @@
 
 The compile-time boundary is intentionally stronger than a feature-only
 boundary. A release profile with `test-support` enabled is still a release
-binary and must not be able to use `WATN_TEST_ENDPOINT_OVERRIDE`.
+binary and must not be able to use `WATN_TEST_ENDPOINT_OVERRIDE`. This change
+exercises the debug binaries first; release-profile smoke verification is
+deferred to `release-truth-and-repository-cleanup`.
 
 ## Compile-time transport boundary
 
@@ -82,30 +84,34 @@ it does not construct an HTTP URL and does not start a network request.
 
 ## Build and binary matrix
 
-The harness must receive explicit binary paths. It must never call a fallback
-such as `target/debug/watn`, reuse a stale package binary, or build inside a
-scenario. A test-run bootstrap creates one parent temporary directory and one
-isolated Cargo target directory per matrix row before Cucumber starts.
+The harness must receive explicit binary paths. It must never discover a
+fallback such as `target/debug/watn`, reuse a stale package binary, or build
+inside a scenario. Debug verification uses Cargo's shared default target
+cache, then copies each debug executable to a unique temporary path. This
+keeps the two child binaries distinct without recompiling all dependencies in
+four isolated target directories.
 
-| Binary path key | Cargo command | Isolated target directory | Expected path | Scenario use |
-|---|---|---|---|---|
-| `WATN_DEFAULT_DEBUG_BIN` | `cargo build --bin watn --target-dir <root>/default-debug` | `<root>/default-debug` | `<root>/default-debug/debug/watn` | debug smoke and non-override control |
-| `WATN_TEST_SUPPORT_DEBUG_BIN` | `cargo build --features test-support --bin watn --target-dir <root>/test-support-debug` | `<root>/test-support-debug` | `<root>/test-support-debug/debug/watn` | isolated routing and missing/whitespace fallback |
-| `WATN_DEFAULT_RELEASE_BIN` | `cargo build --release --bin watn --target-dir <root>/default-release` | `<root>/default-release` | `<root>/default-release/release/watn` | release control |
-| `WATN_TEST_SUPPORT_RELEASE_BIN` | `cargo build --release --features test-support --bin watn --target-dir <root>/test-support-release` | `<root>/test-support-release` | `<root>/test-support-release/release/watn` | release-profile guard with feature enabled |
+| Binary path key | Build and copy sequence | Scenario use |
+|---|---|---|
+| `WATN_DEFAULT_DEBUG_BIN` | `cargo build --bin watn && cp target/debug/watn <root>/default-debug` | configured-endpoint control |
+| `WATN_TEST_SUPPORT_DEBUG_BIN` | `cargo build --features test-support --bin watn && cp target/debug/watn <root>/test-support-debug` | isolated routing and fallback |
 
-The build commands run once before the feature runner. The runner receives all
-four absolute paths through the named environment variables above, or through
-an equivalent explicit harness argument. Missing variables are a bootstrap
-error before any scenario runs. Scenario steps select a path by key; they do
-not discover binaries from the filesystem.
+The bootstrap creates one temporary copy directory before Cucumber starts,
+runs the two build commands sequentially, and exports both absolute copy paths.
+The second build reuses Cargo's dependency cache. Missing variables or copy
+files are bootstrap errors before any scenario runs. Scenario steps select a
+path by key; they do not discover binaries from the filesystem.
 
-The matrix is dual-binary by behavior at each profile: one configured-endpoint
-binary and one debug test-support binary. The release rows are mandatory. The
-`test-support-release` row is the direct proof that enabling the feature does
-not make the override available in a release-profile binary. The normal-release
-scenario invokes both release rows with the same configured provider and a
-competing override server.
+The two copied debug variants are a bootstrap concern, not a requirement that
+each scenario invoke both. The normal scenario invokes only
+`WATN_DEFAULT_DEBUG_BIN`; the isolated-routing and fallback scenarios select
+`WATN_TEST_SUPPORT_DEBUG_BIN` where the override behavior is intended.
+
+The release guard remains in production code through the negated
+`cfg(all(feature = "test-support", debug_assertions))` branch. Building and
+running release variants is deliberately not part of this debug-focused
+change; the later release change will verify that guard with the same copy
+pattern.
 
 ## Transport-specific test state
 
@@ -177,11 +183,12 @@ For a chat request, all of these assertions are mandatory:
 | Persisted endpoint | exact configured loopback URL, unchanged after the child |
 | Persisted override | the override URL is absent from raw TOML |
 
-For the normal release scenario, each of
-`WATN_DEFAULT_RELEASE_BIN` and `WATN_TEST_SUPPORT_RELEASE_BIN` is invoked once.
-Each must produce one configured-server hit and zero competing-server hits; the
-aggregate configured hit count is exactly `2`. This assertion catches both a
-feature branch accidentally present in release and a stale binary path.
+For the normal debug scenario, only `WATN_DEFAULT_DEBUG_BIN` is invoked with a
+non-empty override. It must produce one configured-server hit and zero
+competing-server hits. This proves that a normal debug binary cannot be
+redirected. The `WATN_TEST_SUPPORT_DEBUG_BIN` copy is intentionally not invoked
+in this scenario; its override-honoring behavior is covered by the dedicated
+isolated-routing scenario.
 
 For the test-support debug scenario, the isolated server must receive exactly
 one request and the configured server exactly zero. For the missing and
@@ -198,18 +205,15 @@ positive hit count alone is never an assertion.
 
 ## Scenario mechanics
 
-### Normal release requests
+### Normal debug requests
 
 The scenario starts configured and competing loopback twins, writes the
 configured endpoint and `default_model = "test-model"`, sets the override to
-the competing endpoint, and invokes both release binaries from the build
-matrix. Readiness must complete without contacting either twin. Each child must
-send its chat request to the configured full URL, return `configured-response`,
-and exit successfully. The competing server must remain at zero hits.
-
-This scenario proves both that a default-feature release binary is not
-redirected and that a release binary with `test-support` enabled is not
-redirected.
+the competing endpoint, and invokes the default-feature debug copy from the
+build matrix. Readiness must complete without contacting either twin. The child
+must send its chat request to the configured full URL, return
+`configured-response`, and exit successfully. The competing server must remain
+at zero hits.
 
 ### Debug isolated routing
 
@@ -222,12 +226,13 @@ endpoint and must not contain the isolated endpoint.
 
 ### Missing and whitespace fallback
 
-The scenario outline runs once with the override removed from the child
-environment and once with its value set to whitespace. Both invocations use
-`WATN_TEST_SUPPORT_DEBUG_BIN`. Both must use the configured full URL exactly,
-send one authorized request, return `configured-response`, and send zero
-requests to the competing server. The configured endpoint remains unchanged in
-TOML in both examples.
+The scenario runs two explicit child invocations in one Gherkin scenario: one
+with the override removed from the child environment and one with its value
+set to whitespace. Both invocations use `WATN_TEST_SUPPORT_DEBUG_BIN`. Each
+must use the configured full URL exactly, send one authorized request, and
+return `configured-response`; the aggregate configured count is two and the
+competing server remains at zero hits. The configured endpoint remains
+unchanged in TOML.
 
 ### Readiness contract
 
@@ -253,59 +258,48 @@ and strict verification are complete. No existing `@e2e` tag is removed.
 
 ## Test commands
 
-Build the matrix before running the Cucumber commands. The path variables below
-are illustrative names for the explicit paths defined in the matrix:
+Build the debug copies before running the Cucumber commands. The path variables
+below are illustrative names for the explicit paths defined in the matrix:
 
 ```text
-WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn \
-WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn \
-WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn \
-WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn \
+WATN_DEFAULT_DEBUG_BIN=<root>/default-debug \
+WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug \
 cargo test --test features_runner --features test-support -- --tags 'not @wip and not @e2e'
 
-WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn \
-WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn \
-WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn \
-WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn \
+WATN_DEFAULT_DEBUG_BIN=<root>/default-debug \
+WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug \
 cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip'
 ```
 
-Single-scenario commands use the same four path variables and select one
+Single-scenario commands use the same two path variables and select one
 scenario by name:
 
 ```text
-WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn \
-WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn \
-WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn \
-WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn \
-cargo test --test features_runner --features test-support -- --name "Normal release requests ignore test routing settings"
+WATN_DEFAULT_DEBUG_BIN=<root>/default-debug \
+WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug \
+cargo test --test features_runner --features test-support -- --name "Normal debug requests ignore test routing settings"
 
-WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn \
-WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn \
-WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn \
-WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn \
+WATN_DEFAULT_DEBUG_BIN=<root>/default-debug \
+WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug \
 cargo test --test features_runner --features test-support -- --name "Test-support requests use isolated routing without changing saved configuration"
 
-WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn \
-WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn \
-WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn \
-WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn \
+WATN_DEFAULT_DEBUG_BIN=<root>/default-debug \
+WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug \
 cargo test --test features_runner --features test-support -- --name "Missing or whitespace test overrides fall back to the configured provider"
 
-WATN_DEFAULT_DEBUG_BIN=<root>/default-debug/debug/watn \
-WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug/debug/watn \
-WATN_DEFAULT_RELEASE_BIN=<root>/default-release/release/watn \
-WATN_TEST_SUPPORT_RELEASE_BIN=<root>/test-support-release/release/watn \
+WATN_DEFAULT_DEBUG_BIN=<root>/default-debug \
+WATN_TEST_SUPPORT_DEBUG_BIN=<root>/test-support-debug \
 cargo test --test features_runner --features test-support -- --name "Provider readiness ignores the test routing setting"
 ```
 
-The release build commands are part of verification, not scenario setup:
+The debug copy bootstrap is:
 
 ```text
-cargo build --bin watn --target-dir <root>/default-debug
-cargo build --features test-support --bin watn --target-dir <root>/test-support-debug
-cargo build --release --bin watn --target-dir <root>/default-release
-cargo build --release --features test-support --bin watn --target-dir <root>/test-support-release
+root=$(mktemp -d /tmp/watn-transport.XXXXXX)
+cargo build --bin watn
+cp target/debug/watn "$root/default-debug"
+cargo build --features test-support --bin watn
+cp target/debug/watn "$root/test-support-debug"
 ```
 
 ## Interaction Coverage Matrix
@@ -316,9 +310,9 @@ because it is not an E2E user interaction.
 
 | Inventory entry | `@e2e` scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| run a normal release-profile watn request while a non-empty test routing setting is present | Normal release requests ignore test routing settings | CLI | Run the explicit default-feature release and test-support release subprocess paths against separate loopback twins; inspect output, exact URL/path, counts, Authorization, and TOML |
+| run a normal debug watn request while a non-empty test routing setting is present | Normal debug requests ignore test routing settings | CLI | Run exactly one explicit default-feature debug subprocess copy against separate configured and competing loopback twins; do not invoke the test-support copy in this scenario; inspect output, exact URL/path, counts, Authorization, and TOML |
 | run a test-support debug watn request through an isolated local provider twin | Test-support requests use isolated routing without changing saved configuration | CLI | Run `WATN_TEST_SUPPORT_DEBUG_BIN` as a subprocess with temporary XDG config and an isolated loopback override; inspect the isolated/configured twins and persisted TOML |
-| run a test-support debug watn request with a missing or whitespace override and fall back to the configured local provider | Missing or whitespace test overrides fall back to the configured provider | CLI | Run the explicit test-support debug subprocess once with the variable removed and once with whitespace; inspect exact configured/competing routes, counts, Authorization, output, and TOML |
+| run a test-support debug watn request with a missing or whitespace override and fall back to the configured local provider | Missing or whitespace test overrides fall back to the configured provider | CLI | Run the explicit test-support debug subprocess twice in one scenario, once with the variable removed and once with whitespace; inspect exact configured/competing routes, counts, Authorization, output, and TOML |
 
 ## Architecture impact
 

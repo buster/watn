@@ -41,9 +41,11 @@ preservation, saved credential precedence, direct-write `0600` enforcement
 without an atomic rename promise, typed cancellation, no-resume automatic
 completion, and the ephemeral E2E HTTP construction override for both
 `/models` and `/chat/completions`. The transport refinement makes that override
-available only under `cfg(all(feature = "test-support", debug_assertions))` and
-requires isolated binary targets so a release binary with the feature enabled
-still uses the configured endpoint.
+available only under `cfg(all(feature = "test-support", debug_assertions))`,
+requires pure URL builders after resolution, and uses two copied debug paths
+from Cargo's shared target cache. A release binary with the feature enabled
+still uses the configured endpoint by source guard; runtime release proof is
+deferred to `release-truth-and-repository-cleanup`.
 
 ## ADR-0012 summary
 

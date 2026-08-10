@@ -27,8 +27,8 @@
 | R-021 | A shared wizard can make a partial save ambiguous when the user leaves before model selection is complete | Medium | Medium | Keep provider and completed model choices separate in the runtime result, validate before Save, and write only completed sections while Discard performs no write |
 | R-022 | Migrating Tab and Escape changes can surprise users of the existing model dialog | Medium | Medium | Keep Shift-Tab as the explicit back-page key, make Ctrl-R reasoning focus visible, migrate permanent scenarios, and retain command-specific entry points |
 | R-023 | `watn models` and `watn provider` can start the shared wizard with stale or incomplete page state | Medium | Medium | Seed endpoint, credential storage, current tier selections, and model-specific reasoning from the loaded config; define and test each entry point's initial/final page range |
-| R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; build and run isolated default/release and feature/release binaries in the verification matrix |
-| R-025 | A stale or shared target directory could make transport tests execute the wrong binary | Medium | High | Build every matrix row before Cucumber in an isolated target directory, pass absolute paths to the harness, and fail before scenarios when a path is missing |
+| R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; defer release-profile runtime smoke verification to `release-truth-and-repository-cleanup` and keep the source invariant explicit |
+| R-025 | A stale or overwritten debug executable could make transport tests execute the wrong binary | Medium | High | Build the two debug variants sequentially through Cargo's shared target cache, copy each to a unique temporary path, pass only those absolute paths to the harness, and fail before scenarios when a path is missing |
 | R-026 | Broad mocks could report a successful request from the wrong endpoint or credential | Medium | High | Use separate local twin servers and mocks matching exact method/path/Authorization; assert expected counts, competing zero hits, response source, and persisted endpoint |
 
 ## Technical debt
@@ -63,11 +63,12 @@ The following consequences are accepted and mitigated explicitly:
   documented rather than hidden behind a false atomicity promise.
 - Test transport seam: the override is ephemeral, construction-time only, and
   verified on all touched HTTP paths without changing readiness or persisted
-  endpoint values. The compile-time guard also keeps it out of every release
-  profile, including release with `test-support` enabled.
-- Release/build isolation: the four build rows use distinct target directories
-  and absolute harness paths, so a stale debug executable cannot produce a
-  false-green result.
+  endpoint values. The compile-time guard keeps it out of every release
+  profile, including release with `test-support` enabled; runtime proof is
+  assigned to `release-truth-and-repository-cleanup`.
+- Debug build selection: the two debug variants reuse Cargo's dependency cache
+  but are copied to distinct absolute paths before Cucumber starts, so a stale
+  or overwritten `target/debug/watn` cannot produce a false-green result.
 - Exact transport evidence: separate local twins, exact method/path and
   Authorization matchers, expected/competing request counts, response-source
   checks, and raw TOML endpoint checks prevent a broad mock from hiding a route

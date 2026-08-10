@@ -115,10 +115,12 @@ endpoint. Touched model requests and chat requests use separate loopback twins
 and assert exact full URL, method/path, request count, Authorization header,
 competing-server zero hits, response source, and unchanged persisted endpoint.
 
-Transport verification builds default-feature and test-support binaries for
-debug and release profiles in separate target directories. Absolute binary
-paths are passed to the subprocess harness; scenarios do not discover a stale
-`target/debug/watn` or build during execution.
+Transport verification builds the default-feature and `test-support` binaries
+sequentially for the debug profile through Cargo's shared default target cache,
+then copies them to unique temporary paths. Only those two absolute paths are
+passed to the subprocess harness; scenarios do not discover a stale
+`target/debug/watn` or build during execution. Release-profile runtime
+verification is deferred to `release-truth-and-repository-cleanup`.
 
 ## Consequences
 
@@ -151,10 +153,11 @@ paths are passed to the subprocess harness; scenarios do not discover a stale
   collision is intentional.
 - **Bad:** direct writes do not provide an atomic temp-file/rename guarantee,
   so an interrupted write can leave incomplete configuration.
-- **Bad:** E2E coverage needs a test-only HTTP construction seam, a four-row
-  isolated build matrix, and exact twin assertions; the extra setup is
-  deliberate because a broad mock or stale binary would create false-green
-  transport tests.
+- **Bad:** E2E coverage needs a test-only HTTP construction seam, two sequential
+  debug builds with copied binary paths, per-child accounting, and exact twin
+  assertions; the extra setup is deliberate because a broad mock or stale
+  binary would create false-green transport tests. Release-profile runtime
+  proof remains a later change.
 
 ## Confirmation
 

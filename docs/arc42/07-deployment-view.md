@@ -9,16 +9,18 @@ install it once and run it from any terminal.
 
 ## Verification build topology
 
-Transport verification builds explicit binary variants before the Cucumber
-runner. Each variant has an isolated target directory and an absolute path
-passed to the harness:
+Debug transport verification builds the two required binary variants before the
+Cucumber runner through Cargo's shared default target cache, then copies each
+result to a unique temporary path:
 
-| Variant | Feature/profile | Binary path shape | Transport behavior |
+| Variant | Feature/profile | Copied path shape | Transport behavior |
 |---|---|---|---|
-| Default debug | no feature / dev | `<target>/debug/watn` | Configured endpoint |
-| Test-support debug | `test-support` / dev | `<target>/debug/watn` | Debug-only non-empty override for outbound requests |
-| Default release | no feature / release | `<target>/release/watn` | Configured endpoint |
-| Test-support release | `test-support` / release | `<target>/release/watn` | Configured endpoint; override branch is not compiled |
+| Default debug | no feature / dev | `<root>/default-debug` | Configured endpoint |
+| Test-support debug | `test-support` / dev | `<root>/test-support-debug` | Debug-only non-empty override for outbound requests |
 
-The four target directories are distinct. The harness does not discover or
-reuse `target/debug/watn`, and scenarios do not compile binaries.
+The builds run sequentially so the second feature build can reuse Cargo's
+dependency cache without overwriting the first copied executable. The harness
+receives only these two absolute paths and never discovers or reuses
+`target/debug/watn`. Release-profile runtime verification is deferred to
+`release-truth-and-repository-cleanup`; product release deployment remains the
+single release binary described above.

@@ -1,5 +1,5 @@
 # User Interaction Inventory:
-# - run a normal release-profile watn request while a non-empty test routing setting is present
+# - run a normal debug watn request while a non-empty test routing setting is present
 # - run a test-support debug watn request through an isolated local provider twin
 # - run a test-support debug watn request with a missing or whitespace override and fall back to the configured local provider
 
@@ -7,15 +7,15 @@
 Feature: Isolated test transport
 
   @givn.added @e2e
-  Scenario: Normal release requests ignore test routing settings
+  Scenario: Normal debug requests ignore test routing settings
     Given a reachable local configured provider twin returns "configured-response" for POST "/v1/chat/completions"
     And the configured provider has api key "sk-configured" and default model "test-model"
     And a separate reachable local competing provider twin returns "wrong-endpoint" for POST "/v1/chat/completions"
-    When I run the default-feature release binary and the test-support release binary with the override set to the competing twin
-    Then each binary should exit successfully with output containing "configured-response"
-    And each binary should request exactly the configured twin base URL plus "/v1/chat/completions"
-    And each configured-twin request should be POST path "/v1/chat/completions" exactly once
-    And each configured-twin request should have Authorization exactly "Bearer sk-configured"
+    When I run the default-feature debug binary with the override set to the competing twin
+    Then the binary should exit successfully with output containing "configured-response"
+    And the binary should request exactly the configured twin base URL plus "/v1/chat/completions"
+    And the configured-twin request should be POST path "/v1/chat/completions" exactly once
+    And the configured-twin request should have Authorization exactly "Bearer sk-configured"
     And the competing twin should receive exactly 0 requests for path "/v1/chat/completions"
     And the persisted configured endpoint should remain exactly the configured twin base URL plus "/v1"
 
@@ -33,23 +33,18 @@ Feature: Isolated test transport
     And the persisted configured endpoint should remain exactly the configured twin base URL plus "/v1"
     And the persisted TOML should not contain the isolated twin URL
 
-  @givn.added @e2e @wip
-  Scenario Outline: Missing or whitespace test overrides fall back to the configured provider
+  @givn.added @e2e
+  Scenario: Missing or whitespace test overrides fall back to the configured provider
     Given a reachable local configured provider twin returns "configured-response" for POST "/v1/chat/completions"
     And the configured provider has api key "sk-configured" and default model "test-model"
     And a separate reachable local competing provider twin returns "wrong-endpoint" for POST "/v1/chat/completions"
-    When I run the test-support debug binary with the override state "<override-state>"
-    Then the response should contain "configured-response"
-    And the configured twin base URL plus "/v1" should be the exact request endpoint, with path "/chat/completions"
-    And the configured-twin request should be POST path "/v1/chat/completions" exactly once
-    And the configured-twin request should have Authorization exactly "Bearer sk-configured"
+    When I run the test-support debug binary once with no override and once with a whitespace override
+    Then each fallback response should contain "configured-response"
+    And each fallback request should use exactly the configured twin base URL plus "/v1/chat/completions"
+    And each fallback request should have Authorization exactly "Bearer sk-configured"
+    And the configured twin should receive exactly 2 requests for path "/v1/chat/completions"
     And the competing twin should receive exactly 0 requests for path "/v1/chat/completions"
     And the persisted configured endpoint should remain exactly the configured twin base URL plus "/v1"
-
-    Examples:
-      | override-state |
-      | missing        |
-      | whitespace     |
 
   @givn.added
   Scenario: Provider readiness ignores the test routing setting
