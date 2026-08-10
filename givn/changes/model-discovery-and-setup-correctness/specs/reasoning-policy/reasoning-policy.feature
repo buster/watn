@@ -30,7 +30,7 @@ Feature: Reasoning default and persistence policy
     When I resolve the model reasoning default
     Then the resolver should return a reasoning policy error
 
-  @givn.added @wip
+  @givn.added
   Scenario: Unknown persisted reasoning sends no reasoning request
     Given a model "gpt-4o" assigned to the normal tier with reasoning "bogus"
     When I run `watn -2 "summarise the changes"`

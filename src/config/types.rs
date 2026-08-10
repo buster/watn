@@ -150,7 +150,8 @@ impl TierReasoning {
                 }
             }
             Some("off") => None,
-            Some(s) => Some(s.to_string()),
+            Some(s) if matches!(s, "low" | "minimal" | "medium" | "high") => Some(s.to_string()),
+            Some(_) => None,
         }
     }
 }

@@ -213,22 +213,22 @@
 
 ## Non-E2E Scenario 9: Unknown Persisted Reasoning Sends No Reasoning Request
 
-- [ ] RED: Remove `@wip` from only `Scenario: Unknown persisted reasoning sends no reasoning request`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Unknown persisted reasoning sends no reasoning request`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner initially exited 101 at the no-reasoning assertion.
   ```
-- [ ] GREEN: Replace stubs with real successful-request and absent-reasoning assertions; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real successful-request and absent-reasoning assertions; implement minimum production code. Production files created/modified: `src/config/types.rs`, `tests/steps/ask_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
+- [x] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Unknown persisted reasoning sends no reasoning request`.
+- [x] COMMIT: Create one atomic commit referencing `Unknown persisted reasoning sends no reasoning request`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 10: Non-TTY Model Assignment Never Persists Empty Reasoning Values
