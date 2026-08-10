@@ -54,7 +54,9 @@ hardened with release-gated observations:
 
 Parser-only framing cases such as an optional space after `data:` and a final
 line without a newline are covered by direct parser tests because those are
-reader-boundary contracts rather than distinct user interactions.
+reader-boundary contracts rather than distinct user interactions. The direct
+parser tests also cover the `reasoning_content` alias and replacement by a
+later authoritative usage event.
 
 ### E2E Fidelity And Interaction Coverage
 
@@ -98,9 +100,18 @@ consequences are recorded in chapter 11.
 
 ## Review Outcome
 
+The re-review resolved the hardened-design findings. `StreamRenderer` tracks
+visible content before flush completion, so a flush failure preserves the
+partial-output cleanup boundary. The controlled-writer scenario asserts the
+renderer boundary rather than claiming to be a full CLI injection. The failure
+twin sets zero-linger and sends a real TCP reset. Regular protocol scenarios
+drive the real CLI through loopback twins; only the unwritable-output seam is a
+direct renderer test. Verification wrappers are `./run-tests.sh` and
+`./run-tests.sh --e2e`, and the coverage scripts include `tests/features_runner.rs`
+while explicitly not claiming stable-toolchain branch coverage.
+
 All required questions were resolved through repository inspection or explicit
 user decisions. No duplicate step expression is planned; existing ordinary
-launch, stderr, and exit-status bindings are reused where appropriate. The
-remaining work is scenario-by-scenario implementation.
+launch, stderr, and exit-status bindings are reused where appropriate.
 
 DESIGN-REVIEW: PASS

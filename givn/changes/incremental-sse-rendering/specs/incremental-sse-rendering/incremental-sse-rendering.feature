@@ -93,13 +93,13 @@ Feature: Incremental provider output
     And the exit status should be 3
 
   @givn.added
-  Scenario: Output failure preserves the visible prefix and skips completion actions
+  Scenario: Output failure preserves the visible prefix in the renderer
     Given the streaming output sink flushes prefix "printf prefix" and fails on the next write
     When I render the streaming response through the controlled output sink
     Then the visible command prefix is preserved as "printf prefix"
     And the existing I/O error is reported
-    And final success metadata is omitted
-    And execution is not prompted
+    And the renderer is not marked complete
+    And the execution boundary is not reached
     And the exit status should be 1
 
   @givn.added @e2e
