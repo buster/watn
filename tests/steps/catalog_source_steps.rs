@@ -64,13 +64,3 @@ fn litellm_request_without_auth(world: &mut WatnWorld) {
     let server = world.mock_server.0.as_ref().expect("catalog server");
     assert!(httpmock::Mock::new(id, server).hits() > 0);
 }
-
-#[then(regex = r##"^the config file should contain the selected tier assignments$"##)]
-fn selected_tiers(world: &mut WatnWorld) {
-    let dir = world.temp_dir.as_ref().expect("config directory");
-    let content =
-        std::fs::read_to_string(dir.path().join("watn/config.toml")).expect("config file");
-    for model in &world.pending_mock_returned_models {
-        assert!(content.contains(model));
-    }
-}
