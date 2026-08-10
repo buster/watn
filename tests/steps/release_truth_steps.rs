@@ -10,6 +10,7 @@ pub struct ReleaseTruthState {
     pub file_output: Option<String>,
     pub library_output: Option<String>,
     pub library_status: Option<bool>,
+    pub active_docs: Option<String>,
 }
 
 impl fmt::Debug for ReleaseTruthState {
@@ -20,6 +21,7 @@ impl fmt::Debug for ReleaseTruthState {
             .field("release_binary", &self.release_binary)
             .field("file_output", &self.file_output)
             .field("library_status", &self.library_status)
+            .field("active_docs", &self.active_docs.is_some())
             .finish()
     }
 }
@@ -124,4 +126,104 @@ fn deployment_docs(_world: &mut crate::WatnWorld) {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/arc42/07-deployment-view.md");
     let docs = std::fs::read_to_string(path).expect("read deployment documentation");
     assert!(docs.contains("target-dependent"));
+}
+
+#[given("the active README and architecture documentation")]
+fn active_docs(world: &mut crate::WatnWorld) {
+    world.release_truth.active_docs = Some(read_active_docs());
+}
+
+#[when("I inspect the current command-output and configuration claims")]
+fn inspect_active_docs(world: &mut crate::WatnWorld) {
+    assert!(!world
+        .release_truth
+        .active_docs
+        .as_deref()
+        .unwrap_or_default()
+        .is_empty());
+}
+
+#[then("the documentation states that command content is streamed incrementally")]
+fn docs_streaming(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    assert!(docs.contains("incrementally") && docs.contains("stream"));
+}
+
+#[then("the documentation states that reasoning is buffered and verbose-only")]
+fn docs_reasoning(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    assert!(docs.contains("buffered") && docs.contains("verbose"));
+}
+
+#[then("the documentation names Ctrl-R as the reasoning focus shortcut")]
+fn docs_ctrl_r(world: &mut crate::WatnWorld) {
+    assert!(active_docs_text(world).contains("Ctrl-R"));
+}
+
+#[then("the documentation describes configuration in the XDG config directory")]
+fn docs_xdg(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    assert!(docs.contains("XDG_CONFIG_HOME") && docs.contains("config.toml"));
+}
+
+#[then("the documentation does not claim universal static deployment")]
+fn docs_no_static(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    assert!(!docs.contains("statically-linked binary"));
+    assert!(!docs.contains("standalone executable with no dynamic library"));
+}
+
+#[then("the documentation does not claim an XDG data directory")]
+fn docs_no_data(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    assert!(!docs.contains("~/.local/share"));
+}
+
+#[then("the documentation does not claim release verification is deferred")]
+fn docs_no_deferred(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    assert!(!docs.contains("deferred to release-truth"));
+    assert!(!docs.contains("deferred to this change"));
+}
+
+#[then("the documentation does not use plain r for reasoning focus")]
+fn docs_no_plain_r(world: &mut crate::WatnWorld) {
+    assert!(!active_docs_text(world).contains("`r`"));
+}
+
+#[then("the documentation does not name obsolete setup helper components")]
+fn docs_no_obsolete(world: &mut crate::WatnWorld) {
+    let docs = active_docs_text(world);
+    for obsolete in ["SettingsDialog", "ModelPicker", "TierSelector", "dialoguer"] {
+        assert!(
+            !docs.contains(obsolete),
+            "obsolete documentation claim: {obsolete}"
+        );
+    }
+}
+
+fn active_docs_text(world: &crate::WatnWorld) -> &str {
+    world
+        .release_truth
+        .active_docs
+        .as_deref()
+        .expect("active docs")
+}
+
+fn read_active_docs() -> String {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut paths = vec![root.join("README.md")];
+    let arc42 = root.join("docs/arc42");
+    for entry in std::fs::read_dir(&arc42).expect("read active Arc42 directory") {
+        let path = entry.expect("read Arc42 entry").path();
+        if path.extension().and_then(|value| value.to_str()) == Some("md") {
+            paths.push(path);
+        }
+    }
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| std::fs::read_to_string(path).expect("read active documentation"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }

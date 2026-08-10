@@ -20,7 +20,7 @@ Feature: Release truth and repository cleanup
     And the runtime library inspection succeeds with at least one shared library
     And the deployment documentation states that requirements depend on the target
 
-  @givn.added @wip
+  @givn.added
   Scenario: Active documentation describes current command streaming
     Given the active README and architecture documentation
     When I inspect the current command-output and configuration claims

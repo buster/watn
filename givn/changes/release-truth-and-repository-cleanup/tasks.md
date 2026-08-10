@@ -24,47 +24,54 @@
 
 ## Scenario: Release artifact reports target-dependent runtime libraries
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and run the
   named scenario. Expected non-zero result from a matched stub. Evidence:
   ```text
-  [targeted runner output]
+  Targeted command exited non-zero after matching `release_binary_stub`; the
+  runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Build the release artifact and inspect it with `file` plus Linux
+- [x] GREEN: Build the release artifact and inspect it with `file` plus Linux
   `ldd` or macOS `otool -L`. Assert dynamic executable classification, successful
   host library inspection with at least one shared-library entry, and current
-  deployment documentation. Production files: [list]. Test files: [list].
-  Targeted result:
+  deployment documentation. Production files: `docs/arc42/07-deployment-view.md`
+  and related active Arc42/README documentation. Test files:
+  `tests/steps/release_truth_steps.rs`. Targeted result:
   ```text
-  [targeted runner output]
+  1 feature, 1 scenario, 5 steps passed; dynamic executable, successful `ldd`
+  output, and target-dependent documentation were asserted.
   ```
-- [ ] REFACTOR: Keep host selection and output parsing deterministic without
+- [x] REFACTOR: Keep host selection and output parsing deterministic without
   changing the release contract. Targeted rerun:
   ```text
-  [targeted runner output]
+  Applied formatting and reran: 1 feature, 1 scenario, 5 steps passed.
   ```
-- [ ] COMMIT: `[hash]` - `feat(release-truth-and-repository-cleanup): Release artifact reports target-dependent runtime libraries`
+- [x] COMMIT: `befc0f7` - `feat(release-truth-and-repository-cleanup): Release artifact reports target-dependent runtime libraries`
 
 ## Scenario: Active documentation describes current command streaming
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and run the
   scenario. Expected non-zero result. Evidence:
   ```text
-  [targeted runner output]
+  Targeted command exited non-zero after matching `active_docs_stub`; the
+  runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Update README and all active Arc42 chapters containing stale
+- [x] GREEN: Update README and all active Arc42 chapters containing stale
   streaming, reasoning, Ctrl-R, XDG, static/deferred-release, output-channel,
   and obsolete helper claims. Add absence assertions for each stale claim.
-  Remove only obsolete names confirmed by repository search. Production files:
-  [list]. Test files: [list]. Targeted result:
+  Remove only obsolete names confirmed by repository search. Production/docs
+  files: active README and Arc42 chapters. Test file:
+  `tests/steps/release_truth_steps.rs`. Targeted result:
   ```text
-  [targeted runner output]
+  1 feature, 1 scenario, 11 steps passed; positive and stale-claim absence
+  assertions all passed.
   ```
-- [ ] REFACTOR: Consolidate documentation assertions and preserve archived
+- [x] REFACTOR: Consolidate documentation assertions and preserve archived
   snapshot content. Targeted rerun:
   ```text
-  [targeted runner output]
+  Applied formatting and narrowed absence checks to stale positive claims;
+  targeted rerun passed with 1 feature, 1 scenario, 11 steps.
   ```
-- [ ] COMMIT: `[hash]` - `docs(release-truth-and-repository-cleanup): Active documentation describes current command streaming`
+- [x] COMMIT: `befc0f7` plus the active-step follow-up `[pending hash]` - `docs(release-truth-and-repository-cleanup): Active documentation describes current command streaming`
 
 ## Scenario: Active documentation distinguishes archived historical snapshots
 
