@@ -767,7 +767,12 @@ fn should_query_models_at(w: &mut WatnWorld, _url: String) {
         .models_mock_id
         .expect("no models mock was set up — add pending_mock_returned_models to the Given step");
     let mock = httpmock::Mock::new(mock_id, server);
-    assert!(mock.hits() > 0, "expected model list request");
+    assert!(
+        mock.hits() > 0,
+        "expected model list request; output={:?}; stderr={:?}",
+        w.output,
+        w.stderr_output
+    );
 }
 
 #[then(expr = r"the request should include the Authorization header with {string}")]
