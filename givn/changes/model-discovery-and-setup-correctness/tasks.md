@@ -431,7 +431,7 @@
   After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `7 steps (7 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Assigning tiers does not replace the active provider or catalog settings`.
-- Commit hash: `PENDING`
+- Commit hash: `b64cce089591765c3a014069d21a69b3adc8d2fb`
 
 ## E2E Scenario 7: Minimal Reasoning Is Persisted and Sent
 
