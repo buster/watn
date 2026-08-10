@@ -451,26 +451,26 @@
   After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Minimal reasoning is persisted and sent`.
-- Commit hash: `PENDING`
+- Commit hash: `4f29331944c08de7f3f5b4de39b1d0a1369e957f`
 
 ## E2E Scenario 8: The Terminal Model Picker Displays the Newest Overlapping Search Result
 
-- [ ] RED: Remove `@wip` from only `Scenario: The terminal model picker displays the newest overlapping search result`; implement PTY steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: The terminal model picker displays the newest overlapping search result`; implement PTY steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at undefined searchable-endpoint setup.
   ```
-- [ ] GREEN: Drive the actual terminal picker through PTY, assert visible final suggestions primarily, and verify worker joining secondarily; implement the named generation/test seam and minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Drive the actual terminal picker through PTY, assert visible final suggestions primarily, and verify worker joining secondarily; implement the named generation/test seam and minimum production code. Production files created/modified: `tests/steps/search_concurrency_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted PTY runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
+- [x] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted PTY runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `The terminal model picker displays the newest overlapping search result`.
+- [x] COMMIT: Create one atomic commit referencing `The terminal model picker displays the newest overlapping search result`.
 - Commit hash: `PENDING`
 
 ## Final Verification

@@ -12,7 +12,7 @@ Feature: Newest model search wins
     And a later result for "gpt" does not replace them
     And search workers are cleaned up before the scenario ends
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The terminal model picker displays the newest overlapping search result
     Given a configured provider "test" with a searchable models endpoint
     And the endpoint returns "gpt" results before "o3" results
