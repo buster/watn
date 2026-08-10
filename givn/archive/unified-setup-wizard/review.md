@@ -6,7 +6,8 @@
 
 The active delta contains four `@e2e` scenarios across two feature files:
 
-- `Provider setup separates choices, details, and guidance` in `migrations.feature`.
+- `Provider setup separates choices, details, and guidance` in
+  `provider-setup-widget-layout/provider-setup-widget-layout.feature`.
 - `Setup wizard guides provider and model configuration page by page` in `unified-setup-wizard.feature`.
 - `Models command opens the shared wizard on Small Model` in `unified-setup-wizard.feature`.
 - `Escape asks whether to save or discard current setup` in `unified-setup-wizard.feature`.

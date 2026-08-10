@@ -1,7 +1,7 @@
 # User Interaction Inventory:
 # - open the existing provider setup entry point and identify the active wizard page
 
-@givn.delta @unified-setup-wizard
+@givn.delta @provider-setup-widget-layout
 Feature: Usable provider setup and model picker layouts
 
   @givn.modified @e2e

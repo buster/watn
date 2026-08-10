@@ -64,9 +64,9 @@ cargo test --test features_runner
 
 ## Coverage
 
-[![Coverage: 51.6%](https://img.shields.io/badge/coverage-51.6%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+[![Coverage: 42.2%](https://img.shields.io/badge/coverage-42.2%25-brightgreen)](coverage/non-e2e-cobertura.xml)
 
-Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `872/1689` lines (`51.6%`); the E2E subset covers `1163/1689` lines (`68.9%`).
+Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `876/2074` lines (`42.2%`); the E2E subset covers `1532/2074` lines (`73.9%`).
 
 ```sh
 mkdir -p coverage
@@ -82,6 +82,6 @@ cargo llvm-cov test --no-clean --test features_runner \
 GPL-3.0-or-later
 
 <!-- givn:begin:coverage -->
-Line coverage: 60% (2258/3754)
+Line coverage: 58% (2408/4148)
 Branch coverage: 0% (0/0)
 <!-- givn:end:coverage -->

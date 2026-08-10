@@ -2,16 +2,12 @@ Feature: Usable provider setup and model picker layouts
 
   @e2e
   Scenario: Provider setup separates choices, details, and guidance
-    Given  no provider is configured
+    Given  no config file exists
     When  I start `watn provider` in a terminal
-    Then  the provider setup should show a bordered "Provider setup" panel
-    And  provider setup should show a selectable credential source list
-    And  provider setup should show provider details in aligned rows
-    And  provider setup should show setup guidance as a paragraph
-    When  I enter an invalid endpoint in provider setup
-    Then  provider setup should show validation message "endpoint must be an HTTP or HTTPS URL"
-    When  I restore the default endpoint and enter pasted credential "sk-layout-secret" in provider setup
-    Then  provider setup should mask pasted credentials
+    Then  the setup wizard should show the URL page as active
+    And  the setup wizard should show a visible cursor on the active input
+    When  I advance to the API key page in provider setup
+    Then  the setup wizard should show the API key page as active
 
   @e2e
   Scenario: Model picker makes tiers and long model lists easy to scan
