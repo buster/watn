@@ -109,7 +109,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `6 steps (6 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `LiteLLM discovery without a key sends no authorization header`.
-- Commit hash: `PENDING`
+- Commit hash: `0e2eeac80c3d368fe8cabbcb1d5964d726b73ca5`
 
 ## Non-E2E Scenario 4: Provider Discovery Is Used When LiteLLM Is Absent
 
