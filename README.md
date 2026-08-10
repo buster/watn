@@ -1,5 +1,10 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: 90%](https://img.shields.io/badge/line%20coverage-90%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
+
 You know what you want. watn knows how to type it.
 Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
 
@@ -59,22 +64,21 @@ config stores a reference such as `${OPENROUTER_API_KEY}`.
 ## Development
 
 ```
-cargo test --test features_runner
+./run-tests.sh
+./run-tests.sh --e2e
+./measure-coverage.sh
+./merge-coverages.sh
 ```
 
 ## Coverage
 
-[![Coverage: 47.2%](https://img.shields.io/badge/coverage-47.2%25-brightgreen)](coverage/non-e2e-cobertura.xml)
-
-Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `1095/2320` lines (`47.2%`); the E2E subset covers `1804/2320` lines (`77.8%`).
+Coverage runs both acceptance subsets against instrumented `watn` executables.
+`measure-coverage.sh` writes the two source reports and `merge-coverages.sh`
+writes the merged report used by the badges and the managed summary below.
 
 ```sh
-mkdir -p coverage
-cargo llvm-cov clean --workspace
-cargo llvm-cov run --bin watn --no-report -- --version
-cargo llvm-cov test --no-clean --test features_runner \
-  --cobertura --output-path coverage/non-e2e-cobertura.xml \
-  -- --tags 'not @wip and not @e2e'
+./measure-coverage.sh
+./merge-coverages.sh
 ```
 
 ## License
@@ -82,6 +86,17 @@ cargo llvm-cov test --no-clean --test features_runner \
 GPL-3.0-or-later
 
 <!-- givn:begin:coverage -->
-Line coverage: 63% (2964/4738)
-Branch coverage: 0% (0/0)
+## Coverage
+
+Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
+
+Line coverage: 90% (6522/7218)
+Branch coverage: n/a (0/0)
+
+Reproduce the result:
+
+```sh
+./measure-coverage.sh
+./merge-coverages.sh
+```
 <!-- givn:end:coverage -->

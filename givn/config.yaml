@@ -27,7 +27,7 @@ givn_config_version: "0.2.0"
 # --- Coverage gate (archive-level, requires addons.coverage: true) ------------
 # Commands that run tests with coverage instrumentation. Configured in
 # givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
-# coverage.non_e2e_command and coverage.e2e_command keys.
+# coverage.measure_command and coverage.merge_command keys.
 #
 
 # --- E2E test runner ----------------------------------------------------------
