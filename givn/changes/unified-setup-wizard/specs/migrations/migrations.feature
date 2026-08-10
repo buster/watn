@@ -2,7 +2,7 @@
 # - open the existing provider setup entry point and identify the active wizard page
 
 @givn.delta @unified-setup-wizard
-Feature: Existing setup entry points use the wizard
+Feature: Usable provider setup and model picker layouts
 
   @givn.modified @e2e
   Scenario: Provider setup separates choices, details, and guidance
