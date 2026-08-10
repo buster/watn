@@ -129,7 +129,7 @@
   PASTE COMMAND AND OUTPUT HERE
   ```
 - [ ] COMMIT: Create one atomic commit referencing `Provider discovery is used when LiteLLM is absent`.
-- Commit hash: `PENDING`
+- Commit hash: `abd1814b733808d50b7b9af04022687236ff3a96`
 
 ## Non-E2E Scenario 5: Catalog Pagination and Search Use the Configured Catalog Source
 
