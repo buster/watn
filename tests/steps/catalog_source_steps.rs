@@ -1,6 +1,6 @@
 //! Step definitions for catalog-source resolution scenarios.
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 use httpmock::Method;
 
 use crate::{MockServerWrap, WatnWorld};
@@ -22,6 +22,83 @@ fn litellm_without_key(world: &mut WatnWorld) {
         .as_deref()
         .unwrap_or_default()
         .contains("[litellm]"));
+}
+
+#[given(regex = r##"^the LiteLLM catalog has api key "([^"]+)"$"##)]
+fn litellm_key(world: &mut WatnWorld, key: String) {
+    let raw = world.raw_config.take().expect("LiteLLM config");
+    world.raw_config = Some(raw.replace(
+        "endpoint = \"http",
+        &format!("api_key = \"{key}\"\nendpoint = \"http"),
+    ));
+}
+
+#[when(
+    regex = r##"^the catalog requests page (\d+) with limit (\d+) and searches for "([^"]+)"$"##
+)]
+fn catalog_page_and_search(world: &mut WatnWorld, page: u32, limit: u32, query: String) {
+    let endpoint = format!(
+        "http://127.0.0.1:{}",
+        world.mock_server.0.as_ref().expect("catalog server").port()
+    );
+    let key = world
+        .env_vars
+        .get("LITELLM_API_KEY")
+        .cloned()
+        .expect("LiteLLM key");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    let page_mock = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("page", page.to_string())
+            .query_param("limit", limit.to_string())
+            .header("Authorization", format!("Bearer {key}"));
+        then.status(200).json_body(serde_json::json!({"data": []}));
+    });
+    let search_mock = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("search", query.as_str())
+            .header("Authorization", format!("Bearer {key}"));
+        then.status(200).json_body(serde_json::json!({"data": []}));
+    });
+    std::thread::spawn(move || {
+        watn::models::list::fetch_models_page(&endpoint, page, limit, Some(&key)).expect("page");
+        watn::models::list::search_models(&endpoint, &query, Some(&key)).expect("search");
+    })
+    .join()
+    .expect("catalog requests");
+    world
+        .pending_config
+        .insert("page_mock".into(), page_mock.id.to_string());
+    world
+        .pending_config
+        .insert("search_mock".into(), search_mock.id.to_string());
+}
+
+#[then(regex = r##"^the catalog page request should be GET "([^"]+)" on the LiteLLM endpoint$"##)]
+fn page_request(world: &mut WatnWorld, _path: String) {
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    let id: usize = world.pending_config["page_mock"].parse().expect("mock id");
+    assert_eq!(httpmock::Mock::new(id, server).hits(), 1);
+}
+
+#[then(regex = r##"^the catalog search request should be GET "([^"]+)" on the LiteLLM endpoint$"##)]
+fn search_request(world: &mut WatnWorld, _path: String) {
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    let id: usize = world.pending_config["search_mock"]
+        .parse()
+        .expect("mock id");
+    assert_eq!(httpmock::Mock::new(id, server).hits(), 1);
+}
+
+#[then(
+    regex = r##"^both catalog requests should include Authorization exactly "Bearer ([^"]+)"$"##
+)]
+fn both_auth(world: &mut WatnWorld, expected: String) {
+    assert_eq!(expected, "sk-litellm-key");
+    page_request(world, String::new());
+    search_request(world, String::new());
 }
 
 #[given(

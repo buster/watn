@@ -46,7 +46,7 @@ Feature: Catalog source resolution
     And the chat request should use the provider endpoint
     And the chat request should not use the LiteLLM endpoint
 
-  @givn.added @wip
+  @givn.added
   Scenario: Catalog pagination and search use the configured catalog source
     Given a provider "custom" with a separate LiteLLM catalog endpoint
     And the LiteLLM catalog has api key "${LITELLM_API_KEY}"
