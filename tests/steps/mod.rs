@@ -1,10 +1,15 @@
 pub mod ask_steps;
+pub mod catalog_source_steps;
 pub mod config_steps;
+pub mod credentials_steps;
 pub mod model_picker_layout_steps;
 pub mod models_steps;
 pub mod provider_setup_layout_steps;
 pub mod provider_setup_steps;
 pub mod providers_steps;
+pub mod reasoning_policy_steps;
+pub mod search_concurrency_steps;
+pub mod setup_persistence_steps;
 pub mod setup_wizard_steps;
 pub mod transport_steps;
 
