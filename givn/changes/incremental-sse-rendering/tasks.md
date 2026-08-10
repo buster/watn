@@ -88,24 +88,29 @@
 
 ## Scenario: Partial network reads are reassembled into complete events
 
-- [ ] RED: Remove `@wip`, bind explicit stubs, and run only this scenario. The
+- [x] RED: Remove `@wip`, bind explicit stubs, and run only this scenario. The
   pre-release observation must fail against the buffered implementation.
   Evidence:
   ```text
-  [paste targeted runner output]
+  Targeted command exited non-zero after matching `partial_provider`; the
+  runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Replace whole-body buffering with buffered-reader SSE framing that
+- [x] GREEN: Replace whole-body buffering with buffered-reader SSE framing that
   handles byte-sized network writes while emitting the first complete content
-  event before the held next event. Production files: [list every file]. Test
-  files: [list every file]. Targeted result:
+  event before the held next event. No additional production files were needed;
+  the parser implementation from the first scenario was exercised. Test files:
+  `tests/steps/incremental_sse_rendering_steps.rs`; the buffered-reader
+  and callback production implementation was already supplied by the first
+  scenario. Targeted result:
   ```text
-  [paste targeted runner output]
+  1 feature, 1 scenario, 6 steps passed.
   ```
-- [ ] REFACTOR: Keep line framing and release cleanup minimal, then rerun:
+- [x] REFACTOR: Keep line framing and release cleanup minimal, then rerun:
   ```text
-  [paste targeted runner output]
+  Renamed the fixture bindings and reran the targeted command: 1 feature, 1
+  scenario, 6 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `feat(incremental-sse-rendering): Partial network reads are reassembled into complete events`
+- [x] COMMIT: `76050ff` - `feat(incremental-sse-rendering): Partial network reads are reassembled into complete events`
 
 ## Scenario: Malformed nonessential events do not discard valid content
 

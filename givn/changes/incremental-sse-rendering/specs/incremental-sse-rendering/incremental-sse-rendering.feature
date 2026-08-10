@@ -62,7 +62,7 @@ Feature: Incremental provider output
     Then the generated command line "printf partial" appears exactly once
     And the exit status should be 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Malformed nonessential events do not discard valid content
     Given a streaming provider sends a malformed event, flushes valid content "printf valid", and holds `[DONE]`
     When I start the streaming command `watn "ignore an invalid event"`

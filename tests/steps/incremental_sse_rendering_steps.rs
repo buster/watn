@@ -432,3 +432,26 @@ fn release_next_event(world: &mut WatnWorld) {
         finish_pty_session(world, session);
     }
 }
+
+#[given(
+    regex = r##"^a streaming provider sends a malformed event, flushes valid content "([^"]+)", and holds `\[DONE\]`$"##
+)]
+fn malformed_provider(world: &mut WatnWorld, content: String) {
+    let events = vec![
+        b"data: {not-json}\n\n".to_vec(),
+        content_event("test-model", &content),
+        done_event(),
+    ];
+    world.streaming.server = Some(StreamingServer::start_with_options(events, Some(1), false));
+    update_config(world);
+}
+
+#[then(regex = r##"^the valid streamed fragment "([^"]+)" is visible before the provider releases `\[DONE\]`$"##)]
+fn valid_fragment(world: &mut WatnWorld, fragment: String) {
+    streamed_fragment(world, fragment);
+}
+
+#[when("I release `[DONE]` and wait for watn to exit")]
+fn release_done(world: &mut WatnWorld) {
+    release_next_event(world);
+}
