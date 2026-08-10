@@ -24,6 +24,40 @@ fn litellm_without_key(world: &mut WatnWorld) {
         .contains("[litellm]"));
 }
 
+#[given(
+    regex = r##"^a provider "([^"]+)" with a provider catalog endpoint and api key "([^"]+)"$"##
+)]
+fn provider_catalog(world: &mut WatnWorld, provider: String, key: String) {
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}", server.port());
+    world.mock_server = MockServerWrap(Some(server), None);
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"{endpoint}\"\napi_key = \"{key}\"\n"
+    ));
+}
+
+#[given(regex = r##"^the provider catalog returns models \[([^\]]+)\]$"##)]
+fn provider_catalog_models(world: &mut WatnWorld, values: String) {
+    litellm_models(world, values);
+}
+
+#[then("the model catalog request should use the provider endpoint")]
+fn provider_request_used(world: &mut WatnWorld) {
+    let id = world.models_mock_id.expect("catalog mock");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    assert!(httpmock::Mock::new(id, server).hits() > 0);
+}
+
+#[then(
+    regex = r##"^the model catalog request should include Authorization exactly "Bearer ([^"]+)"$"##
+)]
+fn provider_auth_header(world: &mut WatnWorld, expected: String) {
+    let id = world.models_mock_id.expect("catalog mock");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert_eq!(expected, "sk-provider-key");
+}
+
 #[given(regex = r##"^the LiteLLM catalog returns models \[([^\]]+)\]$"##)]
 fn litellm_models(world: &mut WatnWorld, values: String) {
     let models: Vec<String> = values

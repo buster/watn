@@ -26,7 +26,7 @@ Feature: Catalog source resolution
     Then the model catalog request should use the LiteLLM endpoint
     And the model catalog request should not include an Authorization header
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider discovery is used when LiteLLM is absent
     Given a provider "custom" with a provider catalog endpoint and api key "sk-provider-key"
     And the provider catalog returns models ["model-a", "model-b", "model-c"]

@@ -113,23 +113,23 @@
 
 ## Non-E2E Scenario 4: Provider Discovery Is Used When LiteLLM Is Absent
 
-- [ ] RED: Remove `@wip` from only `Scenario: Provider discovery is used when LiteLLM is absent`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Provider discovery is used when LiteLLM is absent`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at undefined provider catalog setup.
   ```
-- [ ] GREEN: Replace stubs with real provider catalog endpoint and authorization assertions; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real provider catalog endpoint and authorization assertions; implement minimum production code. Production files created/modified: `tests/steps/catalog_source_steps.rs` (existing provider resolution exercised).
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
+- [x] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Provider discovery is used when LiteLLM is absent`.
-- Commit hash: `abd1814b733808d50b7b9af04022687236ff3a96`
+- [x] COMMIT: Create one atomic commit referencing `Provider discovery is used when LiteLLM is absent`.
+- Commit hash: `PENDING`
 
 ## Non-E2E Scenario 5: Catalog Pagination and Search Use the Configured Catalog Source
 
