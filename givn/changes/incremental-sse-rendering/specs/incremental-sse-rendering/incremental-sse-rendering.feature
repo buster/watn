@@ -53,7 +53,7 @@ Feature: Incremental provider output
     And the generated command line "printf done" appears exactly once
     When I release the provider connection
 
-  @givn.added @wip
+  @givn.added
   Scenario: Partial network reads are reassembled into complete events
     Given a streaming provider sends the first content event one byte at a time with content "printf partial" and holds the next event
     When I start the streaming command `watn "handle partial reads"`

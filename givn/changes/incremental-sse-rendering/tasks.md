@@ -62,25 +62,29 @@
 
 ## Scenario: A DONE event completes a stream successfully
 
-- [ ] RED: Remove `@wip`, bind explicit stubs, and run only this scenario. The
+- [x] RED: Remove `@wip`, bind explicit stubs, and run only this scenario. The
   held-connection assertion must fail before production changes because the
   current client waits for the complete body. Evidence:
   ```text
-  [paste targeted runner output]
+  Targeted command exited non-zero after matching the explicit `done_provider`
+  stub; the runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Stop parsing at `[DONE]`, return the final aggregate without
+- [x] GREEN: Stop parsing at `[DONE]`, return the final aggregate without
   waiting for the server close, and implement the release-gated stream fixture
-  and terminal completion assertions. Production files: [list every file].
-  Test files: [list every file]. Targeted result:
+  and terminal completion assertions. No additional production file was needed;
+  the provider callback/parser implementation from the prior scenario was
+  exercised. Test file: `tests/steps/incremental_sse_rendering_steps.rs`.
+  Targeted result:
   ```text
-  [paste targeted runner output]
+  1 feature, 1 scenario, 5 steps passed.
   ```
-- [ ] REFACTOR: Consolidate completion-marker handling and deterministic server
+- [x] REFACTOR: Consolidate completion-marker handling and deterministic server
   release cleanup. Targeted rerun:
   ```text
-  [paste targeted runner output]
+  Renamed the implemented step bindings and reran the targeted command:
+  1 feature, 1 scenario, 5 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `feat(incremental-sse-rendering): A DONE event completes a stream successfully`
+- [x] COMMIT: `94645d0` - `feat(incremental-sse-rendering): A DONE event completes a stream successfully`
 
 ## Scenario: Partial network reads are reassembled into complete events
 

@@ -86,6 +86,14 @@ impl Drop for StreamingServer {
 
 impl StreamingServer {
     fn start(events: Vec<Vec<u8>>, hold_after: Option<usize>) -> Self {
+        Self::start_with_options(events, hold_after, false)
+    }
+
+    fn start_with_options(
+        events: Vec<Vec<u8>>,
+        hold_after: Option<usize>,
+        bytewise_first: bool,
+    ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
         let address = listener
             .local_addr()
@@ -112,10 +120,20 @@ impl StreamingServer {
                 if index > 0 {
                     thread::sleep(Duration::from_millis(30));
                 }
-                stream
-                    .write_all(event)
-                    .expect("write streaming provider event");
-                stream.flush().expect("flush streaming provider event");
+                if bytewise_first && index == 0 {
+                    for byte in event {
+                        stream
+                            .write_all(&[*byte])
+                            .expect("write partial streaming provider event");
+                        stream.flush().expect("flush partial streaming provider event");
+                        thread::sleep(Duration::from_millis(2));
+                    }
+                } else {
+                    stream
+                        .write_all(event)
+                        .expect("write streaming provider event");
+                    stream.flush().expect("flush streaming provider event");
+                }
                 if hold_after == Some(index) {
                     thread_release
                         .as_ref()
@@ -366,6 +384,47 @@ fn generated_command_once(world: &mut WatnWorld, command: String) {
 
 #[when("I release the provider connection")]
 fn release_provider(world: &mut WatnWorld) {
+    if let Some(server) = &world.streaming.server {
+        server.release();
+    }
+    if let Some(session) = world.pty_session.take() {
+        finish_pty_session(world, session);
+    }
+}
+
+#[given(
+    regex = r##"^a streaming provider sends the first content event one byte at a time with content "([^"]+)" and holds the next event$"##
+)]
+fn partial_provider(world: &mut WatnWorld, content: String) {
+    let events = vec![content_event("test-model", &content), done_event()];
+    world.streaming.server = Some(StreamingServer::start_with_options(events, Some(0), true));
+    update_config(world);
+}
+
+#[then(regex = r##"^the streamed fragment "([^"]+)" is visible before the provider releases the next event$"##)]
+fn streamed_fragment(world: &mut WatnWorld, fragment: String) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(3);
+    loop {
+        let output = world
+            .pty_session
+            .as_ref()
+            .map(pty_snapshot)
+            .expect("streaming PTY session");
+        if output.contains(&fragment) {
+            return;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "expected streamed fragment {:?} before release, got {:?}",
+            fragment,
+            output
+        );
+        thread::sleep(Duration::from_millis(25));
+    }
+}
+
+#[when("I release the next event and wait for watn to exit")]
+fn release_next_event(world: &mut WatnWorld) {
     if let Some(server) = &world.streaming.server {
         server.release();
     }
