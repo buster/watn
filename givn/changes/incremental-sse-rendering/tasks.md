@@ -30,28 +30,35 @@
 
 ## Scenario: A usage-only final event supplies cost and throughput metadata
 
-- [ ] RED: Remove `@wip` from this scenario, bind every step with explicit
+- [x] RED: Remove `@wip` from this scenario, bind every step with explicit
   `unimplemented!()` stubs or reused real steps, and run only this scenario with
   the single-scenario command from `design.md`. Expected result: non-zero exit
   caused by a matched stub. Evidence:
   ```text
-  [paste targeted runner output]
+  Targeted command exited non-zero. The runner matched
+  `tests/steps/incremental_sse_rendering_steps.rs:6`, panicked with
+  `not implemented`, reported `1 step failed`, and Cargo returned
+  `error: test failed`.
   ```
-- [ ] GREEN: Implement the usage-only loopback stream, distinct requested and
+- [x] GREEN: Implement the usage-only loopback stream, distinct requested and
   response models, response-model-only pricing, and stdout/stderr assertions
   for exact final model, positive tok/s, and non-zero cost. Implement the
   minimum provider/parser and CLI changes needed for the final aggregate.
-  Production files: [list every file]. Test files: [list every file]. Run the
-  targeted scenario and record a passing result:
+  Production files: `src/provider/mod.rs`, `src/provider/openai_compat.rs`,
+  `src/main.rs`, `src/output/render.rs`. Test files:
+  `tests/features_runner.rs`, `tests/steps/mod.rs`,
+  `tests/steps/incremental_sse_rendering_steps.rs`, and
+  `tests/steps/incremental_sse_rendering_e2e_steps.rs`. Targeted result:
   ```text
-  [paste targeted runner output]
+  1 feature, 1 scenario, 10 steps passed.
   ```
-- [ ] REFACTOR: Remove fixture/assertion duplication without changing the
+- [x] REFACTOR: Remove fixture/assertion duplication without changing the
   observable contract. Rerun this scenario and record a passing result:
   ```text
-  [paste targeted runner output]
+  Removed the obsolete final-response renderer and reran the targeted command:
+  1 feature, 1 scenario, 10 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `feat(incremental-sse-rendering): A usage-only final event supplies cost and throughput metadata`
+- [x] COMMIT: `fdd65a2` - `feat(incremental-sse-rendering): A usage-only final event supplies cost and throughput metadata`
 
 ## Scenario: A DONE event completes a stream successfully
 

@@ -1,13 +1,15 @@
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 use regex::Regex;
 use serde_json::json;
 use std::fmt;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use crate::WatnWorld;
+use super::{finish_pty_session, pty_snapshot, start_pty_session};
 
 #[derive(Default)]
 pub struct StreamingState {
@@ -37,6 +39,28 @@ struct Pricing {
 struct StreamingServer {
     endpoint: String,
     handle: Option<JoinHandle<()>>,
+    release: Option<Arc<ReleaseGate>>,
+}
+
+#[derive(Default)]
+struct ReleaseGate {
+    released: Mutex<bool>,
+    changed: Condvar,
+}
+
+impl ReleaseGate {
+    fn wait(&self) {
+        let mut released = self.released.lock().expect("lock release gate");
+        while !*released {
+            released = self.changed.wait(released).expect("wait for release gate");
+        }
+    }
+
+    fn release(&self) {
+        let mut released = self.released.lock().expect("lock release gate");
+        *released = true;
+        self.changed.notify_all();
+    }
 }
 
 impl fmt::Debug for StreamingServer {
@@ -51,6 +75,9 @@ impl fmt::Debug for StreamingServer {
 
 impl Drop for StreamingServer {
     fn drop(&mut self) {
+        if let Some(release) = &self.release {
+            release.release();
+        }
         if let Some(handle) = self.handle.take() {
             let _ = handle.join();
         }
@@ -58,12 +85,14 @@ impl Drop for StreamingServer {
 }
 
 impl StreamingServer {
-    fn start(events: Vec<Vec<u8>>) -> Self {
+    fn start(events: Vec<Vec<u8>>, hold_after: Option<usize>) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
         let address = listener
             .local_addr()
             .expect("read streaming provider address");
         let endpoint = format!("http://{}", address);
+        let release = hold_after.map(|_| Arc::new(ReleaseGate::default()));
+        let thread_release = release.clone();
         let handle = thread::spawn(move || {
             let Ok((mut stream, _)) = listener.accept() else {
                 return;
@@ -87,12 +116,25 @@ impl StreamingServer {
                     .write_all(event)
                     .expect("write streaming provider event");
                 stream.flush().expect("flush streaming provider event");
+                if hold_after == Some(index) {
+                    thread_release
+                        .as_ref()
+                        .expect("release gate for held stream")
+                        .wait();
+                }
             }
         });
 
         Self {
             endpoint,
             handle: Some(handle),
+            release,
+        }
+    }
+
+    fn release(&self) {
+        if let Some(release) = &self.release {
+            release.release();
         }
     }
 }
@@ -197,7 +239,7 @@ fn usage_only_provider(
         usage_event(&response_model, prompt_tokens, completion_tokens),
         done_event(),
     ];
-    world.streaming.server = Some(StreamingServer::start(events));
+    world.streaming.server = Some(StreamingServer::start(events, None));
     update_config(world);
 }
 
@@ -268,4 +310,66 @@ fn stderr_has_positive_throughput(world: &mut WatnWorld) {
         .and_then(|value| value.as_str().parse::<f64>().ok())
         .expect("metadata should contain throughput");
     assert!(tok_s > 0.0, "expected positive throughput, got {tok_s}");
+}
+
+#[given(
+    regex = r##"^a streaming provider emits content "([^"]+)", sends `\[DONE\]`, and holds the connection open until released$"##
+)]
+fn done_provider(world: &mut WatnWorld, content: String) {
+    let requested_model = world
+        .streaming
+        .requested_model
+        .clone()
+        .unwrap_or_else(|| "test-model".to_string());
+    let events = vec![content_event(&requested_model, &content), done_event()];
+    world.streaming.server = Some(StreamingServer::start(events, Some(1)));
+    update_config(world);
+}
+
+#[when(regex = r##"^I start the streaming command `watn "([^"]*)"`$"##)]
+fn start_streaming_command(world: &mut WatnWorld, question: String) {
+    let session = start_pty_session(world, &[&question]);
+    world.pty_session = Some(session);
+}
+
+#[then("watn exits successfully before the provider connection is released")]
+fn exits_before_release(world: &mut WatnWorld) {
+    let session = world
+        .pty_session
+        .as_mut()
+        .expect("streaming PTY session");
+    let deadline = std::time::Instant::now() + Duration::from_secs(3);
+    loop {
+        if let Some(status) = session.child.try_wait().expect("poll streaming child") {
+            assert_eq!(status.exit_code(), 0);
+            return;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "watn did not exit before the provider release"
+        );
+        thread::sleep(Duration::from_millis(25));
+    }
+}
+
+#[then(regex = r##"^the generated command line "([^"]+)" appears exactly once$"##)]
+fn generated_command_once(world: &mut WatnWorld, command: String) {
+    let output = world
+        .pty_session
+        .as_ref()
+        .map(pty_snapshot)
+        .or_else(|| world.output.clone())
+        .expect("streaming output");
+    let occurrences = output.match_indices(&command).count();
+    assert_eq!(occurrences, 1, "expected one generated command, got {output:?}");
+}
+
+#[when("I release the provider connection")]
+fn release_provider(world: &mut WatnWorld) {
+    if let Some(server) = &world.streaming.server {
+        server.release();
+    }
+    if let Some(session) = world.pty_session.take() {
+        finish_pty_session(world, session);
+    }
 }

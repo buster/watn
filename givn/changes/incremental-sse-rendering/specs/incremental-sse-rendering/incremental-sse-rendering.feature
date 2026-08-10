@@ -45,7 +45,7 @@ Feature: Incremental provider output
     And stderr should contain a positive throughput value
     And the exit status should be 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: A DONE event completes a stream successfully
     Given a streaming provider emits content "printf done", sends `[DONE]`, and holds the connection open until released
     When I start the streaming command `watn "finish the command"`
