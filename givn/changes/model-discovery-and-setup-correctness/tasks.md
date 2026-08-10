@@ -269,7 +269,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Existing reasoning survives selection without a valid replacement`.
-- Commit hash: `PENDING`
+- Commit hash: `45736b026c1aa9fabf172c7513e125f865410259`
 
 ## Non-E2E Scenario 12: The Newest Search Result Stays Visible When an Older Result Arrives Later
 
