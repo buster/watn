@@ -169,46 +169,46 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `3 steps (3 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `A disabled model default selects off even when a default effort is present`.
-- Commit hash: `PENDING`
+- Commit hash: `abd1814b733808d50b7b9af04022687236ff3a96`
 
 ## Non-E2E Scenario 7: Mandatory Reasoning Excludes Off
 
-- [ ] RED: Remove `@wip` from only `Scenario: Mandatory reasoning excludes off`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Mandatory reasoning excludes off`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at the undefined selected-reasoning assertion.
   ```
-- [ ] GREEN: Replace stubs with valid non-off selection assertions and minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with valid non-off selection assertions and minimum production code. Production files created/modified: `src/models/dialog.rs`, `tests/steps/reasoning_policy_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `3 steps (3 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
+- [x] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `3 steps (3 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Mandatory reasoning excludes off`.
+- [x] COMMIT: Create one atomic commit referencing `Mandatory reasoning excludes off`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 8: Mandatory Reasoning With No Usable Metadata Returns a Policy Error
 
-- [ ] RED: Remove `@wip` from only `Scenario: Mandatory reasoning with no usable metadata returns a policy error`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Mandatory reasoning with no usable metadata returns a policy error`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at undefined reasoning-policy assertion.
   ```
-- [ ] GREEN: Replace stubs with typed policy-error assertions and minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with typed policy-error assertions and minimum production code. Production files created/modified: `src/models/dialog.rs`, `tests/steps/reasoning_policy_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
+- [x] REFACTOR: Clean up and rerun the targeted scenario; confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Mandatory reasoning with no usable metadata returns a policy error`.
+- [x] COMMIT: Create one atomic commit referencing `Mandatory reasoning with no usable metadata returns a policy error`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 9: Unknown Persisted Reasoning Sends No Reasoning Request

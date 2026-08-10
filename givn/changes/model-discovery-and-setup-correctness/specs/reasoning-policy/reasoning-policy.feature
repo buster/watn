@@ -17,13 +17,13 @@ Feature: Reasoning default and persistence policy
     When I resolve the model reasoning default
     Then the selected reasoning should be "off"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Mandatory reasoning excludes off
     Given model reasoning metadata is mandatory with supported efforts "low", "high"
     When I resolve the model reasoning default
     Then the selected reasoning should be the first valid supported effort "low"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Mandatory reasoning with no usable metadata returns a policy error
     Given model reasoning metadata is mandatory with supported efforts "bogus"
     And no existing non-off reasoning value is configured
