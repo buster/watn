@@ -129,7 +129,7 @@
   Targeted runner exited 0: `1 scenario (1 passed)`, `5 steps (5 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Provider discovery is used when LiteLLM is absent`.
-- Commit hash: `PENDING`
+- Commit hash: `977f34c724d257147447cd07298684331125ff54`
 
 ## Non-E2E Scenario 5: Catalog Pagination and Search Use the Configured Catalog Source
 
