@@ -47,16 +47,6 @@ impl<W: Write> StreamRenderer<W> {
     }
 }
 
-pub fn write_streamed_content<W: Write>(writer: &mut W, content: &str) -> io::Result<()> {
-    writer.write_all(content.as_bytes())?;
-    writer.flush()
-}
-
-pub fn finish_streamed_command(has_content: bool) -> io::Result<()> {
-    let mut stdout = io::stdout();
-    finish_streamed_command_to(&mut stdout, has_content)
-}
-
 fn finish_streamed_command_to<W: Write>(writer: &mut W, has_content: bool) -> io::Result<()> {
     if has_content {
         writer.write_all(b"\n\n")?;
