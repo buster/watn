@@ -649,6 +649,12 @@ not modify a developer's real configuration. Cover:
 - Reload instructions identify the exact modified file for every selected
   shell.
 
+### 6. Highlight Active Setup Input
+
+Improve the setup dialog's visual indication of where user input is currently
+being entered. The border or box surrounding the active input location shall be
+green; inactive input locations retain their existing styling.
+
 ## Handoff Rules
 
 - Read `givn instructions` before acting.
