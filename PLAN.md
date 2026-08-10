@@ -60,6 +60,14 @@ through a reviewed proposal and specification:
 - A missing saved environment reference is an authentication error and does
   not fall through to another environment variable.
 
+## Coverage And Test Command Contract
+
+- Coverage and test commands must be `.sh` scripts configured in `commands.yaml`.
+- Those scripts must compute overall line and branch coverage by merging E2E and
+  non-E2E coverage.
+- The README must contain the resulting overall line and branch coverage counts
+  once, rather than multiple different counts.
+
 ## Completed Change
 
 - `model-discovery-and-setup-correctness` is implemented and reviewed.
