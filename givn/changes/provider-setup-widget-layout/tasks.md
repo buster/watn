@@ -57,12 +57,7 @@
   command: `cargo test --test features_runner -- --name 'Provider setup separates choices, details, and guidance'`
   output: 1 scenario passed, 10 steps passed after removing the unused plain-text PTY wait helper.
   ```
-- [x] **COMMIT** Create one atomic commit for RED/GREEN/REFACTOR with a message
-  referencing `Provider setup separates choices, details, and guidance` and
-  record its hash:
-  ```text
-  commit: `a7593b3`
-  ```
+- [x] COMMIT: `a7593b3` — feat(provider-setup-widget-layout): Provider setup separates choices, details, and guidance
 
 ## E2E Scenario: Model picker makes tiers and long model lists easy to scan
 
@@ -92,25 +87,20 @@
   command: `cargo test --test features_runner -- --name 'Model picker makes tiers and long model lists easy to scan'`; also `cargo test --test features_runner -- --tags '@e2e and not @wip'` and `cargo test --test features_runner -- --tags 'not @wip and not @e2e'`.
   output: targeted scenario passed (9 steps); full E2E passed (36 scenarios, 208 steps); regular suite passed (43 scenarios, 234 steps). Existing filter, page navigation, reasoning, back-navigation, empty-state, fallback, and stale-result scenarios remained green.
   ```
-- [ ] **COMMIT** Create one atomic commit for RED/GREEN/REFACTOR with a message
-  referencing `Model picker makes tiers and long model lists easy to scan` and
-  record its hash:
-  ```text
-  commit:
-  ```
+- [x] COMMIT: `49c7856` — feat(provider-setup-widget-layout): Model picker makes tiers and long model lists easy to scan
 
 ## Final Verification
 
-- [ ] Run `givn lint --change provider-setup-widget-layout`; no WIP findings
+- [x] Run `givn lint --change provider-setup-widget-layout`; no WIP findings
   remain and both `@e2e` tags are preserved.
-- [ ] Run the regular verify command and record zero exit plus scenario count:
+- [x] Run the regular verify command and record zero exit plus scenario count:
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --tags 'not @wip and not @e2e'`
+  output: zero exit; 8 features, 43 scenarios (43 passed), 234 steps (234 passed).
   ```
-- [ ] Run the E2E verify command and record zero exit plus a count strictly
+- [x] Run the E2E verify command and record zero exit plus a count strictly
   smaller than the regular suite:
   ```text
-  command:
-  output:
+  command: `cargo test --test features_runner -- --tags '@e2e and not @wip'`
+  output: zero exit; 9 features, 36 scenarios (36 passed), 208 steps (208 passed). E2E count 36 is strictly below regular-plus-e2e full coverage (the regular command covers 43 non-E2E scenarios).
   ```

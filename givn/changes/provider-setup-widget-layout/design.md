@@ -103,14 +103,11 @@ results, and persisted configuration remain unchanged.
 The existing Cucumber-rs runner registers modules globally, so the new E2E
 bindings are isolated by capability and use unique step text:
 
-- `tests/steps/provider_setup_layout_steps.rs` — reuses the existing provider
-  PTY start step and asserts the bordered setup panel, credential list, details
-  rows, guidance paragraph, validation message, and masked value in the real
-  terminal output. It must not redeclare the provider start step.
-- `tests/steps/model_picker_layout_steps.rs` — starts `watn models` through the
-  existing PTY harness and asserts the bordered picker, tier tabs, aligned
-  column headings, scrollbar output, active-tier label, and navigation result.
-- `tests/steps/mod.rs` — registers the two capability-specific step modules.
+| Capability | File | Responsibility |
+|---|---|---|
+| Provider setup layout | `tests/steps/provider_setup_layout_steps.rs` | Reuse the existing provider PTY start step; assert the bordered setup panel, credential list, details rows, guidance paragraph, validation message, and masked value. Do not redeclare the provider start step. |
+| Model picker layout | `tests/steps/model_picker_layout_steps.rs` | Start `watn models` through the existing PTY harness; assert the bordered picker, tier tabs, aligned column headings, scrollbar output, active-tier label, and navigation result. |
+| Step registration and PTY lifecycle | `tests/steps/mod.rs` | Register both capability-specific modules and provide readiness, reader-drain, and child-cleanup helpers. |
 
 Existing Given steps provide the no-provider and long-model-list fixtures. The
 new Then steps assert stable visible labels from the real PTY output; they do

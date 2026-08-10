@@ -101,8 +101,11 @@ tables; no ASCII-art diagrams were introduced.
 - Extended the delta feature with live validation, masking, and navigation
   assertions while keeping exactly one E2E scenario per inventory entry.
 - Added ADR-0012 and updated arc42 chapters 1, 3, 4, 5, 6, 8, 9, 10, 11, and 12.
-- Ran `givn lint --change provider-setup-widget-layout`; the only findings are
-  the two intentional `@wip` scenarios awaiting implementation.
+- Ran `givn lint --change provider-setup-widget-layout` during planning; the
+  only findings then were the two intentional `@wip` scenarios awaiting
+  implementation. Final lint is clean.
+- Normalized the Step Definitions artifact to the required markdown-table
+  format without changing its reviewed file locations or behavior.
 
 ## Status
 

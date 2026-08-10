@@ -1312,7 +1312,22 @@ fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
         let models_clone = models.clone();
         let mock = server.mock(move |when, then| {
             when.method(httpmock::Method::GET).path("/models");
-            let data: Vec<serde_json::Value> = models_clone.iter().map(|id| serde_json::json!({"id": id})).collect();
+            let data: Vec<serde_json::Value> = models_clone
+                .iter()
+                .map(|id| {
+                    if id == "model-01" {
+                        serde_json::json!({
+                            "id": id,
+                            "name": "Model One",
+                            "context_length": 128000,
+                            "pricing": {"prompt": "0.15", "completion": "0.60"},
+                            "supported_features": ["tools"]
+                        })
+                    } else {
+                        serde_json::json!({"id": id})
+                    }
+                })
+                .collect();
             then.status(200)
                 .header("Content-Type", "application/json")
                 .body(serde_json::json!({"data": data}).to_string());
