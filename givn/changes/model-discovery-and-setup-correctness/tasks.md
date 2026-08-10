@@ -391,7 +391,7 @@
   After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `LiteLLM discovery does not replace the active chat provider`.
-- Commit hash: `PENDING`
+- Commit hash: `3f3347d616baedf3cc24e2f0f303615606d1b1b0`
 
 ## E2E Scenario 5: Model Catalog Failure After Provider Setup Preserves the Provider and Sends No Request
 
