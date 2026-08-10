@@ -114,25 +114,28 @@
 
 ## Scenario: Malformed nonessential events do not discard valid content
 
-- [ ] RED: Remove `@wip`, bind explicit stubs, and run only this scenario. The
+- [x] RED: Remove `@wip`, bind explicit stubs, and run only this scenario. The
   pre-`[DONE]` content observation must fail against final-body buffering.
   Evidence:
   ```text
-  [paste targeted runner output]
+  Targeted command exited non-zero after matching `malformed_provider`; the
+  runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Ignore malformed nonessential JSON data lines, continue parsing,
+- [x] GREEN: Ignore malformed nonessential JSON data lines, continue parsing,
   emit valid content before the held `[DONE]`, and assert the final command and
-  successful status. Production files: [list every file]. Test files: [list
-  every file]. Targeted result:
+  successful status. No additional production files were needed; the parser
+  implementation from the first scenario was exercised. Test file:
+  `tests/steps/incremental_sse_rendering_steps.rs`. Targeted result:
   ```text
-  [paste targeted runner output]
+  1 feature, 1 scenario, 6 steps passed.
   ```
-- [ ] REFACTOR: Centralize malformed-line tolerance without changing valid
+- [x] REFACTOR: Centralize malformed-line tolerance without changing valid
   event handling. Targeted rerun:
   ```text
-  [paste targeted runner output]
+  Reused the release-gated fragment assertion and reran the targeted command:
+  1 feature, 1 scenario, 6 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `feat(incremental-sse-rendering): Malformed nonessential events do not discard valid content`
+- [x] COMMIT: `2684870` - `feat(incremental-sse-rendering): Malformed nonessential events do not discard valid content`
 
 ## Scenario: EOF without DONE is a truncated stream
 

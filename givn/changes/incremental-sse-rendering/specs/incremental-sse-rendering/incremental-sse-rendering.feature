@@ -82,7 +82,7 @@ Feature: Incremental provider output
     And the terminal output does not contain "Execute now? [Y/n]"
     And the exit status should be 3
 
-  @givn.added @wip
+  @givn.added
   Scenario: EOF without DONE is a truncated stream
     Given a streaming provider flushes valid content "printf truncated" and closes cleanly without sending `[DONE]`
     When I run `watn "detect a truncated stream"`

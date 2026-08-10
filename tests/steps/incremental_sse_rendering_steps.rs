@@ -455,3 +455,23 @@ fn valid_fragment(world: &mut WatnWorld, fragment: String) {
 fn release_done(world: &mut WatnWorld) {
     release_next_event(world);
 }
+
+#[given(
+    regex = r##"^a streaming provider flushes valid content "([^"]+)" and closes cleanly without sending `\[DONE\]`$"##
+)]
+fn eof_provider(world: &mut WatnWorld, content: String) {
+    world.streaming.server = Some(StreamingServer::start(vec![content_event(
+        "test-model",
+        &content,
+    )], None));
+    update_config(world);
+}
+
+#[then("stderr should not contain successful model metadata")]
+fn stderr_no_success_metadata(world: &mut WatnWorld) {
+    let stderr = world.stderr_output.as_deref().expect("stderr was not captured");
+    assert!(
+        !stderr.contains("tok/s"),
+        "unexpected successful metadata in stderr: {stderr:?}"
+    );
+}
