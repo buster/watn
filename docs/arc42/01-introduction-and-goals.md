@@ -19,6 +19,10 @@ Top requirements:
 10. Structured terminal setup views make credential-source choices, provider details, model tiers, and long model catalogs scannable
 11. One setup wizard makes the current page, editable line, cursor, and save/discard state explicit
 12. Test routing must be isolated from normal and release-profile binaries; configured endpoints, readiness, and persisted configuration remain authoritative
+13. Model discovery must preserve credential sources, select LiteLLM independently from chat, and use exact endpoint and Authorization behavior
+14. Provider confirmation must survive catalog failure without changing unconfirmed model tiers or sending the original question
+15. Reasoning defaults and persisted values must resolve consistently across interactive and non-interactive model selection
+16. Overlapping model searches must leave the newest result visible and clean up older search work
 
 See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 
@@ -32,6 +36,7 @@ See `givn/changes/watn-cli/specs/` for the executable Gherkin specification.
 | 4 | Security | Prefer environment-backed credentials, mask pasted credentials, enforce private config permissions, and keep resolved secrets out of diagnostics |
 | 5 | Observability | Model name, tokens/second, cost (when priced), and reasoning content (when verbose) printed per response; exit codes for scripting |
 | 6 | Test isolation | Loopback transport overrides are available only to debug test-support binaries and cannot redirect release or normal invocations |
+| 7 | Correctness | Catalog source, credential-source, setup-save, reasoning, and stale-search policies are shared across all model-discovery paths |
 
 ## Stakeholders
 

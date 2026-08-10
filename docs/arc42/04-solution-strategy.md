@@ -16,6 +16,10 @@
 - Provider and model onboarding share one page-based Ratatui wizard; commands select its initial and final page rather than owning separate event loops
 - Test transport is a compile-time debug capability: only `test-support` plus `debug_assertions` can read the endpoint override; release-profile builds use configured endpoints even when the feature is enabled
 - Debug verification builds the default-feature and `test-support` binaries sequentially through Cargo's shared default target cache, copies them to unique temporary paths, and passes those absolute paths to the subprocess harness; release runtime verification is deferred to `release-truth-and-repository-cleanup`
+- Catalog source resolution is explicit: `[litellm]` owns model listing, pagination, and search when present; otherwise the selected provider is used, while chat construction remains provider-only
+- Credential values retain their persisted source representation and are expanded only at the outbound discovery or chat request boundary; a confirmed provider draft is saved before its first catalog request
+- A shared reasoning policy validates closed-set strengths, honors model default-enabled and mandatory metadata, and preserves existing valid reasoning when no replacement exists
+- Search workers carry generations and can update the picker only when current; the test twin coordinates overlapping workers and joins them before exit
 
 ## Technology choices
 
@@ -30,6 +34,8 @@
 | Gherkin runner | cucumber-rs | Mature Rust cucumber implementation |
 | Pseudo-terminal testing | portable-pty | PTY-based E2E tests for the terminal dialog |
 | Transport verification | `httpmock` loopback twins plus explicit subprocess paths | Proves endpoint, path, request count, Authorization, competing-server, and persistence behavior without live providers |
+| Catalog resolution | Runtime-only catalog source value | Keeps LiteLLM discovery separate from active chat and makes optional catalog authentication explicit |
+| Reasoning policy | Pure closed-set resolver | Prevents TTY, non-TTY, and request-body reasoning behavior from diverging |
 
 ## Approach to quality goals
 

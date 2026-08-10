@@ -34,13 +34,13 @@ graph TB
 | Building block | Responsibility |
 |---|---|
 | CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
-| Config | Load and merge from built-in defaults, user config file, env, CLI |
+| Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources and resolve the catalog source |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
-| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, and save/discard prompt; return provider and completed model drafts without writing configuration |
+| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, and save/discard prompt; save a confirmed provider draft before catalog access and return optional provider plus completed model drafts |
 | Output | Format response with metadata header (model, tok/s, cost) + command body |
-| Models | Query the provider `/models` endpoint; interactive tier selection via the existing dialoguer/ratatui paths; return a typed setup result and persist tiers through the direct config writer |
+| Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
 | Exec | Print command, prompt confirmation, invoke `sh -c` if confirmed |
 
 ## Level 2 — Key building blocks
@@ -57,6 +57,22 @@ graph TB
 
 The transport boundary is the only production endpoint-resolution seam. URL
 builders receive an effective endpoint and remain free of environment lookups.
+
+### Catalog source
+
+The catalog-source resolver selects `[litellm]` when configured and otherwise
+uses the active provider. It carries the raw credential source until the
+request boundary, where a literal or exact environment reference is expanded.
+An absent LiteLLM key produces no Authorization header. The active provider
+resolver used by chat is separate and is never replaced by the catalog source.
+
+### Setup persistence
+
+The wizard's provider-confirmation transition is the first durable boundary. It
+validates and saves the provider source before catalog loading, while model-tier
+updates remain a later, independent write. This permits catalog failure or
+post-confirmation cancellation to preserve the provider without manufacturing
+empty or partial tier values.
 
 ### Config
 

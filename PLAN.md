@@ -10,14 +10,15 @@ work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: clean before this plan update
-- Remote/upstream: none configured
+- Worktree: archive and documentation changes staged; this plan update is unstaged
+- Remote/upstream: `origin` configured
 - Active givn change: none
 - Archived transport work: `isolate-test-transport`
+- Completed change pending archive commit: `model-discovery-and-setup-correctness`
 - Current package version: `0.1.2` in `Cargo.toml`
 - Current CLI version: still hardcoded as `0.1.0` in `src/main.rs`
 
-Do not amend existing commits. Configure a remote before attempting to push.
+Do not amend existing commits. Do not push unless explicitly requested.
 
 ## Required Session Start
 
@@ -59,193 +60,15 @@ through a reviewed proposal and specification:
 - A missing saved environment reference is an authentication error and does
   not fall through to another environment variable.
 
-## Change 2: Model Discovery and Setup Correctness
+## Completed Change
 
-Create this as the next active givn change:
-
-```text
-givn new model-discovery-and-setup-correctness
-```
-
-Use the full givn workflow. The scope covers report findings 1, 4, 5, 6, and 8,
-plus the stale-search test defect that was explicitly deferred from change 1.
-
-### Workstream A: Credential Source Preservation
-
-Current defect:
-
-- `src/models/mod.rs::run_models_result()` resolves an API key and discards
-  the result before entering the TTY wizard.
-- The built-in OpenRouter provider in `src/config/mod.rs` has `api_key: None`.
-- `src/setup.rs::SetupWizard::from_config()` initializes an empty configuration
-  credential.
-- `load_catalog()` then rejects the empty credential.
-
-Required behavior:
-
-- With no saved OpenRouter key and `OPENROUTER_API_KEY` set, TTY
-  `watn models` must discover models successfully.
-- The wizard must treat the credential as environment-backed, not literal.
-- The secret must not appear in terminal output or persisted TOML.
-- Confirming that source persists `${OPENROUTER_API_KEY}`.
-- A saved literal key remains authoritative over environment fallback.
-- A saved exact environment reference remains authoritative and reports a
-  missing variable as an authentication error.
-
-Likely implementation direction:
-
-- Preserve a credential source representation through `run_models_result()` and
-  `SetupWizard` initialization.
-- Distinguish `None`, literal, and complete `${VARIABLE}` references.
-- Use `config::get_provider_api_key()` only for the outbound discovery secret;
-  retain the source representation for persistence and UI state.
-- Avoid displaying resolved secrets.
-
-Required scenarios:
-
-- TTY model setup with implicit built-in OpenRouter and `OPENROUTER_API_KEY`.
-- Environment-backed confirmation persists the reference, not the value.
-- Missing saved environment reference fails without a request.
-
-### Workstream B: Catalog Source Resolution
-
-Current defect:
-
-- `Config.litellm` is parsed but production model discovery ignores it.
-- `run_models_result()` uses the active provider endpoint for catalog requests.
-- The permanent LiteLLM scenario in `givn/specs/providers/providers.feature`
-  only checks that some mock was hit; `tests/steps/ask_steps.rs` ignores the
-  expected URL.
-
-Required behavior:
-
-- When `[litellm]` exists, `/models`, paginated catalog, and search requests use
-  the LiteLLM endpoint.
-- A LiteLLM key is optional. No Authorization header is sent when absent.
-- A configured LiteLLM environment reference expands at request time.
-- Without `[litellm]`, discovery falls back to the selected provider endpoint.
-- Chat completions always use the selected provider endpoint, never LiteLLM.
-- The active provider draft and catalog source remain separate.
-- Exact URL, method, path, query, and Authorization assertions must be used.
-
-Likely implementation direction:
-
-- Add one catalog-source resolver used by non-TTY model setup and the shared
-  wizard.
-- Pass endpoint and optional credential explicitly into model-list functions.
-- Keep `LiteLLMConfig` as a production-consumed configuration type.
-- Update `should_query_models_at()` to assert the supplied URL rather than only
-  checking `mock.hits() > 0`.
-- Add exact model search and pagination URL assertions where applicable.
-
-Required scenarios:
-
-- LiteLLM configured with a key uses exact `/models` URL and Authorization.
-- LiteLLM configured without a key uses exact `/models` URL without auth.
-- Provider discovery is used when LiteLLM is absent.
-- Chat requests remain on the active provider when LiteLLM is configured.
-- Search and pagination use the correct catalog source.
-
-### Workstream C: Partial Save Through The Real Wizard
-
-Current defect:
-
-- Documentation claims the provider is saved before model discovery.
-- `apply_result()` currently persists only after the wizard returns a complete
-  result.
-- Catalog failure in `move_next()` returns to the API-key page but does not save
-  the confirmed provider.
-- The current catalog-failure step bypasses the real wizard by calling
-  `save_provider_draft()` directly.
-
-Required behavior:
-
-- Provider setup saves only after valid credential confirmation.
-- Full setup and implicit onboarding save the provider before the first catalog
-  request.
-- Catalog failure leaves the provider persisted and tiers unchanged.
-- Cancellation before credential confirmation does not write.
-- Cancellation after credential confirmation preserves the provider.
-- No original chat request is sent after setup failure or cancellation.
-- `watn models` changes tiers without replacing provider or LiteLLM settings.
-
-Required test correction:
-
-- Drive catalog failure through the actual unified wizard or a reviewed seam
-  that exercises the same persistence boundary.
-- Do not use a direct `save_provider_draft()` call as the primary simulation of
-  automatic onboarding.
-- Assert terminal/CLI behavior first and config persistence second.
-
-### Workstream D: Reasoning Defaults And Persistence
-
-Current defects:
-
-- Non-TTY `watn models` creates three empty reasoning strings and overwrites
-  existing reasoning configuration.
-- `ModelReasoning.default_enabled` is parsed but ignored.
-- `TierReasoning::effort()` forwards arbitrary values such as `bogus`.
-- Reasoning metadata behavior is missing tests for `minimal`, mandatory,
-  disabled defaults, and unknown strengths.
-
-Required policy:
-
-- Valid strengths are `off`, `low`, `minimal`, `medium`, and `high`.
-- Empty and unknown persisted values resolve to no reasoning.
-- A non-mandatory model with `default_enabled = false` defaults to `off`.
-- A mandatory model cannot select `off`.
-- A valid `default_effort` is preferred when enabled and supported.
-- Otherwise select the first valid supported effort.
-- Unknown supported efforts are ignored.
-- Non-TTY model assignment preserves existing reasoning unless a valid model
-  default replaces it.
-- No empty reasoning strings are serialized.
-
-Likely implementation direction:
-
-- Centralize parsing and resolution in a small pure policy function.
-- Reuse the policy in TTY wizard synchronization and non-TTY selection.
-- Keep the thinking-tier absent-value compatibility default explicit.
-- Add unit tests for policy boundaries plus Gherkin scenarios for observable
-  request bodies and persisted TOML.
-
-Required scenarios:
-
-- Disabled default selects `off` even when a default effort is present.
-- Mandatory reasoning excludes `off`.
-- `minimal` is persisted and sent.
-- Unknown configured strength sends no reasoning.
-- Non-TTY model selection never writes empty strings.
-- Existing reasoning survives model selection when no valid replacement exists.
-
-### Workstream E: Stale Search Concurrency
-
-Current defect:
-
-- `tests/steps/ask_steps.rs` waits for the slow search before starting the fast
-  search.
-- `search_query_delays` is populated but does not control actual overlap.
-- The current scenario can pass even if the generation guard is removed.
-
-Required behavior:
-
-- Start the slow query and fast query before either result is fully applied.
-- The fast/newest result becomes visible.
-- A late slow/older result cannot replace it.
-- The assertion checks exact final IDs: includes the fast result and excludes
-  the stale result.
-- Search workers are cleaned up before scenario exit.
-
-Likely implementation direction:
-
-- Add a deterministic barrier or channel to the test twin.
-- Dispatch both real search operations concurrently.
-- Apply results through the same generation guard as production.
-- Remove `search_query_delays` if the corrected test no longer needs it.
+- `model-discovery-and-setup-correctness` is implemented and reviewed.
+- The archive transaction and permanent-spec migration are staged.
+- Verification passed: 56 non-E2E scenarios and 52 E2E scenarios.
 
 ## Change 3: Incremental SSE Rendering
 
-Create after change 2 is archived:
+Create as the next active givn change:
 
 ```text
 givn new incremental-sse-rendering
@@ -348,21 +171,13 @@ candidates.
 Update the active Arc42 and README claims for:
 
 - Incremental versus buffered streaming.
-- LiteLLM discovery-only behavior.
-- Actual shared setup wizard behavior.
 - Actual PTY helper names.
 - Ctrl-R rather than plain `r` for reasoning focus.
-- Four reasoning strengths plus `minimal`.
-- stdout command output and stderr metadata/prompt behavior.
 - Config-only XDG storage rather than an unimplemented data directory.
-- Debug-only test-support routing and deferred release verification.
 - Historical status of archived Arc42 snapshots.
-- One authoritative coverage command and current measured values.
 
 ### Dead Code And Hygiene
 
-- Keep `LiteLLMConfig` after adding its production consumer.
-- Keep `ModelReasoning.default_enabled` after adding its behavior.
 - Remove provider setup result wrappers only after confirming there are no
   external library consumers. This repository is currently structured as a
   binary application, but public modules exist in `src/lib.rs`.

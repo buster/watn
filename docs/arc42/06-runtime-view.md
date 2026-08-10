@@ -198,7 +198,7 @@ sequenceDiagram
     Dialog->>Worker: spawn: per-word local/remote match (gen=N)
     API-->>Worker: matching models
     Worker->>Dialog: newest result wins → update suggestions
-    User->>Dialog: ↓ (select), `r` (reasoning low)
+    User->>Dialog: ↓ (select), `r` (reasoning minimal)
     User->>Dialog: Enter or Tab (confirm small, advance to Middle Model)
     loop normal, thinking
         User->>Dialog: pick model, Enter or Tab to advance
@@ -217,7 +217,8 @@ sequenceDiagram
    order-independent and are debounced with a stale-result guard.
 3. Arrow/page keys move selection; Enter and Tab accept/advance; Shift-Tab
    returns to the previous page.
-4. `r` cycles reasoning strength (off/low/medium/high) on a model page.
+    4. `r` exposes the closed reasoning set (off/low/minimal/medium/high) on a
+       model page; mandatory models exclude off.
 5. Escape opens a save/discard prompt; saving persists the provider and all
    completed model choices.
 
@@ -334,10 +335,12 @@ sequenceDiagram
     else stdin is a TTY
         CLI->>Setup: open five-page setup wizard
         User->>Setup: enter endpoint and choose credential storage
+        User->>Setup: explicitly confirm the credential
+        Setup->>Config: persist the confirmed provider draft
         Setup->>Twin: GET /models
-        Twin-->>Setup: model catalog
+        Twin-->>Setup: model catalog or catalog failure
         User->>Setup: select small, middle, and large models
-        Setup->>Config: save provider and completed tier assignments
+        Setup->>Config: save completed tier assignments only after selection
         CLI-->>User: setup complete; exit 0
         Note over CLI: original question is not sent; user reruns it
     end
@@ -409,3 +412,64 @@ sequenceDiagram
     Wizard->>Config: persist provider and completed tiers
     Wizard-->>User: saved setup result
 ```
+
+## Scenario: Catalog discovery with independent LiteLLM source
+
+**Trigger:** User runs `watn models` with a `[litellm]` section.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant CLI as watn models
+    participant Config as Config
+    participant Catalog as LiteLLM catalog
+    participant Provider as Active provider
+
+    User->>CLI: watn models
+    CLI->>Config: load active provider and optional LiteLLM source
+    Config-->>CLI: catalog endpoint + raw optional credential; active provider unchanged
+    CLI->>Catalog: GET /models or paginated /models with optional Bearer key
+    Catalog-->>CLI: model metadata
+    User->>CLI: assign small, normal, and thinking tiers
+    CLI->>Config: save tier assignments only
+    Note over CLI,Provider: Later chat requests still use Provider, never Catalog
+```
+
+The source is resolved once per discovery operation. A configured LiteLLM key
+is expanded at request time; no key means no Authorization header. Search and
+pagination reuse the same endpoint and credential policy. Without LiteLLM, the
+selected provider receives the catalog requests.
+
+## Scenario: Provider confirmation before catalog failure
+
+**Trigger:** User confirms a provider credential in `watn setup`, then catalog
+discovery fails.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Wizard as Setup Wizard
+    participant Config as Config
+    participant Catalog as Catalog source
+
+    User->>Wizard: confirm endpoint and credential source
+    Wizard->>Wizard: validate and resolve credential
+    Wizard->>Config: save provider draft and raw credential source
+    Wizard->>Catalog: request model catalog
+    Catalog-->>Wizard: error
+    Wizard-->>User: catalog failure; return to credential/setup state
+    Config-->>User: confirmed provider remains saved; tiers unchanged
+```
+
+Cancellation before credential confirmation performs no write. Cancellation
+after confirmation preserves the provider. Neither path sends the original chat
+question.
+
+## Scenario: Reasoning policy and stale search generation
+
+The shared reasoning resolver filters invalid strengths, honors disabled and
+mandatory metadata, and is used before both tier persistence and chat request
+construction. Search workers receive monotonically increasing generations; a
+late worker may finish its HTTP request but cannot apply its result after a
+newer generation has been applied. The wizard joins or discards workers before
+returning to the caller.

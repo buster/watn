@@ -82,6 +82,6 @@ cargo llvm-cov test --no-clean --test features_runner \
 GPL-3.0-or-later
 
 <!-- givn:begin:coverage -->
-Line coverage: 62% (2899/4640)
+Line coverage: 63% (2964/4738)
 Branch coverage: 0% (0/0)
 <!-- givn:end:coverage -->

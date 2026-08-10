@@ -14,8 +14,8 @@ graph TB
     User -->|"endpoint and credential input in provider setup"| CLI
     User -->|"rerun the original request after successful automatic setup"| CLI
     CLI -->|"POST /v1/chat/completions"| API
-    CLI -->|"GET /models (optional)"| LiteLLM
-    CLI -->|"GET /models?search=..."| LiteLLM
+    CLI -->|"GET /models, pages, search"| LiteLLM
+    CLI -->|"GET /models when LiteLLM absent"| API
     CLI -->|"sh -c (when -x flag)"| Shell
     User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab) in the model settings dialog"| CLI
     CLI -->|"write provider endpoint and credential representation"| Config
@@ -28,7 +28,7 @@ graph TB
 |---|---|---|
 | Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); page navigation and editing in the shared `watn setup` wizard; `watn models` model-page entry | Shell command + metadata (model, tok/s, cost); five-page setup wizard with visible tabs, cursor, provider credential choice, model tables, and save/discard prompt; saved provider/tier setup; actionable non-TTY setup guidance; or confirmation prompt |
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions` |
-| LiteLLM (optional) | Endpoint URL (config), search query (typed by user) | HTTP GET to `/models`, HTTP GET to `/models?search=...` |
+| LiteLLM (optional) | Endpoint URL (config), optional credential, search query (typed by user) | HTTP GET to `/models`, paginated `/models`, and HTTP GET to `/models?search=...`; never receives chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
 
 ## Technical context

@@ -68,6 +68,20 @@ Environment-backed credentials are persisted as complete references such as
 `${OPENROUTER_API_KEY}`. The resolver expands the reference for an outbound
 request, while the serializer preserves the reference.
 
+## Catalog source resolution
+
+Model discovery does not share the chat provider's endpoint by accident. When
+`[litellm]` exists, its endpoint is used for `/models`, pagination, and search;
+the selected provider remains the chat destination. LiteLLM authentication is
+optional. If its key is absent, the request omits `Authorization`; if a key is
+an environment reference, the reference is expanded at the request boundary.
+When `[litellm]` is absent, discovery falls back to the selected provider and
+uses that provider's credential-source precedence.
+
+Request tests use separate loopback twins and match exact method, path, query,
+and Authorization. A mock hit without source-specific assertions is not
+considered evidence of correct routing.
+
 ## Credential safety
 
 - Literal credential input is masked in the ratatui setup screen.
@@ -137,7 +151,7 @@ When the thinking tier (`-3` / `--thinking`) is activated, the request body incl
 {"reasoning_effort": "high"}
 ```
 
-This signals the API to generate reasoning/chain-of-thought tokens alongside the answer. The `reasoning_effort` is only set for tier 3 (the thinking tier). Tiers 1 and 2 do not send this parameter.
+This signals the API to generate reasoning tokens alongside the answer. A valid non-`off` configured strength may be sent for any model tier; the thinking tier retains its compatibility default of `high` when no value is configured.
 
 Response chunks from the API may include a `reasoning` field in the delta object alongside the `content` field. The provider accumulates reasoning content separately from command content.
 
@@ -188,7 +202,7 @@ time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
 - Model-specific reasoning options derived from the catalog's supported efforts,
   default effort, enabled flag, and mandatory flag.
 - A scrollbar showing position when the catalog exceeds the available rows.
-- A reasoning-strength selector (off, low, medium, high) for the current level.
+- A reasoning-strength selector (off, low, minimal, medium, high) for the current level.
 - A status line for the empty state or the unsupported-search notice.
 
 Key bindings:
@@ -228,7 +242,9 @@ cancellation.
 
 The stale-result guard uses `Arc<AtomicU64>` as a generation counter. Each
 filter change increments the counter before dispatching a search; the worker
-discards a response whose generation has advanced (newest-result-wins).
+discards a response whose generation has advanced. Generation order is
+user-entry order, not completion order, so a slower newer search may replace an
+older completed result while a late older result is discarded.
 
 ## Per-level reasoning configuration
 
@@ -236,16 +252,19 @@ Each tier's reasoning strength is persisted in config under `[tiers.reasoning]`:
 
 ```toml
 [tiers.reasoning]
-small = "off"    # one of off | low | medium | high
+small = "off"    # one of off | low | minimal | medium | high
 normal = "low"
 thinking = "high"
 ```
 
-When a request runs on a tier, `reasoning_effort` is resolved from the
-configured strength: `off` (or absent config) sends no reasoning; any other
-strength sends that value. When a tier has no explicit reasoning configured,
-the prior default is preserved (thinking → "high", others → none) for
-backwards compatibility.
+When a request runs on a tier, `reasoning_effort` is resolved from the closed
+set `off`, `low`, `minimal`, `medium`, and `high`. `off`, empty, and unknown
+values send no reasoning. When a tier has no explicit reasoning configured, the
+prior default is preserved (thinking -> `high`, others -> none) for backwards
+compatibility. Model metadata defaults are applied by the same policy in the
+interactive and non-interactive selection paths; mandatory reasoning preserves
+a valid existing non-off value or returns a typed policy error when metadata
+has no usable effort, and no empty value is serialized.
 
 ## PTY-based E2E test harness
 

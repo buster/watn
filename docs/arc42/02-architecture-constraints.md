@@ -34,3 +34,6 @@
 | Provider readiness is local | First-run detection checks config and environment state without probing a live provider or consulting the E2E transport override |
 | Explicit provider selection preserves errors | `--provider` and `WATN_PROVIDER` never trigger onboarding; unknown-provider and missing-key errors remain observable |
 | Test binaries use explicit paths | The debug verification bootstrap builds the two required feature variants sequentially through Cargo's shared default target cache, copies each executable to a unique temporary path, and passes only those absolute paths to the harness; stale `target/debug/watn` discovery is not permitted |
+| Catalog and chat endpoints are separate concerns | A configured LiteLLM endpoint may serve model discovery only; chat completion requests remain on the selected provider endpoint |
+| Credential source is authoritative | A literal saved key or complete saved `${VARIABLE}` reference cannot be replaced by environment fallback; only an absent source may use fallback discovery |
+| Reasoning strengths are closed-set values | Persisted and outbound reasoning values are limited to `off`, `low`, `minimal`, `medium`, and `high`; empty or unknown values do not produce a reasoning request |

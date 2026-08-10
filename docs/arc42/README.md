@@ -10,6 +10,12 @@ structured Ratatui widgets so choices, metadata, status, tier tabs, and long
 catalog position remain visible in the terminal.
 Provider and model onboarding now share a five-page setup wizard with explicit
 page, cursor, and save/discard state.
+Model discovery resolves a dedicated catalog source: configured LiteLLM is used
+for model listing, pagination, and search, while chat remains on the selected
+provider. Credential sources remain literal values or exact environment
+references through discovery and partial setup saves; model reasoning defaults
+are validated centrally and stale search generations cannot overwrite results
+from a newer user-entered search.
 The outbound transport boundary keeps configured endpoints authoritative for
 normal and release-profile binaries; only a debug `test-support` binary may
 route requests to a loopback test twin, and that route is never persisted or

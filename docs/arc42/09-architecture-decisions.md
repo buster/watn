@@ -19,6 +19,7 @@ options, the decision outcome, and consequences.
 | ADR-0011 | Interactive provider onboarding with environment-backed credentials | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
 | ADR-0012 | Structured widget composition for terminal setup views | [docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md](../adr/0012-structured-widget-composition-for-terminal-setup-views.md) |
 | ADR-0013 | Shared five-page setup wizard | [docs/adr/0013-shared-five-page-setup-wizard.md](../adr/0013-shared-five-page-setup-wizard.md) |
+| ADR-0014 | Independent catalog source and provider confirmation boundary | [docs/adr/0014-independent-catalog-source-and-provider-confirmation.md](../adr/0014-independent-catalog-source-and-provider-confirmation.md) |
 
 ## ADR-0011 summary
 
@@ -52,6 +53,14 @@ deferred to `release-truth-and-repository-cleanup`.
 ADR-0012 chooses native Ratatui widget composition for the existing provider and
 model setup flows. Borders establish the screen boundary, lists and tabs expose
 selection context, tables align provider/model metadata, paragraphs carry
-guidance and status, and a scrollbar makes long model catalogs navigable. The
+ guidance and status, and a scrollbar makes long model catalogs navigable. The
 decision preserves the existing event loop and state transitions while removing
 direct raw cursor output from these renderers.
+
+## ADR-0014 summary
+
+ADR-0014 separates the model catalog source from the active chat provider and
+places provider persistence immediately after valid credential confirmation.
+The decision preserves raw credential sources, makes LiteLLM authentication
+optional, and lets catalog failure or later cancellation preserve a confirmed
+provider without changing tiers or sending the original request.

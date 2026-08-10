@@ -15,7 +15,7 @@
 | Reasoning | Chain-of-thought or step-by-step explanation produced by the LLM alongside the final answer. Exposed via the API's `reasoning` field in the streaming delta. Displayed on stderr when `-v`/`--verbose` is set. |
 | Autosuggest picker | Raw-terminal input loop that updates a suggestion list as the user types; replaces the static scrollable list for model tier assignment |
 | SettingsDialog | Ratatui keyboard-driven dialog that walks the small/normal/thinking levels in a guided sequence, showing the filter, the highlighted model list, and a reasoning-strength selector per level |
-| Reasoning strength | Graduated per-level setting (`off`, `low`, `medium`, `high`) controlling the `reasoning_effort` sent on that tier's requests |
+| Reasoning strength | Graduated per-level setting (`off`, `low`, `minimal`, `medium`, `high`) controlling the `reasoning_effort` sent on that tier's requests; `off` sends no field |
 | Guided sequence | The fixed small → normal → thinking walk performed by the settings dialog, with the ability to return to a previous level before confirming |
 | Page navigation | Moving the selection through the model list by a full page at a time with PageUp/PageDown keys |
 | Per-word filter | Order-independent matching where every whitespace-separated word of the query must appear somewhere in the model id |
@@ -39,8 +39,13 @@
 | Model table | The aligned model catalog showing model identity and available metadata in columns |
 | Scrollbar | The terminal indicator showing the current position within an overflowing model catalog |
 | Debounced search | A search started only after the user has stopped changing the filter for the configured short interval |
-| Search generation | The monotonically increasing query identifier used to reject stale model-search results |
+| Search generation | The monotonically increasing user-entry identifier used to reject stale model-search results, regardless of completion order |
 | Setup wizard | The shared five-page terminal flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
 | Setup page | One tab-selected step in the setup wizard; only the active page accepts editing input |
 | Visible cursor | The highlighted block marker showing where the next character or current selection is being edited |
 | Save/discard prompt | The Escape confirmation that persists valid current settings or abandons all unsaved changes |
+| Catalog source | The endpoint used for model listing, pagination, and search; configured LiteLLM takes precedence over the active provider |
+| Credential source | The persisted origin of a secret: literal value, exact `${VARIABLE}` reference, or absent source |
+| Provider draft | A validated endpoint and credential source confirmed before complete model-tier setup |
+| Reasoning policy | The shared rule that resolves model metadata and persisted values to a valid reasoning strength |
+| Valid reasoning strength | One of `off`, `low`, `minimal`, `medium`, or `high`; unknown and empty values mean no reasoning request |

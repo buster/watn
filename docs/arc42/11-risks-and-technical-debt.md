@@ -30,6 +30,10 @@
 | R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; defer release-profile runtime smoke verification to `release-truth-and-repository-cleanup` and keep the source invariant explicit |
 | R-025 | A stale or overwritten debug executable could make transport tests execute the wrong binary | Medium | High | Build the two debug variants sequentially through Cargo's shared target cache, copy each to a unique temporary path, pass only those absolute paths to the harness, and fail before scenarios when a path is missing |
 | R-026 | Broad mocks could report a successful request from the wrong endpoint or credential | Medium | High | Use separate local twin servers and mocks matching exact method/path/Authorization; assert expected counts, competing zero hits, response source, and persisted endpoint |
+| R-027 | A catalog source may be configured with an endpoint or credential policy that differs from the active chat provider | Medium | High | Resolve catalog and chat sources separately, pass the selected source explicitly to list/page/search calls, and assert exact source, query, and Authorization behavior |
+| R-028 | A malformed reasoning default or supported-effort list could silently change request behavior | Medium | Medium | Use one closed-set policy, ignore unknown efforts, enforce mandatory non-off selection, preserve valid existing choices, and cover request bodies plus persisted TOML |
+| R-029 | Saving a provider at the wrong wizard transition could either lose a confirmed source or write unconfirmed input | Medium | High | Validate and resolve before the first catalog request, persist only at credential confirmation, keep tier writes separate, and drive failure/cancellation through the real wizard |
+| R-030 | A corrected concurrent-search test could still pass without proving worker overlap or cleanup | Medium | Medium | Coordinate slow and fast workers with channels/barriers, apply through the generation guard, assert exact final IDs, and join every worker before scenario exit |
 
 ## Technical debt
 
@@ -38,7 +42,7 @@
 | TD-001 | Non-OpenAI-compatible provider adapters | Medium | Provider trait is designed for extension; new adapters per provider |
 | TD-002 | No input validation of shell commands before execution | Medium | User sees full command before confirming |
 | TD-003 | Crossterm terminal event behavior varies across terminal emulators | Low | Key bindings use standard sequences (arrows, backspace, enter, escape, ctrl-c); non-standard terminals may require `TERM` detection fallbacks |
-| TD-004 | Reasoning config parsing edge cases (unknown strength values read from an edited config) | Low | Parse leniently; only `off`/`low`/`medium`/`high` map to `reasoning_effort`, unknown values fall back to no reasoning |
+| TD-004 | Reasoning config parsing edge cases (unknown strength values read from an edited config) | Low | Parse leniently; only `off`/`low`/`minimal`/`medium`/`high` map to `reasoning_effort`, unknown values fall back to no reasoning |
 | TD-005 | E2E tests need a non-persisted endpoint override to exercise configured-provider paths without live network access | Medium | Keep the override behind the debug-plus-feature guard; use reachable loopback twins and explicit binary paths; assert the exact persisted configured URL before and after routing |
 
 ## ADR-0011 bad-consequence coverage
@@ -83,3 +87,17 @@ The following consequences are accepted and mitigated explicitly:
 - Partial wizard saves: a user can leave after credentials but before all
   model pages; the caller persists the valid provider and only completed tier
   assignments, leaving uncompleted tiers unchanged.
+
+- Catalog-source separation: LiteLLM is discovery-only and optional-auth; the
+  active provider remains the chat destination. Separate twins and exact
+  request matchers prevent source crossover.
+- Credential-source preservation: literal and exact environment references are
+  retained through setup and expanded only when used. A missing saved reference
+  fails before a request rather than falling back to another variable.
+- Reasoning policy: the closed strength set and shared resolver prevent TTY and
+  non-TTY model selection from writing empty or unsupported values.
+- Provider confirmation boundary: saving after validation but before catalog
+  access leaves a usable provider after discovery failure while preserving old
+  tiers and avoiding an unintended original request.
+- Concurrent search evidence: deterministic overlap and worker joins ensure the
+  newest-result guarantee is tested rather than inferred from serialized sleeps.

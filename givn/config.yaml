@@ -176,6 +176,15 @@ givn_config_version: "0.2.0"
 #
 # grill_with_docs: false   # set to true to enable
 
+# --- Skill agent targets ------------------------------------------------------
+# Which agent targets receive the generated skills and commands.
+# `givn init` asks for this selection (default: opencode only); `givn skills
+# sync` installs to exactly the persisted targets. Toggle by editing the
+# list below (allowed values: opencode, agents, claude).
+#
+# skills:
+#   targets: [opencode]      # set to e.g. [opencode, agents, claude] for all
+
 # --- User overrides preserved from previous version ---
 addons:
   arc42: true
