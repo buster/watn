@@ -15,6 +15,11 @@ fn provider_with_litellm(world: &mut WatnWorld, provider: String) {
     ));
 }
 
+#[given(regex = r##"^a configured provider "([^"]+)" with a separate LiteLLM catalog endpoint$"##)]
+fn configured_provider_with_litellm(world: &mut WatnWorld, provider: String) {
+    provider_with_litellm(world, provider);
+}
+
 #[given("the LiteLLM catalog has no api key")]
 fn litellm_without_key(world: &mut WatnWorld) {
     assert!(world

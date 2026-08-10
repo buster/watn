@@ -411,26 +411,26 @@
   PASTE COMMAND AND OUTPUT HERE
   ```
 - [ ] COMMIT: Create one atomic commit referencing `Model catalog failure after provider setup preserves the provider and sends no request`.
-- Commit hash: `PENDING`
+- Commit hash: `3f3347d616baedf3cc24e2f0f303615606d1b1b0`
 
 ## E2E Scenario 6: Assigning Tiers Does Not Replace the Active Provider or Catalog Settings
 
-- [ ] RED: Remove `@wip` from only `Scenario: Assigning tiers does not replace the active provider or catalog settings`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Assigning tiers does not replace the active provider or catalog settings`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at undefined provider persistence assertions.
   ```
-- [ ] GREEN: Drive `watn models` through the real subprocess and assert confirmation output primarily, with provider/catalog persistence checks secondary; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Drive `watn models` through the real subprocess and assert confirmation output primarily, with provider/catalog persistence checks secondary; implement minimum production code. Production files created/modified: `tests/steps/catalog_source_steps.rs`, `tests/steps/setup_persistence_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted subprocess runner exited 0: `1 scenario (1 passed)`, `7 steps (7 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
+- [x] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `7 steps (7 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Assigning tiers does not replace the active provider or catalog settings`.
+- [x] COMMIT: Create one atomic commit referencing `Assigning tiers does not replace the active provider or catalog settings`.
 - Commit hash: `PENDING`
 
 ## E2E Scenario 7: Minimal Reasoning Is Persisted and Sent
