@@ -50,8 +50,8 @@
 - [x] REFACTOR: Remove duplication in the transport fixture/assertion helpers
   without changing behavior. The targeted rerun passed with 1 scenario and 6
   steps.
-- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Provider readiness ignores the test routing setting`. Commit hash: `3009286`.
+- [x] COMMIT: `3009286` - test(transport): Provider readiness ignores the test
+  routing setting
 
 ## Scenario: Normal debug requests ignore test routing settings
 
@@ -73,10 +73,11 @@
 - [x] REFACTOR: Make binary-copy and server cleanup deterministic, remove
   catch-all mock matchers, and rerun this scenario through verify-e2e. The
   formatted shared-cache rerun passed with 1 scenario and 10 steps.
-- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Normal debug requests ignore test routing settings`. Commit hash: `f78ed9e`.
+- [x] COMMIT: `f78ed9e` - test(transport): Normal debug requests ignore test
+  routing settings
   The earlier release-scoped implementation commit `0554516` is superseded by
-  this debug-scope correction.
+  this debug-scope correction. Production transport behavior is supplied by
+  `3009286` and verified by this harness commit.
 
 ## Scenario: Test-support requests use isolated routing without changing saved configuration
 
@@ -94,9 +95,8 @@
 - [x] REFACTOR: Consolidate shared transport state and preserve the primary
   CLI-output assertion. The cleanup-enabled targeted rerun passed with 1
   scenario and 11 steps.
-- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Test-support requests use isolated routing without changing saved configuration`.
-  Commit hash: `1bce76b`.
+- [x] COMMIT: `1bce76b` - test(transport): Test-support requests use isolated
+  routing without changing saved configuration
 
 ## Scenario: Missing or whitespace test overrides fall back to the configured provider
 
@@ -112,9 +112,9 @@
 - [x] REFACTOR: Remove duplicated fallback setup while keeping both child
   invocations independently observable. The formatted efficient-bootstrap
   rerun passed with 1 scenario and 10 steps.
-- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Missing or whitespace test overrides fall back to the configured provider`.
-  Commit hash: `686df8c`.
+- [x] COMMIT: `686df8c` - test(transport): Missing or whitespace test overrides
+  fall back to the configured provider. Production endpoint fallback behavior is supplied by
+  `1bce76b`; this commit completes the fallback fixture and assertions.
 
 ## Final Change Verification
 
@@ -140,8 +140,8 @@
   explicit debug copies and serialized library tests; non-E2E coverage is
   47.20% line coverage and E2E coverage is 77.76% line coverage. Both reports
   include 0/0 branch counters.
-  Verification evidence commit: `092b130`; coverage-command correction is
-  recorded in the review follow-up commit.
+  Verification evidence commit: `092b130`; coverage-command correction:
+  `6d976e6`.
 - [x] Record that release-profile override verification is deferred to
   `release-truth-and-repository-cleanup`; the source guard remains compiled and
   the later change owns the release smoke test.
