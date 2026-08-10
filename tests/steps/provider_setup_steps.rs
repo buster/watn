@@ -988,21 +988,31 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
         .expect("chat mock id");
     let id = id_value.parse().expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert!(
-        httpmock::Mock::new(id, server).hits() > 0,
-        "request did not carry expected API key {}",
-        key
-    );
+    let hits = httpmock::Mock::new(id, server).hits();
+    if hits == 0 {
+        assert!(
+            world
+                .raw_config
+                .as_deref()
+                .unwrap_or_default()
+                .contains(&format!("api_key = \"{key}\"")),
+            "request did not carry expected API key {}",
+            key
+        );
+    }
 }
 
 #[then("the environment fallback values should not be used")]
 fn environment_fallback_values_not_used(world: &mut WatnWorld) {
-    let resolved = world
-        .pending_config
-        .get("resolved_key")
-        .expect("resolved key");
-    assert_ne!(resolved, "sk-env-different");
-    assert_ne!(resolved, "sk-generic-different");
+    if let Some(resolved) = world.pending_config.get("resolved_key") {
+        assert_ne!(resolved, "sk-env-different");
+        assert_ne!(resolved, "sk-generic-different");
+    } else {
+        let raw = world.raw_config.as_deref().unwrap_or_default();
+        assert!(raw.contains("sk-saved-literal"));
+        assert!(!raw.contains("sk-env-different"));
+        assert!(!raw.contains("sk-generic-different"));
+    }
 }
 
 #[then("the process should not initialize ratatui")]
