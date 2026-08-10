@@ -69,7 +69,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `8 steps (8 passed)`.
   ```
 - [x] COMMIT: Create one atomic RED/GREEN/REFACTOR commit referencing the exact scenario title.
-- Commit hash: `PENDING`
+- Commit hash: `c512243c5d9aae9b529796159ebb9067d9287c10`
 
 ## Non-E2E Scenario 2: Provider-Specific Environment Fallback Precedes Generic Fallback
 
