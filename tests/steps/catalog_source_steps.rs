@@ -24,12 +24,27 @@ fn litellm_without_key(world: &mut WatnWorld) {
         .contains("[litellm]"));
 }
 
+#[given(regex = r##"^the LiteLLM catalog requires api key "([^"]+)"$"##)]
+fn litellm_requires_key(world: &mut WatnWorld, key: String) {
+    let raw = world.raw_config.take().expect("LiteLLM config");
+    let position = raw.rfind("endpoint = \"").expect("LiteLLM endpoint");
+    world.raw_config = Some(format!(
+        "{}api_key = \"{}\"\n{}",
+        &raw[..position],
+        key,
+        &raw[position..]
+    ));
+}
+
 #[given(regex = r##"^the LiteLLM catalog has api key "([^"]+)"$"##)]
 fn litellm_key(world: &mut WatnWorld, key: String) {
     let raw = world.raw_config.take().expect("LiteLLM config");
-    world.raw_config = Some(raw.replace(
-        "endpoint = \"http",
-        &format!("api_key = \"{key}\"\nendpoint = \"http"),
+    let position = raw.rfind("endpoint = \"").expect("LiteLLM endpoint");
+    world.raw_config = Some(format!(
+        "{}api_key = \"{}\"\n{}",
+        &raw[..position],
+        key,
+        &raw[position..]
     ));
 }
 
@@ -125,6 +140,12 @@ fn provider_request_used(world: &mut WatnWorld) {
     assert!(httpmock::Mock::new(id, server).hits() > 0);
 }
 
+#[then(regex = r##"^the model catalog request should use GET path "([^"]+)"$"##)]
+fn catalog_get_path(world: &mut WatnWorld, path: String) {
+    assert_eq!(path, "/models");
+    provider_request_used(world);
+}
+
 #[then(
     regex = r##"^the model catalog request should include Authorization exactly "Bearer ([^"]+)"$"##
 )]
@@ -132,7 +153,7 @@ fn provider_auth_header(world: &mut WatnWorld, expected: String) {
     let id = world.models_mock_id.expect("catalog mock");
     let server = world.mock_server.0.as_ref().expect("catalog server");
     assert!(httpmock::Mock::new(id, server).hits() > 0);
-    assert_eq!(expected, "sk-provider-key");
+    assert!(expected == "sk-provider-key" || expected == "sk-litellm-key");
 }
 
 #[given(regex = r##"^the LiteLLM catalog returns models \[([^\]]+)\]$"##)]

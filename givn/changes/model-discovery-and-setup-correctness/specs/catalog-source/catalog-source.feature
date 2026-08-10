@@ -5,7 +5,7 @@
 @givn.delta @catalog-source
 Feature: Catalog source resolution
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Configured LiteLLM is used for model catalog requests
     Given a provider "custom" with a separate LiteLLM catalog endpoint
     And the LiteLLM catalog requires api key "sk-litellm-key"

@@ -351,26 +351,26 @@
   After `cargo fmt --all`, targeted subprocess runner exited 0: `2 scenarios (2 passed)`, `17 steps (17 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `A literal saved credential is authoritative over environment fallback`.
-- Commit hash: `PENDING`
+- Commit hash: `13057493e43218dd130063373540e1c195e0d7d6`
 
 ## E2E Scenario 3: Configured LiteLLM Is Used for Model Catalog Requests
 
-- [ ] RED: Remove `@wip` from only `Scenario: Configured LiteLLM is used for model catalog requests`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Configured LiteLLM is used for model catalog requests`; implement real subprocess steps with `unimplemented!`; target through `verify.e2e_command`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Initial targeted run exited 101 at the missing catalog path assertion.
   ```
-- [ ] GREEN: Drive `watn models` through the real subprocess, assert terminal output primarily and catalog request details secondarily; implement minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Drive `watn models` through the real subprocess, assert terminal output primarily and catalog request details secondarily; implement minimum production code. Production files created/modified: `tests/steps/catalog_source_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted subprocess runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
-- [ ] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
+- [x] REFACTOR: Clean up and rerun the targeted e2e scenario; confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted subprocess runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Configured LiteLLM is used for model catalog requests`.
+- [x] COMMIT: Create one atomic commit referencing `Configured LiteLLM is used for model catalog requests`.
 - Commit hash: `PENDING`
 
 ## E2E Scenario 4: LiteLLM Discovery Does Not Replace the Active Chat Provider
