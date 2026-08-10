@@ -53,22 +53,22 @@
 
 ## Non-E2E Scenario 1: A Missing Saved Environment Credential Fails Before Discovery
 
-- [ ] RED: Remove `@wip` from only `Scenario: A missing saved environment credential fails before discovery`; implement its new steps with the strict `unimplemented!` stub; run the single-scenario command using `-- --name 'A missing saved environment credential fails before discovery'`; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: A missing saved environment credential fails before discovery`; implement its new steps with the strict `unimplemented!` stub; run the single-scenario command using `-- --name 'A missing saved environment credential fails before discovery'`; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101: Cucumber reported `1 scenario (1 failed)` and an unmatched step, followed by `error: test failed`.
   ```
-- [ ] GREEN: Replace stubs with real authentication-error and no-catalog-request assertions; implement the minimum production behavior. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real authentication-error and no-catalog-request assertions; implement the minimum production behavior. Production files created/modified: `src/models/mod.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `8 steps (8 passed)`.
   ```
-- [ ] REFACTOR: Clean up without behavior change; rerun the same single-scenario command and confirm zero exit; paste output.
+- [x] REFACTOR: Clean up without behavior change; rerun the same single-scenario command and confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `8 steps (8 passed)`.
   ```
-- [ ] COMMIT: Create one atomic RED/GREEN/REFACTOR commit referencing the exact scenario title.
+- [x] COMMIT: Create one atomic RED/GREEN/REFACTOR commit referencing the exact scenario title.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 2: Provider-Specific Environment Fallback Precedes Generic Fallback

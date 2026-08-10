@@ -500,6 +500,7 @@ fn saved_provider_credential(world: &mut WatnWorld, key: String) {
 #[given(regex = r#"^its saved api_key is \"([^\"]+)\"$"#)]
 fn saved_provider_api_key(world: &mut WatnWorld, key: String) {
     saved_provider_credential(world, key);
+    rebuild_saved_provider_config(world);
 }
 
 #[given(regex = r#"^environment variable ([A-Z0-9_]+) is not set$"#)]
