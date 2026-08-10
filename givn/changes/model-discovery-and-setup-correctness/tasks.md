@@ -149,7 +149,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `7 steps (7 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Catalog pagination and search use the configured catalog source`.
-- Commit hash: `PENDING`
+- Commit hash: `853b06bc16a0871382a30f542f44d4d4ead2ef43`
 
 ## Non-E2E Scenario 6: A Disabled Model Default Selects Off Even When a Default Effort Is Present
 
