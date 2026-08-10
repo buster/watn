@@ -1,4 +1,5 @@
 use cucumber::{given, then, when};
+use regex::Regex;
 use std::fmt;
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
@@ -9,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use crate::WatnWorld;
 
-use super::{finish_pty_session, pty_snapshot, start_pty_session};
+use super::{finish_pty_session, pty_snapshot, pty_write, start_pty_session};
 
 pub struct LiveInvocation {
     child: Child,
@@ -328,6 +329,61 @@ fn terminal_output_not_contains(world: &mut WatnWorld, text: String) {
         !output.contains(&text),
         "unexpected terminal output {text:?}: {output:?}"
     );
+}
+
+#[given(regex = r##"^a streaming provider emits content "([^"]+)"$"##)]
+fn command_provider(world: &mut WatnWorld, content: String) {
+    super::incremental_sse_rendering_steps::configure_command_content(world, content);
+}
+
+#[when(regex = r##"^I start the executable streaming command `watn -x "([^"]*)"` in a terminal$"##)]
+fn start_executable_stream(world: &mut WatnWorld, question: String) {
+    let session = start_pty_session(world, &["-x", &question]);
+    world.pty_session = Some(session);
+}
+
+#[then(regex = r##"^the generated command line "([^"]+)" is visible before confirmation$"##)]
+fn command_before_confirmation(world: &mut WatnWorld, command: String) {
+    wait_for_terminal_text(world, &command);
+    wait_for_terminal_text(world, "Execute now? [Y/n]");
+}
+
+#[then(
+    regex = r##"^the terminal output does not contain an execution output line "([^"]+)" before confirmation$"##
+)]
+fn execution_absent_before_confirmation(world: &mut WatnWorld, output: String) {
+    let terminal = pty_snapshot(world.pty_session.as_ref().expect("streaming PTY session"));
+    let clean = strip_ansi(&terminal).replace('\r', "");
+    assert!(
+        !clean.lines().any(|line| line.trim() == output),
+        "execution output appeared before confirmation: {clean:?}"
+    );
+}
+
+#[when("I confirm execution with the raw terminal Enter key")]
+fn confirm_raw_enter(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("streaming PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("streaming PTY session");
+    finish_pty_session(world, session);
+}
+
+#[then(regex = r##"^the execution output line "([^"]+)" appears exactly once$"##)]
+fn execution_output_once(world: &mut WatnWorld, output: String) {
+    let terminal = world
+        .output
+        .as_deref()
+        .expect("terminal output was not captured");
+    let clean = strip_ansi(terminal).replace('\r', "");
+    let count = clean.lines().filter(|line| line.trim() == output).count();
+    assert_eq!(count, 1, "expected one execution output line in {clean:?}");
+}
+
+fn strip_ansi(text: &str) -> String {
+    Regex::new(r"\x1b\[[0-9;?]*[A-Za-z]")
+        .expect("valid terminal escape regex")
+        .replace_all(text, "")
+        .into_owned()
 }
 
 fn wait_for_terminal_text(world: &WatnWorld, text: &str) {

@@ -265,24 +265,31 @@
 
 ## Scenario: A mid-stream failure preserves visible content and exits unsuccessfully
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
+- [x] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
   only it through `verify.e2e_command`. Expected non-zero result. Evidence:
   ```text
-  [paste targeted E2E output]
+  Targeted E2E command exited non-zero after matching the explicit
+  `failure_provider_stub`; the runner reported `1 step failed` and Cargo
+  returned `error: test failed`.
   ```
-- [ ] GREEN: Drive the real binary in a PTY against a connection-reset twin.
+- [x] GREEN: Drive the real binary in a PTY against a connection-reset twin.
   Assert visible prefix, spinner clear-line evidence, network status 3, no final
   metadata, no confirmation prompt, and non-zero exit. Production files: [list
-  every file]. Test files: [list every file]. Targeted E2E result:
+  every file]. Test files:
+  `tests/steps/incremental_sse_rendering_steps.rs` and
+  `tests/steps/incremental_sse_rendering_e2e_steps.rs`. The existing production
+  EOF/error path was exercised. Targeted E2E result:
   ```text
-  [paste targeted E2E output]
+  1 feature, 1 scenario, 8 steps passed; status 3, visible prefix, clear-line
+  evidence, metadata suppression, and prompt suppression were asserted.
   ```
-- [ ] REFACTOR: Consolidate failure cleanup and make the PTY terminal evidence
+- [x] REFACTOR: Consolidate failure cleanup and make the PTY terminal evidence
   stable. Targeted E2E rerun:
   ```text
-  [paste targeted E2E output]
+  Applied rustfmt and reran the targeted E2E command: 1 feature, 1 scenario,
+  8 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `test(e2e): A mid-stream failure preserves visible content and exits unsuccessfully`
+- [x] COMMIT: `e8c3d66` - `test(e2e): A mid-stream failure preserves visible content and exits unsuccessfully`
 
 ## Scenario: Raw terminal confirmation happens after the complete command arrives
 

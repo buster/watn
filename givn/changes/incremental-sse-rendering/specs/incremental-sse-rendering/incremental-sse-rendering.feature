@@ -102,14 +102,14 @@ Feature: Incremental provider output
     And execution is not prompted
     And the exit status should be 1
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Raw terminal confirmation happens after the complete command arrives
     Given a streaming provider emits content "printf raw-confirmed"
     When I start the executable streaming command `watn -x "run the command"` in a terminal
     Then the generated command line "printf raw-confirmed" is visible before confirmation
-    And the terminal output does not contain the execution output line "raw-confirmed" before confirmation
+    And the terminal output does not contain an execution output line "raw-confirmed" before confirmation
     When I confirm execution with the raw terminal Enter key
-    Then the generated command line "printf raw-confirmed" appears exactly once
+    Then the terminal generated command line "printf raw-confirmed" appears exactly once
     And the execution output line "raw-confirmed" appears exactly once
     And the exit status should be 0
 
