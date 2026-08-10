@@ -283,7 +283,8 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
             if reuse_existing_server {
                 let raw = world.raw_config.clone().unwrap_or_default();
-                config_content = rewrite_provider_endpoints(&raw, &base_url);
+                config_content = rewrite_provider_endpoints(&raw, &base_url)
+                    .replace("http://localhost:4000", &base_url);
                 has_config = !no_config;
             } else {
                 let raw = world.raw_config.clone().unwrap_or_default();
@@ -310,7 +311,8 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 );
 
                 if !non_default.is_empty() {
-                    let rewritten = rewrite_provider_endpoints(&non_default, &base_url);
+                    let rewritten = rewrite_provider_endpoints(&non_default, &base_url)
+                        .replace("http://localhost:4000", &base_url);
                     config_content = format!("{}\n\n{}", mock_cfg, rewritten);
                 } else {
                     config_content = mock_cfg;
@@ -395,15 +397,24 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
         world.mock_server.1 = Some(mock.id);
 
         if !world.pending_mock_no_config_file {
-            config_content = build_config(
-                "test",
-                None,
-                Some(vec![("test", &base_url, "test-key", "test-model")]),
-                None,
-                None,
-                None,
-            );
-            has_config = true;
+            if let Some(raw) = world.raw_config.clone() {
+                config_content = rewrite_provider_endpoints(&raw, &base_url);
+                has_config = true;
+                if raw.contains("[litellm]") {
+                    let models = vec!["test-model".to_string()];
+                    world.models_mock_id = setup_models_mock(server_ref, &models, false);
+                }
+            } else {
+                config_content = build_config(
+                    "test",
+                    None,
+                    Some(vec![("test", &base_url, "test-key", "test-model")]),
+                    None,
+                    None,
+                    None,
+                );
+                has_config = true;
+            }
         }
     }
 

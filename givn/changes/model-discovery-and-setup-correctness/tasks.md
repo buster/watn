@@ -411,7 +411,7 @@
   After `cargo fmt --all`, targeted PTY runner exited 0: `2 scenarios (2 passed)`, `18 steps (18 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `Model catalog failure after provider setup preserves the provider and sends no request`.
-- Commit hash: `PENDING`
+- Commit hash: `c9e54c3322f26690c384d1fc86e0af01ff3c03ba`
 
 ## E2E Scenario 6: Assigning Tiers Does Not Replace the Active Provider or Catalog Settings
 
@@ -475,18 +475,18 @@
 
 ## Final Verification
 
-- [ ] Run the complete configured `verify.command`; paste output and confirm zero exit.
+- [x] Run the complete configured `verify.command`; paste output and confirm zero exit.
 - Full non-e2e verification output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Exit 0: `13 features`, `56 scenarios (56 passed)`, `303 steps (303 passed)`.
   ```
-- [ ] Run the complete configured `verify.e2e_command`; paste output and confirm zero exit.
+- [x] Run the complete configured `verify.e2e_command`; paste output and confirm zero exit.
 - Full e2e verification output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Exit 0: `16 features`, `50 scenarios (50 passed)`, `333 steps (333 passed)`.
   ```
-- [ ] Run `givn lint --change model-discovery-and-setup-correctness` if needed for static feature validation; paste output.
+- [x] Run `givn lint --change model-discovery-and-setup-correctness` if needed for static feature validation; paste output.
 - Lint output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  `givn lint --change model-discovery-and-setup-correctness` exited 0 and reported only the two intentionally deferred cancellation scenarios tagged `@wip`.
   ```

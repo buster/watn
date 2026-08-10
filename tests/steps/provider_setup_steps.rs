@@ -664,7 +664,15 @@ fn builtin_endpoint_not_selected(world: &mut WatnWorld, endpoint: String) {
 )]
 fn config_contains_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
     let config = load_world_config(world);
-    assert_eq!(config.providers[&provider].endpoint, endpoint);
+    assert_eq!(
+        config
+            .providers
+            .get(&provider)
+            .map(|value| value.endpoint.as_str()),
+        Some(endpoint.as_str()),
+        "providers in config: {:?}",
+        config.providers.keys().collect::<Vec<_>>()
+    );
 }
 
 #[then(regex = r#"^the config file should contain provider \"([^\"]+)\"$"#)]

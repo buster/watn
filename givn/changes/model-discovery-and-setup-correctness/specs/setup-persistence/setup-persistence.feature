@@ -18,7 +18,7 @@ Feature: Setup persistence boundaries
     And the config file should not contain selected tier assignments
     And no original chat completion request should be sent
 
-  @givn.added @e2e
+  @givn.added @e2e @wip
   Scenario: Cancelling before credential confirmation does not save a provider
     Given no config file exists
     When I start `watn setup` in a terminal
@@ -37,7 +37,7 @@ Feature: Setup persistence boundaries
     And the config file should contain api_key exactly "sk-confirmed"
     And the config file should not contain selected tier assignments
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Assigning tiers does not replace the active provider or catalog settings
     Given a configured provider "custom" with a separate LiteLLM catalog endpoint
     And the LiteLLM catalog returns models ["model-a", "model-b", "model-c"]
