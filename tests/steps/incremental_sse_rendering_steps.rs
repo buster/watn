@@ -8,8 +8,8 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use crate::WatnWorld;
 use super::{finish_pty_session, pty_snapshot, start_pty_session};
+use crate::WatnWorld;
 
 #[derive(Default)]
 pub struct StreamingState {
@@ -27,7 +27,10 @@ impl fmt::Debug for StreamingState {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("StreamingState")
-            .field("server", &self.server.as_ref().map(|server| &server.endpoint))
+            .field(
+                "server",
+                &self.server.as_ref().map(|server| &server.endpoint),
+            )
             .field("requested_model", &self.requested_model)
             .field("pricing", &self.pricing)
             .field("controlled_visible", &self.controlled_visible)
@@ -140,6 +143,15 @@ impl StreamingServer {
         hold_after: Option<usize>,
         bytewise_first: bool,
     ) -> Self {
+        Self::start_with_initial_delay(events, hold_after, bytewise_first, Duration::ZERO)
+    }
+
+    fn start_with_initial_delay(
+        events: Vec<Vec<u8>>,
+        hold_after: Option<usize>,
+        bytewise_first: bool,
+        initial_delay: Duration,
+    ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
         let address = listener
             .local_addr()
@@ -161,6 +173,9 @@ impl StreamingServer {
                 .write_all(headers.as_bytes())
                 .expect("write streaming provider headers");
             stream.flush().expect("flush streaming provider headers");
+            if !initial_delay.is_zero() {
+                thread::sleep(initial_delay);
+            }
 
             for (index, event) in events.iter().enumerate() {
                 if index > 0 {
@@ -171,7 +186,9 @@ impl StreamingServer {
                         stream
                             .write_all(&[*byte])
                             .expect("write partial streaming provider event");
-                        stream.flush().expect("flush partial streaming provider event");
+                        stream
+                            .flush()
+                            .expect("flush partial streaming provider event");
                         thread::sleep(Duration::from_millis(2));
                     }
                 } else {
@@ -278,6 +295,32 @@ fn update_config(world: &mut WatnWorld) {
     ));
 }
 
+pub(crate) fn configure_delayed_content(world: &mut WatnWorld, first: String, second: String) {
+    let requested_model = world
+        .streaming
+        .requested_model
+        .clone()
+        .unwrap_or_else(|| "test-model".to_string());
+    let events = vec![
+        content_event(&requested_model, &first),
+        content_event(&requested_model, &second),
+        done_event(),
+    ];
+    world.streaming.server = Some(StreamingServer::start_with_initial_delay(
+        events,
+        Some(0),
+        false,
+        Duration::from_millis(200),
+    ));
+    update_config(world);
+}
+
+pub(crate) fn release_stream(world: &WatnWorld) {
+    if let Some(server) = &world.streaming.server {
+        server.release();
+    }
+}
+
 #[given(regex = r##"^the request asks for model "([^"]+)"$"##)]
 fn requested_model(world: &mut WatnWorld, model: String) {
     world.streaming.requested_model = Some(model);
@@ -310,12 +353,7 @@ fn usage_only_provider(
 #[given(
     regex = r##"^pricing is configured only for "([^"]+)" at ([0-9]+\.[0-9]+) input and ([0-9]+\.[0-9]+) output per million tokens$"##
 )]
-fn response_model_pricing(
-    world: &mut WatnWorld,
-    model: String,
-    input: f64,
-    output: f64,
-) {
+fn response_model_pricing(world: &mut WatnWorld, model: String, input: f64, output: f64) {
     world.streaming.pricing = Some(Pricing {
         model,
         input,
@@ -335,7 +373,10 @@ fn stdout_contains(world: &mut WatnWorld, text: String) {
 
 #[then(expr = "the final metadata names exactly {string}")]
 fn final_metadata_names(world: &mut WatnWorld, model: String) {
-    let stderr = world.stderr_output.as_deref().expect("stderr was not captured");
+    let stderr = world
+        .stderr_output
+        .as_deref()
+        .expect("stderr was not captured");
     assert!(
         stderr.contains(&format!("{model} ·")),
         "expected final metadata for {model:?}, got {stderr:?}"
@@ -344,7 +385,10 @@ fn final_metadata_names(world: &mut WatnWorld, model: String) {
 
 #[then(expr = "stderr should not contain final metadata for {string}")]
 fn stderr_not_name_model(world: &mut WatnWorld, model: String) {
-    let stderr = world.stderr_output.as_deref().expect("stderr was not captured");
+    let stderr = world
+        .stderr_output
+        .as_deref()
+        .expect("stderr was not captured");
     assert!(
         !stderr.contains(&format!("{model} ·")),
         "did not expect final metadata for {model:?}, got {stderr:?}"
@@ -353,8 +397,14 @@ fn stderr_not_name_model(world: &mut WatnWorld, model: String) {
 
 #[then(expr = "stderr should contain a non-zero cost for {string}")]
 fn stderr_has_nonzero_cost(world: &mut WatnWorld, model: String) {
-    let stderr = world.stderr_output.as_deref().expect("stderr was not captured");
-    assert!(stderr.contains(&model), "expected model metadata in {stderr:?}");
+    let stderr = world
+        .stderr_output
+        .as_deref()
+        .expect("stderr was not captured");
+    assert!(
+        stderr.contains(&model),
+        "expected model metadata in {stderr:?}"
+    );
     let cost = Regex::new(r"\$(\d+\.\d{4})")
         .expect("valid cost regex")
         .captures(stderr)
@@ -366,7 +416,10 @@ fn stderr_has_nonzero_cost(world: &mut WatnWorld, model: String) {
 
 #[then("stderr should contain a positive throughput value")]
 fn stderr_has_positive_throughput(world: &mut WatnWorld) {
-    let stderr = world.stderr_output.as_deref().expect("stderr was not captured");
+    let stderr = world
+        .stderr_output
+        .as_deref()
+        .expect("stderr was not captured");
     let tok_s = Regex::new(r"(\d+(?:\.\d+)?) tok/s")
         .expect("valid throughput regex")
         .captures(stderr)
@@ -398,10 +451,7 @@ fn start_streaming_command(world: &mut WatnWorld, question: String) {
 
 #[then("watn exits successfully before the provider connection is released")]
 fn exits_before_release(world: &mut WatnWorld) {
-    let session = world
-        .pty_session
-        .as_mut()
-        .expect("streaming PTY session");
+    let session = world.pty_session.as_mut().expect("streaming PTY session");
     let deadline = std::time::Instant::now() + Duration::from_secs(3);
     loop {
         if let Some(status) = session.child.try_wait().expect("poll streaming child") {
@@ -425,7 +475,10 @@ fn generated_command_once(world: &mut WatnWorld, command: String) {
         .or_else(|| world.output.clone())
         .expect("streaming output");
     let occurrences = output.match_indices(&command).count();
-    assert_eq!(occurrences, 1, "expected one generated command, got {output:?}");
+    assert_eq!(
+        occurrences, 1,
+        "expected one generated command, got {output:?}"
+    );
 }
 
 #[when("I release the provider connection")]
@@ -447,7 +500,9 @@ fn partial_provider(world: &mut WatnWorld, content: String) {
     update_config(world);
 }
 
-#[then(regex = r##"^the streamed fragment "([^"]+)" is visible before the provider releases the next event$"##)]
+#[then(
+    regex = r##"^the streamed fragment "([^"]+)" is visible before the provider releases the next event$"##
+)]
 fn streamed_fragment(world: &mut WatnWorld, fragment: String) {
     let deadline = std::time::Instant::now() + Duration::from_secs(3);
     loop {
@@ -492,7 +547,9 @@ fn malformed_provider(world: &mut WatnWorld, content: String) {
     update_config(world);
 }
 
-#[then(regex = r##"^the valid streamed fragment "([^"]+)" is visible before the provider releases `\[DONE\]`$"##)]
+#[then(
+    regex = r##"^the valid streamed fragment "([^"]+)" is visible before the provider releases `\[DONE\]`$"##
+)]
 fn valid_fragment(world: &mut WatnWorld, fragment: String) {
     streamed_fragment(world, fragment);
 }
@@ -506,23 +563,28 @@ fn release_done(world: &mut WatnWorld) {
     regex = r##"^a streaming provider flushes valid content "([^"]+)" and closes cleanly without sending `\[DONE\]`$"##
 )]
 fn eof_provider(world: &mut WatnWorld, content: String) {
-    world.streaming.server = Some(StreamingServer::start(vec![content_event(
-        "test-model",
-        &content,
-    )], None));
+    world.streaming.server = Some(StreamingServer::start(
+        vec![content_event("test-model", &content)],
+        None,
+    ));
     update_config(world);
 }
 
 #[then("stderr should not contain successful model metadata")]
 fn stderr_no_success_metadata(world: &mut WatnWorld) {
-    let stderr = world.stderr_output.as_deref().expect("stderr was not captured");
+    let stderr = world
+        .stderr_output
+        .as_deref()
+        .expect("stderr was not captured");
     assert!(
         !stderr.contains("tok/s"),
         "unexpected successful metadata in stderr: {stderr:?}"
     );
 }
 
-#[given(regex = r##"^the streaming output sink flushes prefix "([^"]+)" and fails on the next write$"##)]
+#[given(
+    regex = r##"^the streaming output sink flushes prefix "([^"]+)" and fails on the next write$"##
+)]
 fn controlled_sink(world: &mut WatnWorld, prefix: String) {
     world.streaming.controlled_prefix = Some(prefix);
 }

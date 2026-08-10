@@ -2,7 +2,9 @@ use std::io::{BufRead, BufReader};
 use std::time::{Duration, Instant};
 
 use crate::error::Error;
-use crate::provider::{Message, Provider, RequestOptions, StreamEvent, StreamingResponse, TokenUsage};
+use crate::provider::{
+    Message, Provider, RequestOptions, StreamEvent, StreamingResponse, TokenUsage,
+};
 
 pub struct OpenAICompatibleProvider {
     pub endpoint: String,

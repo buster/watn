@@ -164,38 +164,44 @@
 
 ## Scenario: Output failure preserves the visible prefix and skips completion actions
 
-- [ ] RED: Remove `@wip`, bind explicit controlled-sink stubs, and run only this
+- [x] RED: Remove `@wip`, bind explicit controlled-sink stubs, and run only this
   scenario. Expected failure: the current renderer has no streamed output sink
   error boundary. Evidence:
   ```text
-  [paste targeted runner output]
+  Targeted command exited non-zero after matching `controlled_sink_stub`; the
+  runner reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Add a controlled writer seam or direct renderer test that fails on
+- [x] GREEN: Add a controlled writer seam or direct renderer test that fails on
   the next write/flush. Propagate the existing I/O error, retain the visible
   prefix, finish the spinner, omit metadata, and skip execution. Production
-  files: [list every file]. Test files: [list every file]. Targeted result:
+  files: `src/output/render.rs`, `src/main.rs`. Test file:
+  `tests/steps/incremental_sse_rendering_steps.rs`. Targeted result:
   ```text
-  [paste targeted runner output]
+  1 feature, 1 scenario, 7 steps passed; exit status 1 and the controlled I/O
+  error were asserted.
   ```
-- [ ] REFACTOR: Keep the writer seam test-only or narrowly scoped and ensure no
+- [x] REFACTOR: Keep the writer seam test-only or narrowly scoped and ensure no
   duplicate output path remains. Targeted rerun:
   ```text
-  [paste targeted runner output]
+  Kept `write_streamed_content` narrow and reused it from the CLI callback;
+  targeted rerun passed with 1 feature, 1 scenario, 7 steps.
   ```
-- [ ] COMMIT: `[commit hash]` - `feat(incremental-sse-rendering): Output failure preserves the visible prefix and skips completion actions`
+- [x] COMMIT: `3371a0f` - `feat(incremental-sse-rendering): Output failure preserves the visible prefix and skips completion actions`
 
 ## E2E Setup
 
-- [ ] Before the first E2E scenario, confirm the local run command requires no
+- [x] Before the first E2E scenario, confirm the local run command requires no
   external service: the loopback streaming twin starts inside the Cucumber
   process and is released/joined per scenario. Register
   `tests/steps/incremental_sse_rendering_e2e_steps.rs` separately from the
   non-E2E step module. Prove the configured E2E command is a strict subset of
   the non-E2E command by running both and recording scenario counts here:
   ```text
-  verify.command count: [count]
-  verify.e2e_command count: [count]
-  Result: E2E count is strictly smaller: [yes/no]
+  verify.command count: 14 features, 62 scenarios, 344 steps passed.
+  verify.e2e_command count: 16 features, 52 scenarios, 346 steps passed.
+  Result: E2E count is strictly smaller: yes (52 < 62). The loopback streaming
+  twin starts and is cleaned up inside the Cucumber process; no external service
+  or network dependency is required.
   ```
 
 ## E2E Scenarios

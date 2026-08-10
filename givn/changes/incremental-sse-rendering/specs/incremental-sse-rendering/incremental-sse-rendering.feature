@@ -8,15 +8,15 @@
 @givn.delta @incremental-sse-rendering
 Feature: Incremental provider output
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Command text appears before a delayed stream completes
     Given a streaming provider flushes content "printf first" and delays content " && printf second" while keeping the connection open
-    When I start the streaming command `watn "build a two-part command"` in a terminal
+    When I start the delayed streaming command `watn "build a two-part command"` in a terminal
     Then the progress indicator is visible before the first streamed content
     And the first streamed content "printf first" is visible before the provider releases the delayed event
     And the terminal shows spinner cleanup after the first streamed content
     When I release the delayed event and wait for watn to exit
-    Then the generated command line "printf first && printf second" appears exactly once
+    Then the terminal generated command line "printf first && printf second" appears exactly once
     And the exit status should be 0
 
   @givn.added @e2e @wip
