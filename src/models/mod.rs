@@ -2,8 +2,8 @@ pub mod dialog;
 pub mod list;
 pub mod picker;
 
-use crate::config::{resolve_provider, save_config};
 use crate::config::types::ModelTiers;
+use crate::config::{resolve_provider, save_config};
 use crate::error::Error;
 use crate::provider::setup::ModelSetupResult;
 use list::{fetch_models, fetch_models_page};
@@ -19,9 +19,7 @@ pub fn run_models_result(
         Err(error) => return ModelSetupResult::Failed(error),
     };
 
-    if let (Some(small), Some(normal), Some(thinking)) =
-        (&set_small, &set_normal, &set_thinking)
-    {
+    if let (Some(small), Some(normal), Some(thinking)) = (&set_small, &set_normal, &set_thinking) {
         let mut updated = config.clone();
         updated.tiers.small = Some(small.clone());
         updated.tiers.normal = Some(normal.clone());
@@ -36,11 +34,7 @@ pub fn run_models_result(
         return ModelSetupResult::Saved;
     }
 
-    let provider_name = config
-        .defaults
-        .provider
-        .as_deref()
-        .unwrap_or("openrouter");
+    let provider_name = config.defaults.provider.as_deref().unwrap_or("openrouter");
 
     let provider_config = match resolve_provider(&config, provider_name) {
         Ok(p) => p,
@@ -145,10 +139,7 @@ pub fn format_model_entry(entry: &list::ModelEntry) -> String {
     if let Some(ref pricing) = entry.pricing {
         parts.push(format!(
             "${:.2}/{}K in, ${:.2}/{}K out",
-            pricing.input,
-            1,
-            pricing.output,
-            1
+            pricing.input, 1, pricing.output, 1
         ));
     }
     if !entry.supported_features.is_empty() {
@@ -158,11 +149,11 @@ pub fn format_model_entry(entry: &list::ModelEntry) -> String {
     parts.join(" ")
 }
 
-fn select_model<'a>(models: &'a [list::ModelEntry], tier: &str) -> Result<&'a list::ModelEntry, Error> {
-    let selections: Vec<String> = models
-        .iter()
-        .map(format_model_entry)
-        .collect();
+fn select_model<'a>(
+    models: &'a [list::ModelEntry],
+    tier: &str,
+) -> Result<&'a list::ModelEntry, Error> {
+    let selections: Vec<String> = models.iter().map(format_model_entry).collect();
 
     let selection = select_model_non_interactive(&selections, tier)?;
 

@@ -127,14 +127,15 @@
   subset of verify.command. Result: shared-cache two-build bootstrap; 11
   features, 42 scenarios, 267 steps passed. The E2E count is strictly below
   the 44-scenario verify count.
-- [ ] Run `cargo fmt --all -- --check`, `cargo check --all-targets`,
+- [x] Run `cargo fmt --all -- --check`, `cargo check --all-targets`,
   `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-targets`,
   `cargo test --doc`, `cargo build --release`, and `git diff --check`.
-  Results: `cargo fmt --all -- --check` remains non-zero because of the
-  repository-wide pre-existing formatting drift in unrelated test files;
-  `cargo check --all-targets`, clippy with `-D warnings`, `cargo test
-  --all-targets` (15 unit tests plus 86 scenarios), `cargo test --doc`,
-  `cargo build --release`, and `git diff --check` pass.
+  Results: applied repository-wide rustfmt; `cargo fmt --all -- --check`,
+  `cargo check --all-targets`, and `cargo clippy --all-targets --all-features
+  -- -D warnings` pass. The shared-cache bootstrap with explicit default and
+  test-support debug binaries and `cargo test --all-targets --features
+  test-support` passed 15 unit tests, 86 scenarios, and 507 steps. `cargo test
+  --doc` (0 doc tests), `cargo build --release`, and `git diff --check` pass.
 - [x] Record that release-profile override verification is deferred to
   `release-truth-and-repository-cleanup`; the source guard remains compiled and
   the later change owns the release smoke test.

@@ -44,18 +44,39 @@ impl Config {
             },
             providers: {
                 let mut m = HashMap::new();
-                m.insert("custom".to_string(), ProviderConfig {
-                    endpoint: "https://api.example.com/v1".to_string(),
-                    api_key: Some("sk-...".to_string()),
-                    default_model: Some("custom-model".to_string()),
-                });
+                m.insert(
+                    "custom".to_string(),
+                    ProviderConfig {
+                        endpoint: "https://api.example.com/v1".to_string(),
+                        api_key: Some("sk-...".to_string()),
+                        default_model: Some("custom-model".to_string()),
+                    },
+                );
                 m
             },
             pricing: {
                 let mut m = HashMap::new();
-                m.insert("~deepseek/deepseek-v4-flash-latest".to_string(), ModelPricing { input: 0.15, output: 0.60 });
-                m.insert("deepseek/deepseek-v4-pro".to_string(), ModelPricing { input: 2.50, output: 10.00 });
-                m.insert("z-ai/glm-5.2".to_string(), ModelPricing { input: 1.10, output: 4.40 });
+                m.insert(
+                    "~deepseek/deepseek-v4-flash-latest".to_string(),
+                    ModelPricing {
+                        input: 0.15,
+                        output: 0.60,
+                    },
+                );
+                m.insert(
+                    "deepseek/deepseek-v4-pro".to_string(),
+                    ModelPricing {
+                        input: 2.50,
+                        output: 10.00,
+                    },
+                );
+                m.insert(
+                    "z-ai/glm-5.2".to_string(),
+                    ModelPricing {
+                        input: 1.10,
+                        output: 4.40,
+                    },
+                );
                 m
             },
             litellm: None,

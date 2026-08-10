@@ -1,11 +1,14 @@
 use cucumber::{then, when};
 
-use crate::WatnWorld;
 use super::{finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write};
+use crate::WatnWorld;
 
 fn assert_label(output: &str, label: &str) {
     for word in label.split_whitespace() {
-        assert!(output.contains(word), "missing {word:?} in provider setup output: {output:?}");
+        assert!(
+            output.contains(word),
+            "missing {word:?} in provider setup output: {output:?}"
+        );
     }
 }
 
@@ -13,8 +16,18 @@ fn assert_label(output: &str, label: &str) {
 fn provider_setup_bordered_panel(world: &mut WatnWorld, title: String) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     let output = pty_wait_for_label(session, "Setup");
-    assert!(output.contains('┌'), "provider setup is not bordered: {output:?}");
-    assert_label(&output, if title == "Provider setup" { "Setup" } else { &title });
+    assert!(
+        output.contains('┌'),
+        "provider setup is not bordered: {output:?}"
+    );
+    assert_label(
+        &output,
+        if title == "Provider setup" {
+            "Setup"
+        } else {
+            &title
+        },
+    );
 }
 
 #[then("provider setup should show a selectable credential source list")]
@@ -57,7 +70,9 @@ fn provider_setup_validation_message(world: &mut WatnWorld, message: String) {
     assert_label(&output, &message);
 }
 
-#[when(regex = r#"^I restore the default endpoint and enter pasted credential \"([^\"]+)\" in provider setup$"#)]
+#[when(
+    regex = r#"^I restore the default endpoint and enter pasted credential \"([^\"]+)\" in provider setup$"#
+)]
 fn restore_endpoint_and_enter_credential(world: &mut WatnWorld, credential: String) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
     pty_write(session, "\x15https://openrouter.ai/api/v1\r");
@@ -65,7 +80,9 @@ fn restore_endpoint_and_enter_credential(world: &mut WatnWorld, credential: Stri
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, &credential);
-    world.pending_config.insert("layout_credential".to_string(), credential);
+    world
+        .pending_config
+        .insert("layout_credential".to_string(), credential);
     std::thread::sleep(std::time::Duration::from_millis(100));
 }
 
@@ -95,7 +112,10 @@ fn provider_setup_masks_credentials(world: &mut WatnWorld) {
         masked_count >= credential.chars().count(),
         "masked credential missing: {output:?}"
     );
-    assert!(!output.contains(&credential), "credential leaked in provider output: {output:?}");
+    assert!(
+        !output.contains(&credential),
+        "credential leaked in provider output: {output:?}"
+    );
 
     let session = world.pty_session.take().expect("provider PTY session");
     let mut session = session;

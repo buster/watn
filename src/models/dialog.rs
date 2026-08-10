@@ -30,7 +30,10 @@ impl ReasoningStrength {
     }
 
     pub fn parse(value: &str) -> Option<Self> {
-        Self::ALL.iter().copied().find(|strength| strength.as_str() == value)
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|strength| strength.as_str() == value)
     }
 }
 

@@ -2,10 +2,7 @@ use std::io::Read;
 use std::time::{Duration, Instant};
 
 use crate::error::Error;
-use crate::provider::{
-    Message, Provider, RequestOptions, StreamingResponse,
-    TokenUsage,
-};
+use crate::provider::{Message, Provider, RequestOptions, StreamingResponse, TokenUsage};
 
 pub struct OpenAICompatibleProvider {
     pub endpoint: String,
@@ -135,9 +132,7 @@ impl Provider for OpenAICompatibleProvider {
                         if let Some(usage) = chunk["usage"].as_object() {
                             final_usage = Some(TokenUsage {
                                 prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
-                                completion_tokens: usage["completion_tokens"]
-                                    .as_u64()
-                                    .unwrap_or(0)
+                                completion_tokens: usage["completion_tokens"].as_u64().unwrap_or(0)
                                     as u32,
                             });
                         }
@@ -153,7 +148,11 @@ impl Provider for OpenAICompatibleProvider {
             model: response_model,
             full_content,
             elapsed_secs,
-            reasoning_content: if reasoning_content.is_empty() { None } else { Some(reasoning_content) },
+            reasoning_content: if reasoning_content.is_empty() {
+                None
+            } else {
+                Some(reasoning_content)
+            },
         })
     }
 }

@@ -5,18 +5,18 @@ use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
-    DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, Cell, List, ListItem, ListState, Paragraph, Row, Scrollbar,
-        ScrollbarOrientation, ScrollbarState, Table, TableState, Tabs, Wrap,
+        Block, Cell, List, ListItem, ListState, Paragraph, Row, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, Table, TableState, Tabs, Wrap,
     },
+    DefaultTerminal, Frame,
 };
 
-use crate::config::{self, resolve_provider};
 use crate::config::types::Config;
+use crate::config::{self, resolve_provider};
 use crate::error::Error;
 use crate::models::dialog::{LevelChoice, ReasoningStrength};
 use crate::models::list::{fetch_models, fetch_models_page, word_matches, ModelEntry};
@@ -144,10 +144,7 @@ pub fn run_with_config(
     result
 }
 
-pub fn apply_result(
-    config: &mut Config,
-    result: &SetupWizardResult,
-) -> Result<(), Error> {
+pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
     config::save_provider_draft(config, &result.provider)?;
 
     let mut updated = config.clone();
@@ -208,11 +205,7 @@ struct SetupWizard {
 
 impl SetupWizard {
     fn from_config(config: &Config, entry: SetupEntryPoint) -> Result<Self, Error> {
-        let provider_name = config
-            .defaults
-            .provider
-            .as_deref()
-            .unwrap_or("openrouter");
+        let provider_name = config.defaults.provider.as_deref().unwrap_or("openrouter");
         let provider = match resolve_provider(config, provider_name) {
             Ok(provider) => provider,
             Err(_error) if entry != SetupEntryPoint::Models => {
@@ -230,10 +223,7 @@ impl SetupWizard {
                 value[2..value.len() - 1].to_string(),
             ),
             Some(value) => (CredentialStorage::Configuration, value.to_string()),
-            None => (
-                CredentialStorage::Configuration,
-                String::new(),
-            ),
+            None => (CredentialStorage::Configuration, String::new()),
         };
         let first_page = match entry {
             SetupEntryPoint::Models => SetupPage::SmallModel,
@@ -308,8 +298,8 @@ impl SetupWizard {
             {
                 continue;
             }
-            let Event::Key(key) = event::read()
-                .map_err(|error| Error::IoError(std::io::Error::other(error)))?
+            let Event::Key(key) =
+                event::read().map_err(|error| Error::IoError(std::io::Error::other(error)))?
             else {
                 continue;
             };
@@ -351,18 +341,18 @@ impl SetupWizard {
             KeyCode::Char('n') | KeyCode::Char('N') => {
                 // Invalidate catalog work before abandoning the draft state.
                 self.generation.fetch_add(1, Ordering::SeqCst);
-                Ok(Some(SetupWizardOutcome::Cancelled(SetupCancellation::Escape)))
+                Ok(Some(SetupWizardOutcome::Cancelled(
+                    SetupCancellation::Escape,
+                )))
             }
-            KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
-                match self.result() {
-                    Ok(result) => Ok(Some(SetupWizardOutcome::Saved(Box::new(result)))),
-                    Err(error) => {
-                        self.save_prompt = false;
-                        self.validation = error.to_string();
-                        Ok(None)
-                    }
+            KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => match self.result() {
+                Ok(result) => Ok(Some(SetupWizardOutcome::Saved(Box::new(result)))),
+                Err(error) => {
+                    self.save_prompt = false;
+                    self.validation = error.to_string();
+                    Ok(None)
                 }
-            }
+            },
             KeyCode::Esc => {
                 self.save_prompt = false;
                 Ok(None)
@@ -563,7 +553,9 @@ impl SetupWizard {
             SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel
                 if self.model_focus == ModelFocus::Table =>
             {
-                let Some(slot) = self.page.model_slot() else { return };
+                let Some(slot) = self.page.model_slot() else {
+                    return;
+                };
                 if let Some(character) = character {
                     self.queries[slot].push(character);
                 } else {
@@ -580,7 +572,9 @@ impl SetupWizard {
             self.storage = CredentialStorage::Configuration;
             return;
         }
-        let Some(slot) = self.page.model_slot() else { return };
+        let Some(slot) = self.page.model_slot() else {
+            return;
+        };
         if self.model_focus == ModelFocus::Reasoning {
             self.cycle_reasoning(slot, -1);
         } else {
@@ -597,7 +591,9 @@ impl SetupWizard {
             }
             return;
         }
-        let Some(slot) = self.page.model_slot() else { return };
+        let Some(slot) = self.page.model_slot() else {
+            return;
+        };
         if self.model_focus == ModelFocus::Reasoning {
             self.cycle_reasoning(slot, 1);
         } else if !self.suggestions[slot].is_empty() {
@@ -607,7 +603,9 @@ impl SetupWizard {
     }
 
     fn move_page(&mut self, direction: i32) {
-        let Some(slot) = self.page.model_slot() else { return };
+        let Some(slot) = self.page.model_slot() else {
+            return;
+        };
         if self.model_focus == ModelFocus::Reasoning {
             return;
         }
@@ -713,9 +711,8 @@ impl SetupWizard {
                 Ok((models, error, no_results)) => {
                     self.suggestions[slot] = models;
                     self.selection[slot] = 0;
-                    self.search_status[slot] = error.or_else(|| {
-                        no_results.then(|| "(no models found)".to_string())
-                    });
+                    self.search_status[slot] =
+                        error.or_else(|| no_results.then(|| "(no models found)".to_string()));
                 }
                 Err(error) => {
                     let filtered = self.models[slot]
@@ -768,8 +765,7 @@ impl SetupWizard {
     fn sync_reasoning(&mut self, slot: usize) {
         let options = self.reasoning_options(slot);
         if !self.reasoning_explicit[slot] || !options.contains(&self.reasoning[slot]) {
-            self.reasoning[slot] = self
-                .suggestions[slot]
+            self.reasoning[slot] = self.suggestions[slot]
                 .get(self.selection[slot])
                 .and_then(|model| model.reasoning.as_ref())
                 .and_then(|metadata| metadata.default_effort.as_deref())
@@ -912,38 +908,69 @@ impl SetupWizard {
     }
 
     fn draw_model(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let Some(slot) = self.page.model_slot() else { return };
+        let Some(slot) = self.page.model_slot() else {
+            return;
+        };
         let chunks = Layout::vertical([Constraint::Min(7), Constraint::Length(3)]).split(area);
-        let rows = self.suggestions[slot].iter().enumerate().map(|(index, model)| {
-            let label = if index == self.selection[slot] {
-                format!("> {}", model.id)
-            } else {
-                model.id.clone()
-            };
-            Row::new([
-                Cell::from(label),
-                Cell::from(model.context_length.map(|value| format!("{}K", value / 1000)).unwrap_or_else(|| "-".to_string())),
-                Cell::from(model.pricing.as_ref().map(|value| format!("${:.2}/${:.2}", value.input, value.output)).unwrap_or_else(|| "-".to_string())),
-                Cell::from(model.supported_features.join(", ")),
-            ])
-        });
+        let rows = self.suggestions[slot]
+            .iter()
+            .enumerate()
+            .map(|(index, model)| {
+                let label = if index == self.selection[slot] {
+                    format!("> {}", model.id)
+                } else {
+                    model.id.clone()
+                };
+                Row::new([
+                    Cell::from(label),
+                    Cell::from(
+                        model
+                            .context_length
+                            .map(|value| format!("{}K", value / 1000))
+                            .unwrap_or_else(|| "-".to_string()),
+                    ),
+                    Cell::from(
+                        model
+                            .pricing
+                            .as_ref()
+                            .map(|value| format!("${:.2}/${:.2}", value.input, value.output))
+                            .unwrap_or_else(|| "-".to_string()),
+                    ),
+                    Cell::from(model.supported_features.join(", ")),
+                ])
+            });
         let mut table_state = TableState::default();
         if !self.suggestions[slot].is_empty() {
-            table_state.select(Some(self.selection[slot].min(self.suggestions[slot].len() - 1)));
+            table_state.select(Some(
+                self.selection[slot].min(self.suggestions[slot].len() - 1),
+            ));
         }
         let table = Table::new(
             rows,
-            [Constraint::Percentage(52), Constraint::Percentage(15), Constraint::Percentage(18), Constraint::Min(0)],
+            [
+                Constraint::Percentage(52),
+                Constraint::Percentage(15),
+                Constraint::Percentage(18),
+                Constraint::Min(0),
+            ],
         )
-        .header(Row::new(["Model", "Context", "Pricing", "Features"]).style(Style::default().add_modifier(Modifier::BOLD)))
+        .header(
+            Row::new(["Model", "Context", "Pricing", "Features"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
         .block(Block::bordered().title(format!("{} (editing)", self.page.title())))
-        .row_highlight_style(Style::default().bg(Color::Cyan).fg(Color::Black).add_modifier(Modifier::BOLD))
+        .row_highlight_style(
+            Style::default()
+                .bg(Color::Cyan)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD),
+        )
         .highlight_symbol("");
         frame.render_stateful_widget(table, chunks[0], &mut table_state);
         let visible_rows = chunks[0].height.saturating_sub(4) as usize;
         if self.suggestions[slot].len() > visible_rows.max(1) {
-            let mut scrollbar_state = ScrollbarState::new(self.suggestions[slot].len())
-                .position(self.selection[slot]);
+            let mut scrollbar_state =
+                ScrollbarState::new(self.suggestions[slot].len()).position(self.selection[slot]);
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .thumb_symbol("#")
                 .track_symbol(Some("."));
@@ -957,13 +984,30 @@ impl SetupWizard {
             );
         }
         let options = self.reasoning_options(slot);
-        let options = options.iter().map(ReasoningStrength::as_str).collect::<Vec<_>>().join(", ");
+        let options = options
+            .iter()
+            .map(ReasoningStrength::as_str)
+            .collect::<Vec<_>>()
+            .join(", ");
         let reasoning = Paragraph::new(format!(
             "Reasoning {}: {}  |  Supported: {}{}",
-            if self.model_focus == ModelFocus::Reasoning { "(focused)" } else { "" },
+            if self.model_focus == ModelFocus::Reasoning {
+                "(focused)"
+            } else {
+                ""
+            },
             self.reasoning[slot].as_str(),
             options,
-            if self.suggestions[slot].get(self.selection[slot]).and_then(|model| model.reasoning.as_ref()).map(|reasoning| reasoning.mandatory).unwrap_or(false) { "  | mandatory" } else { "" }
+            if self.suggestions[slot]
+                .get(self.selection[slot])
+                .and_then(|model| model.reasoning.as_ref())
+                .map(|reasoning| reasoning.mandatory)
+                .unwrap_or(false)
+            {
+                "  | mandatory"
+            } else {
+                ""
+            }
         ))
         .block(Block::bordered().title("Model reasoning"))
         .wrap(Wrap { trim: true });

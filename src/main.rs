@@ -1,11 +1,11 @@
 use clap::Parser;
 
-use watn::config::{self, load_config, resolve_model, resolve_provider};
-use watn::error::exit_code;
-use watn::output::render;
 use std::io::IsTerminal;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use watn::config::{self, load_config, resolve_model, resolve_provider};
+use watn::error::exit_code;
+use watn::output::render;
 use watn::provider::openai_compat::OpenAICompatibleProvider;
 use watn::provider::registry::ProviderRegistry;
 use watn::provider::{Message, RequestOptions};
@@ -118,9 +118,10 @@ fn main() {
         }
     };
 
-    let provider_name = cli.provider.as_deref().unwrap_or(
-        config.defaults.provider.as_deref().unwrap_or("openrouter"),
-    );
+    let provider_name = cli
+        .provider
+        .as_deref()
+        .unwrap_or(config.defaults.provider.as_deref().unwrap_or("openrouter"));
 
     let explicit_provider = cli.provider.is_some() || std::env::var("WATN_PROVIDER").is_ok();
     if !explicit_provider && !config::provider_ready(&config, provider_name) {
@@ -176,7 +177,13 @@ fn main() {
     };
 
     let mut registry = ProviderRegistry::new();
-    build_registry(&mut registry, &config, provider_name, &provider_config.endpoint, &api_key);
+    build_registry(
+        &mut registry,
+        &config,
+        provider_name,
+        &provider_config.endpoint,
+        &api_key,
+    );
 
     let provider = registry.get(provider_name).unwrap();
 
@@ -224,21 +231,33 @@ fn main() {
     let int_flag = interrupted.clone();
     ctrlc::set_handler(move || {
         int_flag.store(true, Ordering::SeqCst);
-    }).expect("install SIGINT handler");
+    })
+    .expect("install SIGINT handler");
 
     let spinner = watn::output::spinner::Spinner::start(&model);
     match provider.chat_completions_streaming(&messages, &options) {
         Ok(response) => {
             spinner.finish();
             let cost = config.pricing.get(&model).map(|p| {
-                let input_cost = p.input * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64 / 1_000_000.0;
-                let output_cost = p.output * response.final_usage.as_ref().map_or(0, |u| u.completion_tokens) as f64 / 1_000_000.0;
+                let input_cost = p.input
+                    * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
+                    / 1_000_000.0;
+                let output_cost = p.output
+                    * response
+                        .final_usage
+                        .as_ref()
+                        .map_or(0, |u| u.completion_tokens) as f64
+                    / 1_000_000.0;
                 input_cost + output_cost
             });
 
             let elapsed = response.elapsed_secs;
             let tok_s = if elapsed > 0.0 {
-                response.final_usage.as_ref().map_or(0.0, |u| u.completion_tokens as f64) / elapsed
+                response
+                    .final_usage
+                    .as_ref()
+                    .map_or(0.0, |u| u.completion_tokens as f64)
+                    / elapsed
             } else {
                 0.0
             };
@@ -287,7 +306,10 @@ fn build_registry(
 ) {
     registry.register(
         active_provider.to_string(),
-        Box::new(OpenAICompatibleProvider::new(endpoint.to_string(), api_key.to_string())),
+        Box::new(OpenAICompatibleProvider::new(
+            endpoint.to_string(),
+            api_key.to_string(),
+        )),
     );
 }
 

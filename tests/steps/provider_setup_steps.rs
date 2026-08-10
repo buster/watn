@@ -1,12 +1,14 @@
-use cucumber::{then, when};
 use cucumber::given;
+use cucumber::{then, when};
 use std::path::PathBuf;
 
-use crate::WatnWorld;
+use super::{
+    finish_pty_session, pty_snapshot, pty_write, run_binary_with_state, start_pty_session,
+};
 use crate::MockServerWrap;
-use super::{finish_pty_session, pty_snapshot, pty_write, run_binary_with_state, start_pty_session};
-use watn::config::{self, save_provider_draft};
+use crate::WatnWorld;
 use watn::config::types::Config;
+use watn::config::{self, save_provider_draft};
 use watn::provider::setup::{build_provider_draft, suggested_api_key_env};
 
 #[when(regex = r#"^provider setup accepts endpoint \"([^\"]+)\"$"#)]
@@ -50,7 +52,9 @@ fn provider_setup_receives_empty_credential(world: &mut WatnWorld) {
         watn::error::Error::ConfigError(message) => message,
         other => other.to_string(),
     };
-    world.pending_config.insert("setup_error".to_string(), message);
+    world
+        .pending_config
+        .insert("setup_error".to_string(), message);
 }
 
 fn config_path(world: &mut WatnWorld) -> PathBuf {
@@ -177,8 +181,15 @@ fn provider_setup_chooses_explicit_environment(world: &mut WatnWorld, variable: 
 #[when("I send a request through the configured provider")]
 fn send_request_through_configured_provider(world: &mut WatnWorld) {
     let config = load_world_config(world);
-    let provider_name = config.defaults.provider.as_deref().expect("default provider");
-    let provider = config.providers.get(provider_name).expect("provider config");
+    let provider_name = config
+        .defaults
+        .provider
+        .as_deref()
+        .expect("default provider");
+    let provider = config
+        .providers
+        .get(provider_name)
+        .expect("provider config");
     let key = config::get_provider_api_key(provider_name, provider).expect("resolve API key");
     world.pending_config.insert("resolved_key".to_string(), key);
 }
@@ -206,29 +217,54 @@ fn config_contains_default_provider(world: &mut WatnWorld, provider: String) {
 #[then(regex = r#"^the config file should contain endpoint exactly \"([^\"]+)\"$"#)]
 fn config_contains_endpoint(world: &mut WatnWorld, endpoint: String) {
     let config = load_world_config(world);
-    let provider = config.defaults.provider.as_deref().expect("default provider");
+    let provider = config
+        .defaults
+        .provider
+        .as_deref()
+        .expect("default provider");
     assert_eq!(config.providers[provider].endpoint, endpoint);
 }
 
 #[then(regex = r#"^the config file should contain api_key exactly \"([^\"]+)\"$"#)]
 fn config_contains_api_key(world: &mut WatnWorld, api_key: String) {
     let config = load_world_config(world);
-    let provider = config.defaults.provider.as_deref().expect("default provider");
-    assert_eq!(config.providers[provider].api_key.as_deref(), Some(api_key.as_str()));
+    let provider = config
+        .defaults
+        .provider
+        .as_deref()
+        .expect("default provider");
+    assert_eq!(
+        config.providers[provider].api_key.as_deref(),
+        Some(api_key.as_str())
+    );
 }
 
 #[then(regex = r#"^the model catalog URL should be exactly \"([^\"]+)\"$"#)]
 fn model_catalog_url_exact(world: &mut WatnWorld, url: String) {
     let config = load_world_config(world);
-    let provider = config.defaults.provider.as_deref().expect("default provider");
-    assert_eq!(watn::models::list::models_url(&config.providers[provider].endpoint), url);
+    let provider = config
+        .defaults
+        .provider
+        .as_deref()
+        .expect("default provider");
+    assert_eq!(
+        watn::models::list::models_url(&config.providers[provider].endpoint),
+        url
+    );
 }
 
 #[then(regex = r#"^the chat completion URL should be exactly \"([^\"]+)\"$"#)]
 fn chat_completion_url_exact(world: &mut WatnWorld, url: String) {
     let config = load_world_config(world);
-    let provider = config.defaults.provider.as_deref().expect("default provider");
-    assert_eq!(watn::provider::openai_compat::chat_completions_url(&config.providers[provider].endpoint), url);
+    let provider = config
+        .defaults
+        .provider
+        .as_deref()
+        .expect("default provider");
+    assert_eq!(
+        watn::provider::openai_compat::chat_completions_url(&config.providers[provider].endpoint),
+        url
+    );
 }
 
 #[then(regex = r#"^the default provider should be \"([^\"]+)\"$"#)]
@@ -252,7 +288,10 @@ fn unrelated_settings_remain(world: &mut WatnWorld) {
     assert_eq!(config.tiers.normal.as_deref(), Some("legacy-normal"));
     assert_eq!(config.tiers.thinking.as_deref(), Some("legacy-thinking"));
     assert_eq!(config.pricing["legacy-small"].input, 1.0);
-    assert_eq!(config.litellm.as_ref().map(|value| value.endpoint.as_str()), Some("https://legacy-litellm.example"));
+    assert_eq!(
+        config.litellm.as_ref().map(|value| value.endpoint.as_str()),
+        Some("https://legacy-litellm.example")
+    );
 }
 
 #[then(regex = r#"^only the fixed provider entry \"([^\"]+)\" should be replaced or created$"#)]
@@ -265,7 +304,10 @@ fn only_fixed_provider_entry(world: &mut WatnWorld, provider: String) {
 #[then(regex = r#"^the config file should not contain \"([^\"]+)\"$"#)]
 fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     let content = std::fs::read_to_string(config_path(world)).expect("read test config");
-    assert!(!content.contains(&secret), "config unexpectedly contained secret");
+    assert!(
+        !content.contains(&secret),
+        "config unexpectedly contained secret"
+    );
 }
 
 #[then("stderr should contain actionable guidance to run \"watn provider\" in a terminal")]
@@ -319,9 +361,13 @@ fn cancel_provider_setup_escape(world: &mut WatnWorld) {
         load_world_config(world);
     }
     let content = std::fs::read_to_string(&path).expect("config file");
-    world.pending_config.insert("config_before".to_string(), content);
+    world
+        .pending_config
+        .insert("config_before".to_string(), content);
     assert!(matches!(
-        watn::provider::setup::cancellation_result(watn::provider::setup::SetupCancellation::Escape),
+        watn::provider::setup::cancellation_result(
+            watn::provider::setup::SetupCancellation::Escape
+        ),
         watn::provider::setup::ProviderSetupResult::Cancelled(
             watn::provider::setup::SetupCancellation::Escape
         )
@@ -336,7 +382,9 @@ fn cancel_provider_setup_ctrl_c(world: &mut WatnWorld) {
         load_world_config(world);
     }
     let content = std::fs::read_to_string(&path).expect("config file");
-    world.pending_config.insert("config_before".to_string(), content);
+    world
+        .pending_config
+        .insert("config_before".to_string(), content);
     assert!(matches!(
         watn::provider::setup::cancellation_result(watn::provider::setup::SetupCancellation::CtrlC),
         watn::provider::setup::ProviderSetupResult::Cancelled(
@@ -360,7 +408,10 @@ fn config_is_byte_for_byte_unchanged(world: &mut WatnWorld) {
 #[then(regex = r#"^provider \"([^\"]+)\" should still contain credential \"([^\"]+)\"$"#)]
 fn provider_still_contains_credential(world: &mut WatnWorld, provider: String, key: String) {
     let config = load_world_config(world);
-    assert_eq!(config.providers[&provider].api_key.as_deref(), Some(key.as_str()));
+    assert_eq!(
+        config.providers[&provider].api_key.as_deref(),
+        Some(key.as_str())
+    );
 }
 
 fn rebuild_saved_provider_config(world: &mut WatnWorld) {
@@ -394,8 +445,12 @@ fn rebuild_saved_provider_config(world: &mut WatnWorld) {
 
 #[given(regex = r#"^a configured default provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
 fn configured_default_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
-    world.pending_config.insert("saved_provider".to_string(), provider);
-    world.pending_config.insert("saved_endpoint".to_string(), endpoint);
+    world
+        .pending_config
+        .insert("saved_provider".to_string(), provider);
+    world
+        .pending_config
+        .insert("saved_endpoint".to_string(), endpoint);
 }
 
 #[given(regex = r#"^a saved default provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
@@ -431,7 +486,8 @@ fn existing_provider_config_mode(world: &mut WatnWorld, mode: String) {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let permissions = std::fs::Permissions::from_mode(u32::from_str_radix(&mode, 8).expect("mode"));
+        let permissions =
+            std::fs::Permissions::from_mode(u32::from_str_radix(&mode, 8).expect("mode"));
         std::fs::set_permissions(path, permissions).expect("set config mode");
     }
 }
@@ -506,7 +562,9 @@ fn config_contains_unrelated_settings(world: &mut WatnWorld) {
     ));
 }
 
-#[given(regex = r#"^an existing config contains provider \"([^\"]+)\" with credential \"([^\"]+)\"$"#)]
+#[given(
+    regex = r#"^an existing config contains provider \"([^\"]+)\" with credential \"([^\"]+)\"$"#
+)]
 fn existing_provider_config(world: &mut WatnWorld, provider: String, key: String) {
     world.raw_config = Some(format!(
         "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"https://legacy.example/v1\"\napi_key = \"{key}\"\n"
@@ -516,20 +574,28 @@ fn existing_provider_config(world: &mut WatnWorld, provider: String, key: String
 
 #[given(regex = r#"^its saved default model is \"([^\"]+)\"$"#)]
 fn saved_provider_default_model(world: &mut WatnWorld, model: String) {
-    world.pending_config.insert("saved_model".to_string(), model);
+    world
+        .pending_config
+        .insert("saved_model".to_string(), model);
     rebuild_saved_provider_config(world);
 }
 
-#[when(regex = r#"^automatic onboarding saves provider endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]
+#[when(
+    regex = r#"^automatic onboarding saves provider endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#
+)]
 fn automatic_onboarding_saves_provider(world: &mut WatnWorld, endpoint: String, key: String) {
     let mut config = load_world_config(world);
     let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
     save_provider_draft(&mut config, &draft).expect("save provider draft");
-    world.pending_config.insert("provider_name".to_string(), draft.name);
+    world
+        .pending_config
+        .insert("provider_name".to_string(), draft.name);
     world.config_content = Some(toml::to_string_pretty(&config).expect("serialize config"));
 }
 
-#[when(regex = r#"^the explicit provider setup command saves endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#)]
+#[when(
+    regex = r#"^the explicit provider setup command saves endpoint \"([^\"]+)\" and credential \"([^\"]+)\"$"#
+)]
 fn explicit_provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: String) {
     let mut config = load_world_config(world);
     let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
@@ -548,7 +614,9 @@ fn provider_setup_saves(world: &mut WatnWorld, endpoint: String, key: String) {
     let mut config = load_world_config(world);
     let draft = build_provider_draft(&endpoint, &key).expect("provider draft");
     save_provider_draft(&mut config, &draft).expect("save provider draft");
-    world.pending_config.insert("saved_endpoint".to_string(), draft.endpoint);
+    world
+        .pending_config
+        .insert("saved_endpoint".to_string(), draft.endpoint);
 }
 
 #[when("automatic model setup attempts catalog discovery")]
@@ -575,15 +643,23 @@ fn resolve_saved_openrouter_provider(world: &mut WatnWorld) {
 
 #[then(regex = r#"^the selected endpoint should be exactly \"([^\"]+)\"$"#)]
 fn selected_endpoint_exact(world: &mut WatnWorld, endpoint: String) {
-    assert_eq!(world.pending_config.get("selected_endpoint"), Some(&endpoint));
+    assert_eq!(
+        world.pending_config.get("selected_endpoint"),
+        Some(&endpoint)
+    );
 }
 
 #[then(regex = r#"^the built-in endpoint \"([^\"]+)\" should not be selected$"#)]
 fn builtin_endpoint_not_selected(world: &mut WatnWorld, endpoint: String) {
-    assert_ne!(world.pending_config.get("selected_endpoint"), Some(&endpoint));
+    assert_ne!(
+        world.pending_config.get("selected_endpoint"),
+        Some(&endpoint)
+    );
 }
 
-#[then(regex = r#"^the config file should contain provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
+#[then(
+    regex = r#"^the config file should contain provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#
+)]
 fn config_contains_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
     let config = load_world_config(world);
     assert_eq!(config.providers[&provider].endpoint, endpoint);
@@ -600,7 +676,11 @@ fn config_has_unix_mode(world: &mut WatnWorld, mode: String) {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let actual = std::fs::metadata(config_path(world)).expect("config metadata").permissions().mode() & 0o777;
+        let actual = std::fs::metadata(config_path(world))
+            .expect("config metadata")
+            .permissions()
+            .mode()
+            & 0o777;
         assert_eq!(actual, u32::from_str_radix(&mode, 8).expect("mode"));
     }
 }
@@ -666,7 +746,9 @@ fn implicit_openrouter_transport(world: &mut WatnWorld) {
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
 }
 
-#[given(regex = r#"^the ephemeral E2E transport returns a successful chat completion for \"([^\"]+)\"$"#)]
+#[given(
+    regex = r#"^the ephemeral E2E transport returns a successful chat completion for \"([^\"]+)\"$"#
+)]
 fn ephemeral_e2e_chat_transport(world: &mut WatnWorld, path: String) {
     assert_eq!(path, "/chat/completions");
     world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
@@ -751,14 +833,27 @@ fn setup_terminal_shows_endpoint(world: &mut WatnWorld, endpoint: String) {
 
 #[then("the terminal should show model setup after provider setup")]
 fn terminal_shows_model_setup(world: &mut WatnWorld) {
-    let session = world.pty_session.as_ref().expect("interactive onboarding PTY");
+    let session = world
+        .pty_session
+        .as_ref()
+        .expect("interactive onboarding PTY");
     let output = pty_snapshot(session);
     assert!(output.contains("Small"), "terminal output: {output:?}");
 }
 
-#[when(regex = r#"^I select \"([^\"]+)\" for small, \"([^\"]+)\" for normal, and \"([^\"]+)\" for thinking$"#)]
-fn select_models_in_terminal(world: &mut WatnWorld, small: String, normal: String, thinking: String) {
-    let mut session = world.pty_session.take().expect("interactive onboarding PTY");
+#[when(
+    regex = r#"^I select \"([^\"]+)\" for small, \"([^\"]+)\" for normal, and \"([^\"]+)\" for thinking$"#
+)]
+fn select_models_in_terminal(
+    world: &mut WatnWorld,
+    small: String,
+    normal: String,
+    thinking: String,
+) {
+    let mut session = world
+        .pty_session
+        .take()
+        .expect("interactive onboarding PTY");
     for model in [small, normal, thinking] {
         pty_write(&mut session, &model);
         std::thread::sleep(std::time::Duration::from_millis(400));
@@ -770,7 +865,12 @@ fn select_models_in_terminal(world: &mut WatnWorld, small: String, normal: Strin
 
 #[then("automatic onboarding should exit successfully after model selection")]
 fn automatic_onboarding_exits_successfully(world: &mut WatnWorld) {
-    assert_eq!(world.exit_status, Some(0), "onboarding output: {:?}", world.output);
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "onboarding output: {:?}",
+        world.output
+    );
 }
 
 #[then(regex = r#"^the model catalog request should hit ephemeral path \"([^\"]+)\"$"#)]
@@ -794,8 +894,14 @@ fn model_catalog_hits_ephemeral_path(world: &mut WatnWorld, path: String) {
 fn setup_terminal_shows_credential_choices(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
     let output = pty_snapshot(session);
-    assert!(output.contains("Setup"), "provider setup output: {output:?}");
-    assert!(output.contains("pages"), "provider setup output: {output:?}");
+    assert!(
+        output.contains("Setup"),
+        "provider setup output: {output:?}"
+    );
+    assert!(
+        output.contains("pages"),
+        "provider setup output: {output:?}"
+    );
     assert!(output.contains("API"), "provider setup output: {output:?}");
 }
 
@@ -877,16 +983,21 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
         .or_else(|| world.pending_config.get("e2e_chat_mock"))
         .expect("chat mock id")
         .clone();
-    let id = id_value
-        .parse()
-        .expect("valid mock id");
+    let id = id_value.parse().expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0, "request did not carry expected API key {}", key);
+    assert!(
+        httpmock::Mock::new(id, server).hits() > 0,
+        "request did not carry expected API key {}",
+        key
+    );
 }
 
 #[then("the environment fallback values should not be used")]
 fn environment_fallback_values_not_used(world: &mut WatnWorld) {
-    let resolved = world.pending_config.get("resolved_key").expect("resolved key");
+    let resolved = world
+        .pending_config
+        .get("resolved_key")
+        .expect("resolved key");
     assert_ne!(resolved, "sk-env-different");
     assert_ne!(resolved, "sk-generic-different");
 }

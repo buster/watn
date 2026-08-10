@@ -1,11 +1,14 @@
 use cucumber::{then, when};
 
-use crate::WatnWorld;
 use super::{finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write, start_pty_session};
+use crate::WatnWorld;
 
 fn assert_words(output: &str, text: &str) {
     for word in text.split_whitespace() {
-        assert!(output.contains(word), "missing {word:?} in setup output: {output:?}");
+        assert!(
+            output.contains(word),
+            "missing {word:?} in setup output: {output:?}"
+        );
     }
 }
 
@@ -49,7 +52,9 @@ fn start_shared_models_wizard(world: &mut WatnWorld) {
     wait_for_page(session, "Small Model");
 }
 
-#[then(regex = r#"^the setup wizard should show tabs "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)"$"#)]
+#[then(
+    regex = r#"^the setup wizard should show tabs "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)"$"#
+)]
 fn setup_wizard_tabs(
     _world: &mut WatnWorld,
     _first: String,
@@ -65,7 +70,9 @@ fn setup_wizard_tabs(
     }
 }
 
-#[then(regex = r#"^the setup wizard should show the (URL|API key|Small Model|Middle Model|Large Model) page as active$"#)]
+#[then(
+    regex = r#"^the setup wizard should show the (URL|API key|Small Model|Middle Model|Large Model) page as active$"#
+)]
 fn setup_wizard_active_page(world: &mut WatnWorld, page: String) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let output = wait_for_page(session, &page);
@@ -142,7 +149,12 @@ fn confirm_large_model(world: &mut WatnWorld) {
 
 #[then("setup should exit successfully")]
 fn setup_exits_successfully(world: &mut WatnWorld) {
-    assert_eq!(world.exit_status, Some(0), "setup output: {:?}", world.output);
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "setup output: {:?}",
+        world.output
+    );
 }
 
 #[then(regex = r#"^the setup wizard should show the URL and API key tabs$"#)]
@@ -182,7 +194,9 @@ fn press_escape_in_setup_wizard(world: &mut WatnWorld) {
     let dir = world.temp_dir.as_ref().expect("config temp dir");
     let path = dir.path().join("watn").join("config.toml");
     let content = std::fs::read_to_string(&path).expect("config file");
-    world.pending_config.insert("config_before".to_string(), content);
+    world
+        .pending_config
+        .insert("config_before".to_string(), content);
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\x1b");
     std::thread::sleep(std::time::Duration::from_millis(150));
@@ -215,8 +229,15 @@ fn discard_current_setup(world: &mut WatnWorld) {
     assert_eq!(world.exit_status, Some(1), "discard should cancel setup");
 }
 
-#[then(regex = r#"^the config file should contain small tier "([^"]+)", middle tier "([^"]+)", and large tier "([^"]+)"$"#)]
-fn config_contains_wizard_tiers(world: &mut WatnWorld, small: String, middle: String, large: String) {
+#[then(
+    regex = r#"^the config file should contain small tier "([^"]+)", middle tier "([^"]+)", and large tier "([^"]+)"$"#
+)]
+fn config_contains_wizard_tiers(
+    world: &mut WatnWorld,
+    small: String,
+    middle: String,
+    large: String,
+) {
     let dir = world.temp_dir.as_ref().expect("config temp dir");
     let path = dir.path().join("watn").join("config.toml");
     let raw = std::fs::read_to_string(&path).expect("read wizard config");

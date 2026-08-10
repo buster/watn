@@ -54,8 +54,7 @@ pub fn load_config() -> Result<Config, Error> {
     let mut config = if content.trim().is_empty() {
         Config::default()
     } else {
-        toml::from_str(&content)
-            .map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
+        toml::from_str(&content).map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
     };
 
     #[cfg(unix)]
@@ -64,7 +63,10 @@ pub fn load_config() -> Result<Config, Error> {
             use std::os::unix::fs::PermissionsExt;
             let mode = meta.permissions().mode();
             if mode & 0o004 != 0 {
-                eprintln!("warning: config file is world-readable ({:o})", mode & 0o777);
+                eprintln!(
+                    "warning: config file is world-readable ({:o})",
+                    mode & 0o777
+                );
             }
         }
     }
@@ -81,10 +83,7 @@ pub fn load_config() -> Result<Config, Error> {
     Ok(config)
 }
 
-pub fn resolve_provider(
-    config: &Config,
-    provider_name: &str,
-) -> Result<ProviderConfig, Error> {
+pub fn resolve_provider(config: &Config, provider_name: &str) -> Result<ProviderConfig, Error> {
     if provider_name == "openai" {
         if let Some(pc) = config.providers.get("openai") {
             let mut pc = pc.clone();
@@ -166,11 +165,7 @@ pub fn resolve_model(
 }
 
 fn resolve_default_model(config: &Config) -> Result<String, Error> {
-    let provider = config
-        .defaults
-        .provider
-        .as_deref()
-        .unwrap_or("openrouter");
+    let provider = config.defaults.provider.as_deref().unwrap_or("openrouter");
     if provider == "openai" {
         Ok("gpt-4o-mini".to_string())
     } else if provider == "openrouter" {
@@ -180,7 +175,9 @@ fn resolve_default_model(config: &Config) -> Result<String, Error> {
             .clone()
             .ok_or_else(|| Error::ConfigError("no default model configured".to_string()))
     } else {
-        Err(Error::ConfigError("no default model configured".to_string()))
+        Err(Error::ConfigError(
+            "no default model configured".to_string(),
+        ))
     }
 }
 
@@ -221,13 +218,13 @@ pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result
 fn environment_reference(value: &str) -> Option<&str> {
     let name = value.strip_prefix("${")?.strip_suffix('}')?;
     if name.is_empty()
-        || !name
-            .chars()
-            .enumerate()
-            .all(|(index, character)| {
-                (index == 0 && (character == '_' || character.is_ascii_uppercase()))
-                    || (index > 0 && (character == '_' || character.is_ascii_uppercase() || character.is_ascii_digit()))
-            })
+        || !name.chars().enumerate().all(|(index, character)| {
+            (index == 0 && (character == '_' || character.is_ascii_uppercase()))
+                || (index > 0
+                    && (character == '_'
+                        || character.is_ascii_uppercase()
+                        || character.is_ascii_digit()))
+        })
     {
         return None;
     }
@@ -250,7 +247,10 @@ pub fn expand_api_key(value: &str) -> Result<String, Error> {
     }
 }
 
-pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfig) -> Result<String, Error> {
+pub fn get_provider_api_key(
+    provider_name: &str,
+    provider_config: &ProviderConfig,
+) -> Result<String, Error> {
     if let Some(key) = &provider_config.api_key {
         return expand_api_key(key);
     }
@@ -259,5 +259,8 @@ pub fn get_provider_api_key(provider_name: &str, provider_config: &ProviderConfi
         return Ok(key);
     }
 
-    Err(Error::AuthError(format!("api key not found for provider '{}'", provider_name)))
+    Err(Error::AuthError(format!(
+        "api key not found for provider '{}'",
+        provider_name
+    )))
 }

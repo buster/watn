@@ -35,5 +35,9 @@ pub fn provider_api_key(provider_name: &str) -> Option<String> {
     std::env::var(&provider_specific)
         .ok()
         .filter(|value| !value.is_empty())
-        .or_else(|| std::env::var("WATN_API_KEY").ok().filter(|value| !value.is_empty()))
+        .or_else(|| {
+            std::env::var("WATN_API_KEY")
+                .ok()
+                .filter(|value| !value.is_empty())
+        })
 }

@@ -3,8 +3,11 @@ use regex::Regex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
+use super::{
+    build_config, find_binary, finish_pty_session, pty_write, run_binary_with_state,
+    start_pty_session,
+};
 use crate::{MockServerWrap, WatnWorld};
-use super::{build_config, find_binary, finish_pty_session, pty_write, run_binary_with_state, start_pty_session};
 use watn::models::list::ModelEntry;
 use watn::models::picker;
 
@@ -21,7 +24,14 @@ fn configured_default_provider(w: &mut WatnWorld) {
 
 #[given(regex = r#"^a model "([^"]+)" assigned to the small/fast tier$"#)]
 fn model_assigned_small(w: &mut WatnWorld, model: String) {
-    let config = build_config("openai", Some((&model, "gpt-4o", "o3-mini")), None, None, None, None);
+    let config = build_config(
+        "openai",
+        Some((&model, "gpt-4o", "o3-mini")),
+        None,
+        None,
+        None,
+        None,
+    );
     w.raw_config = Some(config);
     w.pending_mock_model = Some(model);
     w.pending_mock_output = Some("find . -type f -mtime -3".to_string());
@@ -30,7 +40,14 @@ fn model_assigned_small(w: &mut WatnWorld, model: String) {
 
 #[given(regex = r#"^a model "([^"]+)" assigned to the normal tier$"#)]
 fn model_assigned_normal(w: &mut WatnWorld, model: String) {
-    let config = build_config("openai", Some(("gpt-4o-mini", &model, "o3-mini")), None, None, None, None);
+    let config = build_config(
+        "openai",
+        Some(("gpt-4o-mini", &model, "o3-mini")),
+        None,
+        None,
+        None,
+        None,
+    );
     w.raw_config = Some(config);
     w.pending_mock_model = Some(model);
     w.pending_mock_output = Some("some output".to_string());
@@ -39,7 +56,14 @@ fn model_assigned_normal(w: &mut WatnWorld, model: String) {
 
 #[given(regex = r#"^a model "([^"]+)" assigned to the thinking tier$"#)]
 fn model_assigned_thinking(w: &mut WatnWorld, model: String) {
-    let config = build_config("openai", Some(("gpt-4o-mini", "gpt-4o", &model)), None, None, None, None);
+    let config = build_config(
+        "openai",
+        Some(("gpt-4o-mini", "gpt-4o", &model)),
+        None,
+        None,
+        None,
+        None,
+    );
     w.raw_config = Some(config);
     w.pending_mock_model = Some(model);
     w.pending_mock_output = Some("some output".to_string());
@@ -92,7 +116,9 @@ fn configured_provider_with_key(w: &mut WatnWorld, provider: String, key: String
         &provider,
         None,
         Some(vec![(&provider, "http://mock", &key, "")]),
-        None, None, None,
+        None,
+        None,
+        None,
     );
     w.raw_config = Some(config);
     w.pending_mock_auth_fail = true;
@@ -117,7 +143,14 @@ fn no_args_no_stdin(w: &mut WatnWorld) {
 
 #[given(regex = r#"^pricing configured at "\$2\.50/1M input tokens" per model$"#)]
 fn pricing_configured_given(w: &mut WatnWorld) {
-    let config = build_config("openai", None, None, Some(vec![("gpt-4o-mini", 2.50, 10.00)]), None, None);
+    let config = build_config(
+        "openai",
+        None,
+        None,
+        Some(vec![("gpt-4o-mini", 2.50, 10.00)]),
+        None,
+        None,
+    );
     w.raw_config = Some(config);
     w.pending_mock_model = Some("gpt-4o-mini".to_string());
     w.pending_mock_output = Some("some output".to_string());
@@ -214,7 +247,14 @@ fn provider_no_key_no_env(w: &mut WatnWorld, provider: String) {
 
 #[given(regex = r#"^a LiteLLM endpoint at "([^"]+)"$"#)]
 fn litellm_endpoint(w: &mut WatnWorld, url: String) {
-    let config = build_config("openai", None, None, None, Some((&url, "test-litellm-key")), None);
+    let config = build_config(
+        "openai",
+        None,
+        None,
+        None,
+        Some((&url, "test-litellm-key")),
+        None,
+    );
     w.raw_config = Some(config);
     w.pending_mock_model = Some("test-model".to_string());
     w.pending_mock_output = Some("some output".to_string());
@@ -223,14 +263,16 @@ fn litellm_endpoint(w: &mut WatnWorld, url: String) {
 
 #[given(regex = r#"^the endpoint returns models \[([^\]]+)\]$"#)]
 fn endpoint_returns_models(w: &mut WatnWorld, models_str: String) {
-    let models: Vec<String> = models_str.split(',')
+    let models: Vec<String> = models_str
+        .split(',')
         .map(|s| s.trim().trim_matches('"').to_string())
         .collect();
     w.pending_mock_returned_models = models;
 }
 
 #[given(regex = r#"^a configured provider "([^"]+)" with models endpoint$"#)]
-fn configured_provider_with_models(w: &mut WatnWorld, provider: String) {    let server = httpmock::MockServer::start();
+fn configured_provider_with_models(w: &mut WatnWorld, provider: String) {
+    let server = httpmock::MockServer::start();
     let base_url = format!("http://127.0.0.1:{}", server.port());
     let server_ref = &server;
     server_ref.mock(move |when, then| {
@@ -314,13 +356,8 @@ fn configured_provider_models_bare(w: &mut WatnWorld) {
 
 #[given("no LiteLLM endpoint is configured")]
 fn no_litellm(w: &mut WatnWorld) {
-    w.raw_config = Some(
-        "[defaults]\nprovider = \"nonexistent\"\n"
-            .to_string(),
-    );
+    w.raw_config = Some("[defaults]\nprovider = \"nonexistent\"\n".to_string());
 }
-
-
 
 // ===== WHEN =====
 
@@ -439,15 +476,23 @@ fn run_watn_models(w: &mut WatnWorld) {
     run_binary_with_state(w, &["models"], None);
 }
 
-#[when(regex = r#"^I run `watn models` and select "([^"]+)" for small, "([^"]+)" for normal, and "([^"]+)" for thinking$"#)]
+#[when(
+    regex = r#"^I run `watn models` and select "([^"]+)" for small, "([^"]+)" for normal, and "([^"]+)" for thinking$"#
+)]
 fn run_watn_models_select(w: &mut WatnWorld, small: String, normal: String, thinking: String) {
     // We need to map model names to their indices in the mock model list.
     // The mock returns models in order, and dialoguer selects by index.
     // We pipe index+enter for each selection to simulate interactive input.
     let models = &w.pending_mock_returned_models;
     let small_idx = models.iter().position(|m| m == &small).unwrap_or(0);
-    let normal_idx = models.iter().position(|m| m == &normal).unwrap_or(1.min(models.len().saturating_sub(1)));
-    let thinking_idx = models.iter().position(|m| m == &thinking).unwrap_or(2.min(models.len().saturating_sub(1)));
+    let normal_idx = models
+        .iter()
+        .position(|m| m == &normal)
+        .unwrap_or(1.min(models.len().saturating_sub(1)));
+    let thinking_idx = models
+        .iter()
+        .position(|m| m == &thinking)
+        .unwrap_or(2.min(models.len().saturating_sub(1)));
     let stdin_input = format!("{}\n{}\n{}\n", small_idx, normal_idx, thinking_idx);
 
     if w.raw_config.is_none() && w.pending_mock_model.is_none() {
@@ -468,32 +513,60 @@ fn run_watn_model_gpt4o(w: &mut WatnWorld, question: String) {
 
 #[then(expr = "the exit status should be {int}")]
 fn exit_status_n(w: &mut WatnWorld, status: i32) {
-    assert_eq!(w.exit_status, Some(status), "expected exit status {}, got {:?}. stderr: {}", status, w.exit_status, w.stderr_output.as_deref().unwrap_or(""));
+    assert_eq!(
+        w.exit_status,
+        Some(status),
+        "expected exit status {}, got {:?}. stderr: {}",
+        status,
+        w.exit_status,
+        w.stderr_output.as_deref().unwrap_or("")
+    );
 }
 
 #[then("the exit status should be non-zero")]
 fn exit_status_nonzero(w: &mut WatnWorld) {
-    assert!(w.exit_status != Some(0), "expected non-zero exit status, got {:?}. stderr: {}", w.exit_status, w.stderr_output.as_deref().unwrap_or(""));
-    assert!(w.exit_status.is_some(), "expected exit status to be set, got None");
+    assert!(
+        w.exit_status != Some(0),
+        "expected non-zero exit status, got {:?}. stderr: {}",
+        w.exit_status,
+        w.stderr_output.as_deref().unwrap_or("")
+    );
+    assert!(
+        w.exit_status.is_some(),
+        "expected exit status to be set, got None"
+    );
 }
 
 #[then(expr = "the output should contain {string}")]
 fn output_should_contain(w: &mut WatnWorld, text: String) {
     let output = w.output.as_ref().expect("no output captured");
-    assert!(output.contains(&text), "expected output to contain '{}', got: '{}'", text, output);
+    assert!(
+        output.contains(&text),
+        "expected output to contain '{}', got: '{}'",
+        text,
+        output
+    );
 }
 
 #[then("the output should contain a model name")]
 fn output_contains_model(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     let re = Regex::new(r"[\w~/.\-]+ · \d+ tok/s").unwrap();
-    assert!(re.is_match(stderr), "expected stderr to contain a model name with tokens/sec, got: '{}'", stderr);
+    assert!(
+        re.is_match(stderr),
+        "expected stderr to contain a model name with tokens/sec, got: '{}'",
+        stderr
+    );
 }
 
 #[then("the output should contain a tokens/second value")]
 fn output_contains_tok_s(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains("tok/s"), "expected stderr to contain 'tok/s', got: '{}'", stderr);
+    assert!(
+        stderr.contains("tok/s"),
+        "expected stderr to contain 'tok/s', got: '{}'",
+        stderr
+    );
 }
 
 #[then("the output should not contain ANSI escape sequences")]
@@ -506,21 +579,40 @@ fn output_no_ansi(w: &mut WatnWorld) {
 #[then(expr = "the output should match regex {string}")]
 fn output_matches(w: &mut WatnWorld, pattern: String) {
     let re = Regex::new(&pattern).expect("invalid regex");
-    let combined = format!("{}\n{}", w.output.as_deref().unwrap_or(""), w.stderr_output.as_deref().unwrap_or(""));
-    assert!(re.is_match(&combined), "expected output to match regex '{}'. stdout: '{}', stderr: '{}'", pattern,
-        w.output.as_deref().unwrap_or(""), w.stderr_output.as_deref().unwrap_or(""));
+    let combined = format!(
+        "{}\n{}",
+        w.output.as_deref().unwrap_or(""),
+        w.stderr_output.as_deref().unwrap_or("")
+    );
+    assert!(
+        re.is_match(&combined),
+        "expected output to match regex '{}'. stdout: '{}', stderr: '{}'",
+        pattern,
+        w.output.as_deref().unwrap_or(""),
+        w.stderr_output.as_deref().unwrap_or("")
+    );
 }
 
 #[then(expr = "stderr should contain {string}")]
 fn stderr_contains(w: &mut WatnWorld, text: String) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains(&text), "expected stderr to contain '{}', got: '{}'", text, stderr);
+    assert!(
+        stderr.contains(&text),
+        "expected stderr to contain '{}', got: '{}'",
+        text,
+        stderr
+    );
 }
 
 #[then(expr = "stderr should not contain {string}")]
 fn stderr_not_contain(w: &mut WatnWorld, text: String) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(!stderr.contains(&text), "expected stderr to not contain '{}', got: '{}'", text, stderr);
+    assert!(
+        !stderr.contains(&text),
+        "expected stderr to not contain '{}', got: '{}'",
+        text,
+        stderr
+    );
 }
 
 #[then(expr = "the API request should include reasoning with effort {string}")]
@@ -528,64 +620,118 @@ fn api_request_includes_reasoning(w: &mut WatnWorld, effort: String) {
     let mock_id = w.mock_server.1.expect("no mock id stored");
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
-    assert_eq!(w.exit_status, Some(0), "expected exit 0, got {:?}", w.exit_status);
-    assert!(mock.hits() > 0, "expected mock to be hit (reasoning effort {})", effort);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "expected exit 0, got {:?}",
+        w.exit_status
+    );
+    assert!(
+        mock.hits() > 0,
+        "expected mock to be hit (reasoning effort {})",
+        effort
+    );
 }
 
 #[then("the API request should not include reasoning")]
 fn api_request_not_include_reasoning(w: &mut WatnWorld) {
-    assert_eq!(w.exit_status, Some(0), "expected exit 0, got {:?}", w.exit_status);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "expected exit 0, got {:?}",
+        w.exit_status
+    );
     let blocking_id = w.blocking_mock_id.expect("no blocking mock id stored");
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let blocking = httpmock::Mock::new(blocking_id, server);
-    assert_eq!(blocking.hits(), 0,
-        "expected no reasoning_effort in the request, but a reasoning request was blocked");
+    assert_eq!(
+        blocking.hits(),
+        0,
+        "expected no reasoning_effort in the request, but a reasoning request was blocked"
+    );
 }
 
 #[then("the output should contain a version number")]
 fn output_contains_version(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
-    assert!(out.contains("0.1.0"), "expected output to contain version '0.1.0', got: '{}'", out);
+    assert!(
+        out.contains("0.1.0"),
+        "expected output to contain version '0.1.0', got: '{}'",
+        out
+    );
 }
 
 #[then("the output should contain a cost value")]
 fn output_contains_cost(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     let re = Regex::new(r"\$\d+(\.\d+)?").unwrap();
-    assert!(re.is_match(stderr), "expected stderr to contain a cost value, got: '{}'", stderr);
+    assert!(
+        re.is_match(stderr),
+        "expected stderr to contain a cost value, got: '{}'",
+        stderr
+    );
 }
 
 #[then(expr = "the output should be a command suggestion containing {string}")]
 fn output_contains_command_suggestion(w: &mut WatnWorld, text: String) {
     let out = w.output.as_ref().expect("no output captured");
-    assert!(out.contains(&text), "expected output to contain '{}', got: '{}'", text, out);
+    assert!(
+        out.contains(&text),
+        "expected output to contain '{}', got: '{}'",
+        text,
+        out
+    );
 }
 
 #[then("the command should not have been executed")]
 fn command_not_executed(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
-    let lines: Vec<&str> = out.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
-    assert_eq!(lines.len(), 1, "expected single command suggestion, got {} lines: '{}'", lines.len(), out);
+    let lines: Vec<&str> = out
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    assert_eq!(
+        lines.len(),
+        1,
+        "expected single command suggestion, got {} lines: '{}'",
+        lines.len(),
+        out
+    );
     assert_eq!(lines[0], "echo hello", "expected command suggestion");
 }
 
 #[then(expr = r"{string} should have been printed to stdout")]
 fn string_printed_to_stdout(w: &mut WatnWorld, text: String) {
     let out = w.output.as_ref().expect("no output captured");
-    assert!(out.contains(&text), "expected stdout to contain '{}', got: '{}'", text, out);
+    assert!(
+        out.contains(&text),
+        "expected stdout to contain '{}', got: '{}'",
+        text,
+        out
+    );
 }
 
 #[then("the output should contain a cost estimate")]
 fn output_contains_cost_estimate(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     let re = Regex::new(r"\$\d+(\.\d+)?").unwrap();
-    assert!(re.is_match(stderr), "expected stderr to contain a cost estimate, got: '{}'", stderr);
+    assert!(
+        re.is_match(stderr),
+        "expected stderr to contain a cost estimate, got: '{}'",
+        stderr
+    );
 }
 
 #[then(expr = "the request should use model {string}")]
 fn request_should_use_model(w: &mut WatnWorld, model: String) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(stderr.contains(&model), "expected stderr to contain model '{}', got: '{}'", model, stderr);
+    assert!(
+        stderr.contains(&model),
+        "expected stderr to contain model '{}', got: '{}'",
+        model,
+        stderr
+    );
 }
 
 #[then(expr = "the request should be sent to provider {string}")]
@@ -593,7 +739,10 @@ fn request_sent_to_provider(w: &mut WatnWorld, _provider: String) {
     let mock_id = w.mock_server.1.expect("no chat mock id stored");
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
-    assert!(mock.hits() > 0, "expected chat completion request to be sent to the provider");
+    assert!(
+        mock.hits() > 0,
+        "expected chat completion request to be sent to the provider"
+    );
 }
 
 #[then(expr = "the request should be sent to {string}")]
@@ -601,15 +750,18 @@ fn request_sent_to_url(w: &mut WatnWorld, _url: String) {
     let mock_id = w.mock_server.1.expect("no chat mock id stored");
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
-    assert!(mock.hits() > 0, "expected chat completion request to be sent to the URL");
+    assert!(
+        mock.hits() > 0,
+        "expected chat completion request to be sent to the URL"
+    );
 }
 
 #[then(expr = "it should query the model list at {string}")]
 fn should_query_models_at(w: &mut WatnWorld, _url: String) {
     let server = w.mock_server.0.as_ref().expect("no mock server");
-    let mock_id = w.models_mock_id.expect(
-        "no models mock was set up — add pending_mock_returned_models to the Given step"
-    );
+    let mock_id = w
+        .models_mock_id
+        .expect("no models mock was set up — add pending_mock_returned_models to the Given step");
     let mock = httpmock::Mock::new(mock_id, server);
     assert!(mock.hits() > 0, "expected model list request");
 }
@@ -619,19 +771,37 @@ fn request_has_auth_header(w: &mut WatnWorld, _key: String) {
     let mock_id = w.mock_server.1.expect("no chat mock id stored");
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
-    assert!(mock.hits() > 0, "expected chat completion request with Authorization header");
+    assert!(
+        mock.hits() > 0,
+        "expected chat completion request with Authorization header"
+    );
 }
 
 #[then("the config file should contain the selected tier assignments")]
 fn config_contains_tier_assignments(w: &mut WatnWorld) {
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
-    let content = std::fs::read_to_string(&config_path)
-        .expect("config file should exist");
-    assert!(content.contains("[tiers]"), "config should have [tiers] section, got: {}", content);
-    assert!(content.contains("small = \""), "config should have small tier, got: {}", content);
-    assert!(content.contains("normal = \""), "config should have normal tier, got: {}", content);
-    assert!(content.contains("thinking = \""), "config should have thinking tier, got: {}", content);
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    assert!(
+        content.contains("[tiers]"),
+        "config should have [tiers] section, got: {}",
+        content
+    );
+    assert!(
+        content.contains("small = \""),
+        "config should have small tier, got: {}",
+        content
+    );
+    assert!(
+        content.contains("normal = \""),
+        "config should have normal tier, got: {}",
+        content
+    );
+    assert!(
+        content.contains("thinking = \""),
+        "config should have thinking tier, got: {}",
+        content
+    );
 }
 
 #[then(regex = r#"^running `watn "([^"]*)"` should use "([^"]*)"$"#)]
@@ -643,7 +813,12 @@ fn running_should_use(w: &mut WatnWorld, command: String, model: String) {
 
     let output = cmd.output().expect("run binary");
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-    assert!(stderr.contains(&model), "expected stderr to contain model '{}', got: '{}'", model, stderr);
+    assert!(
+        stderr.contains(&model),
+        "expected stderr to contain model '{}', got: '{}'",
+        model,
+        stderr
+    );
 }
 
 #[then("the output should contain model metadata")]
@@ -651,9 +826,16 @@ fn output_contains_model_metadata(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     let combined = format!("{}\n{}", out, stderr);
-    assert!(combined.contains("context") || combined.contains("ctx") || combined.contains("pricing")
-        || combined.contains("$") || combined.contains("features"),
-        "expected model metadata in output, got stdout: '{}' stderr: '{}'", out, stderr);
+    assert!(
+        combined.contains("context")
+            || combined.contains("ctx")
+            || combined.contains("pricing")
+            || combined.contains("$")
+            || combined.contains("features"),
+        "expected model metadata in output, got stdout: '{}' stderr: '{}'",
+        out,
+        stderr
+    );
 }
 
 #[then("the output should not contain pricing information")]
@@ -661,44 +843,71 @@ fn output_not_contain_pricing(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     let combined = format!("{}\n{}", out, stderr);
-    assert!(!combined.contains("$"), "expected no pricing in output, got: '{}'", combined);
+    assert!(
+        !combined.contains("$"),
+        "expected no pricing in output, got: '{}'",
+        combined
+    );
 }
 
 #[then("the output should contain an error message")]
 fn output_contains_error(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(!stderr.is_empty(), "expected error message in stderr, got empty");
+    assert!(
+        !stderr.is_empty(),
+        "expected error message in stderr, got empty"
+    );
 }
 
 #[then("the output should contain instructions for configuring providers manually")]
 fn output_contains_instructions(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
-    assert!(out.contains("No provider endpoint") || stderr.contains("No provider endpoint"),
-        "expected output to mention provider configuration, got stdout: '{}' stderr: '{}'", out, stderr);
+    assert!(
+        out.contains("No provider endpoint") || stderr.contains("No provider endpoint"),
+        "expected output to mention provider configuration, got stdout: '{}' stderr: '{}'",
+        out,
+        stderr
+    );
 }
 
 // ===== auto-init-config steps =====
 
 #[then("a config file exists at the standard XDG path")]
 fn config_file_exists_at_xdg(w: &mut WatnWorld) {
-    let dir = w.temp_dir.as_ref().expect("no temp dir set up by ensure_test_env");
+    let dir = w
+        .temp_dir
+        .as_ref()
+        .expect("no temp dir set up by ensure_test_env");
     let config_path = dir.path().join("watn").join("config.toml");
-    assert!(config_path.exists(), "expected config file at {:?} to exist", config_path);
+    assert!(
+        config_path.exists(),
+        "expected config file at {:?} to exist",
+        config_path
+    );
 }
 
 #[then(regex = r#"^the config file contains a commented-out "([^"]+)" section$"#)]
 fn config_file_contains_commented_section(w: &mut WatnWorld, section: String) {
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
-    let content = std::fs::read_to_string(&config_path)
-        .expect("config file should exist");
-    assert!(content.contains(&format!("# [{}]", section)), "expected config file to contain commented-out '[{}]' section, got:\n{}", section, content);
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    assert!(
+        content.contains(&format!("# [{}]", section)),
+        "expected config file to contain commented-out '[{}]' section, got:\n{}",
+        section,
+        content
+    );
 }
 
 #[then("the command succeeds as if the file already existed")]
 fn command_succeeds(w: &mut WatnWorld) {
-    assert_eq!(w.exit_status, Some(0), "expected exit status 0, got {:?}", w.exit_status);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "expected exit status 0, got {:?}",
+        w.exit_status
+    );
 }
 
 #[given(regex = r#"^an existing config file with provider "([^"]+)"$"#)]
@@ -731,9 +940,13 @@ fn existing_config_with_provider(w: &mut WatnWorld, provider: String) {
 fn config_file_still_contains_provider(w: &mut WatnWorld, provider: String) {
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
-    let content = std::fs::read_to_string(&config_path)
-        .expect("config file should exist");
-    assert!(content.contains(&format!("provider = \"{}\"", provider)), "expected config file to contain 'provider = \"{}\"', got:\n{}", provider, content);
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    assert!(
+        content.contains(&format!("provider = \"{}\"", provider)),
+        "expected config file to contain 'provider = \"{}\"', got:\n{}",
+        provider,
+        content
+    );
 }
 
 // ===== Model autosuggest steps =====
@@ -758,9 +971,10 @@ fn mock_search_response(w: &mut WatnWorld, query: &str, models: &[String], delay
         if delay_ms > 0 {
             std::thread::sleep(std::time::Duration::from_millis(delay_ms));
         }
-        let data: Vec<serde_json::Value> = models_clone.iter().map(|id| {
-            serde_json::json!({"id": id})
-        }).collect();
+        let data: Vec<serde_json::Value> = models_clone
+            .iter()
+            .map(|id| serde_json::json!({"id": id}))
+            .collect();
         then.status(200)
             .header("Content-Type", "application/json")
             .body(serde_json::json!({"data": data}).to_string());
@@ -790,9 +1004,10 @@ fn provider_with_models(w: &mut WatnWorld, models_str: String) {
         when.method(httpmock::Method::GET)
             .path("/models")
             .query_param_exists("search");
-        let data: Vec<serde_json::Value> = models_clone.iter().map(|id| {
-            serde_json::json!({"id": id})
-        }).collect();
+        let data: Vec<serde_json::Value> = models_clone
+            .iter()
+            .map(|id| serde_json::json!({"id": id}))
+            .collect();
         then.status(200)
             .header("Content-Type", "application/json")
             .body(serde_json::json!({"data": data}).to_string());
@@ -815,7 +1030,9 @@ async fn type_into_picker(w: &mut WatnWorld, query: String) {
     let result = tokio::task::spawn_blocking(move || {
         let current_gen = generation.fetch_add(1, Ordering::SeqCst) + 1;
         picker::execute_search(&endpoint, None, &q, &all_models, &generation, current_gen)
-    }).await.expect("blocking task failed");
+    })
+    .await
+    .expect("blocking task failed");
 
     match result {
         Ok((results, error, no_results)) => {
@@ -833,36 +1050,74 @@ async fn type_into_picker(w: &mut WatnWorld, query: String) {
 
 #[then(regex = r#"^the suggestions include "([^"]+)" and "([^"]+)"$"#)]
 fn suggestions_include(w: &mut WatnWorld, model1: String, model2: String) {
-    let suggestions = w.picker_suggestions.as_ref()
+    let suggestions = w
+        .picker_suggestions
+        .as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    assert!(ids.contains(&model1.as_str()), "expected suggestions to contain '{}', got: {:?}", model1, ids);
-    assert!(ids.contains(&model2.as_str()), "expected suggestions to contain '{}', got: {:?}", model2, ids);
+    assert!(
+        ids.contains(&model1.as_str()),
+        "expected suggestions to contain '{}', got: {:?}",
+        model1,
+        ids
+    );
+    assert!(
+        ids.contains(&model2.as_str()),
+        "expected suggestions to contain '{}', got: {:?}",
+        model2,
+        ids
+    );
 }
 
 #[then(regex = r#"^the suggestions do not include "([^"]+)" or "([^"]+)"$"#)]
 fn suggestions_not_include(w: &mut WatnWorld, model1: String, model2: String) {
-    let suggestions = w.picker_suggestions.as_ref()
+    let suggestions = w
+        .picker_suggestions
+        .as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    assert!(!ids.contains(&model1.as_str()), "expected suggestions to not contain '{}', got: {:?}", model1, ids);
-    assert!(!ids.contains(&model2.as_str()), "expected suggestions to not contain '{}', got: {:?}", model2, ids);
+    assert!(
+        !ids.contains(&model1.as_str()),
+        "expected suggestions to not contain '{}', got: {:?}",
+        model1,
+        ids
+    );
+    assert!(
+        !ids.contains(&model2.as_str()),
+        "expected suggestions to not contain '{}', got: {:?}",
+        model2,
+        ids
+    );
 }
 
 #[then(expr = "the suggestions include {string}")]
 fn suggestions_single_include(w: &mut WatnWorld, model: String) {
-    let suggestions = w.picker_suggestions.as_ref()
+    let suggestions = w
+        .picker_suggestions
+        .as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    assert!(ids.contains(&model.as_str()), "expected suggestions to contain '{}', got: {:?}", model, ids);
+    assert!(
+        ids.contains(&model.as_str()),
+        "expected suggestions to contain '{}', got: {:?}",
+        model,
+        ids
+    );
 }
 
 #[then(expr = "the suggestions do not include {string}")]
 fn suggestions_single_not_include(w: &mut WatnWorld, model: String) {
-    let suggestions = w.picker_suggestions.as_ref()
+    let suggestions = w
+        .picker_suggestions
+        .as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    assert!(!ids.contains(&model.as_str()), "expected suggestions to not contain '{}', got: {:?}", model, ids);
+    assert!(
+        !ids.contains(&model.as_str()),
+        "expected suggestions to not contain '{}', got: {:?}",
+        model,
+        ids
+    );
 }
 
 #[when(regex = r#"^I replace the search text with "([^"]+)"$"#)]
@@ -881,7 +1136,9 @@ async fn replace_search_text(w: &mut WatnWorld, query: String) {
     let result = tokio::task::spawn_blocking(move || {
         let current_gen = generation.fetch_add(1, Ordering::SeqCst) + 1;
         picker::execute_search(&endpoint, None, &q, &all_models, &generation, current_gen)
-    }).await.expect("blocking task failed");
+    })
+    .await
+    .expect("blocking task failed");
 
     match result {
         Ok((results, error, no_results)) => {
@@ -904,7 +1161,10 @@ async fn replace_search_text(w: &mut WatnWorld, query: String) {
 
 #[then(regex = r#"^the picker says that no models were found$"#)]
 fn picker_says_no_models(w: &mut WatnWorld) {
-    assert!(w.picker_no_results, "expected picker to report no models found");
+    assert!(
+        w.picker_no_results,
+        "expected picker to report no models found"
+    );
 }
 
 #[then(expr = "the dialog shows the filter text {string}")]
@@ -912,7 +1172,11 @@ fn dialog_shows_filter_text(w: &mut WatnWorld, text: String) {
     // Non-e2e: assert the stored picker query. (The e2e PTY variant asserts
     // the rendered filter line with ANSI sequences stripped.)
     if let Some(q) = &w.picker_query {
-        assert_eq!(q, &text, "expected dialog filter text '{}', got '{}'", text, q);
+        assert_eq!(
+            q, &text,
+            "expected dialog filter text '{}', got '{}'",
+            text, q
+        );
         return;
     }
     let output = w.output.as_ref().expect("no output captured");
@@ -928,7 +1192,9 @@ fn dialog_shows_filter_text(w: &mut WatnWorld, text: String) {
     }
 }
 
-#[given(regex = r#"^a provider returns the results for "([^"]+)" more slowly than the results for "([^"]+)"$"#)]
+#[given(
+    regex = r#"^a provider returns the results for "([^"]+)" more slowly than the results for "([^"]+)"$"#
+)]
 fn slow_provider_results(w: &mut WatnWorld, slow_query: String, fast_query: String) {
     let endpoint = setup_search_mock(w);
 
@@ -948,10 +1214,16 @@ fn slow_provider_results(w: &mut WatnWorld, slow_query: String, fast_query: Stri
 
 #[then(regex = r#"^the suggestions for "([^"]+)" are displayed$"#)]
 fn suggestions_for_query_displayed(w: &mut WatnWorld, query: String) {
-    let suggestions = w.picker_suggestions.as_ref()
+    let suggestions = w
+        .picker_suggestions
+        .as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    assert!(!ids.is_empty(), "expected suggestions for '{}', got empty", query);
+    assert!(
+        !ids.is_empty(),
+        "expected suggestions for '{}', got empty",
+        query
+    );
 }
 
 #[then(regex = r#"^a later result for "([^"]+)" does not replace them$"#)]
@@ -960,14 +1232,20 @@ fn later_result_does_not_replace(w: &mut WatnWorld, query: String) {
     // completed) search — the newer "o3" result. A stale, slower result for
     // `query` ("gpt") must not have overwritten them, because the generation
     // guard discards results whose generation advanced before they landed.
-    let suggestions = w.picker_suggestions.as_ref()
+    let suggestions = w
+        .picker_suggestions
+        .as_ref()
         .expect("no suggestions available");
     let ids: Vec<&str> = suggestions.iter().map(|m| m.id.as_str()).collect();
-    assert!(!ids.is_empty(), "expected the newer suggestions to remain, got empty");
+    assert!(
+        !ids.is_empty(),
+        "expected the newer suggestions to remain, got empty"
+    );
     assert!(
         !ids.iter().any(|id| id.starts_with(&query)),
         "stale result for '{}' replaced the newer suggestions: {:?}",
-        query, ids
+        query,
+        ids
     );
 }
 
@@ -989,7 +1267,9 @@ fn provider_no_search_support(w: &mut WatnWorld) {
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
 }
 
-#[given(expr = "a provider that does not support searching its model catalog with models {string} and {string}")]
+#[given(
+    expr = "a provider that does not support searching its model catalog with models {string} and {string}"
+)]
 fn provider_no_search_support_with_models(w: &mut WatnWorld, m1: String, m2: String) {
     let endpoint = setup_search_mock(w);
     let m1c = m1.trim_matches('"').to_string();
@@ -1008,14 +1288,32 @@ fn provider_no_search_support_with_models(w: &mut WatnWorld, m1: String, m2: Str
     w.picker_endpoint = Some(endpoint);
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
     w.picker_local_models = Some(vec![
-        ModelEntry { id: m1c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
-        ModelEntry { id: m2c.clone(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None },
+        ModelEntry {
+            id: m1c.clone(),
+            name: None,
+            context_length: None,
+            pricing: None,
+            supported_features: vec![],
+            reasoning: None,
+        },
+        ModelEntry {
+            id: m2c.clone(),
+            name: None,
+            context_length: None,
+            pricing: None,
+            supported_features: vec![],
+            reasoning: None,
+        },
     ]);
 }
 #[then(regex = r#"^the picker reports that model search is unavailable$"#)]
 fn picker_reports_search_unavailable(w: &mut WatnWorld) {
-    assert_eq!(w.picker_error.as_deref(), Some("model search is not supported by this provider"),
-        "expected picker to report search unavailable, got: {:?}", w.picker_error);
+    assert_eq!(
+        w.picker_error.as_deref(),
+        Some("model search is not supported by this provider"),
+        "expected picker to report search unavailable, got: {:?}",
+        w.picker_error
+    );
 }
 
 #[given(regex = r#"^the catalog has models "([^"]+)" and "([^"]+)" where "([^"]+)" has pricing$"#)]
@@ -1024,11 +1322,21 @@ fn provider_with_models_pricing(w: &mut WatnWorld, m1: String, m2: String, price
         id,
         name: None,
         context_length: None,
-        pricing: if has_pricing { Some(watn::config::types::ModelPricing { input: 0.15, output: 0.60 }) } else { None },
+        pricing: if has_pricing {
+            Some(watn::config::types::ModelPricing {
+                input: 0.15,
+                output: 0.60,
+            })
+        } else {
+            None
+        },
         supported_features: vec![],
         reasoning: None,
     };
-    let a = mk(m1.trim_matches('"').to_string(), priced.trim_matches('"') == "model-a");
+    let a = mk(
+        m1.trim_matches('"').to_string(),
+        priced.trim_matches('"') == "model-a",
+    );
     let b = mk(m2.trim_matches('"').to_string(), false);
     w.picker_local_models = Some(vec![a, b]);
 }
@@ -1036,21 +1344,42 @@ fn provider_with_models_pricing(w: &mut WatnWorld, m1: String, m2: String, price
 #[when("I format the model list for display")]
 fn format_model_list(w: &mut WatnWorld) {
     let models = w.picker_local_models.as_ref().expect("no models set up");
-    w.formatted_entries = Some(models.iter().map(watn::models::format_model_entry).collect());
+    w.formatted_entries = Some(
+        models
+            .iter()
+            .map(watn::models::format_model_entry)
+            .collect(),
+    );
 }
 
 #[then(expr = "the entry for {string} shows a price")]
 fn entry_shows_price(w: &mut WatnWorld, model: String) {
     let entries = w.formatted_entries.as_ref().expect("no formatted entries");
-    let line = entries.iter().find(|l| l.starts_with(&model)).expect("entry not found");
-    assert!(line.contains('$'), "expected '{}' to show a price, got: '{}'", model, line);
+    let line = entries
+        .iter()
+        .find(|l| l.starts_with(&model))
+        .expect("entry not found");
+    assert!(
+        line.contains('$'),
+        "expected '{}' to show a price, got: '{}'",
+        model,
+        line
+    );
 }
 
 #[then(expr = "the entry for {string} shows no price")]
 fn entry_shows_no_price(w: &mut WatnWorld, model: String) {
     let entries = w.formatted_entries.as_ref().expect("no formatted entries");
-    let line = entries.iter().find(|l| l.starts_with(&model)).expect("entry not found");
-    assert!(!line.contains('$'), "expected '{}' to show no price, got: '{}'", model, line);
+    let line = entries
+        .iter()
+        .find(|l| l.starts_with(&model))
+        .expect("entry not found");
+    assert!(
+        !line.contains('$'),
+        "expected '{}' to show no price, got: '{}'",
+        model,
+        line
+    );
 }
 
 #[given(regex = r#"^a provider with a paginated model catalog$"#)]
@@ -1070,7 +1399,8 @@ fn paginated_model_catalog(w: &mut WatnWorld) {
                 .path("/models")
                 .query_param("page", "1")
                 .query_param("limit", "50");
-            let data: Vec<serde_json::Value> = p1.iter().map(|id| serde_json::json!({"id": id})).collect();
+            let data: Vec<serde_json::Value> =
+                p1.iter().map(|id| serde_json::json!({"id": id})).collect();
             then.status(200)
                 .header("Content-Type", "application/json")
                 .body(serde_json::json!({"data": data}).to_string());
@@ -1085,7 +1415,8 @@ fn paginated_model_catalog(w: &mut WatnWorld) {
                 .path("/models")
                 .query_param("page", "2")
                 .query_param("limit", "50");
-            let data: Vec<serde_json::Value> = p2.iter().map(|id| serde_json::json!({"id": id})).collect();
+            let data: Vec<serde_json::Value> =
+                p2.iter().map(|id| serde_json::json!({"id": id})).collect();
             then.status(200)
                 .header("Content-Type", "application/json")
                 .body(serde_json::json!({"data": data}).to_string());
@@ -1125,15 +1456,23 @@ fn paginated_model_catalog(w: &mut WatnWorld) {
 
 #[given(regex = r#"^the initial suggestions include "([^"]+)" and "([^"]+)"$"#)]
 fn initial_suggestions_include(w: &mut WatnWorld, _m1: String, _m2: String) {
-    assert!(w.picker_endpoint.is_some(), "paginated catalog must be set up first");
+    assert!(
+        w.picker_endpoint.is_some(),
+        "paginated catalog must be set up first"
+    );
 }
 
 #[given(regex = r#"^a later catalog page includes "([^"]+)"$"#)]
 fn later_catalog_page_includes(w: &mut WatnWorld, _model: String) {
-    assert!(w.picker_endpoint.is_some(), "paginated catalog must be set up first");
+    assert!(
+        w.picker_endpoint.is_some(),
+        "paginated catalog must be set up first"
+    );
 }
 
-#[when(regex = r#"^I run `watn models`, type "([^"]+)" into the small tier picker, and choose "([^"]+)"$"#)]
+#[when(
+    regex = r#"^I run `watn models`, type "([^"]+)" into the small tier picker, and choose "([^"]+)"$"#
+)]
 fn run_models_small_choose(w: &mut WatnWorld, query: String, selected: String) {
     let mut session = start_pty_session(w, &["models"]);
     std::thread::sleep(std::time::Duration::from_millis(200));
@@ -1167,21 +1506,44 @@ fn choose_thinking_tier(w: &mut WatnWorld, selected: String) {
 
 #[then(regex = r#"^the picker displays "([^"]+)" as a matching suggestion$"#)]
 fn picker_displays_suggestion(w: &mut WatnWorld, model: String) {
-    let output = w.output.clone().or_else(|| {
-        std::thread::sleep(std::time::Duration::from_millis(300));
-        w.output.clone()
-    }).expect("pty output captured");
-    assert!(output.contains(&model), "expected picker to display '{}', got: {:?}", model, output);
+    let output = w
+        .output
+        .clone()
+        .or_else(|| {
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            w.output.clone()
+        })
+        .expect("pty output captured");
+    assert!(
+        output.contains(&model),
+        "expected picker to display '{}', got: {:?}",
+        model,
+        output
+    );
 }
 
-#[then(regex = r#"^the completed setup reports small="([^"]+)", normal="([^"]+)", thinking="([^"]+)"$"#)]
+#[then(
+    regex = r#"^the completed setup reports small="([^"]+)", normal="([^"]+)", thinking="([^"]+)"$"#
+)]
 fn completed_setup_reports(w: &mut WatnWorld, small: String, normal: String, thinking: String) {
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
     let content = std::fs::read_to_string(&config_path).expect("config file should exist");
-    assert!(content.contains(&format!("small = \"{}\"", small)), "config small tier missing, got:\n{}", content);
-    assert!(content.contains(&format!("normal = \"{}\"", normal)), "config normal tier missing, got:\n{}", content);
-    assert!(content.contains(&format!("thinking = \"{}\"", thinking)), "config thinking tier missing, got:\n{}", content);
+    assert!(
+        content.contains(&format!("small = \"{}\"", small)),
+        "config small tier missing, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains(&format!("normal = \"{}\"", normal)),
+        "config normal tier missing, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains(&format!("thinking = \"{}\"", thinking)),
+        "config thinking tier missing, got:\n{}",
+        content
+    );
 }
 
 // ===== ratatui-model-picker steps =====
@@ -1205,8 +1567,18 @@ fn set_reasoning_in_wizard(session: &mut super::PtySession, steps: usize) {
     }
 }
 
-#[when(regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small, "([^"]+)" with reasoning "([^"]+)" for normal, and "([^"]+)" with reasoning "([^"]+)" for thinking$"#)]
-fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: String, r2: String, f3: String, r3: String) {
+#[when(
+    regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small, "([^"]+)" with reasoning "([^"]+)" for normal, and "([^"]+)" with reasoning "([^"]+)" for thinking$"#
+)]
+fn run_models_configure_all(
+    w: &mut WatnWorld,
+    f1: String,
+    r1: String,
+    f2: String,
+    r2: String,
+    f3: String,
+    r3: String,
+) {
     let mut session = start_pty_session(w, &["models"]);
     std::thread::sleep(std::time::Duration::from_millis(400));
 
@@ -1236,7 +1608,9 @@ fn run_models_configure_all(w: &mut WatnWorld, f1: String, r1: String, f2: Strin
     finish_pty_session(w, session);
 }
 
-#[when(regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small$"#)]
+#[when(
+    regex = r#"^I run `watn models` and configure "([^"]+)" with reasoning "([^"]+)" for small$"#
+)]
 fn run_models_configure_small(w: &mut WatnWorld, filter: String, reasoning: String) {
     let mut session = start_pty_session(w, &["models"]);
     std::thread::sleep(std::time::Duration::from_millis(400));
@@ -1271,7 +1645,9 @@ fn change_small_tier_model(w: &mut WatnWorld, filter: String, reasoning: String)
     w.pty_session = Some(session);
 }
 
-#[when(regex = r#"^configure "([^"]+)" with reasoning "([^"]+)" for normal and "([^"]+)" with reasoning "([^"]+)" for thinking$"#)]
+#[when(
+    regex = r#"^configure "([^"]+)" with reasoning "([^"]+)" for normal and "([^"]+)" with reasoning "([^"]+)" for thinking$"#
+)]
 fn configure_remaining_tiers(w: &mut WatnWorld, f2: String, r2: String, f3: String, r3: String) {
     let mut session = w.pty_session.take().expect("pty session must be active");
 
@@ -1334,9 +1710,19 @@ fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
     }
     w.picker_endpoint = Some(endpoint);
     w.picker_generation = Some(Arc::new(AtomicU64::new(0)));
-    w.picker_local_models = Some(models.iter().map(|id| ModelEntry {
-        id: id.clone(), name: None, context_length: None, pricing: None, supported_features: vec![], reasoning: None,
-    }).collect());
+    w.picker_local_models = Some(
+        models
+            .iter()
+            .map(|id| ModelEntry {
+                id: id.clone(),
+                name: None,
+                context_length: None,
+                pricing: None,
+                supported_features: vec![],
+                reasoning: None,
+            })
+            .collect(),
+    );
 
     w.raw_config = Some(format!(
         "[defaults]\nprovider = \"{}\"\n\n[providers.{}]\nendpoint = \"{}\"\napi_key = \"test-key\"\n",
@@ -1344,25 +1730,65 @@ fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
     ));
 }
 
-#[then("the config file should contain the selected tier assignments with their reasoning strengths")]
+#[then(
+    "the config file should contain the selected tier assignments with their reasoning strengths"
+)]
 fn config_contains_tiers_and_reasoning(w: &mut WatnWorld) {
     let output = w.output.as_ref().expect("pty output captured");
-    assert!(output.contains("Tiers configured:"), "expected config report, got: {:?}", output);
+    assert!(
+        output.contains("Tiers configured:"),
+        "expected config report, got: {:?}",
+        output
+    );
 
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
     let content = std::fs::read_to_string(&config_path).expect("config file should exist");
-    assert!(content.contains("[tiers]"), "config should have [tiers] section, got:\n{}", content);
-    assert!(content.contains("small = \""), "config should have small tier, got:\n{}", content);
-    assert!(content.contains("normal = \""), "config should have normal tier, got:\n{}", content);
-    assert!(content.contains("thinking = \""), "config should have thinking tier, got:\n{}", content);
-    assert!(content.contains("[tiers.reasoning]"), "config should have [tiers.reasoning], got:\n{}", content);
-    assert!(content.contains("small = \"off\""), "config should have small reasoning off, got:\n{}", content);
-    assert!(content.contains("normal = \"low\""), "config should have normal reasoning low, got:\n{}", content);
-    assert!(content.contains("thinking = \"high\""), "config should have thinking reasoning high, got:\n{}", content);
+    assert!(
+        content.contains("[tiers]"),
+        "config should have [tiers] section, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("small = \""),
+        "config should have small tier, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("normal = \""),
+        "config should have normal tier, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("thinking = \""),
+        "config should have thinking tier, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("[tiers.reasoning]"),
+        "config should have [tiers.reasoning], got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("small = \"off\""),
+        "config should have small reasoning off, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("normal = \"low\""),
+        "config should have normal reasoning low, got:\n{}",
+        content
+    );
+    assert!(
+        content.contains("thinking = \"high\""),
+        "config should have thinking reasoning high, got:\n{}",
+        content
+    );
 }
 
-#[when(regex = r#"^I run `watn models` and use the down arrow to move the selection to the second model$"#)]
+#[when(
+    regex = r#"^I run `watn models` and use the down arrow to move the selection to the second model$"#
+)]
 fn run_models_down_arrow(w: &mut WatnWorld) {
     let mut session = start_pty_session(w, &["models"]);
     std::thread::sleep(std::time::Duration::from_millis(400));
@@ -1389,16 +1815,29 @@ fn use_page_down(w: &mut WatnWorld) {
 #[then("the dialog highlights the selected model")]
 fn dialog_highlights_selected(w: &mut WatnWorld) {
     let output = w.output.clone().unwrap_or_default();
-    assert!(output.contains("> model-12"), "expected dialog to highlight 'model-12', got: {:?}", output);
+    assert!(
+        output.contains("> model-12"),
+        "expected dialog to highlight 'model-12', got: {:?}",
+        output
+    );
 }
 
 #[then(expr = "the completed setup reports small={string}")]
 fn completed_setup_small(w: &mut WatnWorld, small: String) {
     let s = small.trim_matches('"').to_string();
     let output = w.output.as_ref().expect("pty output captured");
-    assert!(output.contains(&format!("small={}", s)), "expected report small={}, got: {:?}", s, output);
+    assert!(
+        output.contains(&format!("small={}", s)),
+        "expected report small={}, got: {:?}",
+        s,
+        output
+    );
     let dir = w.temp_dir.as_ref().expect("no temp dir");
     let config_path = dir.path().join("watn").join("config.toml");
     let content = std::fs::read_to_string(&config_path).expect("config file should exist");
-    assert!(content.contains(&format!("small = \"{}\"", s)), "config small tier missing, got:\n{}", content);
+    assert!(
+        content.contains(&format!("small = \"{}\"", s)),
+        "config small tier missing, got:\n{}",
+        content
+    );
 }

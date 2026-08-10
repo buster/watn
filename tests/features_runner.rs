@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
 
 use watn::models::list::ModelEntry;
 
@@ -118,20 +118,19 @@ struct VecParserCli;
 impl Parser<Vec<PathBuf>> for VecParser {
     type Cli = VecParserCli;
 
-    type Output =
-        stream::Iter<std::vec::IntoIter<Result<Feature, parser::Error>>>;
+    type Output = stream::Iter<std::vec::IntoIter<Result<Feature, parser::Error>>>;
 
     fn parse(self, mut input: Vec<PathBuf>, _cli: Self::Cli) -> Self::Output {
         input.sort();
         let features: Vec<_> = input
             .into_iter()
-        .map(|path| {
-            let env = GherkinEnv::default();
-            match Feature::parse_path(&path, env) {
-                Ok(feature) => Ok(feature),
-                Err(e) => Err(parser::Error::Parsing(Arc::new(e))),
-            }
-        })
+            .map(|path| {
+                let env = GherkinEnv::default();
+                match Feature::parse_path(&path, env) {
+                    Ok(feature) => Ok(feature),
+                    Err(e) => Err(parser::Error::Parsing(Arc::new(e))),
+                }
+            })
             .collect();
         stream::iter(features)
     }

@@ -31,7 +31,12 @@ pub fn models_search_url(endpoint: &str, query: &str) -> String {
 
 pub fn models_page_url(endpoint: &str, page: u32, limit: u32) -> String {
     let endpoint = crate::provider::transport::endpoint(endpoint);
-    format!("{}/models?page={}&limit={}", endpoint.trim_end_matches('/'), page, limit)
+    format!(
+        "{}/models?page={}&limit={}",
+        endpoint.trim_end_matches('/'),
+        page,
+        limit
+    )
 }
 
 pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEntry>, Error> {
@@ -47,20 +52,18 @@ pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEn
         req = req.header("Authorization", format!("Bearer {}", key));
     }
 
-    let response = req
-        .send()
-        .map_err(|e| {
-            if e.is_timeout() || e.is_connect() {
-                Error::NetworkError(e.to_string())
-            } else if let Some(status) = e.status() {
-                Error::ApiError {
-                    status: status.as_u16(),
-                    message: e.to_string(),
-                }
-            } else {
-                Error::NetworkError(e.to_string())
+    let response = req.send().map_err(|e| {
+        if e.is_timeout() || e.is_connect() {
+            Error::NetworkError(e.to_string())
+        } else if let Some(status) = e.status() {
+            Error::ApiError {
+                status: status.as_u16(),
+                message: e.to_string(),
             }
-        })?;
+        } else {
+            Error::NetworkError(e.to_string())
+        }
+    })?;
 
     let status = response.status();
     if !status.is_success() {
@@ -71,19 +74,15 @@ pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEn
         });
     }
 
-    let body: serde_json::Value = response
-        .json()
-        .map_err(|e| Error::ApiError {
-            status: 0,
-            message: format!("failed to parse response: {}", e),
-        })?;
+    let body: serde_json::Value = response.json().map_err(|e| Error::ApiError {
+        status: 0,
+        message: format!("failed to parse response: {}", e),
+    })?;
 
-    let data = body["data"]
-        .as_array()
-        .ok_or_else(|| Error::ApiError {
-            status: 0,
-            message: "response missing 'data' array".to_string(),
-        })?;
+    let data = body["data"].as_array().ok_or_else(|| Error::ApiError {
+        status: 0,
+        message: "response missing 'data' array".to_string(),
+    })?;
 
     let models: Vec<ModelEntry> = data
         .iter()
@@ -92,9 +91,9 @@ pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEn
 
             let name = item["name"].as_str().map(|s| s.to_string());
 
-            let context_length = item["context_length"].as_u64().or_else(|| {
-                item["context_length"].as_str().and_then(|s| s.parse().ok())
-            });
+            let context_length = item["context_length"]
+                .as_u64()
+                .or_else(|| item["context_length"].as_str().and_then(|s| s.parse().ok()));
 
             let pricing = item["pricing"].as_object().map(|p| {
                 let prompt = parse_pricing_value(p.get("prompt"));
@@ -157,20 +156,18 @@ pub fn search_models(
         req = req.header("Authorization", format!("Bearer {}", key));
     }
 
-    let response = req
-        .send()
-        .map_err(|e| {
-            if e.is_timeout() || e.is_connect() {
-                Error::NetworkError(e.to_string())
-            } else if let Some(status) = e.status() {
-                Error::ApiError {
-                    status: status.as_u16(),
-                    message: e.to_string(),
-                }
-            } else {
-                Error::NetworkError(e.to_string())
+    let response = req.send().map_err(|e| {
+        if e.is_timeout() || e.is_connect() {
+            Error::NetworkError(e.to_string())
+        } else if let Some(status) = e.status() {
+            Error::ApiError {
+                status: status.as_u16(),
+                message: e.to_string(),
             }
-        })?;
+        } else {
+            Error::NetworkError(e.to_string())
+        }
+    })?;
 
     let status = response.status();
     if !status.is_success() {
@@ -181,19 +178,15 @@ pub fn search_models(
         });
     }
 
-    let body: serde_json::Value = response
-        .json()
-        .map_err(|e| Error::ApiError {
-            status: 0,
-            message: format!("failed to parse response: {}", e),
-        })?;
+    let body: serde_json::Value = response.json().map_err(|e| Error::ApiError {
+        status: 0,
+        message: format!("failed to parse response: {}", e),
+    })?;
 
-    let data = body["data"]
-        .as_array()
-        .ok_or_else(|| Error::ApiError {
-            status: 0,
-            message: "response missing 'data' array".to_string(),
-        })?;
+    let data = body["data"].as_array().ok_or_else(|| Error::ApiError {
+        status: 0,
+        message: "response missing 'data' array".to_string(),
+    })?;
 
     let models: Vec<ModelEntry> = parse_model_data(data);
 
@@ -223,20 +216,18 @@ pub fn fetch_models_page(
         req = req.header("Authorization", format!("Bearer {}", key));
     }
 
-    let response = req
-        .send()
-        .map_err(|e| {
-            if e.is_timeout() || e.is_connect() {
-                Error::NetworkError(e.to_string())
-            } else if let Some(status) = e.status() {
-                Error::ApiError {
-                    status: status.as_u16(),
-                    message: e.to_string(),
-                }
-            } else {
-                Error::NetworkError(e.to_string())
+    let response = req.send().map_err(|e| {
+        if e.is_timeout() || e.is_connect() {
+            Error::NetworkError(e.to_string())
+        } else if let Some(status) = e.status() {
+            Error::ApiError {
+                status: status.as_u16(),
+                message: e.to_string(),
             }
-        })?;
+        } else {
+            Error::NetworkError(e.to_string())
+        }
+    })?;
 
     let status = response.status();
     if !status.is_success() {
@@ -247,19 +238,15 @@ pub fn fetch_models_page(
         });
     }
 
-    let body: serde_json::Value = response
-        .json()
-        .map_err(|e| Error::ApiError {
-            status: 0,
-            message: format!("failed to parse response: {}", e),
-        })?;
+    let body: serde_json::Value = response.json().map_err(|e| Error::ApiError {
+        status: 0,
+        message: format!("failed to parse response: {}", e),
+    })?;
 
-    let data = body["data"]
-        .as_array()
-        .ok_or_else(|| Error::ApiError {
-            status: 0,
-            message: "response missing 'data' array".to_string(),
-        })?;
+    let data = body["data"].as_array().ok_or_else(|| Error::ApiError {
+        status: 0,
+        message: "response missing 'data' array".to_string(),
+    })?;
 
     let models: Vec<ModelEntry> = parse_model_data(data);
     Ok(models)
@@ -270,14 +257,12 @@ fn parse_model_data(data: &[serde_json::Value]) -> Vec<ModelEntry> {
         .map(|item| {
             let id = item["id"].as_str().unwrap_or("").to_string();
             let name = item["name"].as_str().map(|s| s.to_string());
-            let context_length = item["context_length"].as_u64().or_else(|| {
-                item["context_length"].as_str().and_then(|s| s.parse().ok())
-            });
-            let pricing = item["pricing"].as_object().map(|p| {
-                ModelPricing {
-                    input: parse_pricing_value(p.get("prompt")),
-                    output: parse_pricing_value(p.get("completion")),
-                }
+            let context_length = item["context_length"]
+                .as_u64()
+                .or_else(|| item["context_length"].as_str().and_then(|s| s.parse().ok()));
+            let pricing = item["pricing"].as_object().map(|p| ModelPricing {
+                input: parse_pricing_value(p.get("prompt")),
+                output: parse_pricing_value(p.get("completion")),
             });
             let supported_features: Vec<String> = item["supported_features"]
                 .as_array()
@@ -302,7 +287,9 @@ fn parse_model_data(data: &[serde_json::Value]) -> Vec<ModelEntry> {
 
 fn parse_pricing_value(val: Option<&serde_json::Value>) -> f64 {
     match val {
-        Some(v) => v.as_str().and_then(|s| s.parse::<f64>().ok())
+        Some(v) => v
+            .as_str()
+            .and_then(|s| s.parse::<f64>().ok())
             .or_else(|| v.as_f64())
             .unwrap_or(0.0),
         None => 0.0,

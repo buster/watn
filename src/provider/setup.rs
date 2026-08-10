@@ -50,9 +50,8 @@ pub fn normalize_endpoint(endpoint: &str) -> Result<String, Error> {
         ));
     }
 
-    let parsed = reqwest::Url::parse(&endpoint).map_err(|_| {
-        Error::ConfigError("endpoint must be an HTTP or HTTPS URL".to_string())
-    })?;
+    let parsed = reqwest::Url::parse(&endpoint)
+        .map_err(|_| Error::ConfigError("endpoint must be an HTTP or HTTPS URL".to_string()))?;
     if !matches!(parsed.scheme(), "http" | "https") || parsed.host().is_none() {
         return Err(Error::ConfigError(
             "endpoint must be an HTTP or HTTPS URL".to_string(),

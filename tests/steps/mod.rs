@@ -1,10 +1,10 @@
 pub mod ask_steps;
 pub mod config_steps;
-pub mod models_steps;
 pub mod model_picker_layout_steps;
-pub mod providers_steps;
-pub mod provider_setup_steps;
+pub mod models_steps;
 pub mod provider_setup_layout_steps;
+pub mod provider_setup_steps;
+pub mod providers_steps;
 pub mod setup_wizard_steps;
 pub mod transport_steps;
 
@@ -27,7 +27,11 @@ pub(crate) fn binary_from_env(name: &str) -> PathBuf {
     let path = std::env::var_os(name)
         .map(PathBuf::from)
         .unwrap_or_else(|| panic!("{name} must point to a prebuilt watn binary"));
-    assert!(path.is_file(), "{name} does not point to a file: {}", path.display());
+    assert!(
+        path.is_file(),
+        "{name} does not point to a file: {}",
+        path.display()
+    );
     path
 }
 
@@ -38,7 +42,8 @@ pub(crate) fn build_config(
     pricing: Option<Vec<(&str, f64, f64)>>,
     litellm: Option<(&str, &str)>,
     default_model: Option<&str>,
-) -> String {    let mut lines = Vec::new();
+) -> String {
+    let mut lines = Vec::new();
 
     lines.push("[defaults]".to_string());
     lines.push(format!("provider = \"{}\"", default_provider));
@@ -70,7 +75,10 @@ pub(crate) fn build_config(
         lines.push(String::new());
         lines.push("[pricing]".to_string());
         for (model, input, output) in p {
-            lines.push(format!("\"{}\" = {{ input = {}, output = {} }}", model, input, output));
+            lines.push(format!(
+                "\"{}\" = {{ input = {}, output = {} }}",
+                model, input, output
+            ));
         }
     }
 
@@ -122,7 +130,11 @@ fn setup_chat_completion_mock(
     mock.id
 }
 
-fn setup_models_mock(server_ref: &httpmock::MockServer, models: &[String], fail: bool) -> Option<usize> {
+fn setup_models_mock(
+    server_ref: &httpmock::MockServer,
+    models: &[String],
+    fail: bool,
+) -> Option<usize> {
     let mock = if fail {
         server_ref.mock(move |when, then| {
             when.method(Method::GET).path("/models");
@@ -132,9 +144,10 @@ fn setup_models_mock(server_ref: &httpmock::MockServer, models: &[String], fail:
         let models_clone = models.to_vec();
         server_ref.mock(move |when, then| {
             when.method(Method::GET).path("/models");
-            let data: Vec<serde_json::Value> = models_clone.iter().map(|id| {
-                serde_json::json!({"id": id})
-            }).collect();
+            let data: Vec<serde_json::Value> = models_clone
+                .iter()
+                .map(|id| serde_json::json!({"id": id}))
+                .collect();
             then.status(200)
                 .header("Content-Type", "application/json")
                 .body(serde_json::json!({"data": data}).to_string());
@@ -184,8 +197,14 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
     let mut has_config = false;
 
     if world.pending_mock_model.is_some() || world.pending_mock_output.is_some() {
-        let model = world.pending_mock_model.clone().unwrap_or_else(|| "test-model".to_string());
-        let output = world.pending_mock_output.clone().unwrap_or_else(|| "output".to_string());
+        let model = world
+            .pending_mock_model
+            .clone()
+            .unwrap_or_else(|| "test-model".to_string());
+        let output = world
+            .pending_mock_output
+            .clone()
+            .unwrap_or_else(|| "output".to_string());
         let include_usage = world.pending_mock_usage.unwrap_or(false);
         let auth_fail = world.pending_mock_auth_fail;
         let no_config = world.pending_mock_no_config_file;
@@ -209,7 +228,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 "test",
                 None,
                 Some(vec![("test", &base_url, "test-key", &model)]),
-                None, None, None,
+                None,
+                None,
+                None,
             );
             has_config = true;
         } else {
@@ -218,18 +239,24 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 // chat request whose body contains "reasoning_effort" and
                 // returns HTTP 400. httpmock matches the first mock by id.
                 world.blocking_mock_id = Some(
-                    server.mock(move |when, then| {
-                        when.method(Method::POST)
-                            .path("/chat/completions")
-                            .body_contains("\"reasoning_effort\"");
-                        then.status(400).body(r#"{"error":"should not reason"}"#);
-                    }).id,
+                    server
+                        .mock(move |when, then| {
+                            when.method(Method::POST)
+                                .path("/chat/completions")
+                                .body_contains("\"reasoning_effort\"");
+                            then.status(400).body(r#"{"error":"should not reason"}"#);
+                        })
+                        .id,
                 );
             }
-            let auth_header = world.env_vars.get("WATN_OPENAI_API_KEY")
+            let auth_header = world
+                .env_vars
+                .get("WATN_OPENAI_API_KEY")
                 .map(|key| format!("Bearer {}", key));
             let mock_id = setup_chat_completion_mock(
-                server, &output, include_usage,
+                server,
+                &output,
+                include_usage,
                 world.pending_mock_delay_ms.unwrap_or(0),
                 &world.pending_mock_reasoning,
                 auth_header,
@@ -254,7 +281,10 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 let mut lines: Vec<&str> = raw.lines().collect();
                 if let Some(defaults_idx) = lines.iter().position(|l| l.trim() == "[defaults]") {
                     let mut end = defaults_idx + 1;
-                    while end < lines.len() && !lines[end].starts_with('[') && !lines[end].trim().is_empty() {
+                    while end < lines.len()
+                        && !lines[end].starts_with('[')
+                        && !lines[end].trim().is_empty()
+                    {
                         end += 1;
                     }
                     lines.drain(defaults_idx..end);
@@ -278,12 +308,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 }
                 has_config = !no_config;
 
-                if world.pending_mock_returned_models.is_empty()
-                    && raw.contains("[litellm]")
-                {
+                if world.pending_mock_returned_models.is_empty() && raw.contains("[litellm]") {
                     let default_models = vec!["test-model".to_string()];
-                    world.models_mock_id =
-                        setup_models_mock(server, &default_models, false);
+                    world.models_mock_id = setup_models_mock(server, &default_models, false);
                     world.pending_mock_returned_models = default_models;
                 }
             }
@@ -306,7 +333,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 let _model = world.pending_mock_model.as_deref().unwrap_or("test-model");
                 let output = world.pending_mock_output.as_deref().unwrap_or("output");
                 let include_usage = world.pending_mock_usage.unwrap_or(false);
-                let auth_header = world.env_vars.get("WATN_OPENAI_API_KEY")
+                let auth_header = world
+                    .env_vars
+                    .get("WATN_OPENAI_API_KEY")
                     .map(|key| format!("Bearer {}", key));
 
                 if world.pending_mock_no_reasoning_assert {
@@ -314,17 +343,21 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                     // chat request whose body contains "reasoning_effort" and
                     // returns HTTP 400. httpmock matches the first mock by id.
                     world.blocking_mock_id = Some(
-                        server.mock(move |when, then| {
-                            when.method(Method::POST)
-                                .path("/chat/completions")
-                                .body_contains("\"reasoning_effort\"");
-                            then.status(400).body(r#"{"error":"should not reason"}"#);
-                        }).id,
+                        server
+                            .mock(move |when, then| {
+                                when.method(Method::POST)
+                                    .path("/chat/completions")
+                                    .body_contains("\"reasoning_effort\"");
+                                then.status(400).body(r#"{"error":"should not reason"}"#);
+                            })
+                            .id,
                     );
                 }
 
                 let mock_id = setup_chat_completion_mock(
-                    server, output, include_usage,
+                    server,
+                    output,
+                    include_usage,
                     world.pending_mock_delay_ms.unwrap_or(0),
                     &world.pending_mock_reasoning,
                     auth_header,
@@ -355,7 +388,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 "test",
                 None,
                 Some(vec![("test", &base_url, "test-key", "test-model")]),
-                None, None, None,
+                None,
+                None,
+                None,
             );
             has_config = true;
         }
@@ -369,10 +404,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
         let base_url = format!("http://127.0.0.1:{}", server.port());
         let needs_openai = config_content.contains(r#"provider = "openai""#)
             || world.env_vars.contains_key("WATN_OPENAI_API_KEY");
-        if has_config
-            && !config_content.contains("[providers.openai]")
-            && needs_openai
-        {
+        if has_config && !config_content.contains("[providers.openai]") && needs_openai {
             config_content.push_str(&format!(
                 "\n[providers.openai]\nendpoint = \"{}\"\n",
                 base_url
@@ -410,9 +442,10 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
             let config_path = config_dir.join("config.toml");
             std::fs::write(&config_path, &config_content).expect("write config");
         }
-        world.env_vars.entry("XDG_CONFIG_HOME".to_string()).or_insert_with(|| {
-            dir.to_string_lossy().to_string()
-        });
+        world
+            .env_vars
+            .entry("XDG_CONFIG_HOME".to_string())
+            .or_insert_with(|| dir.to_string_lossy().to_string());
     }
 }
 
@@ -475,7 +508,14 @@ impl std::fmt::Debug for PtySession {
         f.debug_struct("PtySession")
             .field("child", &self.child)
             .field("writer", &self.writer.is_some())
-            .field("output_buffer", &self.output_buffer.lock().map(|buffer| buffer.len()).unwrap_or(0))
+            .field(
+                "output_buffer",
+                &self
+                    .output_buffer
+                    .lock()
+                    .map(|buffer| buffer.len())
+                    .unwrap_or(0),
+            )
             .field("finished", &self.finished)
             .finish()
     }
@@ -483,10 +523,7 @@ impl std::fmt::Debug for PtySession {
 
 /// Start `watn <args>` in a PTY and return the live session. Environment and
 /// config are prepared from the world first.
-pub(crate) fn start_pty_session(
-    world: &mut crate::WatnWorld,
-    args: &[&str],
-) -> PtySession {
+pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> PtySession {
     let binary = find_binary();
     ensure_test_env(world);
 
@@ -547,7 +584,8 @@ pub(crate) fn start_pty_session(
 /// Write a keystroke sequence into a live PTY session.
 pub(crate) fn pty_write(session: &mut PtySession, seq: &str) {
     let w = session.writer.as_mut().expect("pty writer still open");
-    w.write_all(seq.as_bytes()).expect("write keystrokes to pty");
+    w.write_all(seq.as_bytes())
+        .expect("write keystrokes to pty");
     w.flush().ok();
 }
 
@@ -580,10 +618,7 @@ pub(crate) fn cleanup_pty_session(mut session: PtySession) {
 
 /// Wait for the PTY child to exit, collect its output into the world, and
 /// return the captured output text.
-pub(crate) fn finish_pty_session(
-    world: &mut crate::WatnWorld,
-    mut session: PtySession,
-) -> String {
+pub(crate) fn finish_pty_session(world: &mut crate::WatnWorld, mut session: PtySession) -> String {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let status = loop {
         if let Some(status) = session.child.try_wait().expect("poll pty child") {
