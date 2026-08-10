@@ -51,7 +51,7 @@
   without changing behavior. The targeted rerun passed with 1 scenario and 6
   steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Provider readiness ignores the test routing setting`. Commit hash: `e0dd980`.
+  `Provider readiness ignores the test routing setting`. Commit hash: `3009286`.
 
 ## Scenario: Normal debug requests ignore test routing settings
 
@@ -74,7 +74,7 @@
   catch-all mock matchers, and rerun this scenario through verify-e2e. The
   formatted shared-cache rerun passed with 1 scenario and 10 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Normal debug requests ignore test routing settings`. Commit hash: `93b0343`.
+  `Normal debug requests ignore test routing settings`. Commit hash: `f78ed9e`.
   The earlier release-scoped implementation commit `0554516` is superseded by
   this debug-scope correction.
 
@@ -96,7 +96,7 @@
   scenario and 11 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Test-support requests use isolated routing without changing saved configuration`.
-  Commit hash: `16692a8`.
+  Commit hash: `1bce76b`.
 
 ## Scenario: Missing or whitespace test overrides fall back to the configured provider
 
@@ -114,7 +114,7 @@
   rerun passed with 1 scenario and 10 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Missing or whitespace test overrides fall back to the configured provider`.
-  Commit hash: `2df8266`.
+  Commit hash: `686df8c`.
 
 ## Final Change Verification
 
@@ -136,6 +136,12 @@
   test-support debug binaries and `cargo test --all-targets --features
   test-support` passed 15 unit tests, 86 scenarios, and 507 steps. `cargo test
   --doc` (0 doc tests), `cargo build --release`, and `git diff --check` pass.
+  Coverage hooks use the historical `cargo llvm-cov run`/`test` flow with
+  explicit debug copies and serialized library tests; non-E2E coverage is
+  47.20% line coverage and E2E coverage is 77.76% line coverage. Both reports
+  include 0/0 branch counters.
+  Verification evidence commit: `092b130`; coverage-command correction is
+  recorded in the review follow-up commit.
 - [x] Record that release-profile override verification is deferred to
   `release-truth-and-repository-cleanup`; the source guard remains compiled and
   the later change owns the release smoke test.
