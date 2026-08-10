@@ -89,6 +89,14 @@ fn reasoning_policy_error(world: &mut WatnWorld) {
         .is_some_and(|value| value.starts_with("error:")));
 }
 
+#[then("the config file should not contain an empty reasoning value")]
+fn no_empty_reasoning(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("config directory");
+    let content = std::fs::read_to_string(dir.path().join("watn/config.toml")).expect("config");
+    assert!(!content.contains("reasoning = \"\""));
+    assert!(!content.contains("reasoning = ''"));
+}
+
 #[then(regex = r##"^the selected reasoning should be "([^"]+)"$"##)]
 fn selected_reasoning(world: &mut WatnWorld, expected: String) {
     assert_eq!(

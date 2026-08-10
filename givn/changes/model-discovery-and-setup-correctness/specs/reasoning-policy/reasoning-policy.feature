@@ -37,7 +37,7 @@ Feature: Reasoning default and persistence policy
     Then the exit status should be 0
     And the API request should not include reasoning
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-TTY model assignment never persists empty reasoning values
     Given a configured provider "test" with models endpoint
     And the endpoint returns models ["model-a", "model-b", "model-c"]

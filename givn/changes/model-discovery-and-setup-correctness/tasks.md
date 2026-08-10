@@ -233,22 +233,22 @@
 
 ## Non-E2E Scenario 10: Non-TTY Model Assignment Never Persists Empty Reasoning Values
 
-- [ ] RED: Remove `@wip` from only `Scenario: Non-TTY model assignment never persists empty reasoning values`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit.
+- [x] RED: Remove `@wip` from only `Scenario: Non-TTY model assignment never persists empty reasoning values`; implement new steps with `unimplemented!`; target by name; confirm non-zero exit.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101 at the undefined empty-reasoning assertion.
   ```
-- [ ] GREEN: Replace stubs with real TOML assertion and minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real TOML assertion and minimum production code. Production files created/modified: `tests/steps/reasoning_policy_steps.rs` (existing non-TTY persistence exercised).
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] REFACTOR: Clean up, rerun the targeted scenario, and confirm zero exit.
+- [x] REFACTOR: Clean up, rerun the targeted scenario, and confirm zero exit.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `4 steps (4 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Non-TTY model assignment never persists empty reasoning values`.
+- [x] COMMIT: Create one atomic commit referencing `Non-TTY model assignment never persists empty reasoning values`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 11: Existing Reasoning Survives Selection Without a Valid Replacement
