@@ -461,6 +461,7 @@ fn saved_default_provider_endpoint(world: &mut WatnWorld, provider: String, endp
 #[given(regex = r#"^a configured provider \"([^\"]+)\" with endpoint \"([^\"]+)\"$"#)]
 fn configured_provider_endpoint(world: &mut WatnWorld, provider: String, endpoint: String) {
     configured_default_provider_endpoint(world, provider, endpoint);
+    rebuild_saved_provider_config(world);
     ensure_chat_request_mock(world);
 }
 
@@ -982,8 +983,9 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
         .pending_config
         .get("implicit_chat_mock")
         .or_else(|| world.pending_config.get("e2e_chat_mock"))
-        .expect("chat mock id")
-        .clone();
+        .cloned()
+        .or_else(|| world.mock_server.1.map(|id| id.to_string()))
+        .expect("chat mock id");
     let id = id_value.parse().expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
     assert!(

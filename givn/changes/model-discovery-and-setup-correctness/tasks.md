@@ -73,22 +73,22 @@
 
 ## Non-E2E Scenario 2: Provider-Specific Environment Fallback Precedes Generic Fallback
 
-- [ ] RED: Remove `@wip` from only `Scenario: Provider-specific environment fallback precedes generic fallback`; implement new steps with `unimplemented!`; target that scenario by name; confirm non-zero exit; paste output.
+- [x] RED: Remove `@wip` from only `Scenario: Provider-specific environment fallback precedes generic fallback`; implement new steps with `unimplemented!`; target that scenario by name; confirm non-zero exit; paste output.
 - RED runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 101: Cucumber reported `1 scenario (1 failed)` at the undefined `its saved api_key is absent` step.
   ```
-- [ ] GREEN: Replace stubs with real provider-specific-over-generic credential assertions and minimum production code. Production files created/modified: `LIST FILES HERE`.
+- [x] GREEN: Replace stubs with real provider-specific-over-generic credential assertions and minimum production code. Production files created/modified: `src/config/mod.rs` (existing fallback behavior exercised), `tests/steps/credentials_steps.rs`, `tests/steps/mod.rs`, `tests/steps/provider_setup_steps.rs`.
 - GREEN runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  Targeted runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
-- [ ] REFACTOR: Clean up without behavior change; rerun the targeted scenario and confirm zero exit; paste output.
+- [x] REFACTOR: Clean up without behavior change; rerun the targeted scenario and confirm zero exit; paste output.
 - REFACTOR runner output:
   ```text
-  PASTE COMMAND AND OUTPUT HERE
+  After `cargo fmt --all`, targeted runner exited 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
   ```
-- [ ] COMMIT: Create one atomic commit referencing `Provider-specific environment fallback precedes generic fallback`.
+- [x] COMMIT: Create one atomic commit referencing `Provider-specific environment fallback precedes generic fallback`.
 - Commit hash: `PENDING`
 
 ## Non-E2E Scenario 3: LiteLLM Discovery Without a Key Sends No Authorization Header

@@ -44,7 +44,7 @@ Feature: Credential source preservation during model discovery
     And no model catalog request should be sent
     And the saved api_key should remain exactly "${WATN_CUSTOM_API_KEY}"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider-specific environment fallback precedes generic fallback
     Given a configured provider "custom" with endpoint "https://llm.example.com/v1"
     And its saved api_key is absent

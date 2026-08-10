@@ -255,19 +255,23 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 );
             }
             let auth_header = world
-                .env_vars
-                .get("WATN_OPENAI_API_KEY")
+                .pending_config
+                .get("expect_custom_auth")
+                .and_then(|_| world.env_vars.get("WATN_CUSTOM_API_KEY"))
+                .or_else(|| world.env_vars.get("WATN_OPENAI_API_KEY"))
                 .map(|key| format!("Bearer {}", key));
-            let mock_id = setup_chat_completion_mock(
-                server,
-                &output,
-                include_usage,
-                world.pending_mock_delay_ms.unwrap_or(0),
-                &world.pending_mock_reasoning,
-                auth_header,
-                world.pending_mock_expected_reasoning_body.clone(),
-            );
-            world.mock_server.1 = Some(mock_id);
+            if world.pending_config.get("expect_custom_auth").is_none() {
+                let mock_id = setup_chat_completion_mock(
+                    server,
+                    &output,
+                    include_usage,
+                    world.pending_mock_delay_ms.unwrap_or(0),
+                    &world.pending_mock_reasoning,
+                    auth_header,
+                    world.pending_mock_expected_reasoning_body.clone(),
+                );
+                world.mock_server.1 = Some(mock_id);
+            }
 
             if !world.pending_mock_returned_models.is_empty() {
                 world.models_mock_id = setup_models_mock(
@@ -339,8 +343,10 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 let output = world.pending_mock_output.as_deref().unwrap_or("output");
                 let include_usage = world.pending_mock_usage.unwrap_or(false);
                 let auth_header = world
-                    .env_vars
-                    .get("WATN_OPENAI_API_KEY")
+                    .pending_config
+                    .get("expect_custom_auth")
+                    .and_then(|_| world.env_vars.get("WATN_CUSTOM_API_KEY"))
+                    .or_else(|| world.env_vars.get("WATN_OPENAI_API_KEY"))
                     .map(|key| format!("Bearer {}", key));
 
                 if world.pending_mock_no_reasoning_assert {
