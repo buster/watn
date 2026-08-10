@@ -289,7 +289,7 @@
   After `cargo fmt --all`, targeted runner exited 0: `2 features`, `2 scenarios (2 passed)`, `10 steps (10 passed)`.
   ```
 - [x] COMMIT: Create one atomic commit referencing `The newest search result stays visible when an older result arrives later`.
-- Commit hash: `PENDING`
+- Commit hash: `eb328dd57ec8b5d1c6ef7754cb37645cca21905d`
 
 ## E2E Setup
 
