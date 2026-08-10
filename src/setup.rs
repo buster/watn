@@ -349,6 +349,8 @@ impl SetupWizard {
     fn handle_save_prompt(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
         match key.code {
             KeyCode::Char('n') | KeyCode::Char('N') => {
+                // Invalidate catalog work before abandoning the draft state.
+                self.generation.fetch_add(1, Ordering::SeqCst);
                 Ok(Some(SetupWizardOutcome::Cancelled(SetupCancellation::Escape)))
             }
             KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
