@@ -655,6 +655,20 @@ Improve the setup dialog's visual indication of where user input is currently
 being entered. The border or box surrounding the active input location shall be
 green; inactive input locations retain their existing styling.
 
+### 7. Responsive Setup Model Filtering
+
+Improve the setup dialog's model filter so the typed query remains visible while
+the user is entering it. Typing must remain responsive while model searches run
+in the background, and filter updates shall be debounced by 200 ms. The model
+list shall update continuously as the debounced query changes, without blocking
+further input on an in-flight search.
+
+When the complete model list fits in one catalog request (for example, fewer
+than 500 models), load the list once and filter it client-side instead of making
+server-side search requests. Use server-side filtering when the catalog requires
+multiple requests or otherwise cannot be loaded in one request. Results from an
+older in-flight search must not replace the results for a newer query.
+
 ## Handoff Rules
 
 - Read `givn instructions` before acting.
