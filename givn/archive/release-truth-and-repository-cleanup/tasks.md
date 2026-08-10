@@ -121,8 +121,8 @@
   subprocess. Prove full and E2E scenario counts are distinct:
   ```text
   ./run-tests.sh: 15 features, 65 scenarios, 364 steps passed.
-  ./run-tests.sh --e2e: 17 features, 57 scenarios, 385 steps passed.
-  Result: E2E is a strict subset: yes (57 < 65). The local environment uses
+  ./run-tests.sh --e2e: 18 features, 58 scenarios, 390 steps passed.
+  Result: E2E is a strict subset: yes (58 < 65). The local environment uses
   only the built CLI and repository-owned test doubles.
   ```
 
@@ -151,29 +151,33 @@
   ```text
   Applied rustfmt and reran: 1 feature, 1 scenario, 5 steps passed.
   ```
-- [x] COMMIT: `[pending hash]` - `test(e2e): Version flag reports the package version`
+- [x] COMMIT: `5c7b4e8` - `test(e2e): Version flag reports the package version`
 
 ## Final Change Verification
 
-- [ ] Remove all completed scenario `@wip` tags and run
+- [x] Remove all completed scenario `@wip` tags and run
   `givn lint --change release-truth-and-repository-cleanup`.
   ```text
-  Result: [output]
+  Result: clean; 1 file checked and no findings.
   ```
-- [ ] Run `./run-tests.sh` and record the full scenario/step count.
+- [x] Run `./run-tests.sh` and record the full scenario/step count.
   ```text
-  Result: [output]
+  Result: 15 features, 65 scenarios, 364 steps passed.
   ```
-- [ ] Run `./run-tests.sh --e2e` and record the count, proving it is a strict
+- [x] Run `./run-tests.sh --e2e` and record the count, proving it is a strict
   subset of the full run.
   ```text
-  Result: [output]
+  Result: 18 features, 58 scenarios, 390 steps passed; 58 is strictly below 65.
   ```
-- [ ] Run `cargo fmt --all -- --check`, `cargo check --all-targets`,
+- [x] Run `cargo fmt --all -- --check`, `cargo check --all-targets`,
   `cargo clippy --all-targets --all-features -- -D warnings`,
   `cargo test --all-targets` with explicit binary bootstrap, `cargo test --doc`,
   `cargo build --release`, `file target/release/watn`, host library inspection,
   and `git diff --check`.
   ```text
-  Result: [output]
+  Result: formatting, check, clippy, explicit-binary all-target tests, doc tests,
+  release build, `git diff --check`, `file`, and `ldd` all passed. The all-target
+  run passed 19 features, 123 scenarios, and 754 steps. `file` identified a
+  dynamically linked x86-64 ELF executable; `ldd` reported libssl, libcrypto,
+  libc, libz, libzstd, and the dynamic loader.
   ```
