@@ -1,5 +1,10 @@
 use std::io::{self, Write};
 
+pub fn write_streamed_content<W: Write>(writer: &mut W, content: &str) -> io::Result<()> {
+    writer.write_all(content.as_bytes())?;
+    writer.flush()
+}
+
 pub fn finish_streamed_command(has_content: bool) -> io::Result<()> {
     if !has_content {
         return Ok(());

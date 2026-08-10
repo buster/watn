@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use std::io::{self, IsTerminal, Write};
+use std::io::{self, IsTerminal};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use watn::config::{self, load_config, resolve_model, resolve_provider};
@@ -247,10 +247,8 @@ fn main() {
                 }
 
                 let mut stdout = io::stdout();
-                stdout
-                    .write_all(content.as_bytes())
+                render::write_streamed_content(&mut stdout, &content)
                     .map_err(watn::error::Error::IoError)?;
-                stdout.flush().map_err(watn::error::Error::IoError)?;
             }
             StreamEvent::Content(_) => {}
         }

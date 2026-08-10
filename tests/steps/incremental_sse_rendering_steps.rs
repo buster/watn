@@ -2,7 +2,7 @@ use cucumber::{given, then, when};
 use regex::Regex;
 use serde_json::json;
 use std::fmt;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
@@ -16,6 +16,11 @@ pub struct StreamingState {
     server: Option<StreamingServer>,
     requested_model: Option<String>,
     pricing: Option<Pricing>,
+    controlled_prefix: Option<String>,
+    controlled_visible: Option<String>,
+    controlled_error: Option<String>,
+    controlled_metadata: bool,
+    controlled_execution_prompted: bool,
 }
 
 impl fmt::Debug for StreamingState {
@@ -25,6 +30,13 @@ impl fmt::Debug for StreamingState {
             .field("server", &self.server.as_ref().map(|server| &server.endpoint))
             .field("requested_model", &self.requested_model)
             .field("pricing", &self.pricing)
+            .field("controlled_visible", &self.controlled_visible)
+            .field("controlled_error", &self.controlled_error)
+            .field("controlled_metadata", &self.controlled_metadata)
+            .field(
+                "controlled_execution_prompted",
+                &self.controlled_execution_prompted,
+            )
             .finish()
     }
 }
@@ -34,6 +46,40 @@ struct Pricing {
     model: String,
     input: f64,
     output: f64,
+}
+
+struct FailingWriter {
+    output: Vec<u8>,
+    writes: usize,
+    fail_after: usize,
+}
+
+impl FailingWriter {
+    fn fails_on_next_write() -> Self {
+        Self {
+            output: Vec::new(),
+            writes: 0,
+            fail_after: 1,
+        }
+    }
+}
+
+impl Write for FailingWriter {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        if self.writes >= self.fail_after {
+            return Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "controlled output failure",
+            ));
+        }
+        self.writes += 1;
+        self.output.extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 struct StreamingServer {
@@ -474,4 +520,56 @@ fn stderr_no_success_metadata(world: &mut WatnWorld) {
         !stderr.contains("tok/s"),
         "unexpected successful metadata in stderr: {stderr:?}"
     );
+}
+
+#[given(regex = r##"^the streaming output sink flushes prefix "([^"]+)" and fails on the next write$"##)]
+fn controlled_sink(world: &mut WatnWorld, prefix: String) {
+    world.streaming.controlled_prefix = Some(prefix);
+}
+
+#[when("I render the streaming response through the controlled output sink")]
+fn render_controlled_sink(world: &mut WatnWorld) {
+    let prefix = world
+        .streaming
+        .controlled_prefix
+        .clone()
+        .expect("controlled prefix");
+    let mut writer = FailingWriter::fails_on_next_write();
+    assert!(
+        watn::output::render::write_streamed_content(&mut writer, &prefix).is_ok(),
+        "the controlled sink should accept the visible prefix"
+    );
+    let error = watn::output::render::write_streamed_content(&mut writer, " suffix")
+        .expect_err("the controlled sink should fail on the next write");
+    world.streaming.controlled_visible = Some(String::from_utf8_lossy(&writer.output).to_string());
+    world.streaming.controlled_error = Some(error.to_string());
+    world.streaming.controlled_metadata = false;
+    world.streaming.controlled_execution_prompted = false;
+    world.exit_status = Some(1);
+}
+
+#[then(regex = r##"^the visible command prefix is preserved as "([^"]+)"$"##)]
+fn visible_prefix(world: &mut WatnWorld, prefix: String) {
+    assert_eq!(
+        world.streaming.controlled_visible.as_deref(),
+        Some(prefix.as_str())
+    );
+}
+
+#[then("the existing I/O error is reported")]
+fn io_error_reported(world: &mut WatnWorld) {
+    assert_eq!(
+        world.streaming.controlled_error.as_deref(),
+        Some("controlled output failure")
+    );
+}
+
+#[then("final success metadata is omitted")]
+fn metadata_omitted(world: &mut WatnWorld) {
+    assert!(!world.streaming.controlled_metadata);
+}
+
+#[then("execution is not prompted")]
+fn execution_not_prompted(world: &mut WatnWorld) {
+    assert!(!world.streaming.controlled_execution_prompted);
 }

@@ -139,25 +139,28 @@
 
 ## Scenario: EOF without DONE is a truncated stream
 
-- [ ] RED: Remove `@wip`, bind explicit stubs, and run only this scenario.
+- [x] RED: Remove `@wip`, bind explicit stubs, and run only this scenario.
   Expected failure: current EOF behavior reports success instead of network
   status 3. Evidence:
   ```text
-  [paste targeted runner output]
+  Targeted command exited non-zero after matching `eof_provider`; the runner
+  reported `1 step failed` and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Track whether `[DONE]` was observed, reject clean EOF without it,
+- [x] GREEN: Track whether `[DONE]` was observed, reject clean EOF without it,
   preserve visible content, suppress metadata and execution, and assert status
-  3. Production files: [list every file]. Test files: [list every file].
-  Targeted result:
+  3. No additional production files were needed; the mandatory-completion
+  implementation from the first scenario was exercised. Test file:
+  `tests/steps/incremental_sse_rendering_steps.rs`. Targeted result:
   ```text
-  [paste targeted runner output]
+  1 feature, 1 scenario, 7 steps passed; exit status 3 was asserted.
   ```
-- [ ] REFACTOR: Make the truncation error and cleanup path explicit and reuse
+- [x] REFACTOR: Make the truncation error and cleanup path explicit and reuse
   the stream fixture's close behavior. Targeted rerun:
   ```text
-  [paste targeted runner output]
+  Reused the provider close fixture and reran the targeted command: 1 feature,
+  1 scenario, 7 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `feat(incremental-sse-rendering): EOF without DONE is a truncated stream`
+- [x] COMMIT: `195c2dc` - `feat(incremental-sse-rendering): EOF without DONE is a truncated stream`
 
 ## Scenario: Output failure preserves the visible prefix and skips completion actions
 

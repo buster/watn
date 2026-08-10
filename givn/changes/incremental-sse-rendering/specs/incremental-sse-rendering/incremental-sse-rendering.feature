@@ -92,7 +92,7 @@ Feature: Incremental provider output
     And stderr should not contain "Execute now? [Y/n]"
     And the exit status should be 3
 
-  @givn.added @wip
+  @givn.added
   Scenario: Output failure preserves the visible prefix and skips completion actions
     Given the streaming output sink flushes prefix "printf prefix" and fails on the next write
     When I render the streaming response through the controlled output sink
