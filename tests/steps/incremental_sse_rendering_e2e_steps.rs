@@ -1,10 +1,119 @@
 use cucumber::{given, then, when};
+use std::fmt;
+use std::io::Read;
+use std::process::{Child, Command, Stdio};
+use std::sync::{Arc, Mutex};
 use std::thread;
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use crate::WatnWorld;
 
 use super::{finish_pty_session, pty_snapshot, start_pty_session};
+
+pub struct LiveInvocation {
+    child: Child,
+    stdout: Arc<Mutex<Vec<u8>>>,
+    stderr: Arc<Mutex<Vec<u8>>>,
+    readers: Vec<JoinHandle<()>>,
+}
+
+impl fmt::Debug for LiveInvocation {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("LiveInvocation")
+            .field("child_id", &self.child.id())
+            .field("readers", &self.readers.len())
+            .finish()
+    }
+}
+
+impl LiveInvocation {
+    fn start(world: &mut WatnWorld, args: &[&str]) -> Self {
+        let binary = super::find_binary();
+        super::ensure_test_env(world);
+        let mut command = Command::new(binary);
+        command.args(args);
+        super::apply_env(world, &mut command);
+        command.stdin(Stdio::null());
+        command.stdout(Stdio::piped());
+        command.stderr(Stdio::piped());
+
+        let mut child = command.spawn().expect("start live watn invocation");
+        let stdout = Arc::new(Mutex::new(Vec::new()));
+        let stderr = Arc::new(Mutex::new(Vec::new()));
+        let stdout_reader = child.stdout.take().expect("live stdout pipe");
+        let stderr_reader = child.stderr.take().expect("live stderr pipe");
+        let readers = vec![
+            spawn_reader(stdout_reader, Arc::clone(&stdout)),
+            spawn_reader(stderr_reader, Arc::clone(&stderr)),
+        ];
+
+        Self {
+            child,
+            stdout,
+            stderr,
+            readers,
+        }
+    }
+
+    fn stdout_snapshot(&self) -> String {
+        String::from_utf8_lossy(&self.stdout.lock().expect("live stdout lock")).to_string()
+    }
+
+    fn stderr_snapshot(&self) -> String {
+        String::from_utf8_lossy(&self.stderr.lock().expect("live stderr lock")).to_string()
+    }
+
+    fn finish(mut self) -> (i32, String, String) {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let status = loop {
+            if let Some(status) = self.child.try_wait().expect("poll live watn child") {
+                break status;
+            }
+            if Instant::now() >= deadline {
+                let _ = self.child.kill();
+                break self.child.wait().expect("wait for live watn child");
+            }
+            thread::sleep(Duration::from_millis(25));
+        };
+        for reader in self.readers.drain(..) {
+            let _ = reader.join();
+        }
+        let stdout = self.stdout_snapshot();
+        let stderr = self.stderr_snapshot();
+        (status.code().unwrap_or(-1), stdout, stderr)
+    }
+}
+
+impl Drop for LiveInvocation {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+        for reader in self.readers.drain(..) {
+            let _ = reader.join();
+        }
+    }
+}
+
+fn spawn_reader<R>(mut reader: R, buffer: Arc<Mutex<Vec<u8>>>) -> JoinHandle<()>
+where
+    R: Read + Send + 'static,
+{
+    thread::spawn(move || {
+        let mut bytes = [0_u8; 1024];
+        loop {
+            match reader.read(&mut bytes) {
+                Ok(0) => break,
+                Ok(count) => buffer
+                    .lock()
+                    .expect("live pipe lock")
+                    .extend_from_slice(&bytes[..count]),
+                Err(_) => break,
+            }
+        }
+    })
+}
 
 #[given(
     regex = r##"^a streaming provider flushes content "([^"]+)" and delays content "([^"]+)" while keeping the connection open$"##
@@ -69,6 +178,85 @@ fn terminal_generated_command_once(world: &mut WatnWorld, command: String) {
         output.match_indices(&command).count(),
         1,
         "expected one generated command in terminal output: {output:?}"
+    );
+}
+
+#[given(
+    regex = r##"^a streaming provider emits reasoning "([^"]+)" and content "([^"]+)" before holding a later completion event$"##
+)]
+fn verbose_provider(world: &mut WatnWorld, reasoning: String, content: String) {
+    super::incremental_sse_rendering_steps::configure_verbose_content(world, reasoning, content);
+}
+
+#[when(
+    regex = r##"^I start the verbose streaming command `watn -v "([^"]*)"` with captured stdout and stderr$"##
+)]
+fn start_verbose_stream(world: &mut WatnWorld, question: String) {
+    world.live_stream = Some(LiveInvocation::start(world, &["-v", &question]));
+}
+
+#[then(
+    regex = r##"^stdout has streamed fragment "([^"]+)" before the provider releases completion$"##
+)]
+fn live_stdout_fragment(world: &mut WatnWorld, fragment: String) {
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        let invocation = world
+            .live_stream
+            .as_ref()
+            .expect("live streaming invocation");
+        let output = invocation.stdout_snapshot();
+        if output.contains(&fragment) {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "stdout did not contain {fragment:?} before release: {output:?}; stderr: {:?}",
+            invocation.stderr_snapshot()
+        );
+        thread::sleep(Duration::from_millis(25));
+    }
+}
+
+#[then(regex = r##"^stderr does not yet contain "([^"]+)"$"##)]
+fn live_stderr_not_contains(world: &mut WatnWorld, text: String) {
+    let stderr = world
+        .live_stream
+        .as_ref()
+        .expect("live streaming invocation")
+        .stderr_snapshot();
+    assert!(
+        !stderr.contains(&text),
+        "unexpected early stderr output: {stderr:?}"
+    );
+}
+
+#[when("I release completion and wait for watn to exit")]
+fn release_verbose_completion(world: &mut WatnWorld) {
+    super::incremental_sse_rendering_steps::release_stream(world);
+    let invocation = world.live_stream.take().expect("live streaming invocation");
+    let (status, stdout, stderr) = invocation.finish();
+    world.exit_status = Some(status);
+    world.output = Some(stdout);
+    world.stderr_output = Some(stderr);
+}
+
+#[then(regex = r##"^stdout generated command line "([^"]+)" appears exactly once$"##)]
+fn live_generated_command_once(world: &mut WatnWorld, command: String) {
+    let stdout = world.output.as_deref().expect("stdout was not captured");
+    assert_eq!(
+        stdout.match_indices(&command).count(),
+        1,
+        "expected one generated command in stdout: {stdout:?}"
+    );
+}
+
+#[then(expr = "stdout should not contain {string}")]
+fn stdout_not_contains(world: &mut WatnWorld, text: String) {
+    let stdout = world.output.as_deref().expect("stdout was not captured");
+    assert!(
+        !stdout.contains(&text),
+        "unexpected stdout content {text:?}: {stdout:?}"
     );
 }
 

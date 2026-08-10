@@ -19,14 +19,14 @@ Feature: Incremental provider output
     Then the terminal generated command line "printf first && printf second" appears exactly once
     And the exit status should be 0
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Verbose streaming keeps reasoning on stderr and command text on stdout
-    Given a streaming provider flushes reasoning "inspect the files" and content "find . -type" before holding a later completion event
+    Given a streaming provider emits reasoning "inspect the files" and content "find . -type" before holding a later completion event
     When I start the verbose streaming command `watn -v "list the files"` with captured stdout and stderr
     Then stdout has streamed fragment "find . -type" before the provider releases completion
-    And stderr should not contain "reasoning: inspect the files"
+    And stderr does not yet contain "reasoning: inspect the files"
     When I release completion and wait for watn to exit
-    Then the generated command line "find . -type f" appears exactly once on stdout
+    Then stdout generated command line "find . -type f" appears exactly once
     And stdout should not contain "inspect the files"
     And stderr should contain "reasoning:"
     And stderr should contain "inspect the files"

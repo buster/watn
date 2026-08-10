@@ -208,26 +208,31 @@
 
 ## Scenario: Command text appears before a delayed stream completes
 
-- [ ] RED: Remove only this scenario's `@wip`, bind E2E stubs with explicit
+- [x] RED: Remove only this scenario's `@wip`, bind E2E stubs with explicit
   `unimplemented!()`, and run only it through `verify.e2e_command`. Expected
   non-zero result from the first matched stub. Evidence:
   ```text
-  [paste targeted E2E output]
+  Targeted E2E command exited non-zero after matching the explicit
+  `delayed_provider` stub; the runner reported `1 step failed` and Cargo
+  returned `error: test failed`.
   ```
-- [ ] GREEN: Drive the real built binary in a PTY, observe spinner startup and
+- [x] GREEN: Drive the real built binary in a PTY, observe spinner startup and
   flushed first content before releasing the delayed event, observe clear-line
   cleanup, then assert the complete command line exactly once and status 0.
-  Production files: [list every file]. Test files: [list every file]. Targeted
-  E2E result:
+  No additional production behavior was needed; the callback/parser code from
+  the non-E2E scenarios was exercised. Test files:
+  `tests/steps/incremental_sse_rendering_steps.rs` and
+  `tests/steps/incremental_sse_rendering_e2e_steps.rs`. Targeted E2E result:
   ```text
-  [paste targeted E2E output]
+  1 feature, 1 scenario, 8 steps passed.
   ```
-- [ ] REFACTOR: Make PTY waits and server release cleanup deterministic without
+- [x] REFACTOR: Make PTY waits and server release cleanup deterministic without
   weakening terminal assertions. Targeted E2E rerun:
   ```text
-  [paste targeted E2E output]
+  Applied rustfmt and reran the targeted E2E command: 1 feature, 1 scenario,
+  8 steps passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `test(e2e): Command text appears before a delayed stream completes`
+- [x] COMMIT: `a3bc4b9` - `test(e2e): Command text appears before a delayed stream completes`
 
 ## Scenario: Verbose streaming keeps reasoning on stderr and command text on stdout
 

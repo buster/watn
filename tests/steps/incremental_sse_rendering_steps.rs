@@ -246,6 +246,18 @@ fn content_event(model: &str, content: &str) -> Vec<u8> {
     .into_bytes()
 }
 
+pub(crate) fn reasoning_event(model: &str, reasoning: &str) -> Vec<u8> {
+    format!(
+        "data: {}\n\n",
+        json!({
+            "id": "stream-1",
+            "model": model,
+            "choices": [{"index": 0, "delta": {"reasoning": reasoning}, "finish_reason": null}]
+        })
+    )
+    .into_bytes()
+}
+
 fn usage_event(model: &str, prompt_tokens: u32, completion_tokens: u32) -> Vec<u8> {
     format!(
         "data: {}\n\n",
@@ -319,6 +331,26 @@ pub(crate) fn release_stream(world: &WatnWorld) {
     if let Some(server) = &world.streaming.server {
         server.release();
     }
+}
+
+pub(crate) fn configure_verbose_content(
+    world: &mut WatnWorld,
+    reasoning: String,
+    first_content: String,
+) {
+    let requested_model = world
+        .streaming
+        .requested_model
+        .clone()
+        .unwrap_or_else(|| "test-model".to_string());
+    let events = vec![
+        reasoning_event(&requested_model, &reasoning),
+        content_event(&requested_model, &first_content),
+        content_event(&requested_model, " f"),
+        done_event(),
+    ];
+    world.streaming.server = Some(StreamingServer::start_with_options(events, Some(1), false));
+    update_config(world);
 }
 
 #[given(regex = r##"^the request asks for model "([^"]+)"$"##)]
