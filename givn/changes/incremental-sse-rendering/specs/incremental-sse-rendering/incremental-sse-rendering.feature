@@ -71,10 +71,10 @@ Feature: Incremental provider output
     Then the generated command line "printf valid" appears exactly once
     And the exit status should be 0
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A mid-stream failure preserves visible content and exits unsuccessfully
     Given a streaming provider flushes content "printf partial" and then resets the connection before `[DONE]`
-    When I start the streaming command `watn "survive a provider failure"` in a terminal
+    When I start the failing streaming command `watn "survive a provider failure"` in a terminal
     Then the terminal output contains "printf partial"
     And the terminal output contains "network error"
     And the terminal output shows spinner clear-line evidence after "printf partial"

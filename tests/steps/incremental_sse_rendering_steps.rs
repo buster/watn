@@ -353,6 +353,14 @@ pub(crate) fn configure_verbose_content(
     update_config(world);
 }
 
+pub(crate) fn configure_failure_content(world: &mut WatnWorld, content: String) {
+    world.streaming.server = Some(StreamingServer::start(
+        vec![content_event("test-model", &content)],
+        None,
+    ));
+    update_config(world);
+}
+
 #[given(regex = r##"^the request asks for model "([^"]+)"$"##)]
 fn requested_model(world: &mut WatnWorld, model: String) {
     world.streaming.requested_model = Some(model);

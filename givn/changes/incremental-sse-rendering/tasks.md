@@ -236,25 +236,32 @@
 
 ## Scenario: Verbose streaming keeps reasoning on stderr and command text on stdout
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
+- [x] RED: Remove only this scenario's `@wip`, bind explicit E2E stubs, and run
   only it through `verify.e2e_command`. Expected non-zero result. Evidence:
   ```text
-  [paste targeted E2E output]
+  Targeted E2E command exited non-zero after matching the explicit
+  `verbose_provider` stub; the runner reported `1 step failed` and Cargo
+  returned `error: test failed`.
   ```
-- [ ] GREEN: Drive the real `watn -v` subprocess, observe command stdout before
+- [x] GREEN: Drive the real `watn -v` subprocess, observe command stdout before
   completion, verify reasoning is absent before release, then assert final
   separate stdout/stderr channels, exact-once command, buffered reasoning, and
-  status 0. Production files: [list every file]. Test files: [list every file].
-  Targeted E2E result:
+  status 0. No additional production behavior was needed; the existing
+  callback/parser and buffered-reasoning implementation were exercised. Test
+  files: `tests/features_runner.rs`,
+  `tests/steps/incremental_sse_rendering_steps.rs`, and
+  `tests/steps/incremental_sse_rendering_e2e_steps.rs`. Targeted E2E result:
   ```text
-  [paste targeted E2E output]
+  1 feature, 1 scenario, 10 steps passed.
   ```
-- [ ] REFACTOR: Reuse the release-gated subprocess fixture and keep channel
+- [x] REFACTOR: Reuse the release-gated subprocess fixture and keep channel
   assertions exact. Targeted E2E rerun:
   ```text
-  [paste targeted E2E output]
+  Changed live pipe readers to append each read chunk for intermediate
+  observations, applied rustfmt, and reran: 1 feature, 1 scenario, 10 steps
+  passed.
   ```
-- [ ] COMMIT: `[commit hash]` - `test(e2e): Verbose streaming keeps reasoning on stderr and command text on stdout`
+- [x] COMMIT: `54cf444` - `test(e2e): Verbose streaming keeps reasoning on stderr and command text on stdout`
 
 ## Scenario: A mid-stream failure preserves visible content and exits unsuccessfully
 

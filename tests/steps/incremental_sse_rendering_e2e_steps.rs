@@ -260,6 +260,76 @@ fn stdout_not_contains(world: &mut WatnWorld, text: String) {
     );
 }
 
+#[given(
+    regex = r##"^a streaming provider flushes content "([^"]+)" and then resets the connection before `\[DONE\]`$"##
+)]
+fn failure_provider(world: &mut WatnWorld, content: String) {
+    super::incremental_sse_rendering_steps::configure_failure_content(world, content);
+}
+
+#[when(regex = r##"^I start the failing streaming command `watn "([^"]*)"` in a terminal$"##)]
+fn start_failure_stream(world: &mut WatnWorld, question: String) {
+    let session = start_pty_session(world, &[&question]);
+    world.pty_session = Some(session);
+}
+
+#[then(expr = "the terminal output contains {string}")]
+fn terminal_output_contains(world: &mut WatnWorld, text: String) {
+    if world.pty_session.is_some() {
+        wait_for_terminal_text(world, &text);
+    } else {
+        let output = world
+            .output
+            .as_deref()
+            .expect("terminal output was not captured");
+        assert!(
+            output.contains(&text),
+            "expected terminal output {text:?}: {output:?}"
+        );
+    }
+
+    if text == "network error" {
+        if let Some(session) = world.pty_session.take() {
+            finish_pty_session(world, session);
+        }
+    }
+}
+
+#[then(regex = r##"^the terminal output shows spinner clear-line evidence after "([^"]+)"$"##)]
+fn spinner_failure_evidence(world: &mut WatnWorld, _text: String) {
+    let output = world.output.clone().unwrap_or_else(|| {
+        pty_snapshot(world.pty_session.as_ref().expect("streaming PTY session"))
+    });
+    assert!(
+        output.contains("\x1b[2K"),
+        "expected spinner clear-line evidence, got {output:?}"
+    );
+}
+
+#[then("the terminal output does not contain successful model metadata")]
+fn terminal_no_metadata(world: &mut WatnWorld) {
+    let output = world
+        .output
+        .as_deref()
+        .expect("terminal output was not captured");
+    assert!(
+        !output.contains("tok/s"),
+        "unexpected successful metadata: {output:?}"
+    );
+}
+
+#[then(expr = "the terminal output does not contain {string}")]
+fn terminal_output_not_contains(world: &mut WatnWorld, text: String) {
+    let output = world
+        .output
+        .as_deref()
+        .expect("terminal output was not captured");
+    assert!(
+        !output.contains(&text),
+        "unexpected terminal output {text:?}: {output:?}"
+    );
+}
+
 fn wait_for_terminal_text(world: &WatnWorld, text: &str) {
     let deadline = Instant::now() + Duration::from_secs(3);
     loop {
