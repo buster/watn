@@ -42,6 +42,7 @@
   ```text
   command: `cargo test --test features_runner -- --name 'Provider setup separates choices, details, and guidance'`
   output: 2 scenarios passed, 16 steps passed after migrating the legacy provider-layout assertions.
+  follow-up: removed the obsolete standalone provider renderer; all interactive provider pages now live in `src/setup.rs`.
   ```
 - [x] COMMIT: `3a4e027` — feat(unified-setup-wizard): Provider setup separates choices, details, and guidance
 
@@ -135,7 +136,7 @@
   ```
 - [x] COMMIT: `a590670` — feat(unified-setup-wizard): Escape asks whether to save or discard current setup
   ```text
-  commit: a590670
+  commit: a590670; production follow-up: 171cd66 (invalidate pending searches on discard)
   ```
 
 ## Final Verification
