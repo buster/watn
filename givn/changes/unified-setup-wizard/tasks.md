@@ -158,5 +158,9 @@
   command: `cargo test --test features_runner -- --tags '@e2e and not @wip'`
   output: 11 features, 40 scenarios passed, 246 steps passed; strictly smaller than the regular 43-scenario run
   ```
-- [ ] Run `givn check review --change unified-setup-wizard` after completing
+- [x] Run `givn check review --change unified-setup-wizard` after completing
   the review artifact.
+  ```text
+  command: `givn check review --change unified-setup-wizard`
+  output: verify passed; verify-e2e passed; integrity passed
+  ```
