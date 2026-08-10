@@ -78,26 +78,28 @@
   catch-all mock matchers, and rerun this scenario through verify-e2e. The
   formatted targeted rerun passed with 1 scenario and 10 steps.
 - [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
-  `Normal release requests ignore test routing settings`. Commit hash: pending
-  until commit creation.
+  `Normal release requests ignore test routing settings`. Commit hash:
+  `0554516`.
 
 ## Scenario: Test-support requests use isolated routing without changing saved configuration
 
-- [ ] RED: Remove `@wip` from this scenario, bind every step with real stubs,
+- [x] RED: Remove `@wip` from this scenario, bind every step with real stubs,
   and run only the scenario through verify-e2e. Expected result: non-zero exit.
-  Evidence: pending.
-- [ ] GREEN: Implement the debug test-support invocation against the isolated
+  Evidence: the runner matched the `run_isolated_debug_binary` stub and exited
+  non-zero with `Step panicked ... not implemented` and `1 step failed`.
+- [x] GREEN: Implement the debug test-support invocation against the isolated
   loopback twin. Assert isolated response, exact URL and path, exact
   Authorization header, one isolated hit, zero configured hits, unchanged
   configured endpoint, and absence of the isolated endpoint from TOML. Run
   only this scenario through verify-e2e and record passing output. Evidence:
-  pending.
-- [ ] REFACTOR: Consolidate shared transport state and preserve the primary
-  CLI-output assertion. Rerun this scenario through verify-e2e. Evidence:
-  pending.
-- [ ] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
+  explicit four-binary build matrix completed; targeted run passed with 1
+  scenario and 11 steps.
+- [x] REFACTOR: Consolidate shared transport state and preserve the primary
+  CLI-output assertion. The cleanup-enabled targeted rerun passed with 1
+  scenario and 11 steps.
+- [x] COMMIT: Commit RED/GREEN/REFACTOR atomically with a message containing
   `Test-support requests use isolated routing without changing saved configuration`.
-  Commit hash: pending.
+  Commit hash: pending until commit creation.
 
 ## Scenario: Missing or whitespace test overrides fall back to the configured provider
 

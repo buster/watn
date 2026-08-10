@@ -19,7 +19,7 @@ Feature: Isolated test transport
     And the competing twin should receive exactly 0 requests for path "/v1/chat/completions"
     And the persisted configured endpoint should remain exactly the configured twin base URL plus "/v1"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Test-support requests use isolated routing without changing saved configuration
     Given a reachable local configured provider twin returns "configured-response" for POST "/v1/chat/completions"
     And the configured provider has api key "sk-configured" and default model "test-model"
