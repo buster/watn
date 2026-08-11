@@ -4,6 +4,8 @@ pub mod config_steps;
 pub mod credentials_steps;
 pub mod incremental_sse_rendering_e2e_steps;
 pub mod incremental_sse_rendering_steps;
+pub mod interactive_shell_shortcut_e2e_steps;
+pub mod interactive_shell_shortcut_steps;
 pub mod model_picker_layout_steps;
 pub mod models_steps;
 pub mod provider_setup_layout_steps;

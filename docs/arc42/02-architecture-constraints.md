@@ -23,6 +23,9 @@
 | Completion selector is closed | `watn completions <SHELL>` accepts only the lowercase values `bash`, `elvish`, `fish`, `powershell`, and `zsh`; the CLI does not expose the broader `clap_complete::Shell` value type |
 | Completion metadata is authoritative | Generated scripts derive from the same Clap command definition used for parsing and help; separately maintained command lists are not permitted |
 | Completion generation is side-effect free | Successful generation writes only the selected script to stdout, writes nothing to stderr, does not load or create config, contacts no provider, and changes no shell configuration |
+| Shell startup targets are user-owned | Bash and Zsh use `$HOME/.bashrc` and `$HOME/.zshrc`; Fish uses `$XDG_CONFIG_HOME/fish/config.fish` or `$HOME/.config/fish/config.fish`; only an explicitly selected target may be created or changed |
+| Shell widget invocation is non-evaluating | Generated widgets use native line-editor APIs, invoke `command watn -- "$question"` through `PATH`, preserve stderr diagnostics, and never evaluate captured stdout |
+| Shortcut writes are atomic and marker-owned | A target must have zero markers or exactly one ordered marker pair; valid replacements use a same-directory temporary file and rename, while malformed targets are unchanged |
 
 ## Organisational constraints
 

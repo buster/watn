@@ -34,6 +34,12 @@ definition, are deterministic, are written only to stdout, and bypass config
 initialisation and provider requests. Unsupported shell values use the literal
 `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` parser contract.
 
+The shared setup flow also offers an optional Ctrl-W shortcut for Bash, Zsh, and
+Fish, including during implicit first-use onboarding. Installation owns one
+marked startup-file block per selected shell, uses atomic replacement, reports
+independent target results, and invokes `command watn -- "$question"` without
+evaluating generated output.
+
 ## Archive Status
 
 The files in this directory describe the current architecture. Archived givn
@@ -58,3 +64,5 @@ changes.
 | 12 | [Glossary](12-glossary.md) | Domain and technical terms |
 
 Completion generation is further recorded in [ADR-0017](../adr/0017-completion-generation-from-authoritative-command-definition.md).
+Shell shortcut installation and widget safety are recorded in
+[ADR-0018](../adr/0018-safe-shell-shortcut-installation-and-native-widgets.md).

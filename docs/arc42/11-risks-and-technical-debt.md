@@ -47,6 +47,12 @@
 | R-041 | Completion generation could accidentally load config, auto-create the XDG file, contact a provider, write shell configuration, or contaminate stdout/stderr | Low | High | Dispatch before configuration and provider setup; require stdout-only success, empty stderr, an absent-config before/after snapshot, no isolated-directory writes, and a zero-hit provider sentinel |
 | R-042 | Completion renderer or command traversal order could make repeated output differ byte-for-byte | Medium | Medium | Generate twice from the same binary and selector, compare raw stdout bytes, and keep the command definition and renderer mapping deterministic |
 | R-043 | Reserving `completions` can surprise users whose unquoted question begins with that token | Medium | Medium | Document the intentional reservation and require a quoted question or `--` separator; keep the consequence in the proposal, help contract, feature, and Arc42 docs |
+| R-044 | A shortcut installer could corrupt or duplicate a user shell startup file | Medium | High | Validate exact marker counts before any write, preserve bytes outside one block, use same-directory atomic replacement, reject malformed layouts, and test byte-for-byte failure preservation |
+| R-045 | A selected shell target may fail after another target has been changed | Medium | Medium | Attempt every selected target independently, report every success and OS failure, retain successful changes deliberately, and return an aggregate non-zero result |
+| R-046 | Shell-native widget syntax or key maps differ across Bash, Zsh, and Fish environments | Medium | Medium | Keep one native generated block per shell, use installed-shell parser checks, run a real Bash PTY smoke test, and document that Zsh/Fish runtime PTY coverage is outside this change |
+| R-047 | A widget could pass a leading option, reserved token, or generated output into an unintended shell path | Medium | High | Use `command watn -- "$question"`, capture stdout without evaluation, preserve stderr, and assert leading-option/reserved-token, multiline, failure, and no-execution scenarios |
+| R-048 | Automatic first-use onboarding could surprise a user by mutating shell files | Medium | High | Make the shortcut question explicit and opt-in; Enter/no and empty selection perform no shell I/O; report every selected target before returning |
+| R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
 
 ## Technical debt
 
@@ -153,6 +159,29 @@ The completion-generation decision has these durable consequences:
   and stderr contamination; R-041 covers the failure mode.
 - Reserved token: the new subcommand changes an unquoted question's parse path;
   the quote/`--` guidance and R-043 make that compatibility consequence visible.
+
+## ADR-0018 consequence coverage
+
+The shell-shortcut decision has these durable consequences:
+
+- Startup-file mutation: the feature is opt-in but changes user-owned files;
+  R-044 and R-048 require exact marker ownership, a default decline, isolated
+  tests, and visible target reports.
+- Atomic replacement: same-directory temporary files and rename protect an
+  existing target from pre-rename failures, while R-049 records platform/path
+  limitations and R-044 covers malformed markers.
+- Independent targets: Bash, Zsh, and Fish can be partially installed because
+  rollback is not promised; R-045 requires every result and aggregate failure.
+- Shell/version dependence: native line-editor APIs and key maps vary, so
+  R-046 combines per-shell syntax checks with one real Bash PTY rather than
+  claiming identical runtime evidence for all shells.
+- PATH and reserved arguments: `command watn -- "$question"` keeps the
+  installed command resolution explicit and prevents leading options or the
+  reserved `completions` token from changing the question parse; R-047 covers
+  this and the no-evaluation boundary.
+- Multiline output: embedded line breaks remain text in the buffer while only
+  trailing CR/LF is normalized; R-047 and the quality scenarios verify that the
+  text is never evaluated.
 
 ## ADR-0016 consequence coverage
 

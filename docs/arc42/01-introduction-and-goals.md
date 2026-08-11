@@ -28,6 +28,7 @@ Top requirements:
 19. Command-output write failures must retain the visible prefix, clean up progress, and use the existing I/O status without success metadata
 20. `watn --version` must report the Cargo package version, and release documentation must match verified target runtime requirements
 21. `watn completions <SHELL>` must generate the complete current command tree for the closed shell set `bash`, `elvish`, `fish`, `powershell`, and `zsh`, using stdout only without config/provider side effects
+22. Setup may install an optional Ctrl-W command-line widget for selected Bash, Zsh, and Fish targets, including implicit first-use setup, without executing generated output
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 
@@ -44,6 +45,7 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | 7 | Correctness | Catalog source, credential-source, setup-save, reasoning, and stale-search policies are shared across all model-discovery paths |
 | 8 | Responsiveness and recovery | Incremental content, deterministic completion, visible partial prefixes, and mapped stream/I/O failures must remain observable and safe |
 | 9 | Completion fidelity and script safety | Completion output must match the authoritative command tree, remain byte-for-byte deterministic, parse in its target shell, and never initialise configuration or contact a provider |
+| 10 | Shell integration safety | Shortcut installation must preserve user startup files, be idempotent, report independent target failures, and insert generated text without evaluation |
 
 ## Stakeholders
 
@@ -54,4 +56,4 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | CI/user | Pipe questions in, get clean output with exit codes and metadata
 | Test maintainer | Run deterministic local-provider scenarios without changing release-binary behavior or persisted user configuration |
 | Release maintainer | Verify package version output and target-dependent runtime-library requirements before distribution |
-| Shell user | Install or source a generated Bash, Elvish, Fish, PowerShell, or Zsh script without configuration writes, provider access, or stderr contamination |
+| Shell user | Install or source a generated completion script, or opt into a Bash, Zsh, or Fish Ctrl-W widget that inserts a command without executing it |

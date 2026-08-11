@@ -43,6 +43,12 @@
   - QS-045: Unsupported shell errors contain the literal actionable contract
   - QS-046: Successful completion writes only the script to stdout
   - QS-047: The reserved `completions` token consequence is documented and stable
+- **Shell integration safety** — Optional setup, safe startup-file ownership, and non-evaluating line replacement
+  - QS-048: Shortcut setup is opt-in and independent of provider/model selection
+  - QS-049: Selected targets are installed independently and every result is reported
+  - QS-050: Marker validation prevents malformed or duplicate block writes
+  - QS-051: The widget preserves the buffer on empty, failed, or empty results
+  - QS-052: The widget inserts successful output without evaluating it
 
 ## Quality scenarios
 
@@ -95,3 +101,8 @@
 | QS-045 | Completion correctness / Usability | User runs `watn completions nushell` | Exit status is non-zero and stderr contains exactly `unsupported shell 'nushell'; choose bash, elvish, fish, powershell, or zsh` as the parser-owned literal |
 | QS-046 | Completion safety / Observability | User generates a supported completion script | Stdout contains only the generated script and stderr is empty; no shell startup file is changed |
 | QS-047 | Completion compatibility | User has question text whose first unquoted token is `completions` | The token dispatches to the completion subcommand; question text must be quoted or passed after `--`, and this consequence is documented in help/CLI documentation |
+| QS-048 | Shell integration / Onboarding | User completes explicit or implicit first-use setup and accepts the shortcut default or selects no shells | Enter/no or an empty selection leaves every shell target byte-for-byte unchanged; provider/model setup behavior remains unchanged |
+| QS-049 | Shell integration / Recovery | User selects Bash, Zsh, and Fish and one target fails | Every selected target is attempted; successful targets contain one generated block, the failed target is unchanged, every result is reported, and the aggregate status is non-zero |
+| QS-050 | Shell integration / Integrity | A target contains duplicate, unmatched, or reversed shortcut markers | Installation fails before write; the target and its parent directory remain byte-for-byte unchanged |
+| QS-051 | Shell integration / Correctness | User presses Ctrl-W with empty input, non-zero `watn`, or empty output | `watn` is not called for empty input; otherwise the original buffer remains exactly unchanged and stderr remains visible |
+| QS-052 | Shell integration / Safety | User presses Ctrl-W and `watn` returns a successful command containing trailing or embedded line breaks | Trailing CR/LF is removed, embedded breaks remain text in the buffer, the cursor moves to the end, the prompt redraws, and no returned text executes |

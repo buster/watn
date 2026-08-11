@@ -11,6 +11,8 @@ graph TB
     Shell["System shell<br/>(execution mode)"]
     CompletionCaller["Completion caller<br/>(install/source)"]
     ShellParser["Bash / Zsh / Fish<br/>(completion parser)"]
+    ShellStartup["Bash / Zsh / Fish<br/>(startup files)"]
+    LineEditor["Bash Readline / Zsh ZLE / Fish commandline"]
 
     User -->|"question via args/stdin"| CLI
     User -->|"watn completions <SHELL>"| CLI
@@ -23,7 +25,11 @@ graph TB
     CLI -->|"completion script on stdout"| CompletionCaller
     CompletionCaller -->|"install or source"| ShellParser
     User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab / Ctrl-R) in SetupWizard model pages"| CLI
+    User -->|"optional shortcut selection after final setup confirmation"| CLI
     CLI -->|"write provider endpoint and credential representation"| Config
+    CLI -->|"marked shortcut block and reload report"| ShellStartup
+    LineEditor -->|"Ctrl-W current buffer"| CLI
+    CLI -->|"replacement buffer text"| LineEditor
     API -->|"SSE content events and [DONE]"| CLI
     LiteLLM -->|"model list"| CLI
     Shell -->|"command output"| User
@@ -36,6 +42,8 @@ graph TB
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions`; SSE must end with `[DONE]` for success |
 | LiteLLM (optional) | Endpoint URL (config), optional credential, search query (typed by user) | HTTP GET to `/models`, paginated `/models`, and HTTP GET to `/models?search=...`; never receives chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
+| Shell startup file | Optional selected-shell installation | One marked native widget block and a reload instruction; malformed or failed targets remain unchanged |
+| Bash/Zsh/Fish line editor | Ctrl-W and the complete current command buffer | A successful non-empty `watn` result inserted at the cursor end without evaluation; failures preserve the buffer |
 
 ## Technical context
 
@@ -61,3 +69,4 @@ graph TB
 | Confirmation prompt | stdin line read | Read
 | Completion selector | Lowercase shell value on the CLI; closed parser contract | Read; invalid values produce a non-zero argument error containing `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` |
 | Completion output | Generated Bash, Elvish, Fish, PowerShell, or Zsh script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |
+| Shell widget boundary | Native line-editor buffer plus `watn` on `PATH` | Reads one quoted question, captures stdout, keeps stderr visible, and replaces/repaints only after zero status and non-empty output |

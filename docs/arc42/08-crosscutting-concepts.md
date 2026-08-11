@@ -33,6 +33,36 @@ and empty credentials remain in the setup flow with an inline validation
 message. A missing saved environment reference is an authentication error and
 does not fall through to another environment variable.
 
+## Shell shortcut safety and file ownership
+
+The optional shortcut is part of explicit setup and implicit first-use setup,
+but Enter accepts the default decline. Selection is runtime-only; no provider
+configuration field records the chosen shells. The installer resolves Bash and
+Zsh from `HOME`, Fish from `XDG_CONFIG_HOME` or the HOME-based XDG fallback, and
+uses only the basename of `SHELL` for preselection.
+
+Each target is treated as user-owned bytes. A target with no shortcut markers
+gets one generated block appended. An existing target must contain exactly one
+opening marker and one closing marker in that order; duplicate, unmatched, or
+reversed markers fail before any write and leave the target unchanged. Content
+outside the block is preserved. The replacement is written to a uniquely named
+temporary file in the target directory, flushed and synced, then atomically
+renamed over the target while retaining an existing mode where possible.
+
+Selected targets are attempted independently. The installer reports each
+successful path and reload instruction and each failure with its exact path and
+operating-system reason. Successful changes are not rolled back when another
+target fails; the aggregate setup result is non-zero if any selected target
+fails.
+
+The generated Bash, Zsh, and Fish widgets use their native line-editor buffer
+and cursor APIs. They call `command watn -- "$question"` through `PATH`, so a
+leading option or the reserved `completions` token remains one question. Only
+stdout is captured; stderr remains visible. A zero-status non-empty result has
+trailing CR/LF characters removed, while embedded line breaks remain buffer
+text. Empty input, non-zero status, empty output, and malformed target files do
+not replace user content. The result is assigned as text and never evaluated.
+
 ## Completion generation
 
 `watn completions <SHELL>` uses a local closed `CompletionShell` selector. The

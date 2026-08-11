@@ -64,3 +64,11 @@
 | Reserved completion token | The unquoted first token `completions`, which dispatches to the completion subcommand; question text using it must be quoted or placed after `--` |
 | Authoritative command definition | The `Cli::command()` metadata used by Clap for parsing/help and by completion generation for options, positional arguments, subcommands, and values |
 | Provider-request sentinel | The isolated test HTTP mock whose request count proves completion generation did not contact a provider |
+| Shell shortcut | An optional Ctrl-W binding installed in a selected Bash, Zsh, or Fish startup file to turn the current command buffer into one `watn` question |
+| Shortcut target | The resolved user startup file for one supported shell: `.bashrc`, `.zshrc`, or Fish `config.fish` under the XDG configuration directory |
+| Generated block | The marker-delimited shell text owned by watn inside a shortcut target; unrelated target bytes remain user-owned |
+| Widget | A shell-native line-editor function that reads the current buffer, calls `command watn -- "$question"`, and assigns successful stdout as text |
+| Marker pair | The exact opening and closing comments `# >>> watn shell shortcut >>>` and `# <<< watn shell shortcut <<<` delimiting one generated block |
+| Target result | The success or failure report for one selected shortcut target, including its path, reason, and reload instruction when applicable |
+| Aggregate installation failure | A non-zero setup result returned after all selected targets have been attempted and one or more target results failed |
+| Reload instruction | The shell command or guidance that makes a modified startup file active in the current or next shell |

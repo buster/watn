@@ -15,6 +15,8 @@ graph TB
     Exec["Exec<br/>(command execution)"]
     Completion["Completion<br/>(closed selector + renderer)"]
     ShellParser["Bash / Zsh / Fish<br/>(caller parser)"]
+    Shortcut["Shell Shortcut<br/>(targets + widgets)"]
+    LineEditor["Shell line editor<br/>(Readline / ZLE / commandline)"]
 
     CLI --> Config
     CLI --> Provider
@@ -33,6 +35,9 @@ graph TB
     Wizard --> Models
     Exec --> Config
     Completion --> ShellParser
+    CLI --> Shortcut
+    Shortcut --> LineEditor
+    LineEditor --> CLI
 ```
 
 | Building block | Responsibility |
@@ -42,12 +47,14 @@ graph TB
 | Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, and require `[DONE]` |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
-| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, and save/discard prompt; save a confirmed provider draft before catalog access and return optional provider plus completed model drafts |
+| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, save/discard prompt, and optional post-confirmation shortcut selection; save a confirmed provider draft before catalog access and return optional provider, completed model drafts, and shortcut choices |
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
 | Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
 | Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
 | Completion | Parse the closed `CompletionShell` selector, derive scripts from the authoritative Clap command definition, render Bash/Elvish/Fish/PowerShell/Zsh, and write only successful script bytes to stdout |
 | Shell parser boundary | Consume an installed completion script; parser acceptance is verified separately for Bash, Elvish, Fish, PowerShell, and Zsh when the executable is available and is not a provider or configuration dependency |
+| Shell Shortcut | Resolve selected Bash/Zsh/Fish targets, generate native marked blocks, validate marker counts, replace existing blocks atomically, attempt targets independently, and return per-target reports plus aggregate failure |
+| Line editor boundary | Bind Ctrl-W, read the complete current buffer, call `command watn -- "$question"`, replace/repaint only on successful non-empty output, and never evaluate the captured text |
 
 ## Level 2 — Key building blocks
 

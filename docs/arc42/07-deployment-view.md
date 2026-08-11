@@ -4,6 +4,12 @@ Deployment via `cargo install` or copying the release executable to PATH. The
 artifact is one binary for the selected target, but its runtime library
 requirements are target-dependent; no server infrastructure is required.
 
+The optional shell shortcut is a per-user deployment integration, not a second
+binary or service. The installed `watn` executable must be resolvable through the
+user's `PATH`; setup writes only the selected marked block to the user's Bash,
+Zsh, or Fish startup target. The user reloads the reported file or starts a new
+shell. Completion installation and shortcut installation remain separate paths.
+
 The binary is built with `cargo build --release`. On the verified Linux host,
 `file target/release/watn` identifies a dynamically linked executable and
 `ldd target/release/watn` lists the shared libraries it requires. On macOS,
@@ -34,3 +40,8 @@ streaming twin that can flush content, hold a later event, send `[DONE]` without
 closing immediately, close without `[DONE]`, or reset the connection. The twin
 exists only in the test process; the installed production binary continues to
 use the configured provider endpoint.
+
+Shortcut verification uses temporary HOME/XDG trees and isolated startup files.
+It does not modify the developer's shell configuration. The regular runner
+checks generated Bash, Zsh, and Fish text; the E2E runner starts an isolated
+interactive Bash process with a temporary startup file and fake `watn` on PATH.

@@ -23,6 +23,7 @@ options, the decision outcome, and consequences.
 | ADR-0015 | Synchronous stream callback and completion boundary | [docs/adr/0015-synchronous-stream-callback-and-completion-boundary.md](../adr/0015-synchronous-stream-callback-and-completion-boundary.md) |
 | ADR-0016 | Release truth and target-dependent runtime requirements | [docs/adr/0016-release-truth-and-target-dependent-runtime-requirements.md](../adr/0016-release-truth-and-target-dependent-runtime-requirements.md) |
 | ADR-0017 | Completion generation from authoritative command definition | [docs/adr/0017-completion-generation-from-authoritative-command-definition.md](../adr/0017-completion-generation-from-authoritative-command-definition.md) |
+| ADR-0018 | Safe shell shortcut installation and native widgets | [docs/adr/0018-safe-shell-shortcut-installation-and-native-widgets.md](../adr/0018-safe-shell-shortcut-installation-and-native-widgets.md) |
 
 ## ADR-0011 summary
 
@@ -99,6 +100,18 @@ unchanged. The parser error keeps the literal contract
 `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`. The `completions`
 subcommand intentionally reserves that unquoted first token, so question text
 beginning with it must be quoted or passed after `--`.
+
+## ADR-0018 summary
+
+ADR-0018 chooses an opt-in, post-setup shell shortcut that writes exact
+marker-owned Bash, Zsh, and Fish widgets using atomic same-directory replacement.
+The widgets invoke `command watn -- "$question"` through `PATH`, capture only
+stdout, preserve stderr, trim trailing CR/LF characters, and assign the result
+as text without evaluation. The installer attempts selected targets
+independently and reports every success or failure; it does not roll back a
+successful target when a later target fails. The optional interaction is also
+available in implicit first-use setup, while the default Enter path preserves
+the existing five-tab flow.
 
 <!--
 MADR template for future decisions:

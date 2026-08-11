@@ -101,6 +101,67 @@ The subcommand reserves an unquoted first token `completions`. Existing question
 text beginning with that token must be quoted as one argument or passed after
 `--`.
 
+## Scenario: Optional shell shortcut during setup
+
+**Trigger:** A user completes the final model selection during explicit setup or
+implicit first-use onboarding and chooses `y` for the optional shortcut.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Wizard as Setup Wizard
+    participant Config as Config
+    participant Installer as Shell Shortcut Installer
+    participant Files as Selected startup files
+
+    User->>Wizard: Confirm Large Model with y
+    Wizard-->>User: Show Bash/Zsh/Fish multi-select
+    User->>Wizard: Select zero or more shells and confirm
+    Wizard->>Config: Persist provider and completed model choices
+    loop Each selected shell
+        Wizard->>Installer: Resolve target and generate marked block
+        Installer->>Installer: Validate marker count and build replacement
+        Installer->>Files: Atomic temporary-file write and rename
+        Installer-->>Wizard: Per-target success or failure
+    end
+    Wizard-->>User: Report every target and reload instruction
+```
+
+Enter on the optional question accepts the default decline and performs no
+shell-file I/O. A selected shell with no target file creates only its own
+parent directories. Every selected target is attempted independently; a later
+failure does not roll back earlier successful renames, and the aggregate setup
+result is non-zero when any target failed.
+
+## Scenario: Ctrl-W generates a command without evaluation
+
+**Trigger:** A user presses Ctrl-W in an installed Bash, Zsh, or Fish line editor.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Editor as Shell line editor
+    participant Watn as watn on PATH
+
+    User->>Editor: Press Ctrl-W with complete buffer
+    alt buffer empty
+        Editor-->>User: Preserve buffer and repaint
+    else buffer non-empty
+        Editor->>Watn: command watn -- "$question"
+        Watn-->>Editor: stdout text, stderr diagnostics, exit status
+        alt zero status and non-empty stdout after trailing CR/LF trim
+            Editor->>Editor: Insert text, set cursor to end, never evaluate
+        else failure or empty output
+            Editor->>Editor: Preserve original buffer
+        end
+        Editor-->>User: Redraw prompt
+    end
+```
+
+Embedded line breaks are retained as buffer text. The shell never passes the
+captured result to an evaluator, so text that resembles a second command is
+not executed by the shortcut.
+
 ## Scenario: Ask with execution (`-x`)
 
 **Trigger:** User runs `watn -x "echo hello"`.
