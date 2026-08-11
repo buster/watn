@@ -129,28 +129,33 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 7 steps (7 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: ba5c4ba
+  commit: 023ae34
   ```
 
 ## Scenario: A partial multi-shell failure reports every result without rollback
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:240`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: attempt all selected targets, retain successes, collect failures,
+- [x] GREEN: attempt all selected targets, retain successes, collect failures,
   and return an aggregate error. Production files: `src/shell_shortcut.rs`,
   `src/setup.rs`, `src/main.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 10 steps (10
+  passed)`; Bash and Fish were retained, the Zsh directory target was unchanged,
+  and the aggregate error/report contract passed.
   ```
-- [ ] REFACTOR: rerun the targeted scenario and preserve report ordering.
+- [x] REFACTOR: rerun the targeted scenario and preserve report ordering.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 10 steps (10 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text

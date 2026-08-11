@@ -172,20 +172,25 @@ fn install_all_shells(world: &mut WatnWorld) {
         &watn::shell_shortcut::Shell::ALL,
         &environment,
     );
-    assert!(report.is_success(), "installation report: {report:?}");
+    world.shortcut_error = report.aggregate_error().map(|error| error.to_string());
     world.shortcut_shells = report
         .successes()
         .map(|result| result.shell.lowercase_name().to_string())
         .collect();
     world.shortcut_output = Some(
         report
-            .successes()
+            .results
+            .iter()
             .map(|result| {
                 format!(
                     "{} {} {}",
                     result.shell.lowercase_name(),
-                    result.path.as_deref().unwrap().display(),
-                    result.reload.as_deref().unwrap()
+                    result
+                        .path
+                        .as_deref()
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_default(),
+                    result.reload.as_deref().unwrap_or(&result.message)
                 )
             })
             .collect::<Vec<_>>()
@@ -235,4 +240,109 @@ fn reload_instructions(world: &mut WatnWorld) {
         assert!(output.contains(shell), "missing {shell} report");
         assert!(output.contains("Run: source"), "missing reload instruction");
     }
+}
+
+#[given("writable Bash and Fish targets and a Zsh target that cannot be written")]
+fn partial_failure_targets(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let home = temp.path().join("home");
+    let fish_dir = home.join(".config/fish");
+    std::fs::create_dir_all(&fish_dir).expect("create Fish config directory");
+    let zsh_path = home.join(".zshrc");
+    std::fs::create_dir_all(&zsh_path).expect("create unwritable Zsh target directory");
+    let targets = HashMap::from([
+        ("bash".to_string(), home.join(".bashrc")),
+        ("zsh".to_string(), zsh_path),
+        ("fish".to_string(), fish_dir.join("config.fish")),
+    ]);
+    std::fs::write(targets.get("bash").unwrap(), b"# Bash user content\n")
+        .expect("write Bash target");
+    std::fs::write(targets.get("fish").unwrap(), b"# Fish user content\n")
+        .expect("write Fish target");
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = targets;
+}
+
+#[given("the Bash and Fish targets have existing user content")]
+fn partial_failure_content(world: &mut WatnWorld) {
+    world.shortcut_snapshots = world
+        .shortcut_targets
+        .iter()
+        .filter_map(|(shell, path)| {
+            std::fs::read(path)
+                .ok()
+                .map(|content| (shell.clone(), content))
+        })
+        .collect();
+}
+
+#[then("the Bash configuration should contain one watn shell shortcut block")]
+fn bash_one_block(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("bash").unwrap())
+        .expect("read Bash target");
+    assert_eq!(
+        content.matches(watn::shell_shortcut::OPEN_MARKER).count(),
+        1
+    );
+    assert_eq!(
+        content.matches(watn::shell_shortcut::CLOSE_MARKER).count(),
+        1
+    );
+}
+
+#[then("the Fish configuration should contain one watn shell shortcut block")]
+fn fish_one_block(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
+        .expect("read Fish target");
+    assert_eq!(
+        content.matches(watn::shell_shortcut::OPEN_MARKER).count(),
+        1
+    );
+    assert_eq!(
+        content.matches(watn::shell_shortcut::CLOSE_MARKER).count(),
+        1
+    );
+}
+
+#[then("the Bash and Fish user content should remain unchanged")]
+fn partial_content_unchanged(world: &mut WatnWorld) {
+    for shell in ["bash", "fish"] {
+        let current = std::fs::read(world.shortcut_targets.get(shell).unwrap())
+            .expect("read selected target");
+        let original = world.shortcut_snapshots.get(shell).unwrap();
+        assert!(
+            current.starts_with(original),
+            "{shell} unrelated user content was not preserved"
+        );
+    }
+}
+
+#[then("the Zsh configuration should remain unchanged")]
+fn zsh_unchanged(world: &mut WatnWorld) {
+    assert!(world.shortcut_targets.get("zsh").unwrap().is_dir());
+}
+
+#[then("setup should report success for Bash and Fish")]
+fn partial_success_report(world: &mut WatnWorld) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    assert!(output.contains("bash"));
+    assert!(output.contains("fish"));
+    assert!(!world.shortcut_shells.is_empty());
+}
+
+#[then("setup should report the Zsh target path and write failure reason")]
+fn zsh_failure_report(world: &mut WatnWorld) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    let path = world.shortcut_targets.get("zsh").unwrap();
+    assert!(output.contains(&path.display().to_string()));
+    assert!(output.contains("target is a directory"));
+}
+
+#[then("setup should report an aggregate shell installation failure")]
+fn aggregate_failure(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_error
+        .as_deref()
+        .unwrap_or_default()
+        .contains("shell shortcut installation failed"));
 }

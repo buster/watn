@@ -66,7 +66,7 @@ Feature: Interactive shell shortcut for watn
     And setup should report a success for every selected shell
     And each selected shell should have its own reload instruction
 
-  @givn.added @wip
+  @givn.added
   Scenario: A partial multi-shell failure reports every result without rollback
     Given writable Bash and Fish targets and a Zsh target that cannot be written
     And the Bash and Fish targets have existing user content
