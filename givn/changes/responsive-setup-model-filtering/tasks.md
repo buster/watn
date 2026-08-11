@@ -87,9 +87,11 @@
   created or modified: list them here. Run the targeted scenario and record a
   zero exit.
   - Evidence: the retained worker and generation checks in `src/setup.rs` were
-    exercised by delayed `gpt` and immediate `o3` provider twins. Targeted
-    runner passed `1 scenario` and `4 steps`; the late `gpt` result did not
-    replace the visible `o3` result.
+    exercised by delayed `gpt` and immediate `o3` provider twins. The follow-up
+    compatibility fix also updated `src/models/list.rs` and the permanent
+    paginated-catalog fixture so explicit `meta.has_more` prevents false local
+    completeness. Targeted runner passed `1 scenario` and `4 steps`; the late
+    `gpt` result did not replace the visible `o3` result.
 
 - [x] REFACTOR: Keep generation ownership singular, reap finished handles, and
   preserve cancellation and save/discard behavior. Rerun the targeted scenario
@@ -99,54 +101,69 @@
     `1 scenario` and `4 steps`.
 
 - [x] COMMIT: Create one atomic commit referencing `A newer model query remains authoritative`.
-- Commit hash: `144adc5`
+- Commit hashes: `144adc5`, follow-up `7d9eb2c`
 
 ## E2E Setup
 
-- [ ] After all regular scenarios are GREEN, run the configured regular command
+- [x] After all regular scenarios are GREEN, run the configured regular command
   and record its scenario/step count.
-- [ ] Run the configured E2E command with the `@e2e and not @wip` filter and
+- [x] Run the configured E2E command with the `@e2e and not @wip` filter and
   record a strictly smaller scenario count.
-- [ ] Confirm the PTY starts the instrumented `watn setup` binary and the
+- [x] Confirm the PTY starts the instrumented `watn setup` binary and the
   scenario-local `httpmock` model-provider twin starts and stops cleanly.
-- [ ] Confirm the E2E step file remains the capability-specific
+- [x] Confirm the E2E step file remains the capability-specific
   `tests/steps/responsive_setup_model_filtering_steps.rs` and strict mode still
   rejects undefined/pending steps.
-- Evidence: paste both runner summaries and the local-infrastructure result
-  here.
+- Evidence: `./run-tests.sh` passed `98 scenarios` and `570 steps`; the
+  configured E2E command passed `66 scenarios` and `463 steps`, proving
+  `66 < 98`. The final E2E scenario started a real `watn models` PTY child and
+  an in-process `httpmock` twin cleanly. `.fail_on_skipped()` remains active;
+  the capability step file is registered at the designed path.
 
 ## Scenario: The terminal model filter stays responsive during a delayed search
 
-- [ ] RED: Remove `@wip` from this scenario only, bind its PTY query/result
+- [x] RED: Remove `@wip` from this scenario only, bind its PTY query/result
   assertions with `unimplemented!()`, and run the E2E command targeted by name.
   Expected result: non-zero exit.
-  - Evidence: paste the targeted E2E output here.
+  - Evidence: the targeted E2E bootstrap using `--name` exited non-zero with
+    `1 scenario (1 failed)` and `1 step (1 failed)` at the explicit
+    `unimplemented!()` Given step. The runner rejects combining `--tags` and
+    `--name`, so the name-filtered command is the targeted E2E proof.
 
-- [ ] GREEN: Drive the real setup wizard through the PTY, assert the visible
+- [x] GREEN: Drive the real setup wizard through the PTY, assert the visible
   current query and matching row while the provider response is delayed, then
   assert that a subsequent filter change is accepted. Repository/request-count
   checks may support the terminal assertion but cannot replace it. Production
   files created or modified: list them here. Run the targeted E2E scenario and
   record a zero exit.
-  - Evidence: paste the targeted E2E output here.
+  - Evidence: `tests/steps/responsive_setup_model_filtering_steps.rs` drove the
+    real `watn models` PTY against delayed `gpt` and immediate `o3` provider
+    twins. The terminal retained `Filter: o3`, rendered `o3-pro`, and accepted
+    a later `gpt` filter. Targeted E2E runner passed `1 scenario` and `9 steps`.
 
-- [ ] REFACTOR: Keep the PTY screen polling stable across incremental redraws,
+- [x] REFACTOR: Keep the PTY screen polling stable across incremental redraws,
   remove assertion duplication, rerun the targeted E2E scenario, and record a
   zero exit.
-  - Evidence: paste the targeted E2E output and formatting result here.
+  - Evidence: the terminal-screen reconstruction helper was formatted and the
+    unused mutable binding was removed; `cargo fmt --all -- --check` passed and
+    the targeted E2E runner passed `1 scenario` and `9 steps`.
 
-- [ ] COMMIT: Create one atomic commit referencing `The terminal model filter stays responsive during a delayed search`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `The terminal model filter stays responsive during a delayed search`.
+- Commit hash: `2bd4627`
 
 ## Full Verification
 
-- [ ] Run `givn lint --change responsive-setup-model-filtering` with no findings
+- [x] Run `givn lint --change responsive-setup-model-filtering` with no findings
   other than none of the completed scenarios retaining `@wip`.
-- [ ] Run `./run-tests.sh` and `./run-tests.sh --e2e`; both pass with the E2E
+- [x] Run `./run-tests.sh` and `./run-tests.sh --e2e`; both pass with the E2E
   count strictly smaller than the regular count.
-- [ ] Run `./measure-coverage.sh` and `./merge-coverages.sh`; confirm the
+- [x] Run `./measure-coverage.sh` and `./merge-coverages.sh`; confirm the
   runner and instrumented PTY child are included and the merged report is
   fresh.
-- [ ] Run `cargo fmt --all -- --check`, `cargo check --locked`, and
+- [x] Run `cargo fmt --all -- --check`, `cargo check --locked`, and
   `git diff --check`.
-- Evidence: paste final command summaries here.
+- Evidence: `givn lint --change responsive-setup-model-filtering` was clean;
+  regular verification passed `98 scenarios` and `570 steps`; E2E verification
+  passed `66 scenarios` and `463 steps`; coverage measurement and merge passed
+  with fresh reports; `cargo fmt --all -- --check`, `cargo check --locked`, and
+  `git diff --check` passed.
