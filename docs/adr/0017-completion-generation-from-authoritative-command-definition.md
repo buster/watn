@@ -14,14 +14,14 @@ provider, contact a service, write shell files, or contaminate stdout/stderr
 with unrelated diagnostics.
 
 The completion library exposes a broader shell enum than the product supports.
-How should watn generate Bash, Zsh, and Fish scripts while keeping the public
+How should watn generate Bash, Elvish, Fish, PowerShell, and Zsh scripts while keeping the public
 selector closed and the unsupported-shell error stable?
 
 ## Decision Drivers
 
 - Keep completion metadata aligned with the command definition used by parsing
   and help.
-- Support exactly Bash, Zsh, and Fish through lowercase command-line values.
+- Support exactly Bash, Elvish, Fish, PowerShell, and Zsh through lowercase command-line values.
 - Keep unsupported-shell guidance literal and actionable.
 - Preserve stdout-only, deterministic, parser-accepted output for scripting.
 - Bypass configuration, provider, network, file, and shell-startup side effects.
@@ -44,9 +44,10 @@ selector closed and the unsupported-shell error stable?
 ## Decision Outcome
 
 Choose a local `CompletionShell` selector with exactly the lowercase values
-`bash`, `zsh`, and `fish`. Unsupported values are rejected by the local parser
+`bash`, `elvish`, `fish`, `powershell`, and `zsh`, matching all native generators
+in the pinned `clap_complete` release. Unsupported values are rejected by the local parser
 with the literal contract
-`unsupported shell '<value>'; choose bash, zsh, or fish`, embedded in the
+`unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`, embedded in the
 normal non-zero CLI argument error. The broader `clap_complete::Shell` type is
 used only behind the renderer mapping and is not exposed as the CLI argument
 type.

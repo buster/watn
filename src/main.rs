@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
-use clap_complete::shells::{Bash, Fish, Zsh};
+use clap_complete::shells::{Bash, Elvish, Fish, PowerShell, Zsh};
 
 use std::io::{self, IsTerminal};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -66,7 +66,7 @@ enum Commands {
         #[arg(
             value_name = "SHELL",
             value_parser = CompletionShell::parse,
-            help = "Supported shell values: bash, zsh, or fish"
+            help = "Supported shell values: bash, elvish, fish, powershell, or zsh"
         )]
         shell: CompletionShell,
     },
@@ -75,18 +75,22 @@ enum Commands {
 #[derive(Clone, Debug)]
 enum CompletionShell {
     Bash,
-    Zsh,
+    Elvish,
     Fish,
+    PowerShell,
+    Zsh,
 }
 
 impl CompletionShell {
     fn parse(input: &str) -> Result<Self, String> {
         match input {
             "bash" => Ok(Self::Bash),
-            "zsh" => Ok(Self::Zsh),
+            "elvish" => Ok(Self::Elvish),
             "fish" => Ok(Self::Fish),
+            "powershell" => Ok(Self::PowerShell),
+            "zsh" => Ok(Self::Zsh),
             _ => Err(format!(
-                "unsupported shell '{input}'; choose bash, zsh, or fish"
+                "unsupported shell '{input}'; choose bash, elvish, fish, powershell, or zsh"
             )),
         }
     }
@@ -118,7 +122,7 @@ fn main() {
                 run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
             }
             Commands::Provider => run_provider_setup_command(),
-            Commands::Completions { shell } => run_completions(&shell),
+            Commands::Completions { shell } => run_completions(shell),
         }
         return;
     }
@@ -378,13 +382,17 @@ fn main() {
 fn run_completions(shell: &CompletionShell) -> ! {
     let mut command = Cli::command().mut_subcommand("completions", |subcommand| {
         subcommand.mut_arg("shell", |argument| {
-            argument.value_parser(["bash", "zsh", "fish"])
+            argument.value_parser(["bash", "elvish", "fish", "powershell", "zsh"])
         })
     });
     match shell {
         CompletionShell::Bash => generate(Bash, &mut command, "watn", &mut io::stdout()),
-        CompletionShell::Zsh => generate(Zsh, &mut command, "watn", &mut io::stdout()),
+        CompletionShell::Elvish => generate(Elvish, &mut command, "watn", &mut io::stdout()),
         CompletionShell::Fish => generate(Fish, &mut command, "watn", &mut io::stdout()),
+        CompletionShell::PowerShell => {
+            generate(PowerShell, &mut command, "watn", &mut io::stdout())
+        }
+        CompletionShell::Zsh => generate(Zsh, &mut command, "watn", &mut io::stdout()),
     }
     std::process::exit(0)
 }

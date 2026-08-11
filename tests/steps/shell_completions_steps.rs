@@ -4,14 +4,22 @@ use std::process::{Command, Stdio};
 
 use crate::{MockServerWrap, WatnWorld};
 
-#[when(regex = r##"^I run `watn completions (bash|zsh|fish)` as a regular subprocess$"##)]
+#[when(
+    regex = r##"^I run `watn completions (bash|elvish|fish|powershell|zsh)` as a regular subprocess$"##
+)]
 fn regular_completion(world: &mut WatnWorld, shell: String) {
     run_completion(world, &shell);
 }
 
-#[when("I run `watn completions powershell` as a regular subprocess")]
+#[when("I run `watn completions nushell` as a regular subprocess")]
 fn unsupported_completion(world: &mut WatnWorld) {
-    run_completion(world, "powershell");
+    run_completion(world, "nushell");
+}
+
+#[when("I run `watn -- completions find files` as a regular subprocess")]
+fn reserved_completion_token(world: &mut WatnWorld) {
+    super::ensure_test_env(world);
+    run_args(world, &["--", "completions", "find", "files"]);
 }
 
 #[given("no provider configuration exists in an isolated XDG config directory")]
@@ -67,6 +75,15 @@ fn bash_syntax(world: &mut WatnWorld) {
         .contains("complete -F"));
 }
 
+#[then("stdout should not contain Bash completion syntax")]
+fn no_bash_syntax(world: &mut WatnWorld) {
+    assert!(!world
+        .output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("complete -F"));
+}
+
 #[then("stdout should contain all current root options and subcommands")]
 fn all_root_values(world: &mut WatnWorld) {
     let output = world.output.as_deref().expect("completion stdout");
@@ -111,6 +128,24 @@ fn fish_syntax(world: &mut WatnWorld) {
         .as_deref()
         .unwrap_or_default()
         .contains("complete -c watn"));
+}
+
+#[then("stdout should contain Elvish completion syntax")]
+fn elvish_syntax(world: &mut WatnWorld) {
+    assert!(world
+        .output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("edit:completion:arg-completer"));
+}
+
+#[then("stdout should contain PowerShell completion syntax")]
+fn powershell_syntax(world: &mut WatnWorld) {
+    assert!(world
+        .output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("Register-ArgumentCompleter"));
 }
 
 #[then("stdout should contain only the completion script")]
@@ -198,19 +233,45 @@ fn fish_deterministic(world: &mut WatnWorld) {
     deterministic_again(world, "fish");
 }
 
-#[then(regex = r##"^the generated script should be accepted by (Bash|Zsh|Fish)$"##)]
+#[then("a second elvish generation should be byte-for-byte identical")]
+fn elvish_deterministic(world: &mut WatnWorld) {
+    deterministic_again(world, "elvish");
+}
+
+#[then("a second powershell generation should be byte-for-byte identical")]
+fn powershell_deterministic(world: &mut WatnWorld) {
+    deterministic_again(world, "powershell");
+}
+
+#[then(
+    regex = r##"^the generated script should be accepted by (Bash|Elvish|Fish|PowerShell|Zsh)$"##
+)]
 fn shell_parser(world: &mut WatnWorld, shell: String) {
-    let command = shell.to_ascii_lowercase();
     let output = world.output.as_deref().expect("completion stdout");
-    if Command::new(&command).arg("--version").output().is_err() {
+    let commands: &[&str] = match shell.as_str() {
+        "PowerShell" => &["pwsh", "powershell"],
+        _ => &[&shell.to_ascii_lowercase()],
+    };
+    let command = commands
+        .iter()
+        .find(|candidate| Command::new(candidate).arg("--version").output().is_ok());
+    let Some(command) = command else {
+        eprintln!(
+            "environment limitation: {shell} executable is unavailable; generated script was not syntax-checked"
+        );
         assert!(
             !output.trim().is_empty(),
             "{shell} is unavailable and output is empty"
         );
         return;
+    };
+    let mut parser = Command::new(command);
+    if shell == "PowerShell" {
+        parser.args(["-NoLogo", "-NoProfile", "-Command", "-"]);
+    } else {
+        parser.arg("-n");
     }
-    let mut child = Command::new(&command)
-        .arg("-n")
+    let mut child = parser
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
@@ -262,10 +323,10 @@ fn completion_help(world: &mut WatnWorld) {
     run_args(world, &["completions", "--help"]);
 }
 
-#[then("stdout should mention bash, zsh, and fish")]
+#[then("stdout should mention bash, elvish, fish, powershell, and zsh")]
 fn help_shells(world: &mut WatnWorld) {
     let output = world.output.as_deref().expect("help stdout");
-    for shell in ["bash", "zsh", "fish"] {
+    for shell in ["bash", "elvish", "fish", "powershell", "zsh"] {
         assert!(
             output.contains(shell),
             "missing shell in help output: {shell}"
@@ -288,10 +349,15 @@ fn help_purpose(world: &mut WatnWorld) {
     assert!(output.contains("stdout") && output.contains("source"));
 }
 
-#[then("stdout should document that only bash, zsh, and fish are supported shell values")]
+#[then("stdout should document that only bash, elvish, fish, powershell, and zsh are supported shell values")]
 fn help_selector_contract(world: &mut WatnWorld) {
     let output = world.output.as_deref().expect("help stdout");
-    assert!(output.contains("bash") && output.contains("zsh") && output.contains("fish"));
+    for shell in ["bash", "elvish", "fish", "powershell", "zsh"] {
+        assert!(
+            output.contains(shell),
+            "missing shell in help output: {shell}"
+        );
+    }
 }
 
 #[then("stderr should contain the exact unsupported-shell contract:")]

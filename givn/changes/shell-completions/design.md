@@ -7,13 +7,14 @@
   existing Clap dependency; resolve the exact package version through Cargo at
   implementation time rather than duplicating a version from memory.
 - Add a `completions` subcommand with a local, closed `CompletionShell` selector.
-  Its only accepted command-line values are the lowercase literals `bash`,
-  `zsh`, and `fish`, mapping to the `Bash`, `Zsh`, and `Fish` variants. The CLI
-  must not expose `clap_complete::Shell` as its argument type or accept that
-  enum's broader value set.
+  Its accepted command-line values are the lowercase literals `bash`, `elvish`,
+  `fish`, `powershell`, and `zsh`, mapping to the corresponding five variants
+  in `clap_complete::Shell`. The CLI must not expose `clap_complete::Shell` as
+  its argument type; the local selector owns the stable error wording while
+  remaining aligned with the pinned library's complete native shell set.
 - Parse unsupported values through a local `CompletionShell` value parser that
   returns the literal argument-error contract
-  `unsupported shell '<value>'; choose bash, zsh, or fish`. Clap may add its
+  `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`. Clap may add its
   normal argument-error framing around this parser message, but the literal
   contract and rejected value remain stable. This keeps the error wording stable
   while the completion renderer remains mapped to the broader library types only
@@ -30,14 +31,16 @@ from `Cli::command()`, the same metadata used by parsing and help output. The
 completion branch executes immediately
 after argument parsing and before any configuration, auto-init, provider setup,
 model discovery, or spinner setup. `CompletionShell` maps explicitly to the
-corresponding Bash, Zsh, or Fish renderer from `clap_complete` only at the
-renderer boundary and writes the successful script to stdout. A successful
-generation has no stderr output and creates no config file.
+corresponding Bash, Elvish, Fish, PowerShell, or Zsh renderer from
+`clap_complete` only at the renderer boundary and writes the successful script
+to stdout. A successful generation has no stderr output and creates no config
+file.
 
 The shell selector is a closed set. Adding a new shell requires changing this
 selector and the command tree, so generated output cannot silently diverge from
 the supported contract. The subcommand help contract includes
-`Usage: watn completions <SHELL>`, the values `bash`, `zsh`, and `fish`, and the
+`Usage: watn completions <SHELL>`, the values `bash`, `elvish`, `fish`,
+`powershell`, and `zsh`, and the
 fact that the generated script is written to stdout for the caller to install
 or source. The new subcommand reserves the unquoted first token `completions`:
 `watn completions ...` is parsed as the completion command, while question text
@@ -48,7 +51,7 @@ whose first token is `completions` must be quoted as one argument or passed afte
 flowchart TD
     Parse[Parse authoritative Clap command] --> Command{completions command?}
     Command -- no --> Existing[Existing watn behavior]
-    Command -- yes --> Shell[Validate bash, zsh, or fish]
+    Command -- yes --> Shell[Validate bash, elvish, fish, powershell, or zsh]
     Shell --> Generate[Generate from same command metadata]
     Generate --> Stdout[Write only script to stdout]
 ```
@@ -58,7 +61,7 @@ flowchart TD
 ### Step definitions
 
 - `tests/steps/shell_completions_steps.rs`: the separate regular-subprocess step
-  file for Bash, Zsh, Fish, help, the unsupported-shell error, the authoritative
+  file for Bash, Elvish, Fish, PowerShell, Zsh, help, the unsupported-shell error, the authoritative
   root tree, stdout-only success, determinism, shell-parser checks, and the
   closed selector. Supported-shell invocations call
   `run_binary_with_state`, which captures `WatnWorld.output`,
@@ -79,8 +82,9 @@ flowchart TD
   one real built-binary Bash completion invocation. It uses a unique `When`
   wording, launches the binary from `WATN_TEST_SUPPORT_DEBUG_BIN` with
   `std::process::Command`, captures stdout/stderr, and asserts the generated
-  script, determinism, parser acceptance, and exit status. It contains no Zsh or
-  Fish E2E variant.
+  script, determinism, and exit status. Shared regular parser steps perform
+  shell acceptance checks. It contains no
+  alternate-shell E2E variant.
 - `tests/steps/mod.rs`: add `pub mod shell_completions_steps;` and
   `pub mod shell_completions_e2e_steps;`. Reuse the existing `WatnWorld` output,
   temp-directory, and mock-server fields; no new runner-wide state is needed.
@@ -93,13 +97,14 @@ provider sentinel is only an observability seam for the no-config scenario; a
 successful completion request must not reach it.
 
 The regular shell assertions invoke each supported shell twice and compare
-output bytes for deterministic generation. Bash, Zsh, and Fish parser/source
-checks use the corresponding installed shell executable; if a shell is
-unavailable, the scenario reports an explicit environment limitation rather than
-treating syntax as verified. Each supported-shell scenario asserts the complete
-generated root option list and all root subcommands. Bash also asserts the
-closed selector values `bash`, `zsh`, and `fish`; selector values are only
-asserted where the selected shell renderer exposes positional value suggestions.
+output bytes for deterministic generation. Bash, Elvish, Fish, PowerShell, and
+Zsh parser/source checks use the corresponding installed shell executable (or
+`pwsh` for PowerShell); if a shell is unavailable, the scenario reports an
+explicit environment limitation rather than treating syntax as verified. Each
+supported-shell scenario asserts the complete generated root option list and
+all root subcommands. Bash also asserts the selector values `bash`, `elvish`,
+`fish`, `powershell`, and `zsh`; selector values are only asserted where the
+selected shell renderer exposes positional value suggestions.
 
 ### Local runnability and E2E
 
@@ -144,15 +149,15 @@ coverage and the Gherkin runner are measured by the existing coverage wrappers.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| run `watn completions <shell>` for a supported shell and receive its script | Built Bash completion generation emits the current command tree | CLI | `tests/steps/shell_completions_e2e_steps.rs` invokes the explicit `WATN_TEST_SUPPORT_DEBUG_BIN` path as a real subprocess and asserts stdout, stderr, determinism, parser acceptance, and exit status. |
+| run `watn completions <shell>` for a supported shell and receive its script | Built Bash completion generation emits the current command tree | CLI | `tests/steps/shell_completions_e2e_steps.rs` invokes the explicit `WATN_TEST_SUPPORT_DEBUG_BIN` path as a real subprocess and asserts stdout, stderr, determinism, selector values, and exit status; the shared regular parser step handles Bash syntax acceptance. |
 
-Zsh and Fish are regular variants of the same completion-generation action; they
-are not additional E2E interactions. The regular step file also covers the
-authoritative root-tree assertions, Bash selector values, help output, the
-unsupported `powershell` literal error contract, the no-config/no-provider-
-request snapshots, determinism, shell-parser acceptance, and the stdout-only
-success contract. These cases use the existing subprocess runner and do not add
-rows to the E2E inventory.
+Elvish, Fish, PowerShell, and Zsh are regular variants of the same
+completion-generation action; they are not additional E2E interactions. The
+regular step file also covers the authoritative root-tree assertions, Bash
+selector values, help output, the unsupported `nushell` literal error contract,
+the no-config/no-provider-request snapshots, determinism, shell-parser
+acceptance, and the stdout-only success contract. These cases use the existing
+subprocess runner and do not add rows to the E2E inventory.
 
 The authoritative root tree asserted by the regular scenarios is:
 
@@ -171,8 +176,9 @@ The authoritative root tree asserted by the regular scenarios is:
 | `--help` | |
 | `--version` | |
 
-The `completions` selector value suggestions are exactly `bash`, `zsh`, and
-`fish`; `powershell` and every other value are rejected by the local parser.
+The `completions` selector value suggestions are exactly `bash`, `elvish`,
+`fish`, `powershell`, and `zsh`; `nushell` and every other value are rejected by
+the local parser.
 
 ## Single-Scenario Command
 
@@ -180,7 +186,7 @@ Use the explicit binary bootstrap and Cucumber name filter for the regular
 authoritative-tree scenario:
 
 ```text
-root=$(mktemp -d /tmp/watn-completions.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --name "Each supported shell exposes the authoritative command tree"
+root=$(mktemp -d /tmp/watn-completions.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --name "completion exposes the authoritative command tree"
 ```
 
 The configured wrappers remain the full verification commands and execute both
@@ -189,6 +195,6 @@ permanent and active-change feature trees through the Cucumber runner.
 ## Implementation Order
 
 1. Add the dependency, shell selector, and early completion branch.
-2. Implement regular Zsh/Fish/unsupported/help/no-config scenarios.
+2. Implement regular Elvish/Fish/PowerShell/Zsh/unsupported/help/no-config scenarios.
 3. Implement the Bash E2E scenario and prove the wrapper count subset.
 4. Run full verification, coverage, hygiene checks, review, and archive.

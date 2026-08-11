@@ -32,7 +32,7 @@ graph TB
 | Partner / User | Input to system | Output from system |
 |---|---|---|
 | Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); page navigation and editing in the shared `watn setup` wizard; `watn models` model-page entry | Incrementally flushed shell command content on stdout, then final metadata on stderr; buffered reasoning on stderr only after successful completion with `-v`; five-page SetupWizard with visible tabs, cursor, provider credential choice, model tables, and save/discard prompt; saved provider/tier setup; actionable non-TTY setup guidance; or confirmation prompt |
-| Shell user / completion caller | `watn completions <SHELL>` with one of `bash`, `zsh`, or `fish` | The selected shell's completion script on stdout only; the caller installs or sources it |
+| Shell user / completion caller | `watn completions <SHELL>` with one of `bash`, `elvish`, `fish`, `powershell`, or `zsh` | The selected shell's completion script on stdout only; the caller installs or sources it |
 | LLM provider | API key, endpoint URL (config) | HTTP POST to `/v1/chat/completions`; SSE must end with `[DONE]` for success |
 | LiteLLM (optional) | Endpoint URL (config), optional credential, search query (typed by user) | HTTP GET to `/models`, paginated `/models`, and HTTP GET to `/models?search=...`; never receives chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
@@ -59,5 +59,5 @@ graph TB
 | Stdin | TTY or pipe | TTY detection and question/input read |
 | Stdout | Raw text or ANSI-rendered | Write |
 | Confirmation prompt | stdin line read | Read
-| Completion selector | Lowercase shell value on the CLI; closed parser contract | Read; invalid values produce a non-zero argument error containing `unsupported shell '<value>'; choose bash, zsh, or fish` |
+| Completion selector | Lowercase shell value on the CLI; closed parser contract | Read; invalid values produce a non-zero argument error containing `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` |
 | Completion output | Generated Bash, Zsh, or Fish script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |

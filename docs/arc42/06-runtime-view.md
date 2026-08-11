@@ -82,16 +82,18 @@ The regular no-config scenario snapshots the absent isolated
 `$XDG_CONFIG_HOME/watn/config.toml` and a provider-request sentinel at zero hits
 before invocation. The file remains absent, no file is written in that isolated
 config directory, and the sentinel remains at zero afterward. The generated
-script contains the complete root option list, the `question` positional
-argument, all root subcommands, and selector values `bash`, `zsh`, and `fish`.
+script contains the complete root option list, preserves the `question`
+positional acceptance from `Cli::command()` even when a renderer does not emit
+a literal placeholder, all root subcommands, and selector values `bash`,
+`elvish`, `fish`, `powershell`, and `zsh` where the renderer exposes them.
 
 ## Scenario: Completion selector error and help
 
-`watn completions powershell` stops in argument parsing with a non-zero status
+`watn completions nushell` stops in argument parsing with a non-zero status
 and stderr containing the literal
-`unsupported shell 'powershell'; choose bash, zsh, or fish`. It does not enter
+`unsupported shell 'nushell'; choose bash, elvish, fish, powershell, or zsh`. It does not enter
 the generation or configuration path. `watn completions --help` exits 0 and
-prints `Usage: watn completions <SHELL>`, the three supported values, and the
+prints `Usage: watn completions <SHELL>`, the five supported values, and the
 instruction that the generated script is written to stdout for the caller to
 install or source; stderr remains empty.
 

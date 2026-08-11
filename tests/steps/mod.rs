@@ -478,6 +478,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 }
 
 pub(crate) fn apply_env(world: &crate::WatnWorld, cmd: &mut std::process::Command) {
+    if let Some(profile) = std::env::var_os("LLVM_PROFILE_FILE") {
+        cmd.env("LLVM_PROFILE_FILE", profile);
+    }
     cmd.env_remove("WATN_OPENAI_API_KEY");
     cmd.env_remove("WATN_PROVIDER");
     cmd.env_remove("WATN_MODEL");

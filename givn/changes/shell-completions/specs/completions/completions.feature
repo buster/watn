@@ -32,6 +32,12 @@ Feature: Shell completion generation
       | models |
       | provider |
       | completions |
+    And stdout should contain the closed shell-selector value suggestions:
+      | bash |
+      | elvish |
+      | fish |
+      | powershell |
+      | zsh |
     And stdout should contain only the completion script
     And stderr should be empty
     And a second bash generation should be byte-for-byte identical
@@ -43,11 +49,16 @@ Feature: Shell completion generation
     Then the exit status should be 0
     And stdout should contain Zsh completion syntax
     And stdout should contain the authoritative root options:
+      | -1 |
       | --small |
+      | -2 |
       | --normal |
+      | -3 |
       | --thinking |
       | --model |
+      | -x |
       | --execute |
+      | -v |
       | --verbose |
       | --provider |
       | --help |
@@ -68,11 +79,16 @@ Feature: Shell completion generation
     Then the exit status should be 0
     And stdout should contain Fish completion syntax
     And stdout should contain the authoritative root options:
+      | -1 |
       | --small |
+      | -2 |
       | --normal |
+      | -3 |
       | --thinking |
       | --model |
+      | -x |
       | --execute |
+      | -v |
       | --verbose |
       | --provider |
       | --help |
@@ -87,13 +103,73 @@ Feature: Shell completion generation
     And a second fish generation should be byte-for-byte identical
     And the generated script should be accepted by Fish
 
+  @givn.added
+  Scenario: Elvish completion exposes the authoritative command tree
+    When I run `watn completions elvish` as a regular subprocess
+    Then the exit status should be 0
+    And stdout should contain Elvish completion syntax
+    And stdout should contain the authoritative root options:
+      | -1 |
+      | --small |
+      | -2 |
+      | --normal |
+      | -3 |
+      | --thinking |
+      | --model |
+      | -x |
+      | --execute |
+      | -v |
+      | --verbose |
+      | --provider |
+      | --help |
+      | --version |
+    And stdout should contain the authoritative root subcommands:
+      | setup |
+      | models |
+      | provider |
+      | completions |
+    And stdout should contain only the completion script
+    And stderr should be empty
+    And a second elvish generation should be byte-for-byte identical
+    And the generated script should be accepted by Elvish
+
+  @givn.added
+  Scenario: PowerShell completion exposes the authoritative command tree
+    When I run `watn completions powershell` as a regular subprocess
+    Then the exit status should be 0
+    And stdout should contain PowerShell completion syntax
+    And stdout should contain the authoritative root options:
+      | -1 |
+      | --small |
+      | -2 |
+      | --normal |
+      | -3 |
+      | --thinking |
+      | --model |
+      | -x |
+      | --execute |
+      | -v |
+      | --verbose |
+      | --provider |
+      | --help |
+      | --version |
+    And stdout should contain the authoritative root subcommands:
+      | setup |
+      | models |
+      | provider |
+      | completions |
+    And stdout should contain only the completion script
+    And stderr should be empty
+    And a second powershell generation should be byte-for-byte identical
+    And the generated script should be accepted by PowerShell
+
   @givn.added @e2e
   Scenario: Built Bash completion generation emits the current command tree
     When I run the built `watn completions bash` command
     Then the exit status should be 0
     And stdout should contain Bash completion syntax
     And stdout should contain the authoritative root options and subcommands
-    And stdout should contain bash, zsh, and fish value suggestions
+    And stdout should contain bash, elvish, fish, powershell, and zsh value suggestions
     And stdout should contain only the completion script
     And stderr should be empty
     And a second built Bash generation should be byte-for-byte identical
@@ -101,11 +177,11 @@ Feature: Shell completion generation
 
   @givn.added
   Scenario: Unsupported shell returns actionable guidance
-    When I run `watn completions powershell` as a regular subprocess
+    When I run `watn completions nushell` as a regular subprocess
     Then the exit status should be non-zero
     And stderr should contain the exact unsupported-shell contract:
-      | unsupported shell 'powershell'; choose bash, zsh, or fish |
-    And stderr should identify "powershell" as the rejected value
+      | unsupported shell 'nushell'; choose bash, elvish, fish, powershell, or zsh |
+    And stderr should identify "nushell" as the rejected value
 
   @givn.added
   Scenario: Completion generation does not load configuration or contact a provider
@@ -128,7 +204,15 @@ Feature: Shell completion generation
     Then the exit status should be 0
     And completion help stdout should contain "Usage:"
     And completion help stdout should contain "completions <SHELL>"
-    And stdout should mention bash, zsh, and fish
+    And stdout should mention bash, elvish, fish, powershell, and zsh
     And stdout should explain that the generated script is written to stdout for the caller to install or source
-    And stdout should document that only bash, zsh, and fish are supported shell values
+    And stdout should document that only bash, elvish, fish, powershell, and zsh are supported shell values
     And stderr should be empty
+
+  @givn.added
+  Scenario: The reserved completion token can remain question text after `--`
+    Given a configured default provider "openai"
+    When I run `watn -- completions find files` as a regular subprocess
+    Then the exit status should be 0
+    And the output should contain "find"
+    And stdout should not contain Bash completion syntax

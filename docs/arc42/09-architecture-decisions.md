@@ -92,11 +92,11 @@ static artifact.
 
 ADR-0017 chooses a local closed `CompletionShell` selector and renders from
 `Cli::command()` rather than exposing `clap_complete::Shell` or maintaining a
-second command tree. Bash, Zsh, and Fish are the only accepted lowercase values.
+second command tree. Bash, Elvish, Fish, PowerShell, and Zsh are the only accepted lowercase values.
 Generation happens before configuration and provider setup, writes only
 deterministic script bytes to stdout, and leaves stderr and the filesystem
 unchanged. The parser error keeps the literal contract
-`unsupported shell '<value>'; choose bash, zsh, or fish`. The `completions`
+`unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`. The `completions`
 subcommand intentionally reserves that unquoted first token, so question text
 beginning with it must be quoted or passed after `--`.
 

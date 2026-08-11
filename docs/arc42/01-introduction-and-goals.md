@@ -27,7 +27,7 @@ Top requirements:
 18. Only an SSE stream terminated by `[DONE]` succeeds; truncated or failed streams preserve visible output and never execute it
 19. Command-output write failures must retain the visible prefix, clean up progress, and use the existing I/O status without success metadata
 20. `watn --version` must report the Cargo package version, and release documentation must match verified target runtime requirements
-21. `watn completions <SHELL>` must generate the complete current command tree for the closed shell set `bash`, `zsh`, and `fish`, using stdout only without config/provider side effects
+21. `watn completions <SHELL>` must generate the complete current command tree for the closed shell set `bash`, `elvish`, `fish`, `powershell`, and `zsh`, using stdout only without config/provider side effects
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 

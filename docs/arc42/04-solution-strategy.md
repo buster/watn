@@ -22,8 +22,8 @@
 - Credential values retain their persisted source representation and are expanded only at the outbound discovery or chat request boundary; a confirmed provider draft is saved before its first catalog request
 - A shared reasoning policy validates closed-set strengths, honors model default-enabled and mandatory metadata, and preserves existing valid reasoning when no replacement exists
 - Search workers carry generations and can update the picker only when current; the test twin coordinates overlapping workers and joins them before exit
-- Generate shell completions from `Cli::command()` through a local closed `CompletionShell` selector; render only `bash`, `zsh`, or `fish` to stdout before configuration or provider setup
-- Keep the completion parser contract literal: unsupported values return `unsupported shell '<value>'; choose bash, zsh, or fish`; the `completions` token is intentionally reserved as a subcommand
+- Generate shell completions from `Cli::command()` through a local closed `CompletionShell` selector; render only `bash`, `elvish`, `fish`, `powershell`, or `zsh` to stdout before configuration or provider setup
+- Keep the completion parser contract literal: unsupported values return `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`; the `completions` token is intentionally reserved as a subcommand
 
 ## Technology choices
 

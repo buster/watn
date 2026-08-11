@@ -42,8 +42,8 @@
 | R-036 | A release artifact's target-dependent shared-library requirements are hidden by a universal static-deployment claim | Medium | High | Build the exact release target, inspect it with `file` and `ldd` on Linux or `otool -L` on macOS, and document only the verified target requirements |
 | R-037 | The CLI version can drift from the Cargo package version used to build the release artifact | Medium | Medium | Derive the CLI version from package metadata and assert the exact package version through the real release-binary scenario |
 | R-038 | Generated completion output can omit or misrepresent a new option, positional argument, subcommand, or value if its metadata source diverges from the CLI parser | Medium | High | Render only from `Cli::command()`, enumerate the complete root tree and selector values in feature scenarios, and avoid a separately maintained command list |
-| R-039 | Exposing the completion library's broader shell enum could silently expand the supported CLI contract or change the unsupported-value error | Medium | High | Keep a local closed `CompletionShell` selector, accept only `bash`, `zsh`, and `fish`, and assert the literal `unsupported shell '<value>'; choose bash, zsh, or fish` contract |
-| R-040 | A generated script may be syntactically invalid for the selected shell or the shell executable may be unavailable in the verification environment | Medium | Medium | Run the corresponding Bash, Zsh, and Fish parser checks; report a missing executable as an explicit environment failure rather than a false syntax pass |
+| R-039 | Exposing the completion library's shell enum directly could change the stable error contract or version-dependent value surface | Medium | High | Keep a local closed `CompletionShell` selector aligned explicitly to the pinned native set `bash`, `elvish`, `fish`, `powershell`, and `zsh`, and assert the literal `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` contract |
+| R-040 | A generated script may be syntactically invalid for the selected shell or the shell executable may be unavailable in the verification environment | Medium | Medium | Run the corresponding Bash, Elvish, Fish, PowerShell, and Zsh parser checks; report a missing executable as an explicit environment limitation rather than a false syntax pass |
 | R-041 | Completion generation could accidentally load config, auto-create the XDG file, contact a provider, write shell configuration, or contaminate stdout/stderr | Low | High | Dispatch before configuration and provider setup; require stdout-only success, empty stderr, an absent-config before/after snapshot, no isolated-directory writes, and a zero-hit provider sentinel |
 | R-042 | Completion renderer or command traversal order could make repeated output differ byte-for-byte | Medium | Medium | Generate twice from the same binary and selector, compare raw stdout bytes, and keep the command definition and renderer mapping deterministic |
 | R-043 | Reserving `completions` can surprise users whose unquoted question begins with that token | Medium | Medium | Document the intentional reservation and require a quoted question or `--` separator; keep the consequence in the proposal, help contract, feature, and Arc42 docs |
@@ -136,15 +136,16 @@ The following consequences are accepted and mitigated explicitly:
 The completion-generation decision has these durable consequences:
 
 - Authoritative metadata: generated output follows `Cli::command()`, while the
-  complete root tree and selector values are asserted for every supported shell;
-  R-038 covers accidental drift.
-- Closed selector: only lowercase `bash`, `zsh`, and `fish` are product values;
+  complete root tree is asserted for every supported shell and selector values
+  are asserted where the renderer emits positional suggestions; R-038 covers
+  accidental drift.
+- Closed selector: only lowercase `bash`, `elvish`, `fish`, `powershell`, and `zsh` are product values;
   R-039 covers leakage of the library's broader enum and the literal parser
   contract.
 - Renderer dependency: adding a shell requires selector, mapping, help, and
   feature changes; renderer bytes remain a dependency-sensitive surface and are
   checked by R-040 and R-042.
-- Shell validation: Bash, Zsh, and Fish parser checks expose syntax or local
+- Shell validation: Bash, Elvish, Fish, PowerShell, and Zsh parser checks expose syntax or local
   executable availability instead of treating generated text as inherently
   valid.
 - Side-effect boundary: early dispatch and the no-config/sentinel snapshots

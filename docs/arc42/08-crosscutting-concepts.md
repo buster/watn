@@ -36,10 +36,11 @@ does not fall through to another environment variable.
 ## Completion generation
 
 `watn completions <SHELL>` uses a local closed `CompletionShell` selector. The
-only accepted values are the lowercase literals `bash`, `zsh`, and `fish`; the
+only accepted values are the lowercase literals `bash`, `elvish`, `fish`,
+`powershell`, and `zsh`; the
 CLI does not expose the broader `clap_complete::Shell` selector. The parser's
 stable literal error contract is
-`unsupported shell '<value>'; choose bash, zsh, or fish`, embedded in the
+`unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`, embedded in the
 normal non-zero CLI argument error for an unsupported value.
 
 Successful generation is an output boundary distinct from normal command
@@ -56,7 +57,7 @@ The no-config verification snapshots the absent isolated
 `$XDG_CONFIG_HOME/watn/config.toml` and a provider-request sentinel with zero
 hits before execution. Both observations remain unchanged after successful
 generation. Help is also explicit: `watn completions --help` exits 0, includes
-`Usage: watn completions <SHELL>`, names `bash`, `zsh`, and `fish`, and explains
+`Usage: watn completions <SHELL>`, names `bash`, `elvish`, `fish`, `powershell`, and `zsh`, and explains
 that stdout carries the script for the caller to install or source.
 
 The `completions` subcommand reserves an unquoted first token of that name.

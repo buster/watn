@@ -56,6 +56,37 @@
   ```
 - [x] COMMIT: `341671d` - `feat(shell-completions): Each supported shell exposes the authoritative command tree`
 
+## Scenario: Every native clap_complete shell exposes the authoritative command tree
+
+- [ ] RED: Bind explicit stubs for the new Elvish and PowerShell scenarios and
+  target only those scenarios. Expected non-zero result. Evidence:
+  ```text
+  The targeted runner matched the Elvish and PowerShell scenarios; both
+  `regular_completion` stubs panicked with `not implemented`. The summary was
+  1 feature, 2 scenarios (2 failed), and 2 steps (2 failed); Cargo returned
+  `error: test failed`.
+  ```
+- [ ] GREEN: Extend the local selector and renderer mapping to every native
+  `clap_complete 4.6.9` shell: Bash, Elvish, Fish, PowerShell, and Zsh. Assert
+  the new Elvish and PowerShell scripts, deterministic repeated output, root
+  tree, stdout/stderr contracts, and parser acceptance when the executables
+  are available. Production files: [list]. Test files: [list]. Targeted result:
+  ```text
+  Production file: `src/main.rs`. Test files:
+  `tests/steps/shell_completions_steps.rs` and
+  `givn/changes/shell-completions/specs/completions/completions.feature`.
+  The targeted runner reported 1 feature, 5 scenarios (5 passed), and 46 steps
+  (46 passed). Elvish, PowerShell, and Zsh parser availability limitations were
+  reported explicitly where executables were absent.
+  ```
+- [ ] REFACTOR: Keep the five-shell mapping and shell-parser probing centralized
+  without duplicating the command tree. Targeted rerun:
+  ```text
+  `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
+  5 scenarios (5 passed), and 46 steps (46 passed).
+  ```
+- [ ] COMMIT: `[hash]` - `feat(shell-completions): Every native clap_complete shell exposes the authoritative command tree`
+
 ## Scenario: Unsupported shell returns actionable guidance
 
 - [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
@@ -66,7 +97,7 @@
   step (1 failed). Cargo returned `error: test failed`.
   ```
 - [x] GREEN: Implement the closed selector error containing the rejected value,
-  literal `unsupported shell`, and supported values bash/zsh/fish. Assert
+  literal `unsupported shell`, and supported values bash/elvish/fish/powershell/zsh. Assert
   non-zero status and stderr contract. Production files: [list]. Test files:
   [list]. Targeted result:
   ```text
@@ -138,6 +169,35 @@
   ```
 - [x] COMMIT: `9b787cf` - `docs(shell-completions): Completion help documents the supported selector and output contract`
 
+## Scenario: The reserved completion token can remain question text after `--`
+
+- [ ] RED: Bind the reserved-token subprocess step as an explicit stub and
+  target only this scenario. Expected non-zero result. Evidence:
+  ```text
+  The targeted runner matched `reserved_completion_token`; the explicit stub
+  panicked with `not implemented`. The summary was 1 feature, 1 scenario (1
+  failed), and 2 steps (1 passed, 1 failed); Cargo returned `error: test failed`.
+  ```
+- [ ] GREEN: Assert that `watn -- completions find files` reaches the normal
+  question path, returns successfully through the configured test provider,
+  emits the generated answer, and does not emit Bash completion syntax.
+  Production files: none beyond the early-dispatch implementation. Test files:
+  [list]. Targeted result:
+  ```text
+  Production files: none beyond the early-dispatch implementation. Test files:
+  `tests/steps/shell_completions_steps.rs` and
+  `givn/changes/shell-completions/specs/completions/completions.feature`.
+  The targeted runner reported 1 feature, 1 scenario (1 passed), and 5 steps
+  (5 passed).
+  ```
+- [ ] REFACTOR: Keep the reserved-token invocation isolated from completion
+  generation fixtures. Targeted rerun:
+  ```text
+  `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
+  1 scenario (1 passed), and 5 steps (5 passed).
+  ```
+- [ ] COMMIT: `[hash]` - `feat(shell-completions): The reserved completion token can remain question text after --`
+
 ## E2E Setup
 
 - [x] Confirm the local environment needs no external service, register the
@@ -152,33 +212,24 @@
 
 ## Scenario: Built Bash completion generation emits the current command tree
 
-- [x] RED: Remove only this scenario's `@wip`, bind the E2E stub, and target it
+- [ ] RED: Remove only this scenario's `@wip`, bind the E2E stub, and target it
   through `./run-tests.sh --e2e`/the single-scenario equivalent. Expected
   non-zero result. Evidence:
   ```text
-  The single-scenario E2E-equivalent runner matched
-  `tests/steps/shell_completions_e2e_steps.rs:6`, where the explicit stub
-  panicked with `not implemented`. The summary was 1 feature, 1 scenario (1
-  failed), and 1 step (1 failed); Cargo returned `error: test failed`.
+  [targeted E2E output]
   ```
-- [x] GREEN: Invoke the explicit built binary through a real subprocess and
-  assert Bash script output, exact root tree, selector suggestions, stdout-only
+- [ ] GREEN: Invoke the explicit built binary through a real subprocess and
+  assert Bash script output, exact root tree, all five selector suggestions, stdout-only
   output, deterministic second generation, Bash parser acceptance, and status
   0. Production files: none beyond the regular implementation. Test files:
   [list]. Targeted result:
   ```text
-  Production files: none beyond the regular implementation.
-  Test files: `tests/steps/shell_completions_e2e_steps.rs` and
-  `tests/steps/shell_completions_steps.rs`.
-  The targeted runner reported 1 feature, 1 scenario (1 passed), and 9 steps
-  (9 passed).
+  [targeted E2E output]
   ```
-- [x] REFACTOR: Keep the E2E output assertions primary and distinct from the
+- [ ] REFACTOR: Keep the E2E output assertions primary and distinct from the
   regular shell variants. Targeted rerun:
   ```text
-  `cargo fmt --all` passed; the selector assertion was moved into the dedicated
-  E2E module and the targeted runner reported 1 feature, 1 scenario (1 passed),
-  and 9 steps (9 passed).
+  [targeted E2E output]
   ```
 - [ ] COMMIT: `[hash]` - `test(e2e): Built Bash completion generation emits the current command tree`
 
@@ -187,18 +238,18 @@
 - [ ] Remove all completed scenario `@wip` tags and run
   `givn lint --change shell-completions`.
   ```text
-  Result: [output]
+  Result: [output after scope expansion]
   ```
 - [ ] Run `./run-tests.sh` and record the full scenario/step count.
   ```text
-  Result: [output]
+  Result: [output after scope expansion]
   ```
 - [ ] Run `./run-tests.sh --e2e` and prove the count is strictly smaller.
   ```text
-  Result: [output]
+  Result: [output after scope expansion]
   ```
 - [ ] Run formatting, compilation, clippy, explicit-binary all-target tests,
   docs, release build, coverage measurement/merge, and `git diff --check`.
   ```text
-  Result: [output]
+  Result: [output after scope expansion]
   ```

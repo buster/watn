@@ -29,10 +29,10 @@ incrementally, reasoning is buffered and printed only after successful
 completion under `-v`, and `[DONE]` is mandatory; truncated or failed streams
 preserve visible prefixes but do not print success metadata or execute.
 The CLI also generates completions with `watn completions <SHELL>` for the closed
-set `bash`, `zsh`, and `fish`. Scripts come from the authoritative Clap command
+set `bash`, `elvish`, `fish`, `powershell`, and `zsh`. Scripts come from the authoritative Clap command
 definition, are deterministic, are written only to stdout, and bypass config
 initialisation and provider requests. Unsupported shell values use the literal
-`unsupported shell '<value>'; choose bash, zsh, or fish` parser contract.
+`unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` parser contract.
 
 ## Archive Status
 

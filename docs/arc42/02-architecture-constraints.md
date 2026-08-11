@@ -20,7 +20,7 @@
 | Direct config writes enforce Unix mode `0600` | Every template, provider, and model save uses the existing direct-write mechanism and repairs file permissions after writing; atomic rename is not promised |
 | Test transport is debug-only | The endpoint override branch is compiled only under `cfg(all(feature = "test-support", debug_assertions))`; every release-profile build, including one with `test-support`, uses the configured endpoint branch |
 | Release evidence is target-specific | The release artifact is inspected with `file` and `ldd` on Linux or `otool -L` on macOS; a static artifact and universal shared-library set are not assumed |
-| Completion selector is closed | `watn completions <SHELL>` accepts only the lowercase values `bash`, `zsh`, and `fish`; the CLI does not expose the broader `clap_complete::Shell` value set |
+| Completion selector is closed | `watn completions <SHELL>` accepts only the lowercase values `bash`, `elvish`, `fish`, `powershell`, and `zsh`; the CLI does not expose the broader `clap_complete::Shell` value type |
 | Completion metadata is authoritative | Generated scripts derive from the same Clap command definition used for parsing and help; separately maintained command lists are not permitted |
 | Completion generation is side-effect free | Successful generation writes only the selected script to stdout, writes nothing to stderr, does not load or create config, contacts no provider, and changes no shell configuration |
 

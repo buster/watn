@@ -12,11 +12,16 @@ fn run_built_bash(world: &mut WatnWorld) {
 fn e2e_root_tree(world: &mut WatnWorld) {
     let output = world.output.as_deref().expect("completion stdout");
     for value in [
+        "-1",
         "--small",
+        "-2",
         "--normal",
+        "-3",
         "--thinking",
         "--model",
+        "-x",
         "--execute",
+        "-v",
         "--verbose",
         "--provider",
         "--set-small",
@@ -36,10 +41,10 @@ fn e2e_root_tree(world: &mut WatnWorld) {
     }
 }
 
-#[then("stdout should contain bash, zsh, and fish value suggestions")]
+#[then("stdout should contain bash, elvish, fish, powershell, and zsh value suggestions")]
 fn selector_suggestions(world: &mut WatnWorld) {
     let output = world.output.as_deref().expect("completion stdout");
-    for shell in ["bash", "zsh", "fish"] {
+    for shell in ["bash", "elvish", "fish", "powershell", "zsh"] {
         assert!(output.contains(shell), "missing shell suggestion {shell}");
     }
 }
