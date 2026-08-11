@@ -9,13 +9,14 @@ repository state, completed decisions, and remaining implementation work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: clean after merging origin/main; interactive-shell-shortcut archived in `fe8b0f9`
+- Worktree: clean on `main` after reviewing and pushing `highlight-active-setup-input`
 - Remote/upstream: `origin` configured
-- Active givn change: none
+- Active givn change: `highlight-active-setup-input` is ready to archive; run
+  `givn archive --change highlight-active-setup-input` to archive it
 - Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
 - Archived release work: `release-truth-and-repository-cleanup`, `shell-completions`
 - Archived setup work: `interactive-shell-shortcut`
-- Current package version: `0.1.2` in `Cargo.toml`
+- Current package version: `0.1.4` in `Cargo.toml`
 - Current CLI version: read from `CARGO_PKG_VERSION` in `src/main.rs`
 
 Do not amend existing commits. Do not push unless explicitly requested.
@@ -75,35 +76,23 @@ through a reviewed proposal and specification:
 - `shell-completions` is implemented, verified, and archived.
 - `interactive-shell-shortcut` is implemented, verified, and archived in
   commit `fe8b0f9`.
+- `highlight-active-setup-input` is implemented, reviewed, and pushed. Its
+  four PTY scenarios cover URL, credential, model/reasoning, and shortcut
+  focus borders while preserving inactive styling.
 - The shortcut supports optional setup selection for Bash, Zsh, and Fish,
   marked atomic startup-file replacement, idempotent installation, independent
   target reporting, native generated widgets, and non-evaluating
   `command watn -- "$question"` invocation.
-- Shortcut verification passed 93 regular scenarios and 61 E2E scenarios,
-  with 543 regular steps and 407 E2E steps.
-- Merged coverage is 90.77% line coverage (`8115/8940`); branch coverage is
+- The current verification passed 95 regular scenarios and 65 E2E scenarios,
+  with 553 regular steps and 454 E2E steps.
+- Merged coverage is 90.22% line coverage (`8688/9630`); branch coverage is
   unavailable (`0/0`).
 - `givn lint`, formatting, compilation, clippy, documentation tests, release
   build, coverage measurement/merge, and review passed.
 
 ## Remaining Work
 
-### 2. Highlight Active Setup Input
-
-Improve the setup dialog's visual indication of where user input is currently
-being entered. The border or box surrounding the active input location shall be
-green; inactive input locations retain their existing styling.
-
-Create this as a separate givn change:
-
-```text
-givn new highlight-active-setup-input
-```
-
-Use the full lifecycle and scenario-by-scenario TDD workflow. Preserve the
-existing setup layout, keyboard behavior, and visible cursor contract.
-
-### 3. Responsive Setup Model Filtering
+### Responsive Setup Model Filtering
 
 Improve the setup dialog's model filter so the typed query remains visible while
 the user is entering it. Typing must remain responsive while model searches run
@@ -111,26 +100,45 @@ in the background, and filter updates shall be debounced by 200 ms. The model
 list shall update continuously as the debounced query changes, without blocking
 further input on an in-flight search.
 
+The source currently has a 200 ms search delay and a generation guard. It still
+launches remote search for every non-empty query, loads only the first catalog
+page, and does not choose client-side filtering when the complete catalog fits
+in one request. Search worker handles are not retained and joined when the
+wizard exits; the current cleanup steps only assert state or process exit.
+
 When the complete model list fits in one catalog request, load the list once and
 filter it client-side instead of making server-side search requests. Use
 server-side filtering when the catalog requires multiple requests or otherwise
 cannot be loaded in one request. Results from an older in-flight search must not
-replace the results for a newer query.
+replace the results for a newer query, and all worker lifecycle paths must be
+joined or otherwise cleaned up before the wizard exits.
 
-Create this as a separate givn change after the active-input styling change:
+Create this as the next separate givn change:
 
 ```text
 givn new responsive-setup-model-filtering
 ```
 
-The existing generation guard and worker cleanup are part of the baseline. Do
-not regress the current newest-result-wins behavior.
+The existing generation guard is part of the baseline. Worker lifecycle cleanup
+is still open work. Do not regress the current newest-result-wins behavior.
 
-### 8. Preserve Ctrl-W Requests In Shell Config
+### Refresh Coverage Summary
+
+The merged coverage report is current at 90.22% (`8688/9630` lines, branch
+coverage `0/0`), but `README.md` still reports the previous 90.77% (`8115/8940`)
+figures. Refresh the README badge and coverage block from one verified merged
+report, keeping one overall line-count pair and one branch-count pair.
+
+### Preserve Ctrl-W Requests In Shell Config
 
 Extend the shell shortcut so the request that triggered Ctrl-W remains visible
 after command generation. This must be implemented entirely in the generated Bash,
 Zsh, and Fish configuration; `watn` itself should not change.
+
+The current generated widgets replace `READLINE_LINE`, `BUFFER`, or the Fish
+command line with the generated result and do not retain the original request.
+Existing tests cover replacement, failure preservation, quoting, and no
+evaluation, but not request preservation.
 
 Investigate whether the widget can preserve the existing rendered shell line and
 place the generated command on a new editable line without executing either line
