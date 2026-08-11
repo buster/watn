@@ -9,7 +9,7 @@ repository state, completed decisions, and remaining implementation work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: archive commit complete; this plan update is pending
+- Worktree: clean after merging origin/main; interactive-shell-shortcut archived in `fe8b0f9`
 - Remote/upstream: `origin` configured
 - Active givn change: none
 - Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
@@ -125,6 +125,47 @@ givn new responsive-setup-model-filtering
 
 The existing generation guard and worker cleanup are part of the baseline. Do
 not regress the current newest-result-wins behavior.
+
+### 8. Preserve Ctrl-W Requests In Shell Config
+
+Extend the shell shortcut so the request that triggered Ctrl-W remains visible
+after command generation. This must be implemented entirely in the generated Bash,
+Zsh, and Fish configuration; `watn` itself should not change.
+
+Investigate whether the widget can preserve the existing rendered shell line and
+place the generated command on a new editable line without executing either line
+during replacement. Account for shell-specific line-editor redraw behavior,
+wrapped input, multiline input, terminal resizing, and stderr output.
+
+At minimum, implement the portable shell-buffer fallback: replace the current
+buffer with the original request as a shell comment, followed by a newline and
+the generated command:
+
+```text
+# original request
+generated command
+```
+
+Pressing Enter must ignore the comment and execute only the generated command.
+Flatten or otherwise safely represent embedded newlines and control characters in
+the original request so it remains one comment line. Preserve the original plain
+buffer when `watn` fails or returns empty output. Do not evaluate the generated
+command during replacement.
+
+Do not promise shell-history persistence unless it is verified separately for
+Bash, Zsh, and Fish. The required behavior is that the request remains visible in
+the editable buffer and terminal transcript after Ctrl-W succeeds.
+
+Required tests:
+
+- Successful generation leaves the original request visible as a comment.
+- Pressing Enter executes the generated command but not the comment.
+- Requests containing spaces, shell metacharacters, and embedded newlines remain
+  comments.
+- Failed or empty generation preserves the original buffer.
+- The generated command remains editable and is never executed automatically.
+- Bash, Zsh, and Fish redraw the resulting multiline buffer correctly.
+- The behavior is tested with wrapped input and visible stderr output.
 
 ## Handoff Rules
 
