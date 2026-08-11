@@ -102,22 +102,19 @@ Feature: Interactive shell shortcut for watn
     And the error should identify the write failure reason
     And the Bash target should remain a directory
 
-  @givn.added @wip
-  Scenario Outline: Invalid marker layouts fail before any target write
-    Given a Bash configuration with <malformed marker layout>
-    And a byte-for-byte snapshot of the Bash target
-    When I install the Bash shell shortcut
+  @givn.added
+  Scenario: Invalid marker layouts fail before any target write
+    Given isolated Bash targets with these malformed marker layouts:
+      | layout                                             |
+      | two complete watn shell shortcut blocks            |
+      | two opening markers and one closing marker         |
+      | one opening marker and two closing markers         |
+      | an opening marker without a closing marker         |
+      | a closing marker without an opening marker         |
+      | a closing marker before an opening marker          |
+    When I install the Bash shell shortcut for every malformed layout
     Then setup should report malformed watn shell shortcut markers
-    And the Bash target should match its snapshot byte-for-byte
-
-    Examples:
-      | malformed marker layout                              |
-      | two complete watn shell shortcut blocks               |
-      | two opening markers and one closing marker            |
-      | one opening marker and two closing markers            |
-      | an opening marker without a closing marker            |
-      | a closing marker without an opening marker            |
-      | a closing marker before an opening marker             |
+    And every malformed Bash target should match its snapshot byte-for-byte
 
   @givn.added @wip
   Scenario: Generated shell blocks use the installed watn command and preserve shell syntax

@@ -239,28 +239,33 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 6 steps (6 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: 3c97a5a
   ```
 
 ## Scenario: Invalid marker layouts fail before any target write
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
-  targeted scenario outline. Evidence:
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+  targeted table scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:517`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: count exact markers, reject duplicate/unmatched/reversed layouts
+- [x] GREEN: count exact markers, reject duplicate/unmatched/reversed layouts
   before filesystem mutation, and preserve snapshots. Production files:
   `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 4 steps (4
+  passed)` across all six malformed marker rows; every target matched its
+  snapshot and reported malformed markers.
   ```
-- [ ] REFACTOR: rerun all examples in the targeted outline.
+- [x] REFACTOR: rerun the targeted table scenario.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 4 steps (4 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text

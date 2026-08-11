@@ -513,3 +513,87 @@ fn write_failure_reason(world: &mut WatnWorld) {
 fn bash_target_directory(world: &mut WatnWorld) {
     assert!(world.shortcut_targets.get("bash").unwrap().is_dir());
 }
+
+#[given("isolated Bash targets with these malformed marker layouts:")]
+fn malformed_bash_targets(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let table = &step.table().expect("malformed layout table").rows;
+    let open = watn::shell_shortcut::OPEN_MARKER;
+    let close = watn::shell_shortcut::CLOSE_MARKER;
+    let block = watn::shell_shortcut::Shell::Bash.generated_block();
+    for (index, row) in table.iter().enumerate() {
+        let layout = row.first().expect("malformed layout value");
+        if layout == "layout" {
+            continue;
+        }
+        let content = match layout.as_str() {
+            "two complete watn shell shortcut blocks" => format!("{block}{block}"),
+            "two opening markers and one closing marker" => {
+                format!("{open}\n{open}\n{close}\n")
+            }
+            "one opening marker and two closing markers" => {
+                format!("{open}\n{close}\n{close}\n")
+            }
+            "an opening marker without a closing marker" => format!("{open}\n"),
+            "a closing marker without an opening marker" => format!("{close}\n"),
+            "a closing marker before an opening marker" => format!("{close}\n{open}\n"),
+            other => panic!("unknown malformed layout: {other}"),
+        };
+        let target_home = temp.path().join(format!("layout-{index}"));
+        std::fs::create_dir_all(&target_home).expect("create malformed target home");
+        let path = target_home.join(".bashrc");
+        std::fs::write(&path, content).expect("write malformed Bash target");
+        world
+            .shortcut_targets
+            .insert(format!("bash-{index}"), path.clone());
+        world.shortcut_snapshots.insert(
+            format!("bash-{index}"),
+            std::fs::read(path).expect("snapshot target"),
+        );
+    }
+    world.temp_dir = Some(temp);
+}
+
+#[when("I install the Bash shell shortcut for every malformed layout")]
+fn install_malformed_bash_targets(world: &mut WatnWorld) {
+    let root = world.temp_dir.as_ref().expect("malformed target temp dir");
+    let mut messages = Vec::new();
+    for path in world.shortcut_targets.values() {
+        let environment = watn::shell_shortcut::ShellEnvironment {
+            home: root.path().to_path_buf(),
+            xdg_config_home: None,
+            shell: Some("/bin/bash".to_string()),
+        };
+        let target_home = path.parent().unwrap().to_path_buf();
+        let environment = watn::shell_shortcut::ShellEnvironment {
+            home: target_home,
+            ..environment
+        };
+        let report = watn::shell_shortcut::install_with_environment(
+            &[watn::shell_shortcut::Shell::Bash],
+            &environment,
+        );
+        messages.extend(report.results.into_iter().map(|result| result.message));
+    }
+    world.shortcut_error = Some(messages.join("; "));
+}
+
+#[then("setup should report malformed watn shell shortcut markers")]
+fn malformed_report(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_error
+        .as_deref()
+        .unwrap_or_default()
+        .contains("malformed watn shell shortcut markers"));
+}
+
+#[then("every malformed Bash target should match its snapshot byte-for-byte")]
+fn malformed_unchanged(world: &mut WatnWorld) {
+    for (key, path) in &world.shortcut_targets {
+        assert_eq!(
+            std::fs::read(path).expect("read malformed Bash target"),
+            *world.shortcut_snapshots.get(key).unwrap(),
+            "malformed target {key} changed"
+        );
+    }
+}
