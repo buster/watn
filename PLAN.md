@@ -9,13 +9,12 @@ repository state, completed decisions, and remaining implementation work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: clean on `main` after reviewing and pushing `highlight-active-setup-input`
+- Worktree: clean on `main` after archiving and pushing `highlight-active-setup-input`
 - Remote/upstream: `origin` configured
-- Active givn change: `highlight-active-setup-input` is ready to archive; run
-  `givn archive --change highlight-active-setup-input` to archive it
+- Active givn change: none
 - Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
 - Archived release work: `release-truth-and-repository-cleanup`, `shell-completions`
-- Archived setup work: `interactive-shell-shortcut`
+- Archived setup work: `interactive-shell-shortcut`, `highlight-active-setup-input`
 - Current package version: `0.1.4` in `Cargo.toml`
 - Current CLI version: read from `CARGO_PKG_VERSION` in `src/main.rs`
 
@@ -76,15 +75,15 @@ through a reviewed proposal and specification:
 - `shell-completions` is implemented, verified, and archived.
 - `interactive-shell-shortcut` is implemented, verified, and archived in
   commit `fe8b0f9`.
-- `highlight-active-setup-input` is implemented, reviewed, and pushed. Its
-  four PTY scenarios cover URL, credential, model/reasoning, and shortcut
-  focus borders while preserving inactive styling.
+- `highlight-active-setup-input` is implemented, reviewed, archived, and pushed
+  in commit `81bdf63`. Its four PTY scenarios cover URL, credential,
+  model/reasoning, and shortcut focus borders while preserving inactive styling.
 - The shortcut supports optional setup selection for Bash, Zsh, and Fish,
   marked atomic startup-file replacement, idempotent installation, independent
   target reporting, native generated widgets, and non-evaluating
   `command watn -- "$question"` invocation.
-- The current verification passed 95 regular scenarios and 65 E2E scenarios,
-  with 553 regular steps and 454 E2E steps.
+- The current verification passed 95 regular scenarios and 69 E2E scenarios,
+  with 553 regular steps and 494 E2E steps.
 - Merged coverage is 90.22% line coverage (`8688/9630`); branch coverage is
   unavailable (`0/0`).
 - `givn lint`, formatting, compilation, clippy, documentation tests, release
@@ -121,13 +120,6 @@ givn new responsive-setup-model-filtering
 
 The existing generation guard is part of the baseline. Worker lifecycle cleanup
 is still open work. Do not regress the current newest-result-wins behavior.
-
-### Refresh Coverage Summary
-
-The merged coverage report is current at 90.22% (`8688/9630` lines, branch
-coverage `0/0`), but `README.md` still reports the previous 90.77% (`8115/8940`)
-figures. Refresh the README badge and coverage block from one verified merged
-report, keeping one overall line-count pair and one branch-count pair.
 
 ### Preserve Ctrl-W Requests In Shell Config
 
