@@ -285,9 +285,115 @@ fn stale_suggestions_ignored(world: &mut WatnWorld, query: String) {
     assert!(!current.contains("gpt-result"));
 }
 
+#[given(
+    regex = r##"^a configured provider with an incomplete model catalog containing "([^"]+)", "([^"]+)", and "([^"]+)"$"##
+)]
+fn configured_incomplete_catalog(
+    world: &mut WatnWorld,
+    first: String,
+    second: String,
+    third: String,
+) {
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    let mut ids = vec![first, second, third];
+    ids.extend((0..47).map(|index| format!("model-{index}")));
+    let data = ids
+        .iter()
+        .map(|id| serde_json::json!({ "id": id }))
+        .collect::<Vec<_>>();
+    let catalog = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("page", "1")
+            .query_param("limit", "50");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({
+                "data": data,
+                "meta": {"has_more": true}
+            }));
+    });
+    let gpt = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("search", "gpt");
+        then.delay(Duration::from_millis(1000))
+            .status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": [{ "id": "gpt-result" }] }));
+    });
+    let o3 = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("search", "o3");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": [{ "id": "o3-pro" }] }));
+    });
+    world.models_mock_id = Some(catalog.id);
+    world.search_mock_ids = vec![gpt.id, o3.id];
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{base_url}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[given("the provider delays a model search response")]
+fn delayed_model_search(world: &mut WatnWorld) {
+    assert_eq!(world.search_mock_ids.len(), 2);
+}
+
+#[when("I start the setup wizard in a terminal")]
+fn start_filter_setup(world: &mut WatnWorld) {
+    let session = start_pty_session(world, &["models"]);
+    pty_wait_for_label(&session, "Small Model");
+    world.pty_session = Some(session);
+}
+
+#[when(regex = r##"^I replace the filter with "([^"]+)" before the delayed response arrives$"##)]
+fn replace_delayed_filter(world: &mut WatnWorld, query: String) {
+    assert_eq!(query, "o3");
+    std::thread::sleep(Duration::from_millis(300));
+    let mut session = world.pty_session.take().expect("filter PTY session");
+    pty_write(&mut session, "\x7f\x7f\x7f");
+    pty_write(&mut session, &query);
+    world.pty_session = Some(session);
+}
+
+#[then(regex = r##"^the terminal should keep showing the current filter "([^"]+)"$"##)]
+fn terminal_filter_visible(world: &mut WatnWorld, query: String) {
+    let current = wait_for_current_render(world, &format!("Filter: {query}"));
+    assert!(current.contains(&format!("Filter: {query}")));
+}
+
+#[then(regex = r##"^the terminal should show the matching "([^"]+)" suggestion$"##)]
+fn terminal_suggestion_visible(world: &mut WatnWorld, model: String) {
+    let current = wait_for_screen(world, &["Filter: o3", model.as_str()]);
+    assert!(current.contains(&model), "missing {model:?}: {current:?}");
+}
+
+#[when(regex = r##"^I replace the filter with "([^"]+)"$"##)]
+fn replace_filter(world: &mut WatnWorld, query: String) {
+    assert_eq!(query, "gpt");
+    let mut session = world.pty_session.take().expect("filter PTY session");
+    pty_write(&mut session, "\x7f\x7f");
+    pty_write(&mut session, &query);
+    world.pty_session = Some(session);
+}
+
+#[then(regex = r##"^the terminal should show the current filter "([^"]+)"$"##)]
+fn terminal_filter_after_change(world: &mut WatnWorld, query: String) {
+    let current = wait_for_current_render(world, &format!("Filter: {query}"));
+    assert!(current.contains(&format!("Filter: {query}")));
+}
+
 #[when(regex = r##"^I type "([^"]+)" into the active model filter$"##)]
 fn type_model_filter(world: &mut WatnWorld, query: String) {
-    let mut session = start_pty_session(world, &["models"]);
+    let mut session = world
+        .pty_session
+        .take()
+        .unwrap_or_else(|| start_pty_session(world, &["models"]));
     pty_wait_for_label(&session, "Small Model");
     pty_write(&mut session, &query);
     world.pty_session = Some(session);
