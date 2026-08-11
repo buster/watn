@@ -61,27 +61,33 @@
   record the zero exit. Evidence: `cargo fmt --all -- --check` passed and the
   same full-bootstrap targeted command passed with `1 scenario`, `4 steps`.
 
-- [ ] COMMIT: Create one atomic commit for this scenario with a message that
+- [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The initial URL input has a green border` verbatim. Record the
-  hash here: pending.
+  hash here: `7cc4423`.
 
 ## Scenario: The green border follows API key focus
 
-- [ ] RED: Remove `@wip` from this scenario only, add real step bindings with
+- [x] RED: Remove `@wip` from this scenario only, add real step bindings with
   `unimplemented!()` for new assertions, and run the E2E command targeted to
   `The green border follows API key focus`. Expected result: non-zero.
-  Evidence: pending.
+  Evidence: the targeted full-bootstrap run reached the API-key page, passed
+  four setup steps, and failed the new credential assertion with `not
+  implemented`; summary was `1 scenario (1 failed)` and `5 steps (4 passed, 1
+  failed)`.
 
-- [ ] GREEN: Assert through the live PTY that the storage list is green when it
+- [x] GREEN: Assert through the live PTY that the storage list is green when it
   owns focus, the API key value block becomes green after `p`, and the inactive
   credential block has no green SGR. Apply the minimum corresponding
   `src/setup.rs` rendering change. Run the targeted E2E scenario and record a
   zero exit. Production files: `src/setup.rs`; test file:
-  `tests/steps/highlight_active_setup_input_steps.rs`. Evidence: pending.
+  `tests/steps/highlight_active_setup_input_steps.rs`. Evidence: the targeted
+  full-bootstrap run passed `1 scenario` and `9 steps`, including green storage
+  and value borders plus both inactive baseline assertions.
 
-- [ ] REFACTOR: Remove duplication in the titled-border/style assertion helper
+- [x] REFACTOR: Remove duplication in the titled-border/style assertion helper
   without changing behavior, rerun the targeted scenario, and record a zero
-  exit. Evidence: pending.
+  exit. Evidence: `cargo fmt --all -- --check` passed and the targeted
+  full-bootstrap run passed `1 scenario` and `9 steps`.
 
 - [ ] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows API key focus` verbatim. Record the

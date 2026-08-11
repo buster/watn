@@ -14,7 +14,7 @@ Feature: Highlight the active setup input
     When I start `watn setup` in a terminal
     Then the setup wizard should show the active URL input with a green border
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The green border follows API key focus
     Given no config file exists
     And no supported provider environment variable is set
@@ -22,7 +22,7 @@ Feature: Highlight the active setup input
     And I enter the default endpoint and advance to the API key page
     Then the setup wizard should show the active credential location with a green border
     And the inactive API key input should retain its default border styling
-    When I choose to store the API key in the configuration
+    When choose to store the API key in the configuration
     Then the setup wizard should show the API key input with a green border
     And the inactive credential location should retain its default border styling
 
