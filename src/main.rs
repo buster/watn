@@ -1,4 +1,6 @@
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::generate;
+use clap_complete::shells::{Bash, Fish, Zsh};
 
 use std::io::{self, IsTerminal};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -57,6 +59,33 @@ enum Commands {
     Setup,
     Models,
     Provider,
+    #[command(
+        about = "Generate a shell completion script to stdout for the caller to install or source"
+    )]
+    Completions {
+        #[arg(value_name = "SHELL", help = "Supported shell: bash, zsh, or fish")]
+        shell: String,
+    },
+}
+
+#[derive(Clone, Debug)]
+enum CompletionShell {
+    Bash,
+    Zsh,
+    Fish,
+}
+
+impl CompletionShell {
+    fn parse(input: &str) -> Result<Self, String> {
+        match input {
+            "bash" => Ok(Self::Bash),
+            "zsh" => Ok(Self::Zsh),
+            "fish" => Ok(Self::Fish),
+            _ => Err(format!(
+                "unsupported shell '{input}'; choose bash, zsh, or fish"
+            )),
+        }
+    }
 }
 
 impl Cli {
@@ -85,6 +114,7 @@ fn main() {
                 run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
             }
             Commands::Provider => run_provider_setup_command(),
+            Commands::Completions { shell } => run_completions(shell),
         }
         return;
     }
@@ -339,6 +369,27 @@ fn main() {
     if interrupted.load(Ordering::SeqCst) {
         std::process::exit(130);
     }
+}
+
+fn run_completions(shell: &str) -> ! {
+    let shell = match CompletionShell::parse(shell) {
+        Ok(shell) => shell,
+        Err(error) => {
+            eprintln!("error: {}", error);
+            std::process::exit(2);
+        }
+    };
+    let mut command = Cli::command().mut_subcommand("completions", |subcommand| {
+        subcommand.mut_arg("shell", |argument| {
+            argument.value_parser(["bash", "zsh", "fish"])
+        })
+    });
+    match shell {
+        CompletionShell::Bash => generate(Bash, &mut command, "watn", &mut io::stdout()),
+        CompletionShell::Zsh => generate(Zsh, &mut command, "watn", &mut io::stdout()),
+        CompletionShell::Fish => generate(Fish, &mut command, "watn", &mut io::stdout()),
+    }
+    std::process::exit(0)
 }
 
 fn build_registry(

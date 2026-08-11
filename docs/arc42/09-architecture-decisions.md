@@ -22,6 +22,7 @@ options, the decision outcome, and consequences.
 | ADR-0014 | Independent catalog source and provider confirmation boundary | [docs/adr/0014-independent-catalog-source-and-provider-confirmation.md](../adr/0014-independent-catalog-source-and-provider-confirmation.md) |
 | ADR-0015 | Synchronous stream callback and completion boundary | [docs/adr/0015-synchronous-stream-callback-and-completion-boundary.md](../adr/0015-synchronous-stream-callback-and-completion-boundary.md) |
 | ADR-0016 | Release truth and target-dependent runtime requirements | [docs/adr/0016-release-truth-and-target-dependent-runtime-requirements.md](../adr/0016-release-truth-and-target-dependent-runtime-requirements.md) |
+| ADR-0017 | Completion generation from authoritative command definition | [docs/adr/0017-completion-generation-from-authoritative-command-definition.md](../adr/0017-completion-generation-from-authoritative-command-definition.md) |
 
 ## ADR-0011 summary
 
@@ -86,6 +87,18 @@ deployment claims target-specific. Release evidence uses `file` and `ldd` on
 Linux or `otool -L` on macOS to identify the dynamic runtime libraries of the
 exact artifact. The decision deliberately does not add or promise a universal
 static artifact.
+
+## ADR-0017 summary
+
+ADR-0017 chooses a local closed `CompletionShell` selector and renders from
+`Cli::command()` rather than exposing `clap_complete::Shell` or maintaining a
+second command tree. Bash, Zsh, and Fish are the only accepted lowercase values.
+Generation happens before configuration and provider setup, writes only
+deterministic script bytes to stdout, and leaves stderr and the filesystem
+unchanged. The parser error keeps the literal contract
+`unsupported shell '<value>'; choose bash, zsh, or fish`. The `completions`
+subcommand intentionally reserves that unquoted first token, so question text
+beginning with it must be quoted or passed after `--`.
 
 <!--
 MADR template for future decisions:

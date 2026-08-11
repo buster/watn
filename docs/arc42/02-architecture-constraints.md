@@ -20,6 +20,9 @@
 | Direct config writes enforce Unix mode `0600` | Every template, provider, and model save uses the existing direct-write mechanism and repairs file permissions after writing; atomic rename is not promised |
 | Test transport is debug-only | The endpoint override branch is compiled only under `cfg(all(feature = "test-support", debug_assertions))`; every release-profile build, including one with `test-support`, uses the configured endpoint branch |
 | Release evidence is target-specific | The release artifact is inspected with `file` and `ldd` on Linux or `otool -L` on macOS; a static artifact and universal shared-library set are not assumed |
+| Completion selector is closed | `watn completions <SHELL>` accepts only the lowercase values `bash`, `zsh`, and `fish`; the CLI does not expose the broader `clap_complete::Shell` value set |
+| Completion metadata is authoritative | Generated scripts derive from the same Clap command definition used for parsing and help; separately maintained command lists are not permitted |
+| Completion generation is side-effect free | Successful generation writes only the selected script to stdout, writes nothing to stderr, does not load or create config, contacts no provider, and changes no shell configuration |
 
 ## Organisational constraints
 
@@ -40,3 +43,4 @@
 | Catalog and chat endpoints are separate concerns | A configured LiteLLM endpoint may serve model discovery only; chat completion requests remain on the selected provider endpoint |
 | Credential source is authoritative | A literal saved key or complete saved `${VARIABLE}` reference cannot be replaced by environment fallback; only an absent source may use fallback discovery |
 | Reasoning strengths are closed-set values | Persisted and outbound reasoning values are limited to `off`, `low`, `minimal`, `medium`, and `high`; empty or unknown values do not produce a reasoning request |
+| Reserved completion token is explicit | The unquoted first token `completions` dispatches to the completion subcommand; question text beginning with that token must be quoted or passed after `--` |

@@ -33,6 +33,35 @@ and empty credentials remain in the setup flow with an inline validation
 message. A missing saved environment reference is an authentication error and
 does not fall through to another environment variable.
 
+## Completion generation
+
+`watn completions <SHELL>` uses a local closed `CompletionShell` selector. The
+only accepted values are the lowercase literals `bash`, `zsh`, and `fish`; the
+CLI does not expose the broader `clap_complete::Shell` selector. The parser's
+stable literal error contract is
+`unsupported shell '<value>'; choose bash, zsh, or fish`, embedded in the
+normal non-zero CLI argument error for an unsupported value.
+
+Successful generation is an output boundary distinct from normal command
+execution. It derives the root options, `question` positional argument,
+subcommands, and selector value suggestions from `Cli::command()`, writes the
+selected script only to stdout, leaves stderr empty, and returns before config
+loading, config auto-init, provider resolution, model discovery, network access,
+or spinner setup. It does not write a completion file, shell startup file, or
+any other file. Repeated generation from the same binary and selector is
+byte-for-byte deterministic, and the generated script must be accepted by its
+target shell parser.
+
+The no-config verification snapshots the absent isolated
+`$XDG_CONFIG_HOME/watn/config.toml` and a provider-request sentinel with zero
+hits before execution. Both observations remain unchanged after successful
+generation. Help is also explicit: `watn completions --help` exits 0, includes
+`Usage: watn completions <SHELL>`, names `bash`, `zsh`, and `fish`, and explains
+that stdout carries the script for the caller to install or source.
+
+The `completions` subcommand reserves an unquoted first token of that name.
+Question text beginning with the token must be quoted or passed after `--`.
+
 ## Configuration layering
 
 Config is merged in order (later overrides earlier):

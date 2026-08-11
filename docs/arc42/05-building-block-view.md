@@ -13,6 +13,8 @@ graph TB
     Output["Output<br/>(metadata + command)"]
     Models["Models<br/>(catalog and model-picker)"]
     Exec["Exec<br/>(command execution)"]
+    Completion["Completion<br/>(closed selector + renderer)"]
+    ShellParser["Bash / Zsh / Fish<br/>(caller parser)"]
 
     CLI --> Config
     CLI --> Provider
@@ -21,6 +23,7 @@ graph TB
     CLI --> Output
     CLI --> Models
     CLI --> Exec
+    CLI --> Completion
     Provider --> Config
     Models --> Config
     Setup --> Config
@@ -29,6 +32,7 @@ graph TB
     Wizard --> Config
     Wizard --> Models
     Exec --> Config
+    Completion --> ShellParser
 ```
 
 | Building block | Responsibility |
@@ -42,6 +46,8 @@ graph TB
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
 | Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
 | Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
+| Completion | Parse the closed `CompletionShell` selector, derive scripts from the authoritative Clap command definition, render Bash/Zsh/Fish, and write only successful script bytes to stdout |
+| Shell parser boundary | Consume an installed completion script; parser acceptance is verified separately for Bash, Zsh, and Fish and is not a provider or configuration dependency |
 
 ## Level 2 — Key building blocks
 
@@ -104,7 +110,18 @@ empty or partial tier values.
 
  | Element | Responsibility |
  |---|---|
-  | `Executor` | Read stdin for confirmation and run the already rendered `sh -c <cmd>` only after the stream succeeds; it does not print the aggregate again |
+   | `Executor` | Read stdin for confirmation and run the already rendered `sh -c <cmd>` only after the stream succeeds; it does not print the aggregate again |
+
+### Completion
+
+**Responsibility:** Generate a shell completion script without entering normal
+configuration or provider execution.
+
+| Element | Responsibility |
+|---|---|
+| `CompletionShell` | Closed selector accepting only `bash`, `zsh`, and `fish`; rejects every other value with the literal `unsupported shell '<value>'; choose bash, zsh, or fish` parser contract |
+| `CompletionGenerator` | Calls `Cli::command()` and maps the validated selector to the corresponding `clap_complete` renderer; it does not maintain a second command tree |
+| Output boundary | Writes the selected script to stdout only, leaves stderr empty, and returns before config auto-init, provider resolution, network access, or spinner setup |
 
 ## Repository hygiene boundary
 

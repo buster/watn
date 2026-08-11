@@ -15,6 +15,8 @@ pub mod release_truth_steps;
 pub mod search_concurrency_steps;
 pub mod setup_persistence_steps;
 pub mod setup_wizard_steps;
+pub mod shell_completions_e2e_steps;
+pub mod shell_completions_steps;
 pub mod transport_steps;
 
 pub use transport_steps::TransportState;

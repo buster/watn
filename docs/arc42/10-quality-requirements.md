@@ -34,6 +34,15 @@
   - QS-033: A completed stream is distinguished from EOF without `[DONE]`
   - QS-034: Partial output and output failures have safe cleanup behavior
   - QS-039: Version output matches the package metadata
+- **Completion fidelity and script safety** — Current command tree, closed shell support, deterministic output, and no side effects
+  - QS-040: Help states the exact completion usage, supported values, and stdout purpose
+  - QS-041: Every supported script exposes the authoritative root tree and selector values
+  - QS-042: Repeated generation is byte-for-byte deterministic
+  - QS-043: Each generated script is accepted by its target shell parser
+  - QS-044: Completion generation bypasses config creation and provider requests
+  - QS-045: Unsupported shell errors contain the literal actionable contract
+  - QS-046: Successful completion writes only the script to stdout
+  - QS-047: The reserved `completions` token consequence is documented and stable
 
 ## Quality scenarios
 
@@ -78,3 +87,11 @@
 | QS-037 | Recovery / Correctness | A command-output write or flush fails after a visible prefix | The existing I/O error status 1 is returned; the prefix and spinner cleanup remain observable; final metadata and execution confirmation are omitted |
 | QS-038 | Correctness / Usability | A command is confirmed from a raw terminal or a pipe | The generated command is one complete line exactly once; execution output is asserted separately and occurs only after successful completion and confirmation |
 | QS-039 | Correctness / Release truth | User runs `watn --version` from the release artifact | Exit status is 0 and the output contains the exact Cargo package version used to build the binary |
+| QS-040 | Completion fidelity / Usability | User runs `watn completions --help` | Exit status is 0; stdout contains `Usage: watn completions <SHELL>`, `bash`, `zsh`, `fish`, and the instruction that the script is written to stdout for installation or sourcing; stderr is empty |
+| QS-041 | Completion correctness | User runs `watn completions <SHELL>` for each supported shell | The script contains every current root option, the `question` positional argument, every root subcommand, and the selector suggestions `bash`, `zsh`, and `fish` |
+| QS-042 | Completion determinism | User generates the same shell script twice from the same binary | The stdout byte sequences are identical |
+| QS-043 | Completion portability | User validates a generated Bash, Zsh, or Fish script with its corresponding shell executable | The target parser accepts the script; a missing shell executable is reported as an environment failure rather than a syntax success |
+| QS-044 | Completion safety | User generates Bash completion with an absent isolated XDG config file and a zeroed provider-request sentinel | The config file remains absent, no file is written in the isolated config directory, the sentinel remains at zero, and no provider or network request occurs |
+| QS-045 | Completion correctness / Usability | User runs `watn completions powershell` | Exit status is non-zero and stderr contains exactly `unsupported shell 'powershell'; choose bash, zsh, or fish` as the parser-owned literal |
+| QS-046 | Completion safety / Observability | User generates a supported completion script | Stdout contains only the generated script and stderr is empty; no shell startup file is changed |
+| QS-047 | Completion compatibility | User has question text whose first unquoted token is `completions` | The token dispatches to the completion subcommand; question text must be quoted or passed after `--`, and this consequence is documented in help/CLI documentation |

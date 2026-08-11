@@ -43,6 +43,62 @@ sequenceDiagram
 7. Print metadata: response model, tokens/sec, cost (if pricing configured)
 8. Exit 0; the command is not printed again from the final aggregate
 
+## Scenario: Generate a shell completion script
+
+**Trigger:** A caller runs `watn completions <SHELL>` for `bash`, `zsh`, or
+`fish`.
+
+```mermaid
+sequenceDiagram
+    participant User as Caller
+    participant CLI as watn CLI
+    participant Metadata as Clap command definition
+    participant Generator as Completion generator
+    participant Shell as Bash / Zsh / Fish
+
+    User->>CLI: watn completions bash
+    CLI->>CLI: parse arguments and validate CompletionShell
+    CLI->>Metadata: request Cli::command()
+    Metadata-->>CLI: root options, question, subcommands, and values
+    CLI->>Generator: map bash to the Bash renderer
+    Generator->>Metadata: render the authoritative command tree
+    Metadata-->>Generator: completion script bytes
+    Generator-->>User: script on stdout only
+    CLI-->>User: empty stderr and exit 0
+    User->>Shell: install/source script
+    Shell-->>User: parser accepts generated syntax
+```
+
+**Steps:**
+1. Parse the subcommand and the closed selector before normal command dispatch.
+2. Return before configuration loading, config auto-init, provider resolution,
+   model discovery, network access, or spinner setup.
+3. Render from the same command definition used by Clap parsing and help.
+4. Write only the selected script to stdout; successful stderr is empty.
+5. Generate twice for each supported shell and compare bytes exactly.
+6. Pass each generated script through the corresponding installed shell parser.
+
+The regular no-config scenario snapshots the absent isolated
+`$XDG_CONFIG_HOME/watn/config.toml` and a provider-request sentinel at zero hits
+before invocation. The file remains absent, no file is written in that isolated
+config directory, and the sentinel remains at zero afterward. The generated
+script contains the complete root option list, the `question` positional
+argument, all root subcommands, and selector values `bash`, `zsh`, and `fish`.
+
+## Scenario: Completion selector error and help
+
+`watn completions powershell` stops in argument parsing with a non-zero status
+and stderr containing the literal
+`unsupported shell 'powershell'; choose bash, zsh, or fish`. It does not enter
+the generation or configuration path. `watn completions --help` exits 0 and
+prints `Usage: watn completions <SHELL>`, the three supported values, and the
+instruction that the generated script is written to stdout for the caller to
+install or source; stderr remains empty.
+
+The subcommand reserves an unquoted first token `completions`. Existing question
+text beginning with that token must be quoted as one argument or passed after
+`--`.
+
 ## Scenario: Ask with execution (`-x`)
 
 **Trigger:** User runs `watn -x "echo hello"`.

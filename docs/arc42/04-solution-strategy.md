@@ -22,6 +22,8 @@
 - Credential values retain their persisted source representation and are expanded only at the outbound discovery or chat request boundary; a confirmed provider draft is saved before its first catalog request
 - A shared reasoning policy validates closed-set strengths, honors model default-enabled and mandatory metadata, and preserves existing valid reasoning when no replacement exists
 - Search workers carry generations and can update the picker only when current; the test twin coordinates overlapping workers and joins them before exit
+- Generate shell completions from `Cli::command()` through a local closed `CompletionShell` selector; render only `bash`, `zsh`, or `fish` to stdout before configuration or provider setup
+- Keep the completion parser contract literal: unsupported values return `unsupported shell '<value>'; choose bash, zsh, or fish`; the `completions` token is intentionally reserved as a subcommand
 
 ## Technology choices
 
@@ -38,6 +40,7 @@
 | Transport verification | `httpmock` loopback twins plus explicit subprocess paths | Proves endpoint, path, request count, Authorization, competing-server, and persistence behavior without live providers |
 | Catalog resolution | Runtime-only catalog source value | Keeps LiteLLM discovery separate from active chat and makes optional catalog authentication explicit |
 | Reasoning policy | Pure closed-set resolver | Prevents TTY, non-TTY, and request-body reasoning behavior from diverging |
+| Completion generation | `clap_complete` renderers fed by `Cli::command()` and a local `CompletionShell` parser | Keeps generated options, subcommands, positional arguments, and selector values aligned with the authoritative CLI definition while avoiding config/provider side effects |
 
 ## Approach to quality goals
 
@@ -50,3 +53,4 @@
 | Recovery | Visible content survives network/truncation failures; output I/O failures retain the prefix, clean up progress, omit metadata and execution, and use status 1 |
 | First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
 | Transport isolation | The configured endpoint remains the source for readiness, persistence, and display; only debug test-support outbound requests may use a non-empty override, with missing/whitespace values falling back |
+| Completion safety | The selector is closed, success writes only deterministic script bytes to stdout, stderr remains empty, shell parsing is verified for each supported shell, and no config/provider operation is entered |

@@ -28,6 +28,11 @@ synchronous content callback with no worker channel. Command content is flushed
 incrementally, reasoning is buffered and printed only after successful
 completion under `-v`, and `[DONE]` is mandatory; truncated or failed streams
 preserve visible prefixes but do not print success metadata or execute.
+The CLI also generates completions with `watn completions <SHELL>` for the closed
+set `bash`, `zsh`, and `fish`. Scripts come from the authoritative Clap command
+definition, are deterministic, are written only to stdout, and bypass config
+initialisation and provider requests. Unsupported shell values use the literal
+`unsupported shell '<value>'; choose bash, zsh, or fish` parser contract.
 
 ## Archive Status
 
@@ -51,3 +56,5 @@ changes.
 | 10 | [Quality Requirements](10-quality-requirements.md) | Measurable quality scenarios |
 | 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and debt |
 | 12 | [Glossary](12-glossary.md) | Domain and technical terms |
+
+Completion generation is further recorded in [ADR-0017](../adr/0017-completion-generation-from-authoritative-command-definition.md).

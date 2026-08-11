@@ -55,3 +55,12 @@
 | Provider draft | A validated endpoint and credential source confirmed before complete model-tier setup |
 | Reasoning policy | The shared rule that resolves model metadata and persisted values to a valid reasoning strength |
 | Valid reasoning strength | One of `off`, `low`, `minimal`, `medium`, or `high`; unknown and empty values mean no reasoning request |
+| Completion script | A Bash, Zsh, or Fish script generated from watn's current Clap command definition for a caller to install or source |
+| CompletionShell | The local closed selector for completion output; it accepts only `bash`, `zsh`, and `fish` and is not `clap_complete::Shell` |
+| Completion selector value | One of the lowercase literals `bash`, `zsh`, or `fish`; every other value is unsupported |
+| Completion generation | The side-effect-free CLI path that parses a selector, renders the authoritative command tree, and writes only the script to stdout |
+| Unsupported-shell contract | The parser-owned literal `unsupported shell '<value>'; choose bash, zsh, or fish` embedded in a normal non-zero argument error |
+| Shell parser check | Validation of generated Bash, Zsh, or Fish text by the corresponding installed shell executable |
+| Reserved completion token | The unquoted first token `completions`, which dispatches to the completion subcommand; question text using it must be quoted or placed after `--` |
+| Authoritative command definition | The `Cli::command()` metadata used by Clap for parsing/help and by completion generation for options, positional arguments, subcommands, and values |
+| Provider-request sentinel | The isolated test HTTP mock whose request count proves completion generation did not contact a provider |

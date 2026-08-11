@@ -27,6 +27,7 @@ Top requirements:
 18. Only an SSE stream terminated by `[DONE]` succeeds; truncated or failed streams preserve visible output and never execute it
 19. Command-output write failures must retain the visible prefix, clean up progress, and use the existing I/O status without success metadata
 20. `watn --version` must report the Cargo package version, and release documentation must match verified target runtime requirements
+21. `watn completions <SHELL>` must generate the complete current command tree for the closed shell set `bash`, `zsh`, and `fish`, using stdout only without config/provider side effects
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 
@@ -42,6 +43,7 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | 6 | Test isolation | Loopback transport overrides are available only to debug test-support binaries and cannot redirect release or normal invocations |
 | 7 | Correctness | Catalog source, credential-source, setup-save, reasoning, and stale-search policies are shared across all model-discovery paths |
 | 8 | Responsiveness and recovery | Incremental content, deterministic completion, visible partial prefixes, and mapped stream/I/O failures must remain observable and safe |
+| 9 | Completion fidelity and script safety | Completion output must match the authoritative command tree, remain byte-for-byte deterministic, parse in its target shell, and never initialise configuration or contact a provider |
 
 ## Stakeholders
 
@@ -52,3 +54,4 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | CI/user | Pipe questions in, get clean output with exit codes and metadata
 | Test maintainer | Run deterministic local-provider scenarios without changing release-binary behavior or persisted user configuration |
 | Release maintainer | Verify package version output and target-dependent runtime-library requirements before distribution |
+| Shell user | Install or source a generated Bash, Zsh, or Fish script without configuration writes, provider access, or stderr contamination |

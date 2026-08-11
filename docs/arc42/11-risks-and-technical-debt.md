@@ -41,6 +41,12 @@
 | R-035 | Terminal spinner cleanup can race first content or a stream error and leave control sequences visible | Medium | Medium | Keep one CLI-owned spinner lifecycle, finish it on first content and every return path, and assert PTY clear-line evidence for both delayed success and mid-stream failure |
 | R-036 | A release artifact's target-dependent shared-library requirements are hidden by a universal static-deployment claim | Medium | High | Build the exact release target, inspect it with `file` and `ldd` on Linux or `otool -L` on macOS, and document only the verified target requirements |
 | R-037 | The CLI version can drift from the Cargo package version used to build the release artifact | Medium | Medium | Derive the CLI version from package metadata and assert the exact package version through the real release-binary scenario |
+| R-038 | Generated completion output can omit or misrepresent a new option, positional argument, subcommand, or value if its metadata source diverges from the CLI parser | Medium | High | Render only from `Cli::command()`, enumerate the complete root tree and selector values in feature scenarios, and avoid a separately maintained command list |
+| R-039 | Exposing the completion library's broader shell enum could silently expand the supported CLI contract or change the unsupported-value error | Medium | High | Keep a local closed `CompletionShell` selector, accept only `bash`, `zsh`, and `fish`, and assert the literal `unsupported shell '<value>'; choose bash, zsh, or fish` contract |
+| R-040 | A generated script may be syntactically invalid for the selected shell or the shell executable may be unavailable in the verification environment | Medium | Medium | Run the corresponding Bash, Zsh, and Fish parser checks; report a missing executable as an explicit environment failure rather than a false syntax pass |
+| R-041 | Completion generation could accidentally load config, auto-create the XDG file, contact a provider, write shell configuration, or contaminate stdout/stderr | Low | High | Dispatch before configuration and provider setup; require stdout-only success, empty stderr, an absent-config before/after snapshot, no isolated-directory writes, and a zero-hit provider sentinel |
+| R-042 | Completion renderer or command traversal order could make repeated output differ byte-for-byte | Medium | Medium | Generate twice from the same binary and selector, compare raw stdout bytes, and keep the command definition and renderer mapping deterministic |
+| R-043 | Reserving `completions` can surprise users whose unquoted question begins with that token | Medium | Medium | Document the intentional reservation and require a quoted question or `--` separator; keep the consequence in the proposal, help contract, feature, and Arc42 docs |
 
 ## Technical debt
 
@@ -124,6 +130,28 @@ The following consequences are accepted and mitigated explicitly:
 - Exact-once output: content chunks are written once and the final aggregate is
   never reprinted; raw-terminal and piped scenarios count generated and execution
   lines separately.
+
+## ADR-0017 consequence coverage
+
+The completion-generation decision has these durable consequences:
+
+- Authoritative metadata: generated output follows `Cli::command()`, while the
+  complete root tree and selector values are asserted for every supported shell;
+  R-038 covers accidental drift.
+- Closed selector: only lowercase `bash`, `zsh`, and `fish` are product values;
+  R-039 covers leakage of the library's broader enum and the literal parser
+  contract.
+- Renderer dependency: adding a shell requires selector, mapping, help, and
+  feature changes; renderer bytes remain a dependency-sensitive surface and are
+  checked by R-040 and R-042.
+- Shell validation: Bash, Zsh, and Fish parser checks expose syntax or local
+  executable availability instead of treating generated text as inherently
+  valid.
+- Side-effect boundary: early dispatch and the no-config/sentinel snapshots
+  prevent config creation, provider access, network traffic, shell-file writes,
+  and stderr contamination; R-041 covers the failure mode.
+- Reserved token: the new subcommand changes an unquoted question's parse path;
+  the quote/`--` guidance and R-043 make that compatibility consequence visible.
 
 ## ADR-0016 consequence coverage
 
