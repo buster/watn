@@ -341,7 +341,7 @@ fn display_home_path(path: &Path, home: &Path) -> String {
 
 const BASH_BLOCK: &str = r#"# >>> watn shell shortcut >>>
 _watn_widget() {
-    local question=$READLINE_LINE
+    local question="$READLINE_LINE"
     local result
 
     if [[ -z $question ]]; then
@@ -367,7 +367,7 @@ bind -x '"\C-w":_watn_widget'
 
 const ZSH_BLOCK: &str = r#"# >>> watn shell shortcut >>>
 _watn_widget() {
-    local question=$BUFFER
+    local question="$BUFFER"
     local result
 
     if [[ -z $question ]]; then

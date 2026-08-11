@@ -431,27 +431,31 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: cf1734f
   ```
 
 ## Scenario: The complete command line is passed as one quoted question
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:811`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: assert shell metacharacters and spaces reach the fake `watn` as one
+- [x] GREEN: assert shell metacharacters and spaces reach the fake `watn` as one
   argument. Production files: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 4 steps (4
+  passed)` and the log contained exactly one unexpanded question argument.
   ```
-- [ ] REFACTOR: rerun the targeted scenario.
+- [x] REFACTOR: rerun the targeted scenario.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 4 steps (4 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text
