@@ -157,27 +157,32 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 10 steps (10 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: 74fd6fa
   ```
 
 ## Scenario: Missing parent directories are created only for selected shells
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:350`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: delay parent creation until after selection and target validation.
+- [x] GREEN: delay parent creation until after selection and target validation.
   Production files: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 4 steps (4
+  passed)`; selecting Fish created only the isolated XDG Fish parent and left
+  the Bash HOME parent absent.
   ```
-- [ ] REFACTOR: rerun the targeted scenario.
+- [x] REFACTOR: rerun the targeted scenario.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 4 steps (4 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text

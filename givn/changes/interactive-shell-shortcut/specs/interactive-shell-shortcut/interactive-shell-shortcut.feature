@@ -79,7 +79,7 @@ Feature: Interactive shell shortcut for watn
     And setup should report the Zsh target path and write failure reason
     And setup should report an aggregate shell installation failure
 
-  @givn.added @wip
+  @givn.added
   Scenario: Missing parent directories are created only for selected shells
     Given missing Bash and Fish configuration parent directories
     When I install the shell shortcut for Fish

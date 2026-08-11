@@ -1,5 +1,6 @@
 use cucumber::{given, then, when};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::WatnWorld;
 
@@ -7,7 +8,13 @@ fn shortcut_environment(world: &WatnWorld) -> watn::shell_shortcut::ShellEnviron
     let temp = world.temp_dir.as_ref().expect("shortcut temp dir");
     watn::shell_shortcut::ShellEnvironment {
         home: temp.path().join("home"),
-        xdg_config_home: Some(temp.path().join("home").join(".config")),
+        xdg_config_home: Some(
+            world
+                .pending_config
+                .get("shortcut_xdg")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| temp.path().join("home").join(".config")),
+        ),
         shell: Some("/bin/bash".to_string()),
     }
 }
@@ -345,4 +352,51 @@ fn aggregate_failure(world: &mut WatnWorld) {
         .as_deref()
         .unwrap_or_default()
         .contains("shell shortcut installation failed"));
+}
+
+#[given("missing Bash and Fish configuration parent directories")]
+fn missing_parent_dirs(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let home = temp.path().join("home");
+    let xdg = temp.path().join("xdg");
+    world
+        .pending_config
+        .insert("shortcut_xdg".to_string(), xdg.display().to_string());
+    world.shortcut_targets = HashMap::from([
+        ("bash".to_string(), home.join(".bashrc")),
+        ("fish".to_string(), xdg.join("fish/config.fish")),
+    ]);
+    world.temp_dir = Some(temp);
+}
+
+#[when("I install the shell shortcut for Fish")]
+fn install_fish(world: &mut WatnWorld) {
+    let environment = shortcut_environment(world);
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Fish],
+        &environment,
+    );
+    assert!(report.is_success(), "installation report: {report:?}");
+}
+
+#[then("the Fish configuration parent directory should exist")]
+fn fish_parent_exists(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_targets
+        .get("fish")
+        .unwrap()
+        .parent()
+        .unwrap()
+        .is_dir());
+}
+
+#[then("the Bash configuration parent directory should remain absent")]
+fn bash_parent_absent(world: &mut WatnWorld) {
+    assert!(!world
+        .shortcut_targets
+        .get("bash")
+        .unwrap()
+        .parent()
+        .unwrap()
+        .exists());
 }
