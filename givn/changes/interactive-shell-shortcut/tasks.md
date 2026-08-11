@@ -51,25 +51,29 @@
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: 3b17d0b
   ```
 
 ## Scenario: Selecting no shells leaves shell configuration unchanged
 
-- [ ] RED: remove only this scenario's `@wip`, use explicit RED stubs, and run
+- [x] RED: remove only this scenario's `@wip`, use explicit RED stubs, and run
   the targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:69`, reported `1 feature, 1
+  scenario (1 failed), 3 steps (2 passed, 1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: implement empty multi-selection handling and byte-for-byte target
+- [x] GREEN: implement empty multi-selection handling and byte-for-byte target
   snapshots. Production files: `src/setup.rs`, `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 5 steps (5
+  passed)` with the empty install report and unchanged snapshots.
   ```
-- [ ] REFACTOR: rerun the targeted scenario after cleanup.
+- [x] REFACTOR: rerun the targeted scenario after cleanup.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 5 steps (5 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text

@@ -65,3 +65,18 @@ fn shortcut_unchanged(world: &mut WatnWorld) {
         );
     }
 }
+
+#[when("I answer `y` to the optional shortcut question")]
+fn enable_shortcut(world: &mut WatnWorld) {
+    world.shortcut_shells.clear();
+}
+
+#[when("I select no shells in the shortcut multi-select")]
+fn select_no_shells(world: &mut WatnWorld) {
+    let environment = shortcut_environment(world);
+    let report = watn::shell_shortcut::install_with_environment(&[], &environment);
+    assert!(
+        report.results.is_empty(),
+        "empty selection installed a target"
+    );
+}

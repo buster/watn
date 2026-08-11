@@ -38,7 +38,7 @@ Feature: Interactive shell shortcut for watn
     When I press Enter to accept the default decline on the optional shortcut question
     Then every shell configuration file should match its snapshot byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: Selecting no shells leaves shell configuration unchanged
     Given Bash, Zsh, and Fish configuration files with existing user content
     And a snapshot of every shell configuration file
