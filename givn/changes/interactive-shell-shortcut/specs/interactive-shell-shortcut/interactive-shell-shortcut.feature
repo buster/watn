@@ -56,7 +56,7 @@ Feature: Interactive shell shortcut for watn
     When I select Zsh and Fish as well
     Then Bash, Zsh, and Fish should all be selected
 
-  @givn.added @wip
+  @givn.added
   Scenario: Multiple selected shells are installed independently
     Given Bash, Zsh, and Fish configuration paths in an isolated home
     When I install the shell shortcut for Bash, Zsh, and Fish

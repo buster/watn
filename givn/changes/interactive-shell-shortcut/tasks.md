@@ -102,31 +102,36 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 7 steps (7 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: ba5c4ba
   ```
 
 ## Scenario: Multiple selected shells are installed independently
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:154`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: add Bash, Zsh, and Fish target resolution, native generated blocks,
+- [x] GREEN: add Bash, Zsh, and Fish target resolution, native generated blocks,
   and success/reload reports. Production files: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 7 steps (7
+  passed)` and verified the Bash, Zsh, and Fish native block contracts and
+  per-shell reports.
   ```
-- [ ] REFACTOR: rerun the targeted scenario and keep generation centralized.
+- [x] REFACTOR: rerun the targeted scenario and keep generation centralized.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 7 steps (7 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: ba5c4ba
   ```
 
 ## Scenario: A partial multi-shell failure reports every result without rollback

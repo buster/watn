@@ -150,3 +150,89 @@ fn all_shells_selected(world: &mut WatnWorld) {
         "all supported shells should be selectable"
     );
 }
+
+#[given("Bash, Zsh, and Fish configuration paths in an isolated home")]
+fn isolated_shell_paths(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let home = temp.path().join("home");
+    let fish_dir = home.join(".config/fish");
+    std::fs::create_dir_all(&fish_dir).expect("create Fish config directory");
+    world.shortcut_targets = HashMap::from([
+        ("bash".to_string(), home.join(".bashrc")),
+        ("zsh".to_string(), home.join(".zshrc")),
+        ("fish".to_string(), fish_dir.join("config.fish")),
+    ]);
+    world.temp_dir = Some(temp);
+}
+
+#[when("I install the shell shortcut for Bash, Zsh, and Fish")]
+fn install_all_shells(world: &mut WatnWorld) {
+    let environment = shortcut_environment(world);
+    let report = watn::shell_shortcut::install_with_environment(
+        &watn::shell_shortcut::Shell::ALL,
+        &environment,
+    );
+    assert!(report.is_success(), "installation report: {report:?}");
+    world.shortcut_shells = report
+        .successes()
+        .map(|result| result.shell.lowercase_name().to_string())
+        .collect();
+    world.shortcut_output = Some(
+        report
+            .successes()
+            .map(|result| {
+                format!(
+                    "{} {} {}",
+                    result.shell.lowercase_name(),
+                    result.path.as_deref().unwrap().display(),
+                    result.reload.as_deref().unwrap()
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+    );
+}
+
+#[then("the Bash configuration should contain the Bash widget and Ctrl-W binding")]
+fn bash_block(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("bash").unwrap())
+        .expect("read Bash target");
+    assert!(content.contains("READLINE_LINE"));
+    assert!(content.contains("READLINE_POINT"));
+    assert!(content.contains("bind -x"));
+    assert!(content.contains("\\C-w"));
+}
+
+#[then("the Zsh configuration should contain the ZLE widget and Ctrl-W binding")]
+fn zsh_block(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("zsh").unwrap())
+        .expect("read Zsh target");
+    assert!(content.contains("$BUFFER"));
+    assert!(content.contains("CURSOR"));
+    assert!(content.contains("zle -N"));
+    assert!(content.contains("bindkey '^W'"));
+}
+
+#[then("the Fish configuration should contain the Fish widget and Ctrl-W binding")]
+fn fish_block(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
+        .expect("read Fish target");
+    assert!(content.contains("commandline"));
+    assert!(content.contains("commandline -r --"));
+    assert!(content.contains("commandline -f repaint"));
+    assert!(content.contains("bind \\cw"));
+}
+
+#[then("setup should report a success for every selected shell")]
+fn all_shells_success(world: &mut WatnWorld) {
+    assert_eq!(world.shortcut_shells, vec!["bash", "zsh", "fish"]);
+}
+
+#[then("each selected shell should have its own reload instruction")]
+fn reload_instructions(world: &mut WatnWorld) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    for shell in ["bash", "zsh", "fish"] {
+        assert!(output.contains(shell), "missing {shell} report");
+        assert!(output.contains("Run: source"), "missing reload instruction");
+    }
+}
