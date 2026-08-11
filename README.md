@@ -15,14 +15,6 @@ Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
 └──────────────────────────────────────────────┘
 ```
 
-## Quick start
-
-```
-git clone <repo>
-cd <project>
-cargo run
-```
-
 ## Prerequisites
 
 - Rust (latest stable)
@@ -30,12 +22,40 @@ cargo run
 
 ## Usage
 
-```text
-watn find all files modified in the last day
-```
-
 Pass a question as a positional argument or via stdin. watn streams the
 generated command to stdout and metadata (model, tokens/s, cost) to stderr.
+
+### Positional argument
+
+```text
+$ watn find all files modified in the last day
+find . -type f -mtime -1
+```
+
+### stdin
+
+```text
+$ printf "find all rust source files" | watn
+find . -type f -name "*.rs"
+```
+
+### Model tiers
+
+```text
+$ watn -2 "list pods with the most memory usage"
+$ watn -3 "debug this strace"
+$ watn --model anthropic/claude-sonnet-7 "convert flac to mp3 recursively"
+```
+
+### Execute mode
+
+```text
+$ watn -x "remove all .bak files"
+  rm *.bak
+  Execute? [y/N]
+```
+
+### Flags
 
 | Flag | Description |
 |---|---|
@@ -43,7 +63,7 @@ generated command to stdout and metadata (model, tokens/s, cost) to stderr.
 | `-2` | Balanced model tier |
 | `-3` | Thinking/reasoning model tier |
 | `--model <NAME>` | Explicit model override |
-| `-x` | Execute mode: prompt before running |
+| `-x` | Prompt for confirmation before executing the command |
 | `--version` | Print version and exit |
 
 ## Configuration
@@ -78,6 +98,8 @@ cargo llvm-cov test --no-clean --test features_runner \
 ```
 
 ## License
+
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue)](LICENSE)
 
 GPL-3.0-or-later
 
