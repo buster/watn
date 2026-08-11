@@ -94,8 +94,10 @@ configuration:
 | `CRATE_NAME` | Documentation or local shell variable | `watn` |
 | `PRIMARY_BRANCH` | Documentation or local shell variable | `main` |
 | `RELEASE_WORKFLOW` | Documentation or Trusted Publisher setting | `.github/workflows/release.yml` |
+| `RELEASE_PREPARATION_WORKFLOW` | Documentation or Actions workflow | `.github/workflows/prepare-release.yml` |
 | `RELEASE_ENVIRONMENT` | Workflow and GitHub environment | `crates-io` |
 | `RELEASE_TAG` | Local release command | `vX.Y.Z`, selected manually |
+| `RELEASE_PUSH_TOKEN` | GitHub Actions secret, release preparation only | A fine-grained GitHub token with Contents write; never print it |
 | `CARGO_REGISTRY_TOKEN` | GitHub Actions secret, fallback only | A crates.io publish token; never commit it |
 
 `CARGO_REGISTRY_TOKEN` is not required when Trusted Publishing is configured.
@@ -358,6 +360,28 @@ If atomic push is not used, push `main` first and the tag second. The tag
 should never point to a commit that is not already present on `origin/main`.
 
 The tag push is the only event that may trigger crates.io publication.
+
+### GitHub Release Preparation Workflow
+
+The repository also provides a manually triggered `Prepare Release` workflow at
+`${RELEASE_PREPARATION_WORKFLOW}`. Start it from the `main` branch in the GitHub
+Actions tab and provide the next version without the `v` prefix, such as
+`0.1.3`. The input is required and is never inferred from commit messages.
+
+The workflow validates that the version is newer than the manifest version and
+does not already exist on crates.io. It then updates `Cargo.toml`, refreshes
+`Cargo.lock`, generates the versioned changelog section with the pinned
+`git-cliff` tool, runs the locked validation and package checks, commits only
+the release preparation files, and creates an annotated `vX.Y.Z` tag. It pushes
+the release commit and tag atomically with the `RELEASE_PUSH_TOKEN`.
+
+The existing tag-only `${RELEASE_WORKFLOW}` workflow remains responsible for
+Trusted Publishing. A failed preparation or dry run does not push the tag.
+
+The preparation workflow requires `${RELEASE_PUSH_TOKEN}` rather than the
+default `GITHUB_TOKEN` for its final push. GitHub does not start downstream
+workflows for most events created by `GITHUB_TOKEN`; the fine-grained token
+allows the pushed release tag to start `${RELEASE_WORKFLOW}` normally.
 
 ## CI Workflow
 
@@ -821,8 +845,8 @@ though the repository inspection itself is automatable.
    policy.
 8. Add direct-push CI with no secrets or publication permissions.
 9. Add scheduled dependency and workflow security checks.
-10. Add tag-only release validation and crates.io publication workflows, using
-    the variables in this document.
+10. Add manually triggered release preparation plus tag-only release validation
+    and crates.io publication workflows, using the variables in this document.
 11. Pin actions and tool versions, then run `actionlint` and `zizmor` locally
     against every workflow.
 12. Run all `--locked` formatting, build, lint, unit, acceptance, audit, deny,
@@ -850,7 +874,9 @@ though the repository inspection itself is automatable.
     - Environment: `${RELEASE_ENVIRONMENT}` (`crates-io`).
 20. If Trusted Publishing cannot be used, create `CARGO_REGISTRY_TOKEN` and
     store it as a GitHub Actions secret instead of putting it in the repository.
-21. Approve the first real tag push and publication after a successful dry run.
+21. Create a fine-grained `RELEASE_PUSH_TOKEN` secret with Contents write access
+    so the preparation workflow's tag push starts the publish workflow.
+22. Approve the first real tag push and publication after a successful dry run.
 
 ## Project Process
 
@@ -927,6 +953,7 @@ remaining release steps require the maintainer's account access or approval:
    export CRATE_NAME="watn"
    export PRIMARY_BRANCH="main"
    export RELEASE_WORKFLOW=".github/workflows/release.yml"
+   export RELEASE_PREPARATION_WORKFLOW=".github/workflows/prepare-release.yml"
    export RELEASE_ENVIRONMENT="crates-io"
    export RELEASE_TAG="v0.1.3"
    ```
@@ -938,22 +965,23 @@ remaining release steps require the maintainer's account access or approval:
 4. In GitHub repository settings, create the `crates-io` environment and add
    any required approval rule. Protect the `v*` tag pattern from updates and
    deletion.
-5. In crates.io, configure Trusted Publishing for repository `buster/watn`,
+5. In GitHub repository secrets, configure the fine-grained
+   `RELEASE_PUSH_TOKEN` with Contents write access.
+6. In crates.io, configure Trusted Publishing for repository `buster/watn`,
    workflow `.github/workflows/release.yml`, and environment `crates-io`.
-6. If Trusted Publishing is unavailable, create a narrowly scoped crates.io
+7. If Trusted Publishing is unavailable, create a narrowly scoped crates.io
    publish token and add it in GitHub as the Actions secret
    `CARGO_REGISTRY_TOKEN`. Do not create this secret when OIDC is working.
-7. Confirm that no provider API keys are configured for CI. The test suite must
+8. Confirm that no provider API keys are configured for CI. The test suite must
    use mocks rather than `OPENROUTER_API_KEY` or `WATN_API_KEY`.
-8. Approve the first release only after the tag validation and
+9. Approve the first release only after the tag validation and
    `cargo publish --locked --dry-run` jobs pass.
-9. Create and push the annotated release tag with the release commit already on
-   `origin/main`:
+10. Start `${RELEASE_PREPARATION_WORKFLOW}` from the `main` branch in the GitHub
+    Actions tab with the approved version, without the `v` prefix:
 
    ```text
-   git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
-   git push --atomic origin "$PRIMARY_BRANCH" "$RELEASE_TAG"
+   version=0.1.3
    ```
 
-10. Confirm on crates.io that the exact intended `RELEASE_TAG` version was
+11. Confirm on crates.io that the exact intended `RELEASE_TAG` version was
     published, then record the release result and any failure or retry details.
