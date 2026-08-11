@@ -60,13 +60,13 @@ enum Commands {
     Models,
     Provider,
     #[command(
-        about = "Generate a shell completion script to stdout for the caller to install or source"
+        about = "Generate a shell completion script on stdout for the caller to install or source"
     )]
     Completions {
         #[arg(
             value_name = "SHELL",
             value_parser = CompletionShell::parse,
-            help = "Supported shell: bash, zsh, or fish"
+            help = "Supported shell values: bash, zsh, or fish"
         )]
         shell: CompletionShell,
     },

@@ -109,25 +109,32 @@
   made explicit and the targeted runner reported 1 feature, 1 scenario (1
   passed), and 12 steps (12 passed).
   ```
-- [ ] COMMIT: `[hash]` - `feat(shell-completions): Completion generation does not load configuration or contact a provider`
+- [x] COMMIT: `2c6a483` - `feat(shell-completions): Completion generation does not load configuration or contact a provider`
 
 ## Scenario: Completion help documents the supported selector and output contract
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
+- [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
   it. Expected non-zero result. Evidence:
   ```text
-  [targeted runner output]
+  The targeted runner matched `completion_help`, which panicked with
+  `not implemented`; the summary was 1 feature, 1 scenario (1 failed), and 1
+  step (1 failed). Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Add command and shell-argument help text covering exact usage,
+- [x] GREEN: Add command and shell-argument help text covering exact usage,
   supported shells, and stdout install/source purpose. Assert stdout-only help
   and exit 0. Production files: [list]. Test files: [list]. Targeted result:
   ```text
-  [targeted runner output]
+  Production file: `src/main.rs`; test file:
+  `tests/steps/shell_completions_steps.rs`.
+  The targeted runner reported 1 feature, 1 scenario (1 passed), and 8 steps
+  (8 passed).
   ```
-- [ ] REFACTOR: Keep help metadata in the authoritative command definition and
+- [x] REFACTOR: Keep help metadata in the authoritative command definition and
   remove duplicated help strings. Targeted rerun:
   ```text
-  [targeted runner output]
+  `cargo fmt --all -- --check` passed; the help wording was clarified in the
+  authoritative Clap definition and the targeted runner reported 1 feature, 1
+  scenario (1 passed), and 8 steps (8 passed).
   ```
 - [ ] COMMIT: `[hash]` - `docs(shell-completions): Completion help documents the supported selector and output contract`
 
