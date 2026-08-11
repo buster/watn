@@ -138,7 +138,7 @@ Feature: Interactive shell shortcut for watn
     Then the fake watn should not have been invoked
     And the current command line should remain empty
 
-  @givn.added @wip
+  @givn.added
   Scenario: Failed or empty output preserves the original command line
     Given an installed Bash shortcut and a fake watn that fails
     When I run the Bash widget with current input "list files"
@@ -147,21 +147,21 @@ Feature: Interactive shell shortcut for watn
     And I run the Bash widget with current input "show files"
     Then the current command line should remain "show files"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-zero watn status discards partial stdout
     Given an installed Bash shortcut and a fake watn that writes "partial" to stdout and exits non-zero
     When I run the Bash widget with current input "show partial result"
     Then the current command line should remain "show partial result"
     And the partial stdout should not be inserted
 
-  @givn.added @wip
+  @givn.added
   Scenario: The complete command line is passed as one quoted question
     Given an installed Bash shortcut and a fake watn that records its question
     When I run the Bash widget with current input "find files; echo unsafe *"
     Then the fake watn should receive exactly one question "find files; echo unsafe *"
     And the wildcard should not be expanded before watn receives the question
 
-  @givn.added @wip
+  @givn.added
   Scenario: Leading-option and reserved-token questions remain one argument
     Given an installed Bash shortcut and a fake watn that records each question
     When I run the Bash widget with current input "--help"
@@ -169,7 +169,7 @@ Feature: Interactive shell shortcut for watn
     When I run the Bash widget with current input "completions find files"
     Then the fake watn should have received exactly two questions "--help" and "completions find files"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Setup reports the exact reload instruction for every modified shell
     Given isolated Bash, Zsh, and Fish shortcut targets
     When I install the shell shortcut for Bash, Zsh, and Fish
@@ -177,7 +177,7 @@ Feature: Interactive shell shortcut for watn
     And setup should report "source ~/.zshrc" for Zsh
     And setup should report "source ~/.config/fish/config.fish" for Fish
 
-  @givn.added @wip
+  @givn.added
   Scenario: The optional setup result includes only explicitly selected shells
     Given a shortcut selection with Bash enabled and Zsh and Fish disabled
     When the setup result confirms the shortcut selection

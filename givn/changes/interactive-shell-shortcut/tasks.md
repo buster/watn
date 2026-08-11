@@ -49,7 +49,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `3b17d0b`
   ```text
   commit: 3b17d0b
   ```
@@ -75,7 +75,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 5 steps (5 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `e760ae2`
   ```text
   commit: e760ae2
   ```
@@ -102,7 +102,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 7 steps (7 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `ba5c4ba`
   ```text
   commit: ba5c4ba
   ```
@@ -129,7 +129,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 7 steps (7 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `023ae34`
   ```text
   commit: 023ae34
   ```
@@ -157,7 +157,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 10 steps (10 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `74fd6fa`
   ```text
   commit: 74fd6fa
   ```
@@ -184,7 +184,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `df7fa8d`
   ```text
   commit: df7fa8d
   ```
@@ -211,7 +211,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `f45b663`
   ```text
   commit: f45b663
   ```
@@ -239,7 +239,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 6 steps (6 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `3c97a5a`
   ```text
   commit: 3c97a5a
   ```
@@ -267,7 +267,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `6c8c0ee`
   ```text
   commit: 6c8c0ee
   ```
@@ -295,7 +295,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 8 steps (8 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `3781328`
   ```text
   commit: 3781328
   ```
@@ -323,7 +323,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `b259c06`
   ```text
   commit: b259c06
   ```
@@ -350,7 +350,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 6 steps (6 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `a9d71a0`
   ```text
   commit: a9d71a0
   ```
@@ -377,7 +377,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `e530d75`
   ```text
   commit: e530d75
   ```
@@ -404,7 +404,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 6 steps (6 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `32a2198`
   ```text
   commit: 32a2198
   ```
@@ -431,7 +431,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `cf1734f`
   ```text
   commit: cf1734f
   ```
@@ -457,7 +457,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `b6dfcaa`
   ```text
   commit: b6dfcaa
   ```
@@ -485,7 +485,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 5 steps (5 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `8cb788e`
   ```text
   commit: 8cb788e
   ```
@@ -512,7 +512,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 5 steps (5 passed)`.
   ```
-- [x] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `fe55ed8`
   ```text
   commit: fe55ed8
   ```
@@ -539,9 +539,9 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 3 steps (3 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: `92a4f22`
   ```text
-  commit: pending
+  commit: 92a4f22
   ```
 
 ## E2E Scenarios
@@ -570,7 +570,7 @@
   `cargo fmt --all` passed; the targeted E2E runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the E2E scenario commit hash.
+- [x] COMMIT: `84e693c`
   ```text
   commit: 84e693c
   ```
@@ -600,17 +600,30 @@
   `cargo fmt --all` passed; the targeted E2E runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [x] COMMIT: record the E2E scenario commit hash.
+- [x] COMMIT: `cd782b8`
   ```text
   commit: cd782b8
   ```
 
 ## Final Verification
 
-- [ ] Remove all completed scenario `@wip` tags and run `givn lint --change
+- [x] Remove all completed scenario `@wip` tags and run `givn lint --change
   interactive-shell-shortcut` clean.
-- [ ] Run `./run-tests.sh` and record the complete scenario/step count.
-- [ ] Run `./run-tests.sh --e2e` and record a strictly smaller scenario count.
-- [ ] Run formatting, compilation, clippy, all-target tests, docs, release
+- [x] Run `./run-tests.sh` and record the complete scenario/step count.
+  ```text
+  Result: 17 features, 93 scenarios (93 passed), 543 steps (543 passed).
+  ```
+- [x] Run `./run-tests.sh --e2e` and record a strictly smaller scenario count.
+  ```text
+  Result: 20 features, 61 scenarios (61 passed), 407 steps (407 passed).
+  E2E scope is strictly smaller than regular scope: 61 < 93.
+  ```
+- [x] Run formatting, compilation, clippy, all-target tests, docs, release
   build, coverage measurement/merge, and `git diff --check`.
+  ```text
+  Result: fmt check, cargo check --all-targets, clippy with -D warnings,
+  cargo test --doc, release build, and git diff --check passed. Coverage
+  measurement and merge passed with merged line coverage 8115/8940 (90.77%);
+  branch coverage is unavailable (0/0).
+  ```
 - [ ] Complete review and archive; record the archive commit hash.

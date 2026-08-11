@@ -583,6 +583,9 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
     for (key, value) in &world.env_vars {
         cmd.env(key.as_str(), value.as_str());
     }
+    if let Some(profile) = std::env::var_os("LLVM_PROFILE_FILE") {
+        cmd.env("LLVM_PROFILE_FILE", profile);
+    }
     cmd.env("TERM", "xterm-256color");
 
     let child = pair.slave.spawn_command(cmd).expect("spawn pty command");
