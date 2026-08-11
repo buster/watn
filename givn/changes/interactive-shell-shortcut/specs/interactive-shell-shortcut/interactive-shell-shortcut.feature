@@ -86,7 +86,7 @@ Feature: Interactive shell shortcut for watn
     Then the Fish configuration parent directory should exist
     And the Bash configuration parent directory should remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Installing again replaces the generated block without disturbing user content
     Given a Bash configuration containing unrelated user content and one watn shell shortcut block
     When I install the Bash shell shortcut again

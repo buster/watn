@@ -400,3 +400,50 @@ fn bash_parent_absent(world: &mut WatnWorld) {
         .unwrap()
         .exists());
 }
+
+#[given("a Bash configuration containing unrelated user content and one watn shell shortcut block")]
+fn existing_generated_bash(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let home = temp.path().join("home");
+    std::fs::create_dir_all(&home).expect("create shortcut home");
+    let path = home.join(".bashrc");
+    let content = format!(
+        "# before user content\n{}# after user content\n",
+        watn::shell_shortcut::Shell::Bash.generated_block()
+    );
+    std::fs::write(&path, content).expect("write generated Bash fixture");
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = HashMap::from([("bash".to_string(), path)]);
+}
+
+#[when("I install the Bash shell shortcut again")]
+fn reinstall_bash(world: &mut WatnWorld) {
+    let environment = shortcut_environment(world);
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Bash],
+        &environment,
+    );
+    assert!(report.is_success(), "installation report: {report:?}");
+}
+
+#[then("the Bash configuration should contain exactly one watn shell shortcut block")]
+fn exactly_one_bash_block(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("bash").unwrap())
+        .expect("read Bash target");
+    assert_eq!(
+        content.matches(watn::shell_shortcut::OPEN_MARKER).count(),
+        1
+    );
+    assert_eq!(
+        content.matches(watn::shell_shortcut::CLOSE_MARKER).count(),
+        1
+    );
+}
+
+#[then("the unrelated user content should remain unchanged")]
+fn unrelated_content(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("bash").unwrap())
+        .expect("read Bash target");
+    assert!(content.contains("# before user content"));
+    assert!(content.contains("# after user content"));
+}
