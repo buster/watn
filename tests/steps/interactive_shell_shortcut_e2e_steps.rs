@@ -1,34 +1,42 @@
 use cucumber::{then, when};
+use std::io::ErrorKind;
+use std::path::Path;
 use std::process::Command;
 
 use crate::WatnWorld;
 
+fn assert_shell_syntax(shell: &str, name: &str, path: &Path, required: bool) {
+    let result = Command::new(shell)
+        .args(["-n", path.to_str().expect("UTF-8 shell target path")])
+        .output();
+    let result = match result {
+        Ok(result) => result,
+        Err(error) if !required && error.kind() == ErrorKind::NotFound => return,
+        Err(error) => panic!("run {name} syntax check: {error}"),
+    };
+    assert!(
+        result.status.success(),
+        "{name} rejected generated configuration: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
 #[then("the generated Bash configuration should pass a Bash syntax check")]
 fn bash_syntax_check(world: &mut WatnWorld) {
     let path = world.shortcut_targets.get("bash").expect("Bash target");
-    let result = Command::new("bash")
-        .args(["-n", path.to_str().expect("UTF-8 Bash target path")])
-        .output()
-        .expect("run Bash syntax check");
-    assert!(
-        result.status.success(),
-        "Bash rejected generated configuration: {}",
-        String::from_utf8_lossy(&result.stderr)
-    );
+    assert_shell_syntax("bash", "Bash", path, true);
+}
+
+#[then("the generated Zsh configuration should pass a Zsh syntax check")]
+fn zsh_syntax_check(world: &mut WatnWorld) {
+    let path = world.shortcut_targets.get("zsh").expect("Zsh target");
+    assert_shell_syntax("zsh", "Zsh", path, std::env::var_os("CI").is_some());
 }
 
 #[then("the generated Fish configuration should pass a Fish syntax check")]
 fn fish_syntax_check(world: &mut WatnWorld) {
     let path = world.shortcut_targets.get("fish").expect("Fish target");
-    let result = Command::new("fish")
-        .args(["-n", path.to_str().expect("UTF-8 Fish target path")])
-        .output()
-        .expect("run Fish syntax check");
-    assert!(
-        result.status.success(),
-        "Fish rejected generated configuration: {}",
-        String::from_utf8_lossy(&result.stderr)
-    );
+    assert_shell_syntax("fish", "Fish", path, std::env::var_os("CI").is_some());
 }
 
 #[when(

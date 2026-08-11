@@ -38,8 +38,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install Fish for shell syntax checks
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish
+      - name: Install Fish and Zsh for shell syntax checks
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish zsh
 
       - name: Validate release identity
         id: release_identity

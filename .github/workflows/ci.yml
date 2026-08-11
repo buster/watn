@@ -21,8 +21,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Fish for shell syntax checks
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish
+      - name: Install Fish and Zsh for shell syntax checks
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish zsh
 
       - name: Cache Cargo dependencies and build artifacts
         if: github.event_name != 'pull_request'

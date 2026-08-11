@@ -1,10 +1,11 @@
 Feature: Interactive shell shortcut for watn
 
   @e2e
-  Scenario: Generated Bash and Fish configurations pass shell syntax checks
+  Scenario: Generated Bash, Zsh, and Fish configurations pass shell syntax checks
     Given  isolated Bash, Zsh, and Fish shortcut targets
     When  I install the shell shortcut for Bash, Zsh, and Fish
     Then  the generated Bash configuration should pass a Bash syntax check
+    And  the generated Zsh configuration should pass a Zsh syntax check
     And  the generated Fish configuration should pass a Fish syntax check
 
   @e2e
