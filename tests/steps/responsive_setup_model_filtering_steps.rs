@@ -138,7 +138,10 @@ fn complete_catalog(world: &mut WatnWorld, _first: String, _second: String, _thi
         .map(|id| serde_json::json!({ "id": id }))
         .collect::<Vec<_>>();
     let catalog = server.mock(|when, then| {
-        when.method(Method::GET).path("/models");
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("page", "1")
+            .query_param("limit", "50");
         then.status(200)
             .header("Content-Type", "application/json")
             .json_body(serde_json::json!({ "data": data }));
@@ -161,6 +164,45 @@ fn complete_catalog(world: &mut WatnWorld, _first: String, _second: String, _thi
 #[given("the catalog can be loaded in one response")]
 fn complete_catalog_response(_world: &mut WatnWorld) {
     assert!(_world.models_mock_id.is_some());
+}
+
+#[given("a provider with a catalog larger than one response")]
+fn incomplete_catalog(world: &mut WatnWorld) {
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    let data = (0..50)
+        .map(|index| serde_json::json!({ "id": format!("model-{index}") }))
+        .collect::<Vec<_>>();
+    let catalog = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("page", "1")
+            .query_param("limit", "50");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": data }));
+    });
+    let search = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("search", "o3");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": [{ "id": "o3-pro" }] }));
+    });
+    world.models_mock_id = Some(catalog.id);
+    world.search_mock_ids = vec![search.id];
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{base_url}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[given(regex = r##"^the provider search returns "([^"]+)" for the query "([^"]+)"$"##)]
+fn provider_search_result(world: &mut WatnWorld, model: String, query: String) {
+    assert_eq!(model, "o3-pro");
+    assert_eq!(query, "o3");
+    assert!(!world.search_mock_ids.is_empty());
 }
 
 #[when(regex = r##"^I type "([^"]+)" into the active model filter$"##)]
@@ -201,16 +243,39 @@ fn no_provider_search(world: &mut WatnWorld) {
     }
 }
 
+#[then(regex = r##"^the suggestions should contain "([^"]+)"$"##)]
+fn one_suggestion(world: &mut WatnWorld, model: String) {
+    let current = wait_for_screen(world, &["Filter: o3", model.as_str()]);
+    assert!(current.contains(&model), "missing {model:?}: {current:?}");
+}
+
+#[then(regex = r##"^the provider should receive a search request for "([^"]+)"$"##)]
+fn provider_received_search(world: &mut WatnWorld, query: String) {
+    assert_eq!(query, "o3");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    assert!(
+        world
+            .search_mock_ids
+            .iter()
+            .any(|id| httpmock::Mock::new(*id, server).hits() > 0),
+        "provider did not receive a search request"
+    );
+}
+
 fn wait_for_current_render(world: &WatnWorld, marker: &str) -> String {
+    wait_for_screen(world, &[marker])
+}
+
+fn wait_for_screen(world: &WatnWorld, markers: &[&str]) -> String {
     let session = world.pty_session.as_ref().expect("filter PTY session");
     let deadline = Instant::now() + Duration::from_secs(3);
     loop {
         let rendered = parse_screen(&pty_snapshot(session)).text();
-        if rendered.contains(marker) {
+        if markers.iter().all(|marker| rendered.contains(marker)) {
             return rendered;
         }
         if Instant::now() >= deadline {
-            panic!("filter {marker:?} was not rendered: {rendered:?}");
+            panic!("screen markers {markers:?} were not rendered: {rendered:?}");
         }
         std::thread::sleep(Duration::from_millis(25));
     }
