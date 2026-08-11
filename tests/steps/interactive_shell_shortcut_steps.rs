@@ -1,6 +1,7 @@
 use cucumber::{given, then, when};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Command;
 
 use crate::WatnWorld;
 
@@ -596,6 +597,117 @@ fn malformed_unchanged(world: &mut WatnWorld) {
             "malformed target {key} changed"
         );
     }
+}
+
+#[given(regex = r##"^an installed Bash shortcut and a fake watn that returns \"([^\"]*)\"$"##)]
+fn widget_success_fixture(world: &mut WatnWorld, output: String) {
+    let temp = tempfile::tempdir().expect("create widget temp dir");
+    let home = temp.path().join("home");
+    std::fs::create_dir_all(&home).expect("create widget home");
+    let target = home.join(".bashrc");
+    let environment = watn::shell_shortcut::ShellEnvironment {
+        home: home.clone(),
+        xdg_config_home: None,
+        shell: Some("/bin/bash".to_string()),
+    };
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Bash],
+        &environment,
+    );
+    assert!(report.is_success(), "widget fixture report: {report:?}");
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = HashMap::from([("bash".to_string(), target)]);
+    world
+        .pending_config
+        .insert("fake_output".to_string(), output.replace("\\n", "\n"));
+    world
+        .pending_config
+        .insert("fake_status".to_string(), "0".to_string());
+}
+
+#[when(regex = r##"^I run the Bash widget with current input \"([^\"]*)\"$"##)]
+fn run_bash_widget(world: &mut WatnWorld, input: String) {
+    let temp = world.temp_dir.as_ref().expect("widget temp dir");
+    let bin = temp.path().join("bin");
+    std::fs::create_dir_all(&bin).expect("create fake watn bin");
+    let fake = bin.join("watn");
+    std::fs::write(
+        &fake,
+        "#!/bin/sh\nprintf '%s' \"$WATN_FAKE_OUTPUT\"\nexit \"${WATN_FAKE_STATUS:-0}\"\n",
+    )
+    .expect("write fake watn");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755))
+            .expect("make fake watn executable");
+    }
+    let target = world.shortcut_targets.get("bash").expect("Bash target");
+    let shell_script = r#"
+source "$WATN_SHORTCUT_FILE"
+READLINE_LINE="$WATN_INPUT"
+READLINE_POINT=0
+_watn_widget
+printf 'LINE<<%s>>\n' "$READLINE_LINE"
+printf 'POINT<<%s>>\n' "$READLINE_POINT"
+"#;
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let path = format!("{}:{current_path}", bin.display());
+    let result = Command::new("bash")
+        .args(["--noprofile", "--norc", "-c", shell_script])
+        .env("PATH", path)
+        .env("WATN_SHORTCUT_FILE", target)
+        .env("WATN_INPUT", input)
+        .env(
+            "WATN_FAKE_OUTPUT",
+            world
+                .pending_config
+                .get("fake_output")
+                .cloned()
+                .unwrap_or_default(),
+        )
+        .env(
+            "WATN_FAKE_STATUS",
+            world
+                .pending_config
+                .get("fake_status")
+                .cloned()
+                .unwrap_or_else(|| "0".to_string()),
+        )
+        .output()
+        .expect("run Bash widget");
+    world.shortcut_output = Some(String::from_utf8_lossy(&result.stdout).to_string());
+    world.stderr_output = Some(String::from_utf8_lossy(&result.stderr).to_string());
+    world.shortcut_status = result.status.code();
+}
+
+#[then(regex = r##"^the current command line should be exactly \"([^\"]*)\"$"##)]
+fn current_line(world: &mut WatnWorld, line: String) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    let actual = output
+        .split("LINE<<")
+        .nth(1)
+        .and_then(|value| value.split(">>").next())
+        .expect("widget line output");
+    assert_eq!(actual, line);
+}
+
+#[then("the cursor should be at the end of the current command line")]
+fn cursor_end(world: &mut WatnWorld) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    let point = output
+        .split("POINT<<")
+        .nth(1)
+        .and_then(|value| value.split(">>").next())
+        .expect("widget cursor output")
+        .parse::<usize>()
+        .expect("numeric cursor position");
+    let line = output
+        .split("LINE<<")
+        .nth(1)
+        .and_then(|value| value.split(">>").next())
+        .expect("widget line output");
+    assert_eq!(point, line.chars().count());
 }
 
 #[given("isolated Bash, Zsh, and Fish shortcut targets")]

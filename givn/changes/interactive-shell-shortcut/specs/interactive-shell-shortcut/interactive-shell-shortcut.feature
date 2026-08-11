@@ -127,7 +127,7 @@ Feature: Interactive shell shortcut for watn
     And the Fish block should replace and repaint the current command line
     And every generated block should bind Ctrl-W
 
-  @givn.added @wip
+  @givn.added
   Scenario: A successful widget inserts one normalized command and moves the cursor to its end
     Given an installed Bash shortcut and a fake watn that returns "printf 'ready'\n\n"
     When I run the Bash widget with current input "show status"
