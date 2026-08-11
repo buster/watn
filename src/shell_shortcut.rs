@@ -180,13 +180,16 @@ fn install_one(shell: Shell, environment: &ShellEnvironment) -> TargetResult {
     };
 
     match replace_target(shell, &path) {
-        Ok(()) => TargetResult {
-            shell,
-            reload: Some(shell.reload_instruction(&path, &environment.home)),
-            path: Some(path),
-            success: true,
-            message: format!("Configured {}", shell.name()),
-        },
+        Ok(()) => {
+            let message = format!("Configured {} in {}", shell.name(), path.display());
+            TargetResult {
+                shell,
+                reload: Some(shell.reload_instruction(&path, &environment.home)),
+                path: Some(path),
+                success: true,
+                message,
+            }
+        }
         Err(error) => TargetResult {
             shell,
             path: Some(path),
