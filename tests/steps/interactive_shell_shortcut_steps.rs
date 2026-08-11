@@ -80,3 +80,73 @@ fn select_no_shells(world: &mut WatnWorld) {
         "empty selection installed a target"
     );
 }
+
+#[given("`SHELL` is \"/usr/local/bin/bash\"")]
+fn shell_environment(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    std::fs::create_dir_all(temp.path().join("home")).expect("create shortcut home");
+    world.temp_dir = Some(temp);
+    world.pending_config.insert(
+        "shortcut_shell".to_string(),
+        "/usr/local/bin/bash".to_string(),
+    );
+}
+
+#[given("Zsh and Fish target files already exist")]
+fn existing_other_shell_targets(world: &mut WatnWorld) {
+    let temp = world.temp_dir.as_ref().expect("shortcut temp dir");
+    let home = temp.path().join("home");
+    let fish_dir = home.join(".config/fish");
+    std::fs::create_dir_all(&fish_dir).expect("create Fish config directory");
+    let targets = HashMap::from([
+        ("zsh".to_string(), home.join(".zshrc")),
+        ("fish".to_string(), fish_dir.join("config.fish")),
+    ]);
+    for path in targets.values() {
+        std::fs::write(path, b"# existing target\n").expect("write shell target");
+    }
+    world.shortcut_targets = targets;
+}
+
+#[when("the shell shortcut choices are shown")]
+fn show_shortcut_choices(world: &mut WatnWorld) {
+    let temp = world.temp_dir.as_ref().expect("shortcut temp dir");
+    let environment = watn::shell_shortcut::ShellEnvironment {
+        home: temp.path().join("home"),
+        xdg_config_home: Some(temp.path().join("home/.config")),
+        shell: world.pending_config.get("shortcut_shell").cloned(),
+    };
+    world.shortcut_shells = environment
+        .detected_shells()
+        .into_iter()
+        .map(|shell| shell.lowercase_name().to_string())
+        .collect();
+}
+
+#[then("Bash should be preselected")]
+fn bash_preselected(world: &mut WatnWorld) {
+    assert_eq!(world.shortcut_shells, vec!["bash"]);
+}
+
+#[then("Zsh and Fish should remain available and unselected")]
+fn other_shells_unselected(world: &mut WatnWorld) {
+    assert!(!world.shortcut_shells.contains(&"zsh".to_string()));
+    assert!(!world.shortcut_shells.contains(&"fish".to_string()));
+    assert_eq!(world.shortcut_targets.len(), 2);
+}
+
+#[when("I select Zsh and Fish as well")]
+fn select_other_shells(world: &mut WatnWorld) {
+    world
+        .shortcut_shells
+        .extend(["zsh".to_string(), "fish".to_string()]);
+}
+
+#[then("Bash, Zsh, and Fish should all be selected")]
+fn all_shells_selected(world: &mut WatnWorld) {
+    assert_eq!(
+        world.shortcut_shells,
+        vec!["bash", "zsh", "fish"],
+        "all supported shells should be selectable"
+    );
+}

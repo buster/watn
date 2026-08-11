@@ -46,7 +46,7 @@ Feature: Interactive shell shortcut for watn
     And I select no shells in the shortcut multi-select
     Then every shell configuration file should match its snapshot byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: The shell basename alone controls shortcut preselection
     Given `SHELL` is "/usr/local/bin/bash"
     And Zsh and Fish target files already exist

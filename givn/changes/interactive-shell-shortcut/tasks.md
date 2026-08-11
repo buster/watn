@@ -36,7 +36,7 @@
   ```
 - [x] GREEN: implement the default-decline setup/file assertions and the
   minimum optional-question state needed to leave all targets byte-for-byte
-  unchanged. Production files: `src/setup.rs`, `src/shell_shortcut.rs`.
+  unchanged. Production file: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   Targeted result:
   ```text
@@ -49,7 +49,7 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
   commit: 3b17d0b
   ```
@@ -64,7 +64,7 @@
   scenario (1 failed), 3 steps (2 passed, 1 failed)`, and returned non-zero.
   ```
 - [x] GREEN: implement empty multi-selection handling and byte-for-byte target
-  snapshots. Production files: `src/setup.rs`, `src/shell_shortcut.rs`.
+  snapshots. Production file reused: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
   Targeted runner reported `1 feature, 1 scenario (1 passed), 5 steps (5
@@ -75,27 +75,32 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 5 steps (5 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: e760ae2
   ```
 
 ## Scenario: The shell basename alone controls shortcut preselection
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:84`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: implement basename-only `SHELL` detection and unconstrained
-  multi-selection. Production files: `src/shell_shortcut.rs`, `src/setup.rs`.
+- [x] GREEN: implement basename-only `SHELL` detection and unconstrained
+  multi-selection. Production file reused: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 7 steps (7
+  passed)` with `/usr/local/bin/bash` selecting only Bash and later manual
+  selection adding Zsh and Fish.
   ```
-- [ ] REFACTOR: rerun the targeted scenario.
+- [x] REFACTOR: rerun the targeted scenario.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 7 steps (7 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text
