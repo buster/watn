@@ -251,11 +251,12 @@ fn sentinel_remains_zero(world: &mut WatnWorld) {
 #[then("no file should be written in the isolated XDG config directory")]
 fn no_config_files(world: &mut WatnWorld) {
     let directory = world.temp_dir.as_ref().expect("isolated XDG directory");
-    assert_eq!(
+    assert!(
         std::fs::read_dir(directory.path())
             .expect("read XDG directory")
-            .count(),
-        0
+            .next()
+            .is_none(),
+        "completion generation wrote a file in the isolated XDG directory"
     );
 }
 

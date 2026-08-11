@@ -58,43 +58,56 @@
 
 ## Scenario: Unsupported shell returns actionable guidance
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
+- [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
   it. Expected non-zero result. Evidence:
   ```text
-  [targeted runner output]
+  The targeted runner matched `unsupported_completion`, which panicked with
+  `not implemented`; the summary was 1 feature, 1 scenario (1 failed), and 1
+  step (1 failed). Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Implement the closed selector error containing the rejected value,
+- [x] GREEN: Implement the closed selector error containing the rejected value,
   literal `unsupported shell`, and supported values bash/zsh/fish. Assert
   non-zero status and stderr contract. Production files: [list]. Test files:
   [list]. Targeted result:
   ```text
-  [targeted runner output]
+  Production file: `src/main.rs`; test file:
+  `tests/steps/shell_completions_steps.rs`.
+  The targeted runner reported 1 feature, 1 scenario (1 passed), and 4 steps
+  (4 passed).
   ```
-- [ ] REFACTOR: Preserve the normal Clap argument-error framing while keeping
+- [x] REFACTOR: Preserve the normal Clap argument-error framing while keeping
   the local literal contract. Targeted rerun:
   ```text
-  [targeted runner output]
+  `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
+  1 scenario (1 passed), and 4 steps (4 passed).
   ```
-- [ ] COMMIT: `[hash]` - `feat(shell-completions): Unsupported shell returns actionable guidance`
+- [x] COMMIT: `48ab5ec` - `feat(shell-completions): Unsupported shell returns actionable guidance`
 
 ## Scenario: Completion generation does not load configuration or contact a provider
 
-- [ ] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
+- [x] RED: Remove only this scenario's `@wip`, bind explicit stubs, and target
   it. Expected non-zero result. Evidence:
   ```text
-  [targeted runner output]
+  The targeted runner matched `no_provider_config`, which panicked with
+  `not implemented`; the summary was 1 feature, 1 scenario (1 failed), and 1
+  step (1 failed). Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Create isolated XDG state and an observable provider sentinel,
+- [x] GREEN: Create isolated XDG state and an observable provider sentinel,
   invoke completion generation, and assert no config file or other file is
   created, no provider request occurs, stderr is empty, and stdout contains only
   the script. Production files: [list]. Test files: [list]. Targeted result:
   ```text
-  [targeted runner output]
+  Production files: none beyond the implementation committed in `341671d`.
+  Test file: `tests/steps/shell_completions_steps.rs`.
+  The targeted runner reported 1 feature, 1 scenario (1 passed), and 12 steps
+  (12 passed).
   ```
-- [ ] REFACTOR: Keep before/after snapshots deterministic and avoid relying on
+- [x] REFACTOR: Keep before/after snapshots deterministic and avoid relying on
   provider configuration as the primary assertion. Targeted rerun:
   ```text
-  [targeted runner output]
+  `cargo fmt --all -- --check` passed; the isolated-directory assertion was
+  made explicit and the targeted runner reported 1 feature, 1 scenario (1
+  passed), and 12 steps (12 passed).
   ```
 - [ ] COMMIT: `[hash]` - `feat(shell-completions): Completion generation does not load configuration or contact a provider`
 
