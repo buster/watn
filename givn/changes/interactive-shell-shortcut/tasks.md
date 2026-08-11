@@ -517,6 +517,33 @@
   commit: fe55ed8
   ```
 
+## Scenario: The optional setup result includes only explicitly selected shells
+
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+  targeted regular scenario. Evidence:
+  ```text
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:882`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
+  ```
+- [x] GREEN: propagate the enabled flag and selected-shell flags through the
+  optional setup result. Production file: `src/setup.rs`.
+  Test file: `tests/steps/interactive_shell_shortcut_steps.rs`.
+  ```text
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 3 steps (3
+  passed)`.
+  ```
+- [x] REFACTOR: rerun the targeted scenario after extracting the shared
+  selection resolver.
+  ```text
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 3 steps (3 passed)`.
+  ```
+- [ ] COMMIT: record the scenario commit hash.
+  ```text
+  commit: pending
+  ```
+
 ## E2E Scenarios
 
 ## Scenario: Generated Bash and Fish configurations pass shell syntax checks
@@ -573,9 +600,9 @@
   `cargo fmt --all` passed; the targeted E2E runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [ ] COMMIT: record the E2E scenario commit hash.
+- [x] COMMIT: record the E2E scenario commit hash.
   ```text
-  commit: pending
+  commit: cd782b8
   ```
 
 ## Final Verification

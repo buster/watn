@@ -176,3 +176,9 @@ Feature: Interactive shell shortcut for watn
     Then setup should report "source ~/.bashrc" for Bash
     And setup should report "source ~/.zshrc" for Zsh
     And setup should report "source ~/.config/fish/config.fish" for Fish
+
+  @givn.added @wip
+  Scenario: The optional setup result includes only explicitly selected shells
+    Given a shortcut selection with Bash enabled and Zsh and Fish disabled
+    When the setup result confirms the shortcut selection
+    Then the selected shortcut shells should contain only Bash

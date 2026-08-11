@@ -143,6 +143,9 @@ fn confirm_large_model(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(300));
+    // The optional shell-shortcut question defaults to decline.
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(200));
     let session = world.pty_session.take().expect("setup PTY session");
     finish_pty_session(world, session);
 }

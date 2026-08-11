@@ -879,6 +879,24 @@ fn fish_reload(world: &mut WatnWorld) {
         .contains("Run: source ~/.config/fish/config.fish"));
 }
 
+#[given("a shortcut selection with Bash enabled and Zsh and Fish disabled")]
+fn selected_shells_fixture(world: &mut WatnWorld) {
+    world.shortcut_shells = vec!["bash".to_string()];
+}
+
+#[when("the setup result confirms the shortcut selection")]
+fn confirm_selected_shells(world: &mut WatnWorld) {
+    world.shortcut_shells = watn::setup::selected_shortcut_shells(true, [true, false, false])
+        .into_iter()
+        .map(|shell| shell.lowercase_name().to_string())
+        .collect();
+}
+
+#[then("the selected shortcut shells should contain only Bash")]
+fn selected_shortcut_shells(world: &mut WatnWorld) {
+    assert_eq!(world.shortcut_shells, vec!["bash"]);
+}
+
 #[then("the embedded line break should remain in the command line buffer")]
 fn embedded_break(world: &mut WatnWorld) {
     let output = world.shortcut_output.as_deref().unwrap_or_default();
