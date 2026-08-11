@@ -10,7 +10,7 @@ work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: shell-completions archived and verification complete; this plan update is unstaged
+- Worktree: clean; shell-completions archive committed as `f2398ad`
 - Remote/upstream: `origin` configured
 - Active givn change: none
 - Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
@@ -78,7 +78,7 @@ through a reviewed proposal and specification:
 
 ## Remaining Work
 
-### 4. Interactive Shell Shortcut For Watn
+### 1. Interactive Shell Shortcut For Watn
 
 Create this as a separate givn change after shell completions, unless the
 implementation order is deliberately changed through a reviewed proposal:
