@@ -4,8 +4,9 @@ All notable changes to watn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
-
 ## [Unreleased]
+
+## [0.1.3] - 2026-08-11
 
 ### Bug Fixes
 
@@ -33,9 +34,11 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 
 - **reasoning:** Validate unknown persisted request effort
 
+
 ### Documentation
 
 - Rewrite README usage section, add examples, license badge
+
 
 ### Features
 
@@ -113,9 +116,18 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 
 - **search:** The newest search result stays visible when an older result arrives later
 
+
+### Other Changes
+
+- Merge pull request #1 from buster/bright-fireant
+
+Bright fireant
+
+
 ### Refactoring
 
 - Remove obsolete code paths
+
 
 ## [0.1.2] - 2026-08-09
 
