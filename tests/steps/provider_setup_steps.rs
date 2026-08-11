@@ -867,9 +867,12 @@ fn select_models_in_terminal(
         pty_write(&mut session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(300));
     }
-    // The shared setup wizard's optional shell shortcut defaults to decline.
-    pty_write(&mut session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(200));
+    // The shared setup wizard's optional completion and shortcut pages default
+    // to decline.
+    for _ in 0..2 {
+        pty_write(&mut session, "\r");
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
     finish_pty_session(world, session);
 }
 

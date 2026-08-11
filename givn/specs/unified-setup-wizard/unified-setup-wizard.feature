@@ -6,7 +6,7 @@ Feature: Unified setup wizard
     And  no supported provider environment variable is set
     And  the ephemeral E2E transport returns models ["model-small", "model-middle", "model-large"] for "/models"
     When  I start `watn setup` in a terminal
-    Then  the setup wizard should show tabs "URL", "API key", "Small Model", "Middle Model", "Large Model"
+    Then  the setup wizard should show tabs "URL", "API key", "Small Model", "Middle Model", "Large Model", "Shell Completion", "Shell Shortcut"
     And  the setup wizard should show the URL page as active
     And  the setup wizard should explain OpenAI and LiteLLM compatibility
     And  the setup wizard should show a visible cursor on the active input
@@ -17,6 +17,12 @@ Feature: Unified setup wizard
     When  I type "model-large" on the Large Model page
     Then  the setup wizard should show the Large Model page as active
     When  I confirm the Large Model selection with Enter
+    Then  the setup wizard should show the Shell Completion page as active
+    And  the setup wizard should explain shell completion installation
+    When  I skip shell completion setup
+    Then  the setup wizard should show the Shell Shortcut page as active
+    And  the setup wizard should explain shell shortcut installation
+    When  I skip shell integration setup
     Then  setup should exit successfully
     And  the config file should contain api_key exactly "sk-wizard-key"
     And  the config file should contain small tier "model-small", middle tier "model-middle", and large tier "model-large"

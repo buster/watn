@@ -5,4 +5,5 @@ pub mod models;
 pub mod output;
 pub mod provider;
 pub mod setup;
+pub mod shell_completion;
 pub mod shell_shortcut;

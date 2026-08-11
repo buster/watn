@@ -515,6 +515,49 @@ fn bash_target_directory(world: &mut WatnWorld) {
     assert!(world.shortcut_targets.get("bash").unwrap().is_dir());
 }
 
+#[given("a Bash shortcut target that is a symbolic link to a regular file")]
+fn symlinked_bash_target(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create symlink target temp dir");
+    let home = temp.path().join("home");
+    std::fs::create_dir_all(&home).expect("create symlink target home");
+    let real_target = home.join(".bashrc.real");
+    let link = home.join(".bashrc");
+    std::fs::write(&real_target, b"# existing Bash content\n").expect("write symlink target");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(&real_target, &link).expect("create Bash symlink");
+    world.pending_config.insert(
+        "shortcut_real_target".to_string(),
+        real_target.display().to_string(),
+    );
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = HashMap::from([("bash".to_string(), link)]);
+}
+
+#[then("the Bash shortcut symlink should remain intact")]
+fn bash_symlink_remains(world: &mut WatnWorld) {
+    let link = world.shortcut_targets.get("bash").unwrap();
+    assert!(
+        std::fs::symlink_metadata(link)
+            .expect("read Bash symlink metadata")
+            .file_type()
+            .is_symlink(),
+        "Bash target was replaced instead of its resolved file"
+    );
+}
+
+#[then("the resolved Bash shortcut target should contain the Bash widget")]
+fn resolved_bash_target_contains_widget(world: &mut WatnWorld) {
+    let target = PathBuf::from(
+        world
+            .pending_config
+            .get("shortcut_real_target")
+            .expect("resolved Bash target path"),
+    );
+    let content = std::fs::read_to_string(target).expect("read resolved Bash target");
+    assert!(content.contains("READLINE_LINE"));
+    assert!(content.contains("bind -x"));
+}
+
 #[given("isolated Bash targets with these malformed marker layouts:")]
 fn malformed_bash_targets(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
     let temp = tempfile::tempdir().expect("create shortcut temp dir");

@@ -118,9 +118,19 @@ pub struct TargetResult {
     pub reload: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InstallReport {
     pub results: Vec<TargetResult>,
+    kind: &'static str,
+}
+
+impl Default for InstallReport {
+    fn default() -> Self {
+        Self {
+            results: Vec::new(),
+            kind: "shell shortcut",
+        }
+    }
 }
 
 impl InstallReport {
@@ -136,17 +146,17 @@ impl InstallReport {
         self.results.iter().all(|result| result.success)
     }
 
-    pub fn aggregate_error(&self) -> Option<Error> {
+    pub fn failure_message(&self) -> Option<String> {
         let failures = self
             .failures()
             .map(|failure| failure.message.as_str())
             .collect::<Vec<_>>();
-        (!failures.is_empty()).then(|| {
-            Error::ConfigError(format!(
-                "shell shortcut installation failed: {}",
-                failures.join("; ")
-            ))
-        })
+        (!failures.is_empty())
+            .then(|| format!("{} installation failed: {}", self.kind, failures.join("; ")))
+    }
+
+    pub fn aggregate_error(&self) -> Option<Error> {
+        self.failure_message().map(Error::ConfigError)
     }
 }
 
@@ -155,17 +165,55 @@ pub fn install(shells: &[Shell]) -> InstallReport {
 }
 
 pub fn install_with_environment(shells: &[Shell], environment: &ShellEnvironment) -> InstallReport {
-    let mut report = InstallReport::default();
+    install_blocks_with_environment(
+        shells,
+        environment,
+        "shell shortcut",
+        OPEN_MARKER,
+        CLOSE_MARKER,
+        Shell::generated_block,
+    )
+}
+
+pub(crate) fn install_blocks_with_environment<F>(
+    shells: &[Shell],
+    environment: &ShellEnvironment,
+    kind: &'static str,
+    open_marker: &'static str,
+    close_marker: &'static str,
+    generated_block: F,
+) -> InstallReport
+where
+    F: Fn(Shell) -> &'static str,
+{
+    let mut report = InstallReport {
+        results: Vec::new(),
+        kind,
+    };
     let mut selected = shells.to_vec();
     selected.sort_unstable();
     selected.dedup();
     for shell in selected {
-        report.results.push(install_one(shell, environment));
+        report.results.push(install_one(
+            shell,
+            environment,
+            kind,
+            open_marker,
+            close_marker,
+            generated_block(shell),
+        ));
     }
     report
 }
 
-fn install_one(shell: Shell, environment: &ShellEnvironment) -> TargetResult {
+fn install_one(
+    shell: Shell,
+    environment: &ShellEnvironment,
+    kind: &'static str,
+    open_marker: &'static str,
+    close_marker: &'static str,
+    generated_block: &'static str,
+) -> TargetResult {
     let path = match environment.target_path(shell) {
         Ok(path) => path,
         Err(error) => {
@@ -179,9 +227,16 @@ fn install_one(shell: Shell, environment: &ShellEnvironment) -> TargetResult {
         }
     };
 
-    match replace_target(shell, &path) {
+    match replace_target(
+        shell,
+        kind,
+        &path,
+        open_marker,
+        close_marker,
+        generated_block,
+    ) {
         Ok(()) => {
-            let message = format!("Configured {} in {}", shell.name(), path.display());
+            let message = format!("Configured {} {} in {}", shell.name(), kind, path.display());
             TargetResult {
                 shell,
                 reload: Some(shell.reload_instruction(&path, &environment.home)),
@@ -200,36 +255,45 @@ fn install_one(shell: Shell, environment: &ShellEnvironment) -> TargetResult {
     }
 }
 
-fn replace_target(shell: Shell, path: &Path) -> Result<(), Error> {
-    let existing = match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_symlink() => {
-            return Err(target_error(
-                shell,
-                path,
-                "refusing to modify a symbolic link",
-            ));
-        }
+fn replace_target(
+    shell: Shell,
+    kind: &str,
+    path: &Path,
+    open_marker: &str,
+    close_marker: &str,
+    generated_block: &str,
+) -> Result<(), Error> {
+    let target = resolve_target(shell, kind, path)?;
+    let existing = match fs::symlink_metadata(&target) {
         Ok(metadata) if metadata.is_dir() => {
-            return Err(target_error(shell, path, "target is a directory"));
+            return Err(target_error(shell, kind, path, "target is a directory"));
         }
-        Ok(_) => Some(fs::read(path).map_err(|error| target_io_error(shell, path, "read", error))?),
+        Ok(_) => Some(
+            fs::read(&target).map_err(|error| target_io_error(shell, kind, path, "read", error))?,
+        ),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
-        Err(error) => return Err(target_io_error(shell, path, "inspect", error)),
+        Err(error) => return Err(target_io_error(shell, kind, path, "inspect", error)),
     };
 
     let original_mode = existing
         .as_ref()
-        .and_then(|_| fs::metadata(path).ok())
+        .and_then(|_| fs::metadata(&target).ok())
         .map(|metadata| metadata.permissions());
-    let content = build_content(shell, existing.as_deref().unwrap_or_default())?;
-    let parent = path
+    let content = build_content(
+        existing.as_deref().unwrap_or_default(),
+        kind,
+        open_marker,
+        close_marker,
+        generated_block,
+    )?;
+    let parent = target
         .parent()
-        .ok_or_else(|| target_error(shell, path, "target has no parent directory"))?;
+        .ok_or_else(|| target_error(shell, kind, path, "target has no parent directory"))?;
     fs::create_dir_all(parent)
-        .map_err(|error| target_io_error(shell, path, "create parent", error))?;
+        .map_err(|error| target_io_error(shell, kind, path, "create parent", error))?;
 
     let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let file_name = path
+    let file_name = target
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("config");
@@ -242,17 +306,20 @@ fn replace_target(shell: Shell, path: &Path) -> Result<(), Error> {
             .write(true)
             .create_new(true)
             .open(&temporary)
-            .map_err(|error| target_io_error(shell, path, "create temporary target", error))?;
+            .map_err(|error| {
+                target_io_error(shell, kind, path, "create temporary target", error)
+            })?;
         if let Some(mode) = original_mode {
-            fs::set_permissions(&temporary, mode)
-                .map_err(|error| target_io_error(shell, path, "set target permissions", error))?;
+            fs::set_permissions(&temporary, mode).map_err(|error| {
+                target_io_error(shell, kind, path, "set target permissions", error)
+            })?;
         }
         file.write_all(&content)
-            .map_err(|error| target_io_error(shell, path, "write", error))?;
+            .map_err(|error| target_io_error(shell, kind, path, "write", error))?;
         file.sync_all()
-            .map_err(|error| target_io_error(shell, path, "sync", error))?;
-        fs::rename(&temporary, path)
-            .map_err(|error| target_io_error(shell, path, "replace", error))?;
+            .map_err(|error| target_io_error(shell, kind, path, "sync", error))?;
+        fs::rename(&temporary, &target)
+            .map_err(|error| target_io_error(shell, kind, path, "replace", error))?;
         // The rename is the committed target change; directory syncing only
         // improves durability and must not report a failure after replacement.
         let _ = sync_directory(parent);
@@ -264,35 +331,50 @@ fn replace_target(shell: Shell, path: &Path) -> Result<(), Error> {
     write_result
 }
 
-fn build_content(shell: Shell, existing: &[u8]) -> Result<Vec<u8>, Error> {
-    let open_count = count_marker(existing, OPEN_MARKER.as_bytes());
-    let close_count = count_marker(existing, CLOSE_MARKER.as_bytes());
+fn resolve_target(shell: Shell, kind: &str, path: &Path) -> Result<PathBuf, Error> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => fs::canonicalize(path)
+            .map_err(|error| target_io_error(shell, kind, path, "resolve symbolic link", error)),
+        Ok(_) => Ok(path.to_path_buf()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(path.to_path_buf()),
+        Err(error) => Err(target_io_error(shell, kind, path, "inspect", error)),
+    }
+}
+
+fn build_content(
+    existing: &[u8],
+    kind: &str,
+    open_marker: &str,
+    close_marker: &str,
+    generated_block: &str,
+) -> Result<Vec<u8>, Error> {
+    let open_count = count_marker(existing, open_marker.as_bytes());
+    let close_count = count_marker(existing, close_marker.as_bytes());
     if open_count == 0 && close_count == 0 {
         let mut result = existing.to_vec();
         if !result.is_empty() && !result.ends_with(b"\n") {
             result.push(b'\n');
         }
-        result.extend_from_slice(shell.generated_block().as_bytes());
+        result.extend_from_slice(generated_block.as_bytes());
         return Ok(result);
     }
     if open_count != 1 || close_count != 1 {
         return Err(Error::ConfigError(format!(
-            "malformed watn shell shortcut markers: expected zero markers or one ordered pair, found {} opening and {} closing markers",
+            "malformed watn {kind} markers: expected zero markers or one ordered pair, found {} opening and {} closing markers",
             open_count, close_count
         )));
     }
-    let open = find_marker(existing, OPEN_MARKER.as_bytes()).expect("marker count checked");
-    let close = find_marker(existing, CLOSE_MARKER.as_bytes()).expect("marker count checked");
+    let open = find_marker(existing, open_marker.as_bytes()).expect("marker count checked");
+    let close = find_marker(existing, close_marker.as_bytes()).expect("marker count checked");
     if close < open {
-        return Err(Error::ConfigError(
-            "malformed watn shell shortcut markers: closing marker precedes opening marker"
-                .to_string(),
-        ));
+        return Err(Error::ConfigError(format!(
+            "malformed watn {kind} markers: closing marker precedes opening marker"
+        )));
     }
-    let close_end = close + CLOSE_MARKER.len();
-    let mut result = Vec::with_capacity(existing.len() + shell.generated_block().len());
+    let close_end = close + close_marker.len();
+    let mut result = Vec::with_capacity(existing.len() + generated_block.len());
     result.extend_from_slice(&existing[..open]);
-    result.extend_from_slice(shell.generated_block().as_bytes());
+    result.extend_from_slice(generated_block.as_bytes());
     result.extend_from_slice(&existing[close_end..]);
     Ok(result)
 }
@@ -310,17 +392,29 @@ fn find_marker(content: &[u8], marker: &[u8]) -> Option<usize> {
         .position(|candidate| candidate == marker)
 }
 
-fn target_error(shell: Shell, path: &Path, reason: &str) -> Error {
+fn target_error(shell: Shell, kind: &str, path: &Path, reason: &str) -> Error {
     Error::ConfigError(format!(
-        "{} shell shortcut target {}: {}",
+        "{} {} target {}: {}",
         shell.name(),
+        kind,
         path.display(),
         reason
     ))
 }
 
-fn target_io_error(shell: Shell, path: &Path, operation: &str, error: std::io::Error) -> Error {
-    target_error(shell, path, &format!("cannot {operation} target: {error}"))
+fn target_io_error(
+    shell: Shell,
+    kind: &str,
+    path: &Path,
+    operation: &str,
+    error: std::io::Error,
+) -> Error {
+    target_error(
+        shell,
+        kind,
+        path,
+        &format!("cannot {operation} target: {error}"),
+    )
 }
 
 fn sync_directory(path: &Path) -> std::io::Result<()> {

@@ -25,6 +25,7 @@ use crate::provider::setup::{
     build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation,
     OPENROUTER_ENDPOINT,
 };
+use crate::shell_completion;
 use crate::shell_shortcut::{self, Shell};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,6 +39,7 @@ pub enum SetupEntryPoint {
 pub struct SetupWizardResult {
     pub provider: ProviderDraft,
     pub choices: [Option<LevelChoice>; 3],
+    pub completion_shells: Vec<Shell>,
     pub shortcut_shells: Vec<Shell>,
 }
 
@@ -47,7 +49,7 @@ pub enum SetupWizardOutcome {
     Cancelled(SetupCancellation),
 }
 
-pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell> {
+pub fn selected_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell> {
     if !enabled {
         return Vec::new();
     }
@@ -58,6 +60,10 @@ pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell
         .collect()
 }
 
+pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell> {
+    selected_shells(enabled, selected)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum SetupPage {
     Url,
@@ -65,6 +71,8 @@ enum SetupPage {
     SmallModel,
     MiddleModel,
     LargeModel,
+    ShellCompletion,
+    ShellShortcut,
 }
 
 impl SetupPage {
@@ -75,6 +83,8 @@ impl SetupPage {
             Self::SmallModel => "Small Model",
             Self::MiddleModel => "Middle Model",
             Self::LargeModel => "Large Model",
+            Self::ShellCompletion => "Shell Completion",
+            Self::ShellShortcut => "Shell Shortcut",
         }
     }
 
@@ -85,6 +95,8 @@ impl SetupPage {
             Self::SmallModel => 2,
             Self::MiddleModel => 3,
             Self::LargeModel => 4,
+            Self::ShellCompletion => 5,
+            Self::ShellShortcut => 6,
         }
     }
 
@@ -103,7 +115,9 @@ impl SetupPage {
             Self::ApiKey => Some(Self::SmallModel),
             Self::SmallModel => Some(Self::MiddleModel),
             Self::MiddleModel => Some(Self::LargeModel),
-            Self::LargeModel => None,
+            Self::LargeModel => Some(Self::ShellCompletion),
+            Self::ShellCompletion => Some(Self::ShellShortcut),
+            Self::ShellShortcut => None,
         }
     }
 
@@ -114,6 +128,8 @@ impl SetupPage {
             Self::SmallModel => Some(Self::ApiKey),
             Self::MiddleModel => Some(Self::SmallModel),
             Self::LargeModel => Some(Self::MiddleModel),
+            Self::ShellCompletion => Some(Self::LargeModel),
+            Self::ShellShortcut => Some(Self::ShellCompletion),
         }
     }
 }
@@ -137,7 +153,7 @@ enum ModelFocus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ShortcutFocus {
+enum ShellInstallFocus {
     Question,
     Shells,
 }
@@ -194,8 +210,11 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
         *config = updated;
     }
 
-    if !result.shortcut_shells.is_empty() {
-        let report = shell_shortcut::install(&result.shortcut_shells);
+    let environment = shell_shortcut::ShellEnvironment::from_process();
+    let mut installation_failures = Vec::new();
+    if !result.completion_shells.is_empty() {
+        let report =
+            shell_completion::install_with_environment(&result.completion_shells, &environment);
         for target in &report.results {
             if target.success {
                 eprintln!("{}", target.message);
@@ -206,9 +225,29 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
                 eprintln!("{}", target.message);
             }
         }
-        if let Some(error) = report.aggregate_error() {
-            return Err(error);
+        if let Some(error) = report.failure_message() {
+            installation_failures.push(error);
         }
+    }
+    if !result.shortcut_shells.is_empty() {
+        let report =
+            shell_shortcut::install_with_environment(&result.shortcut_shells, &environment);
+        for target in &report.results {
+            if target.success {
+                eprintln!("{}", target.message);
+                if let Some(reload) = &target.reload {
+                    eprintln!("{}", reload);
+                }
+            } else {
+                eprintln!("{}", target.message);
+            }
+        }
+        if let Some(error) = report.failure_message() {
+            installation_failures.push(error);
+        }
+    }
+    if !installation_failures.is_empty() {
+        return Err(Error::ConfigError(installation_failures.join("; ")));
     }
     Ok(())
 }
@@ -238,8 +277,11 @@ struct SetupWizard {
     validation: String,
     save_prompt: bool,
     initial_models: [Option<String>; 3],
-    shortcut_active: bool,
-    shortcut_focus: ShortcutFocus,
+    completion_focus: ShellInstallFocus,
+    completion_enabled: bool,
+    completion_cursor: usize,
+    completion_selected: [bool; 3],
+    shortcut_focus: ShellInstallFocus,
     shortcut_enabled: bool,
     shortcut_cursor: usize,
     shortcut_selected: [bool; 3],
@@ -281,7 +323,8 @@ impl SetupWizard {
         };
         let last_page = match entry {
             SetupEntryPoint::Provider => SetupPage::ApiKey,
-            SetupEntryPoint::Setup | SetupEntryPoint::Models => SetupPage::LargeModel,
+            SetupEntryPoint::Setup => SetupPage::ShellShortcut,
+            SetupEntryPoint::Models => SetupPage::LargeModel,
         };
         let initial_models = [
             config.tiers.small.clone(),
@@ -334,8 +377,11 @@ impl SetupWizard {
             validation: String::new(),
             save_prompt: false,
             initial_models,
-            shortcut_active: false,
-            shortcut_focus: ShortcutFocus::Question,
+            completion_focus: ShellInstallFocus::Question,
+            completion_enabled: false,
+            completion_cursor: 0,
+            completion_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
+            shortcut_focus: ShellInstallFocus::Question,
             shortcut_enabled: false,
             shortcut_cursor: 0,
             shortcut_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
@@ -383,8 +429,8 @@ impl SetupWizard {
                 }
                 continue;
             }
-            if self.shortcut_active {
-                if let Some(result) = self.handle_shortcut_key(key)? {
+            if self.shell_install_page_active() {
+                if let Some(result) = self.handle_shell_install_key(key)? {
                     return Ok(result);
                 }
                 continue;
@@ -424,51 +470,103 @@ impl SetupWizard {
         }
     }
 
-    fn handle_shortcut_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
-        match self.shortcut_focus {
-            ShortcutFocus::Question => match key.code {
+    fn shell_install_page_active(&self) -> bool {
+        matches!(
+            self.page,
+            SetupPage::ShellCompletion | SetupPage::ShellShortcut
+        )
+    }
+
+    fn handle_shell_install_key(
+        &mut self,
+        key: KeyEvent,
+    ) -> Result<Option<SetupWizardOutcome>, Error> {
+        if key.code == KeyCode::Tab && key.modifiers.contains(KeyModifiers::SHIFT)
+            || key.code == KeyCode::BackTab
+        {
+            return self.move_previous();
+        }
+        if key.code == KeyCode::Esc {
+            self.save_prompt = true;
+            return Ok(None);
+        }
+
+        let shortcut = self.page == SetupPage::ShellShortcut;
+        let advance = if shortcut {
+            Self::handle_shell_install_key_inner(
+                key,
+                &mut self.shortcut_focus,
+                &mut self.shortcut_enabled,
+                &mut self.shortcut_cursor,
+                &mut self.shortcut_selected,
+            )
+        } else {
+            Self::handle_shell_install_key_inner(
+                key,
+                &mut self.completion_focus,
+                &mut self.completion_enabled,
+                &mut self.completion_cursor,
+                &mut self.completion_selected,
+            )
+        };
+        if advance {
+            self.advance_shell_install_page()
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn handle_shell_install_key_inner(
+        key: KeyEvent,
+        focus: &mut ShellInstallFocus,
+        enabled: &mut bool,
+        cursor: &mut usize,
+        selected: &mut [bool; 3],
+    ) -> bool {
+        match focus {
+            ShellInstallFocus::Question => match key.code {
                 KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    self.shortcut_enabled = true;
-                    self.shortcut_focus = ShortcutFocus::Shells;
-                    self.shortcut_cursor = 0;
-                    Ok(None)
+                    *enabled = true;
+                    *focus = ShellInstallFocus::Shells;
+                    *cursor = 0;
+                    false
                 }
-                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter => {
-                    self.shortcut_active = false;
-                    Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter | KeyCode::Tab => {
+                    *enabled = false;
+                    true
                 }
-                KeyCode::Esc => {
-                    self.shortcut_active = false;
-                    self.save_prompt = true;
-                    Ok(None)
-                }
-                _ => Ok(None),
+                _ => false,
             },
-            ShortcutFocus::Shells => match key.code {
+            ShellInstallFocus::Shells => match key.code {
                 KeyCode::Up => {
-                    self.shortcut_cursor = self.shortcut_cursor.saturating_sub(1);
-                    Ok(None)
+                    *cursor = cursor.saturating_sub(1);
+                    false
                 }
                 KeyCode::Down => {
-                    self.shortcut_cursor = (self.shortcut_cursor + 1).min(Shell::ALL.len() - 1);
-                    Ok(None)
+                    *cursor = (*cursor + 1).min(Shell::ALL.len() - 1);
+                    false
                 }
                 KeyCode::Char(' ') => {
-                    self.shortcut_selected[self.shortcut_cursor] =
-                        !self.shortcut_selected[self.shortcut_cursor];
-                    Ok(None)
+                    selected[*cursor] = !selected[*cursor];
+                    false
                 }
-                KeyCode::Enter => {
-                    self.shortcut_active = false;
-                    Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
-                }
-                KeyCode::Esc => {
-                    self.shortcut_active = false;
-                    self.save_prompt = true;
-                    Ok(None)
-                }
-                _ => Ok(None),
+                KeyCode::Enter | KeyCode::Tab => true,
+                _ => false,
             },
+        }
+    }
+
+    fn advance_shell_install_page(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
+        match self.page {
+            SetupPage::ShellCompletion => {
+                self.page = SetupPage::ShellShortcut;
+                self.validation.clear();
+                Ok(None)
+            }
+            SetupPage::ShellShortcut => {
+                Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
+            }
+            _ => unreachable!("shell installation page handler used on another page"),
         }
     }
 
@@ -540,11 +638,6 @@ impl SetupWizard {
             }
         }
         if self.page == self.last_page {
-            if self.shortcut_available() && !self.shortcut_active {
-                self.shortcut_active = true;
-                self.shortcut_focus = ShortcutFocus::Question;
-                return Ok(None);
-            }
             return Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))));
         }
         if let Some(next) = self.page.next() {
@@ -639,15 +732,9 @@ impl SetupWizard {
         Ok(SetupWizardResult {
             provider: self.current_provider()?,
             choices: self.completed.clone(),
-            shortcut_shells: selected_shortcut_shells(
-                self.shortcut_enabled,
-                self.shortcut_selected,
-            ),
+            completion_shells: selected_shells(self.completion_enabled, self.completion_selected),
+            shortcut_shells: selected_shells(self.shortcut_enabled, self.shortcut_selected),
         })
-    }
-
-    fn shortcut_available(&self) -> bool {
-        self.first_page == SetupPage::Url && self.last_page == SetupPage::LargeModel
     }
 
     fn choose_storage(&mut self, character: char) {
@@ -925,30 +1012,37 @@ impl SetupWizard {
         .split(panel.inner(frame.area()));
         frame.render_widget(panel, frame.area());
 
-        let tabs = Tabs::new([
+        let mut tab_titles = vec![
             Line::from("URL"),
             Line::from("API key"),
             Line::from("Small Model"),
             Line::from("Middle Model"),
             Line::from("Large Model"),
-        ])
-        .block(Block::bordered().title("Setup pages"))
-        .select(self.page.index())
-        .highlight_style(
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )
-        .divider(Span::raw(" | "));
+            Line::from("Shell Completion"),
+            Line::from("Shell Shortcut"),
+        ];
+        tab_titles.truncate(self.last_page.index() + 1);
+        let tabs = Tabs::new(tab_titles)
+            .block(Block::bordered().title("Setup pages"))
+            .select(self.page.index())
+            .highlight_style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .divider(Span::raw(" | "));
         frame.render_widget(tabs, areas[0]);
 
-        let focus = if self.shortcut_active {
-            match self.shortcut_focus {
-                ShortcutFocus::Question => "shortcut question",
-                ShortcutFocus::Shells => "shortcut shells",
-            }
-        } else {
-            match self.page.model_slot() {
+        let focus = match self.page {
+            SetupPage::ShellCompletion => match self.completion_focus {
+                ShellInstallFocus::Question => "completion confirmation",
+                ShellInstallFocus::Shells => "completion shells",
+            },
+            SetupPage::ShellShortcut => match self.shortcut_focus {
+                ShellInstallFocus::Question => "shortcut confirmation",
+                ShellInstallFocus::Shells => "shortcut shells",
+            },
+            _ => match self.page.model_slot() {
                 Some(_) => match self.model_focus {
                     ModelFocus::Table => "model table",
                     ModelFocus::Reasoning => "reasoning",
@@ -957,11 +1051,12 @@ impl SetupWizard {
                     CredentialFocus::Storage => "storage choice",
                     CredentialFocus::Value => "input",
                 },
-            }
+            },
         };
         let header = Paragraph::new(format!(
-            "Page {} of 5  |  {}  |  Focus: {}",
+            "Page {} of {}  |  {}  |  Focus: {}",
             self.page.index() + 1,
+            self.last_page.index() + 1,
             self.page.title(),
             focus
         ));
@@ -971,23 +1066,34 @@ impl SetupWizard {
             SetupPage::Url => self.draw_url(frame, areas[2]),
             SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
             SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel => {
-                if self.shortcut_active {
-                    self.draw_shortcut(frame, areas[2]);
-                } else {
-                    self.draw_model(frame, areas[2]);
-                }
+                self.draw_model(frame, areas[2]);
             }
+            SetupPage::ShellCompletion => self.draw_shell_install(frame, areas[2], false),
+            SetupPage::ShellShortcut => self.draw_shell_install(frame, areas[2], true),
         }
 
         let footer = if self.save_prompt {
             "Save current settings? [y] Save [n] Discard  [Esc] Return"
-        } else if self.shortcut_active {
-            match self.shortcut_focus {
-                ShortcutFocus::Question => "Configure a shell shortcut? [y] Configure [Enter] Skip",
-                ShortcutFocus::Shells => "Up/Down move  Space toggle  Enter install  Esc back",
-            }
         } else {
-            "Enter/Tab next  Shift-Tab back  Ctrl-R reasoning  Esc save/discard  Ctrl-C quit"
+            match self.page {
+                SetupPage::ShellCompletion => match self.completion_focus {
+                    ShellInstallFocus::Question => {
+                        "[y] Install completion  [Enter] Skip  [Esc] save/discard"
+                    }
+                    ShellInstallFocus::Shells => {
+                        "Up/Down move  Space toggle  Enter continue  Esc save/discard"
+                    }
+                },
+                SetupPage::ShellShortcut => match self.shortcut_focus {
+                    ShellInstallFocus::Question => {
+                        "[y] Install shortcut  [Enter] Skip  [Esc] save/discard"
+                    }
+                    ShellInstallFocus::Shells => {
+                        "Up/Down move  Space toggle  Enter finish  Esc save/discard"
+                    }
+                },
+                _ => "Enter/Tab next  Shift-Tab back  Ctrl-R reasoning  Esc save/discard  Ctrl-C quit",
+            }
         };
         let footer = Paragraph::new(footer)
             .block(Block::bordered().title("Controls"))
@@ -1158,25 +1264,63 @@ impl SetupWizard {
         frame.render_widget(reasoning, chunks[1]);
     }
 
-    fn draw_shortcut(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let chunks = Layout::vertical([Constraint::Length(5), Constraint::Min(5)]).split(area);
-        let question = Paragraph::new(
-            "Configure a shell shortcut for generating commands with watn?\n\nPress y to choose shells or Enter to continue without changing shell files.",
-        )
-        .block(Block::bordered().title("Shell shortcut"))
-        .wrap(Wrap { trim: true });
-        frame.render_widget(question, chunks[0]);
+    fn draw_shell_install(&self, frame: &mut Frame, area: ratatui::layout::Rect, shortcut: bool) {
+        let (focus, enabled, cursor, selected) = if shortcut {
+            (
+                self.shortcut_focus,
+                self.shortcut_enabled,
+                self.shortcut_cursor,
+                &self.shortcut_selected,
+            )
+        } else {
+            (
+                self.completion_focus,
+                self.completion_enabled,
+                self.completion_cursor,
+                &self.completion_selected,
+            )
+        };
+        let (title, description, question) = if shortcut {
+            (
+                "Shell shortcut",
+                "Install a Ctrl-W widget in each selected shell startup file. Type a natural-language request, press Ctrl-W, review or edit the generated command, then press Enter. The command is never executed automatically.",
+                if enabled {
+                    "Select the shells where the Ctrl-W widget should be installed."
+                } else {
+                    "Install the Ctrl-W shell shortcut for watn?"
+                },
+            )
+        } else {
+            (
+                "Shell completion",
+                "Install watn's generated Tab completion in each selected shell startup file. After reloading the file, type watn and press Tab to complete options and subcommands.",
+                if enabled {
+                    "Select the shells where watn completion should be installed."
+                } else {
+                    "Install shell completion for watn?"
+                },
+            )
+        };
+        let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(5)]).split(area);
+        let explanation = Paragraph::new(format!("{}\n\n{}", description, question))
+            .block(Block::bordered().title(title))
+            .wrap(Wrap { trim: true });
+        frame.render_widget(explanation, chunks[0]);
+
+        if focus == ShellInstallFocus::Question {
+            let confirmation = Paragraph::new("Press y to install for selected shells, or Enter to skip without changing shell files.")
+                .block(Block::bordered().title("Confirmation"))
+                .wrap(Wrap { trim: true });
+            frame.render_widget(confirmation, chunks[1]);
+            return;
+        }
 
         let items = Shell::ALL.iter().enumerate().map(|(index, shell)| {
-            let marker = if self.shortcut_selected[index] {
-                "[x]"
-            } else {
-                "[ ]"
-            };
+            let marker = if selected[index] { "[x]" } else { "[ ]" };
             ListItem::new(format!("{} {}", marker, shell.name()))
         });
         let mut state = ListState::default();
-        state.select(Some(self.shortcut_cursor));
+        state.select(Some(cursor));
         let list = List::new(items)
             .block(Block::bordered().title("Select shells"))
             .highlight_style(

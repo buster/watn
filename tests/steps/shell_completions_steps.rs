@@ -1,4 +1,5 @@
 use cucumber::{given, then, when};
+use std::collections::HashMap;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
@@ -422,4 +423,98 @@ fn config_path(world: &WatnWorld) -> std::path::PathBuf {
 fn sentinel_hits(world: &WatnWorld) -> usize {
     let id = world.mock_server.1.expect("sentinel mock");
     httpmock::Mock::new(id, world.mock_server.0.as_ref().expect("sentinel server")).hits()
+}
+
+fn completion_environment(world: &WatnWorld) -> watn::shell_shortcut::ShellEnvironment {
+    let temp = world.temp_dir.as_ref().expect("completion temp dir");
+    watn::shell_shortcut::ShellEnvironment {
+        home: temp.path().join("home"),
+        xdg_config_home: Some(temp.path().join("home/.config")),
+        shell: Some("/bin/bash".to_string()),
+    }
+}
+
+#[given("isolated Bash, Zsh, and Fish completion targets")]
+fn isolated_completion_targets(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create completion temp dir");
+    let home = temp.path().join("home");
+    let fish_dir = home.join(".config/fish");
+    std::fs::create_dir_all(&fish_dir).expect("create completion Fish directory");
+    let targets = HashMap::from([
+        ("bash".to_string(), home.join(".bashrc")),
+        ("zsh".to_string(), home.join(".zshrc")),
+        ("fish".to_string(), fish_dir.join("config.fish")),
+    ]);
+    for path in targets.values() {
+        std::fs::write(path, b"# existing shell content\n").expect("write completion target");
+    }
+    world.temp_dir = Some(temp);
+    world.completion_targets = targets;
+}
+
+#[when("I install shell completion for Bash, Zsh, and Fish")]
+fn install_completion_for_all_shells(world: &mut WatnWorld) {
+    let environment = completion_environment(world);
+    let report = watn::shell_completion::install_with_environment(
+        &watn::shell_shortcut::Shell::ALL,
+        &environment,
+    );
+    world.completion_error = report.aggregate_error().map(|error| error.to_string());
+    world.completion_output = Some(
+        report
+            .results
+            .iter()
+            .map(|result| {
+                format!(
+                    "{} {} {}",
+                    result.shell.lowercase_name(),
+                    result
+                        .path
+                        .as_deref()
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_default(),
+                    result.reload.as_deref().unwrap_or(&result.message)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+    );
+}
+
+fn completion_target_content(world: &WatnWorld, shell: &str) -> String {
+    std::fs::read_to_string(world.completion_targets.get(shell).unwrap())
+        .expect("read completion target")
+}
+
+#[then("the Bash configuration should contain the Bash completion loader")]
+fn bash_completion_loader(world: &mut WatnWorld) {
+    let content = completion_target_content(world, "bash");
+    assert!(content.contains("watn shell completion"));
+    assert!(content.contains("watn completions bash"));
+}
+
+#[then("the Zsh configuration should contain the Zsh completion loader")]
+fn zsh_completion_loader(world: &mut WatnWorld) {
+    let content = completion_target_content(world, "zsh");
+    assert!(content.contains("watn shell completion"));
+    assert!(content.contains("watn completions zsh"));
+    assert!(content.contains("compinit"));
+}
+
+#[then("the Fish configuration should contain the Fish completion loader")]
+fn fish_completion_loader(world: &mut WatnWorld) {
+    let content = completion_target_content(world, "fish");
+    assert!(content.contains("watn shell completion"));
+    assert!(content.contains("watn completions fish"));
+    assert!(content.contains("| source"));
+}
+
+#[then("completion installation should report a reload instruction for every shell")]
+fn completion_reload_instructions(world: &mut WatnWorld) {
+    assert!(world.completion_error.is_none());
+    let output = world.completion_output.as_deref().unwrap_or_default();
+    for shell in ["bash", "zsh", "fish"] {
+        assert!(output.contains(shell), "missing {shell} completion report");
+    }
+    assert_eq!(output.matches("Run: source").count(), 3);
 }

@@ -207,3 +207,11 @@ Feature: Shell completion generation
     Then  the exit status should be 0
     And  the output should contain "find"
     And  stdout should not contain Bash completion syntax
+
+  Scenario: Setup installs shell completion loaders in selected shell files
+    Given  isolated Bash, Zsh, and Fish completion targets
+    When  I install shell completion for Bash, Zsh, and Fish
+    Then  the Bash configuration should contain the Bash completion loader
+    And  the Zsh configuration should contain the Zsh completion loader
+    And  the Fish configuration should contain the Fish completion loader
+    And  completion installation should report a reload instruction for every shell

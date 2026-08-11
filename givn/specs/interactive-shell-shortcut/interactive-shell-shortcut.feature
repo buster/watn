@@ -77,6 +77,12 @@ Feature: Interactive shell shortcut for watn
     And  the error should identify the write failure reason
     And  the Bash target should remain a directory
 
+  Scenario: A symlinked shell target is updated without replacing the link
+    Given  a Bash shortcut target that is a symbolic link to a regular file
+    When  I install the Bash shell shortcut
+    Then  the Bash shortcut symlink should remain intact
+    And  the resolved Bash shortcut target should contain the Bash widget
+
   Scenario: Invalid marker layouts fail before any target write
     Given  isolated Bash targets with these malformed marker layouts:
       | layout |

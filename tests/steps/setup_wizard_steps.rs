@@ -52,26 +52,21 @@ fn start_shared_models_wizard(world: &mut WatnWorld) {
     wait_for_page(session, "Small Model");
 }
 
-#[then(
-    regex = r#"^the setup wizard should show tabs "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)"$"#
-)]
-fn setup_wizard_tabs(
-    _world: &mut WatnWorld,
-    _first: String,
-    _second: String,
-    _third: String,
-    _fourth: String,
-    _fifth: String,
-) {
+#[then(regex = r#"^the setup wizard should show tabs (.+)$"#)]
+fn setup_wizard_tabs(_world: &mut WatnWorld, tab_list: String) {
+    let titles = tab_list
+        .split(", ")
+        .map(|title| title.trim_matches('"'))
+        .collect::<Vec<_>>();
     let session = _world.pty_session.as_ref().expect("setup PTY session");
-    let output = pty_wait_for_label(session, &_first);
-    for title in [&_first, &_second, &_third, &_fourth, &_fifth] {
+    let output = pty_wait_for_label(session, titles[0]);
+    for title in titles {
         assert_words(&output, title);
     }
 }
 
 #[then(
-    regex = r#"^the setup wizard should show the (URL|API key|Small Model|Middle Model|Large Model) page as active$"#
+    regex = r#"^the setup wizard should show the (URL|API key|Small Model|Middle Model|Large Model|Shell Completion|Shell Shortcut) page as active$"#
 )]
 fn setup_wizard_active_page(world: &mut WatnWorld, page: String) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
@@ -143,7 +138,41 @@ fn confirm_large_model(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(300));
-    // The optional shell-shortcut question defaults to decline.
+    if latest_page(&pty_snapshot(session), "Shell Completion") {
+        return;
+    }
+    let session = world.pty_session.take().expect("setup PTY session");
+    finish_pty_session(world, session);
+}
+
+#[then("the setup wizard should explain shell completion installation")]
+fn setup_wizard_shell_completion_explanation(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = pty_snapshot(session);
+    for word in ["Install", "completion", "Tab", "reload"] {
+        assert_words(&output, word);
+    }
+}
+
+#[when("I skip shell completion setup")]
+fn skip_shell_completion_setup(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(200));
+}
+
+#[then("the setup wizard should explain shell shortcut installation")]
+fn setup_wizard_shell_shortcut_explanation(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = pty_snapshot(session);
+    for word in ["Ctrl-W", "review", "Enter", "automatically"] {
+        assert_words(&output, word);
+    }
+}
+
+#[when("I skip shell integration setup")]
+fn skip_shell_integration_setup(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(200));
     let session = world.pty_session.take().expect("setup PTY session");
