@@ -63,7 +63,7 @@
 
 - [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The initial URL input has a green border` verbatim. Record the
-  hash here: `7cc4423`.
+  hash here: `46e5a62`.
 
 ## Scenario: The green border follows API key focus
 
@@ -91,7 +91,7 @@
 
 - [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows API key focus` verbatim. Record the
-  hash here: `b35ce07`.
+  hash here: `3ccb4e3`.
 
 ## Scenario: The green border follows model focus
 
@@ -118,7 +118,7 @@
 
 - [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows model focus` verbatim. Record the hash
-  here: `bcfcd4d`.
+  here: `86ac7e4`.
 
 ## Scenario: The green border follows optional shortcut focus
 
@@ -144,6 +144,6 @@
   `cargo fmt --all -- --check` passed and the targeted full-bootstrap run
   passed `1 scenario` and `15 steps`.
 
-- [ ] COMMIT: Create one atomic commit for this scenario with a message that
+- [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows optional shortcut focus` verbatim.
-  Record the hash here: pending.
+  Record the hash here: `b2b9a97`.
