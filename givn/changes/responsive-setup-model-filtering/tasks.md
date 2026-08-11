@@ -74,25 +74,32 @@
 
 ## Scenario: A newer model query remains authoritative
 
-- [ ] RED: Remove `@wip` from this scenario only, bind the stale-result
+- [x] RED: Remove `@wip` from this scenario only, bind the stale-result
   assertions with `unimplemented!()`, and run the exact targeted command.
   Expected result: non-zero exit.
-  - Evidence: paste the targeted runner output here.
+  - Evidence: the exact targeted command compiled the runner and exited
+    non-zero with `1 scenario (1 failed)` and `1 step (1 failed)` at the
+    explicit `unimplemented!()` provider Given step.
 
-- [ ] GREEN: Retain remote search worker handles, reject stale generations
+- [x] GREEN: Retain remote search worker handles, reject stale generations
   before request/publish/apply, and join all workers when the wizard exits.
   Preserve current newest-result behavior and selection rules. Production files
   created or modified: list them here. Run the targeted scenario and record a
   zero exit.
-  - Evidence: paste the targeted runner output here.
+  - Evidence: the retained worker and generation checks in `src/setup.rs` were
+    exercised by delayed `gpt` and immediate `o3` provider twins. Targeted
+    runner passed `1 scenario` and `4 steps`; the late `gpt` result did not
+    replace the visible `o3` result.
 
-- [ ] REFACTOR: Keep generation ownership singular, reap finished handles, and
+- [x] REFACTOR: Keep generation ownership singular, reap finished handles, and
   preserve cancellation and save/discard behavior. Rerun the targeted scenario
   and record a zero exit.
-  - Evidence: paste the targeted runner output and formatting result here.
+  - Evidence: `cargo fmt --all -- --check` passed after formatting the delayed
+    provider fixture and PTY replacement helper; the targeted runner passed
+    `1 scenario` and `4 steps`.
 
-- [ ] COMMIT: Create one atomic commit referencing `A newer model query remains authoritative`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `A newer model query remains authoritative`.
+- Commit hash: `144adc5`
 
 ## E2E Setup
 
