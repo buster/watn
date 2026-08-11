@@ -48,8 +48,9 @@ jobs:
           fi
           release_version="${BASH_REMATCH[1]}"
 
-          git fetch --no-tags origin \
-            "$PRIMARY_BRANCH:refs/remotes/origin/$PRIMARY_BRANCH"
+          git fetch --force --no-tags origin \
+            "$PRIMARY_BRANCH:refs/remotes/origin/$PRIMARY_BRANCH" \
+            "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
 
           if ! git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
             printf 'release tag is not available locally: %s\n' "$RELEASE_TAG" >&2
