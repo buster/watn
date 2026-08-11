@@ -198,12 +198,27 @@ pub fn search_models(
     Ok(filtered)
 }
 
+#[derive(Debug)]
+pub struct ModelPage {
+    pub models: Vec<ModelEntry>,
+    pub complete: bool,
+}
+
 pub fn fetch_models_page(
     endpoint: &str,
     page: u32,
     limit: u32,
     api_key: Option<&str>,
 ) -> Result<Vec<ModelEntry>, Error> {
+    fetch_models_page_info(endpoint, page, limit, api_key).map(|page| page.models)
+}
+
+pub fn fetch_models_page_info(
+    endpoint: &str,
+    page: u32,
+    limit: u32,
+    api_key: Option<&str>,
+) -> Result<ModelPage, Error> {
     let url = models_page_url(endpoint, page, limit);
 
     let client = reqwest::blocking::Client::builder()
@@ -249,7 +264,11 @@ pub fn fetch_models_page(
     })?;
 
     let models: Vec<ModelEntry> = parse_model_data(data);
-    Ok(models)
+    let complete = body["meta"]["has_more"]
+        .as_bool()
+        .map(|has_more| !has_more)
+        .unwrap_or(data.len() < limit as usize);
+    Ok(ModelPage { models, complete })
 }
 
 fn parse_model_data(data: &[serde_json::Value]) -> Vec<ModelEntry> {

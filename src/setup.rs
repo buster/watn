@@ -20,7 +20,7 @@ use crate::config::types::Config;
 use crate::config::{self, resolve_provider};
 use crate::error::Error;
 use crate::models::dialog::{LevelChoice, ReasoningStrength};
-use crate::models::list::{fetch_models, fetch_models_page, word_matches, ModelEntry};
+use crate::models::list::{fetch_models, fetch_models_page_info, word_matches, ModelEntry};
 use crate::models::picker::execute_search;
 use crate::provider::setup::{
     build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation,
@@ -882,11 +882,8 @@ impl SetupWizard {
             self.validation = error.to_string();
         })?;
         let (models, catalog_complete) =
-            match fetch_models_page(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
-                Ok(models) if !models.is_empty() => {
-                    let complete = models.len() < CATALOG_PAGE_LIMIT as usize;
-                    (models, complete)
-                }
+            match fetch_models_page_info(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
+                Ok(page) if !page.models.is_empty() => (page.models, page.complete),
                 _ => (fetch_models(&self.endpoint, Some(&key))?, true),
             };
         if models.is_empty() {
