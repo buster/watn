@@ -250,8 +250,9 @@ fn replace_target(shell: Shell, path: &Path) -> Result<(), Error> {
             .map_err(|error| target_io_error(shell, path, "sync", error))?;
         fs::rename(&temporary, path)
             .map_err(|error| target_io_error(shell, path, "replace", error))?;
-        sync_directory(parent)
-            .map_err(|error| target_io_error(shell, path, "sync parent", error))?;
+        // The rename is the committed target change; directory syncing only
+        // improves durability and must not report a failure after replacement.
+        let _ = sync_directory(parent);
         Ok::<(), Error>(())
     })();
     if write_result.is_err() {
