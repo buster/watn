@@ -1222,7 +1222,10 @@ impl SetupWizard {
             Row::new(["Model", "Context", "Pricing", "Features"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
-        .block(Block::bordered().title(format!("{} (editing)", self.page.title())))
+        .block(setup_block(
+            format!("{} (editing)", self.page.title()),
+            self.model_focus == ModelFocus::Table,
+        ))
         .row_highlight_style(
             Style::default()
                 .bg(Color::Cyan)
@@ -1273,7 +1276,10 @@ impl SetupWizard {
                 ""
             }
         ))
-        .block(Block::bordered().title("Model reasoning"))
+        .block(setup_block(
+            "Model reasoning",
+            self.model_focus == ModelFocus::Reasoning,
+        ))
         .wrap(Wrap { trim: true });
         frame.render_widget(reasoning, chunks[1]);
     }

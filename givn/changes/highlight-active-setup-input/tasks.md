@@ -89,27 +89,32 @@
   exit. Evidence: `cargo fmt --all -- --check` passed and the targeted
   full-bootstrap run passed `1 scenario` and `9 steps`.
 
-- [ ] COMMIT: Create one atomic commit for this scenario with a message that
+- [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows API key focus` verbatim. Record the
-  hash here: pending.
+  hash here: `b35ce07`.
 
 ## Scenario: The green border follows model focus
 
-- [ ] RED: Remove `@wip` from this scenario only, bind any new toggle/assertion
+- [x] RED: Remove `@wip` from this scenario only, bind any new toggle/assertion
   steps with `unimplemented!()`, and run the E2E command targeted to
   `The green border follows model focus`. Expected result: non-zero.
-  Evidence: pending.
+  Evidence: the targeted full-bootstrap run passed seven setup/catalog steps
+  and failed the model-border assertion with `not implemented`; summary was
+  `1 scenario (1 failed)` and `8 steps (7 passed, 1 failed)`.
 
-- [ ] GREEN: Assert through the live PTY that the model table border is green
+- [x] GREEN: Assert through the live PTY that the model table border is green
   initially, Ctrl-R moves green to the reasoning block, and the inactive model
   table has no green SGR. Apply the minimum corresponding `src/setup.rs`
   rendering change. Run the targeted E2E scenario and record a zero exit.
   Production files: `src/setup.rs`; test file:
-  `tests/steps/highlight_active_setup_input_steps.rs`. Evidence: pending.
+  `tests/steps/highlight_active_setup_input_steps.rs`. Evidence: the targeted
+  full-bootstrap run passed `1 scenario` and `12 steps`, including model-table
+  and reasoning green borders plus both inactive baseline assertions.
 
-- [ ] REFACTOR: Keep the focus-to-border mapping explicit and share only the
+- [x] REFACTOR: Keep the focus-to-border mapping explicit and share only the
   ANSI inspection logic, rerun the targeted scenario, and record a zero exit.
-  Evidence: pending.
+  Evidence: `cargo fmt --all -- --check` passed and the targeted full-bootstrap
+  run passed `1 scenario` and `12 steps`.
 
 - [ ] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows model focus` verbatim. Record the hash

@@ -26,7 +26,7 @@ Feature: Highlight the active setup input
     Then the setup wizard should show the API key input with a green border
     And the inactive credential location should retain its default border styling
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The green border follows model focus
     Given no config file exists
     And no supported provider environment variable is set
