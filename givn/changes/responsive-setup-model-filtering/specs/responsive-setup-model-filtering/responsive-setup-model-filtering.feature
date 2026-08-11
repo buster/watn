@@ -30,7 +30,7 @@ Feature: Responsive setup model filtering
     Then the suggestions should show only the results for "o3"
     And a later result for "gpt" should not replace them
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The terminal model filter stays responsive during a delayed search
     Given a configured provider with an incomplete model catalog containing "gpt-4o-mini", "gpt-4o", and "o3-pro"
     And the provider delays a model search response
