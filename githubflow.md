@@ -119,7 +119,7 @@ The checked-out worktree at the time of this handover is:
 - `CHANGELOG.md`: absent
 - `cliff.toml`: absent
 - `deny.toml`: absent
-- `dependabot.yml`: absent
+- `dependabot.yml`: configured for weekly Cargo and GitHub Actions updates
 
 The repository also has a separate local `main` branch at `ea44c40`, which is
 ahead of the checked-out branch. That branch contains commit `5c7b4e8`, which
@@ -395,6 +395,7 @@ Create `.github/workflows/ci.yml`.
 The CI workflow should run on:
 
 - Pushes to `main`.
+- Pull requests targeting `main`, including Dependabot updates.
 - Explicit `workflow_dispatch` runs.
 
 It should not publish anything.
@@ -427,6 +428,21 @@ The CI job should use:
 
 Do not make CI depend on secrets.
 
+### Build Caching
+
+CI and the manually triggered preparation workflow cache Cargo registry data,
+Git dependency data, and `target/` with a full-SHA-pinned `actions/cache` action.
+The key includes the runner, toolchain, and lockfile, with a toolchain-scoped
+restore prefix so a package-version-only lockfile change can reuse prior build
+artifacts. Pinned release and security tools use separate versioned cache keys
+and conditional installs.
+
+The tag-triggered release workflow deliberately does not restore runtime build
+caches. Its source-publishing path remains hermetic because security analysis
+can flag runtime cache reuse as a cache-poisoning risk. Security checks also
+refresh the RustSec advisory database rather than caching it as a permanent
+artifact.
+
 ## Security Workflow
 
 Create `.github/workflows/security.yml`.
@@ -434,6 +450,7 @@ Create `.github/workflows/security.yml`.
 The security workflow should run:
 
 - On pushes to `main`.
+- On dependency and workflow pull requests targeting `main`.
 - On changes to `Cargo.toml`, `Cargo.lock`, `deny.toml`, or workflows.
 - On a daily or weekly schedule.
 - On explicit `workflow_dispatch`.
@@ -492,12 +509,11 @@ dependency policy and known advisory checks.
 
 ### Dependency Updates
 
-Do not introduce Dependabot update pull requests because the project does not
-use pull-request-based development.
-
-GitHub's dependency graph and Dependabot alerts may still be enabled for
-notifications. Dependency updates should be handled as direct commits to
-`main`, with the normal tests and security checks.
+Dependabot is configured for weekly Cargo and GitHub Actions update pull
+requests. Minor and patch updates are grouped to keep review manageable; major
+updates remain separate for deliberate review. Dependabot updates are not
+automatically merged. Every accepted dependency update must pass the normal
+main-branch CI and security checks.
 
 Do not automatically merge dependency updates.
 

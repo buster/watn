@@ -31,6 +31,8 @@ Release environment: `crates-io`
   the package, commits the preparation, and pushes the annotated tag.
 - Version and lockfile updates use pinned `cargo-release`; changelog generation
   uses pinned `git-cliff`.
+- CI and preparation cache Cargo/build state and versioned tools; the
+  tag-triggered publish workflow remains cache-free for hermetic validation.
 - Only the publish job receives `id-token: write` and uses crates.io Trusted
   Publishing.
 

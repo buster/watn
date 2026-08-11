@@ -43,6 +43,25 @@ jobs:
           # This workflow intentionally pushes its validated commit and tag.
           persist-credentials: true
 
+      - name: Cache Cargo dependencies and build artifacts
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: watn-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            watn-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}-
+            watn-cargo-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Cache pinned release tools
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ~/.cargo/bin/
+          key: watn-release-tools-${{ runner.os }}-${{ runner.arch }}-cargo-release-1.1.4-git-cliff-2.13.1-cargo-audit-0.22.2-cargo-deny-0.20.2
+
       - name: Verify branch and clean source
         shell: bash
         env:
@@ -119,8 +138,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo install cargo-release --version 1.1.4 --locked
-          cargo install git-cliff --version 2.13.1 --locked
+          if ! cargo release --version 2>/dev/null | grep -Fq 'cargo-release 1.1.4'; then
+            cargo install cargo-release --version 1.1.4 --locked
+          fi
+          if ! git-cliff --version 2>/dev/null | grep -Fq 'git-cliff 2.13.1'; then
+            cargo install git-cliff --version 2.13.1 --locked
+          fi
+          if ! cargo audit --version 2>/dev/null | grep -Fq 'cargo-audit-audit 0.22.2'; then
+            cargo install cargo-audit --version 0.22.2 --locked
+          fi
+          if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
+            cargo install cargo-deny --version 0.20.2 --locked
+          fi
 
       - name: Update Cargo manifest and lockfile
         run: cargo release version --execute --no-confirm --isolated --allow-branch "$PRIMARY_BRANCH" "$RELEASE_VERSION"
@@ -227,11 +256,11 @@ jobs:
           cargo clippy --locked --all-targets -- -D warnings
           cargo test --locked --lib
 
-      - name: Run non-E2E acceptance scenarios
+      - name: Run acceptance scenarios
         shell: bash
         run: |
           set -euo pipefail
-          root="$(mktemp -d /tmp/watn-release-prep.XXXXXX)"
+          root="$(mktemp -d /tmp/watn-release-prep-acceptance.XXXXXX)"
           trap 'rm -rf "$root"' EXIT
           cargo build --locked --bin watn
           cp target/debug/watn "$root/default-debug"
@@ -241,28 +270,10 @@ jobs:
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
             --tags 'not @wip and not @e2e'
-
-      - name: Run E2E acceptance scenarios
-        shell: bash
-        run: |
-          set -euo pipefail
-          root="$(mktemp -d /tmp/watn-release-prep-e2e.XXXXXX)"
-          trap 'rm -rf "$root"' EXIT
-          cargo build --locked --bin watn
-          cp target/debug/watn "$root/default-debug"
-          cargo build --locked --features test-support --bin watn
-          cp target/debug/watn "$root/test-support-debug"
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
             --tags '@e2e and not @wip'
-
-      - name: Install pinned security tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo install cargo-audit --version 0.22.2 --locked
-          cargo install cargo-deny --version 0.20.2 --locked
 
       - name: Run security checks
         run: |
