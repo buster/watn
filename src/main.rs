@@ -63,8 +63,12 @@ enum Commands {
         about = "Generate a shell completion script to stdout for the caller to install or source"
     )]
     Completions {
-        #[arg(value_name = "SHELL", help = "Supported shell: bash, zsh, or fish")]
-        shell: String,
+        #[arg(
+            value_name = "SHELL",
+            value_parser = CompletionShell::parse,
+            help = "Supported shell: bash, zsh, or fish"
+        )]
+        shell: CompletionShell,
     },
 }
 
@@ -114,7 +118,7 @@ fn main() {
                 run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
             }
             Commands::Provider => run_provider_setup_command(),
-            Commands::Completions { shell } => run_completions(shell),
+            Commands::Completions { shell } => run_completions(&shell),
         }
         return;
     }
@@ -371,14 +375,7 @@ fn main() {
     }
 }
 
-fn run_completions(shell: &str) -> ! {
-    let shell = match CompletionShell::parse(shell) {
-        Ok(shell) => shell,
-        Err(error) => {
-            eprintln!("error: {}", error);
-            std::process::exit(2);
-        }
-    };
+fn run_completions(shell: &CompletionShell) -> ! {
     let mut command = Cli::command().mut_subcommand("completions", |subcommand| {
         subcommand.mut_arg("shell", |argument| {
             argument.value_parser(["bash", "zsh", "fish"])

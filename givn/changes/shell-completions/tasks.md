@@ -22,12 +22,18 @@
 
 ## Scenario: Each supported shell exposes the authoritative command tree
 
-- [ ] RED: Remove only this Scenario Outline's `@wip`, bind explicit stubs, and
+- [x] RED: Remove only this Scenario Outline's `@wip`, bind explicit stubs, and
   target the outline. Expected non-zero result. Evidence:
   ```text
-  [targeted runner output]
+  Targeted runner matched the Bash, Zsh, and Fish scenarios, each explicit
+  `regular_completion` stub panicked with `not implemented`, and Cargo
+  returned `error: test failed`.
+  [Summary]
+  1 feature
+  3 scenarios (3 failed)
+  3 steps (3 failed)
   ```
-- [ ] GREEN: Add the locked compatible `clap_complete` dependency, the closed
+- [x] GREEN: Add the locked compatible `clap_complete` dependency, the closed
   `CompletionShell` parser, the `completions` subcommand, and early dispatch.
   Generate from `Cli::command()`. Implement Bash/Zsh/Fish regular subprocess
   assertions for all root options, positional argument, subcommands, selector
@@ -35,14 +41,20 @@
   and shell parser/source acceptance. Production files: [list]. Test files:
   [list]. Targeted result:
   ```text
-  [targeted runner output]
+  Production files: `Cargo.toml`, `Cargo.lock`, `src/main.rs`.
+  Test files: `tests/steps/mod.rs`, `tests/steps/shell_completions_steps.rs`.
+  [Summary]
+  1 feature
+  3 scenarios (3 passed)
+  27 steps (27 passed)
   ```
-- [ ] REFACTOR: Keep shell mapping and output assertions centralized without
+- [x] REFACTOR: Keep shell mapping and output assertions centralized without
   duplicating the command tree. Targeted rerun:
   ```text
-  [targeted runner output]
+  `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
+  3 scenarios (3 passed), and 27 steps (27 passed).
   ```
-- [ ] COMMIT: `[hash]` - `feat(shell-completions): Each supported shell exposes the authoritative command tree`
+- [x] COMMIT: `341671d` - `feat(shell-completions): Each supported shell exposes the authoritative command tree`
 
 ## Scenario: Unsupported shell returns actionable guidance
 
@@ -108,12 +120,12 @@
 
 ## E2E Setup
 
-- [ ] Confirm the local environment needs no external service, register the
+- [x] Confirm the local environment needs no external service, register the
   separate E2E step module, and prove the E2E wrapper is a strict subset:
   ```text
-  ./run-tests.sh: [count]
-  ./run-tests.sh --e2e: [count]
-  Result: E2E count is strictly smaller: [yes/no]
+  ./run-tests.sh: 16 features, 71 scenarios, 415 steps
+  ./run-tests.sh --e2e: 19 features, 59 scenarios, 399 steps
+  Result: E2E count is strictly smaller: yes
   ```
 
 ## E2E Scenario
