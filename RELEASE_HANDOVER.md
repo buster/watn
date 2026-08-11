@@ -7,6 +7,7 @@ Repository: `buster/watn`
 Crate: `watn`
 Primary branch: `main`
 Release workflow: `.github/workflows/release.yml`
+Release preparation workflow: `.github/workflows/prepare-release.yml`
 Release environment: `crates-io`
 
 ## Implemented
@@ -25,6 +26,9 @@ Release environment: `crates-io`
   dispatches.
 - Release validation runs only for annotated version tags other than the
   already-published `v0.1.2` tag.
+- The `Prepare Release` workflow can be started from the Actions tab with an
+  explicit version. It updates the manifest, lockfile, and changelog, validates
+  the package, commits the preparation, and pushes the annotated tag.
 - Only the publish job receives `id-token: write` and uses crates.io Trusted
   Publishing.
 
@@ -39,10 +43,12 @@ Release environment: `crates-io`
 5. Decide whether to create the historical `v0.1.2` tag. The published crate
    was verified against commit `d5ddb36`; if accepted, tag that commit rather
    than the current release-flow branch.
-6. Select the next unpublished version, likely `v0.1.3`, and approve the
-   generated changelog, manifest version, lockfile, and package contents.
-7. Approve the first real release only after tag validation and
-   `cargo publish --locked --dry-run` pass.
+6. Select the next unpublished version, likely `v0.1.3`, and start `Prepare
+   Release` from the Actions tab with that version as input.
+7. Approve the first real release only after the preparation workflow's tag
+   validation and `cargo publish --locked --dry-run` pass.
+8. Review the generated changelog, manifest version, lockfile, and package
+   contents before allowing the tag-triggered publish workflow to complete.
 
 The historical `0.1.0`, `0.1.1`, and `0.1.2` crates already exist on crates.io.
 Do not reuse any of those versions or tag the current commit as `v0.1.2`.
@@ -52,17 +58,14 @@ Do not reuse any of those versions or tag the current commit as `v0.1.2`.
 After the repository changes are on `origin/main`:
 
 ```sh
-git cliff d5ddb36..HEAD --tag v0.1.3 -o /tmp/watn-CHANGELOG.md
-# Review the generated section, replace the matching [Unreleased] section,
-# and preserve the historical baseline.
-# Update Cargo.toml and Cargo.lock to the approved version.
-# Run the locked validation commands and review the package list.
-git tag -a v0.1.3 -m "Release v0.1.3"
-git push --atomic origin main v0.1.3
+# In GitHub: Actions -> Prepare Release -> Run workflow
+# Enter the approved version without the `v` prefix, for example `0.1.3`.
 ```
 
-The tag push is the only event that can publish a crate. The workflow creates
-no GitHub Release object and uploads no binary artifacts.
+The preparation workflow creates the release commit and annotated tag only
+after validation and a clean `cargo publish --locked --dry-run`. The tag push is
+the only event that can publish a crate. The workflow creates no GitHub Release
+object and uploads no binary artifacts.
 
 ## Secrets And Credentials
 
@@ -72,6 +75,11 @@ mock providers.
 Do not add `CARGO_REGISTRY_TOKEN` when Trusted Publishing is configured. If
 Trusted Publishing is unavailable, the workflow must be deliberately changed
 to support a narrowly scoped fallback token before adding that secret.
+
+Configure a fine-grained GitHub Actions secret named `RELEASE_PUSH_TOKEN` with
+Contents write access. The preparation workflow uses it for the final commit
+and tag push because pushes made with the default `GITHUB_TOKEN` do not trigger
+the downstream tag-publish workflow.
 
 ## Verification Evidence
 
