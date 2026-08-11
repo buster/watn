@@ -47,6 +47,10 @@ fn bash_process_line(world: &mut WatnWorld, expected: String) {
         .and_then(|value| value.split(">>").next())
         .expect("Bash process line output");
     assert_eq!(line, expected);
+    let temp = world.temp_dir.as_ref().expect("Bash E2E temp dir");
+    let log = std::fs::read_to_string(temp.path().join("watn-invocations.log"))
+        .expect("Bash E2E invocation log");
+    assert_eq!(log, "find all images\n");
 }
 
 #[then("the Bash process should not execute the replacement text")]

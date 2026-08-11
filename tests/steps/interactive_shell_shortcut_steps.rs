@@ -615,6 +615,11 @@ fn widget_success_fixture(world: &mut WatnWorld, output: String) {
         &environment,
     );
     assert!(report.is_success(), "widget fixture report: {report:?}");
+    let fake_log = temp
+        .path()
+        .join("watn-invocations.log")
+        .display()
+        .to_string();
     world.temp_dir = Some(temp);
     world.shortcut_targets = HashMap::from([("bash".to_string(), target)]);
     world
@@ -623,6 +628,9 @@ fn widget_success_fixture(world: &mut WatnWorld, output: String) {
     world
         .pending_config
         .insert("fake_status".to_string(), "0".to_string());
+    world
+        .pending_config
+        .insert("fake_log".to_string(), fake_log);
     let _ = std::fs::remove_file("/tmp/watn-shortcut-should-not-run");
 }
 

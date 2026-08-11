@@ -543,30 +543,35 @@
   `cargo fmt --all` passed; the targeted E2E runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [ ] COMMIT: record the E2E scenario commit hash.
+- [x] COMMIT: record the E2E scenario commit hash.
   ```text
-  commit: pending
+  commit: 84e693c
   ```
 
 ## Scenario: The generated Bash widget runs through Bash without evaluating its result
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit E2E stubs, and run
+- [x] RED: remove only this scenario's `@wip`, bind explicit E2E stubs, and run
   the targeted `./run-tests.sh --e2e` scenario. Evidence:
   ```text
-  pending
+  The targeted E2E runner matched the explicit `unimplemented!()` Bash process
+  step, reported `1 feature, 1 scenario (1 failed), 1 step (1 failed)`, and
+  returned non-zero.
   ```
-- [ ] GREEN: source the generated block through
+- [x] GREEN: source the generated block through
   `bash --noprofile --norc -c`, supply a fake `watn` on `PATH`, and assert the
   replacement buffer plus no-evaluation sentinel. Production file reused:
   `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_e2e_steps.rs`.
   ```text
-  pending
+  Targeted E2E runner reported `1 feature, 1 scenario (1 passed), 4 steps (4
+  passed)`; the fresh Bash process replaced the buffer and did not execute the
+  replacement text.
   ```
-- [ ] REFACTOR: rerun the targeted E2E scenario and retain the real Bash
+- [x] REFACTOR: rerun the targeted E2E scenario and retain the real Bash
   process assertions.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted E2E runner again reported `1 feature, 1
+  scenario (1 passed), 4 steps (4 passed)`.
   ```
 - [ ] COMMIT: record the E2E scenario commit hash.
   ```text
