@@ -626,4 +626,5 @@
   measurement and merge passed with merged line coverage 8115/8940 (90.77%);
   branch coverage is unavailable (0/0).
   ```
-- [ ] Complete review and archive; record the archive commit hash.
+- [x] Complete review and archive; archive preparation commit `9f19752` is
+  recorded here before the archive move.
