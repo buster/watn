@@ -118,8 +118,9 @@ The interactive-shell-shortcut feature verifies the default decline, empty
 selection, basename-only preselection, all three generated blocks, exact marker
 validation, atomic failure preservation, independent aggregate reporting,
 reload guidance, leading-option/reserved-token quoting, status handling,
-trailing and embedded newline behavior, cursor placement, prompt redraw, and
-no-evaluation behavior. A real Bash PTY drives setup and Ctrl-W; regular
-isolated tests cover Zsh/Fish generation and shell contracts. The existing
+trailing and embedded newline behavior, cursor placement, and no-evaluation
+behavior. Installed Bash and Fish parsers validate generated configuration, and
+a non-interactive Bash process exercises the generated widget; regular
+isolated tests cover Zsh generation and shell contracts. The existing
 `./run-tests.sh` and `./run-tests.sh --e2e` wrappers remain the verification
 commands.

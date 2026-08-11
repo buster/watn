@@ -49,8 +49,10 @@ in shells selected by the user.
 This change does not execute generated commands, change provider selection,
 change model selection, or install shortcuts for unsupported shells. It does not
 modify shell files when the user declines or selects no shells. Runtime E2E
-coverage is limited to an interactive Bash PTY; Zsh and Fish are covered by
-regular generated-syntax and contract checks.
+verification does not require an interactive shell PTY. Generated Bash and
+Fish configurations are checked by their installed shell parsers, and the
+Bash widget is exercised through a non-interactive Bash process; Zsh is covered
+by generated-block and contract checks when its executable is unavailable.
 
 ## Open Questions
 

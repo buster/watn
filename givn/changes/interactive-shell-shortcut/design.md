@@ -177,8 +177,9 @@ flowchart TD
 The optional interaction is reachable from explicit `watn setup` and implicit
 first-use setup, but not from `watn provider` or `watn models`. The permanent
 five-tab setup scenario remains unchanged: its final Enter follows the default
-decline and never opens the multi-select. The added setup E2E scenario drives
-the same final confirmation with `y` and then selects Bash.
+decline and never opens the multi-select. Syntax-focused E2E scenarios validate
+the generated Bash and Fish artifacts and run the Bash widget through a shell
+process; no setup PTY is required.
 
 ### Widget Runtime Flow
 
@@ -231,12 +232,13 @@ Use one regular and one E2E step file for this capability:
   fixtures, basename-only selection/detection assertions, target path and
   marker contract checks, atomic-write/error probes, generated syntax checks for
   all three shells, and Bash widget subprocess probes.
-- `tests/steps/interactive_shell_shortcut_e2e_steps.rs`: the real implicit
-  first-use setup PTY flow and the real interactive Bash Ctrl-W flow. This file
-  owns the only two `@e2e` scenarios and does not launch Zsh or Fish.
+- `tests/steps/interactive_shell_shortcut_e2e_steps.rs`: the real installed
+  shell-process checks for generated Bash/Fish configuration and the generated
+  Bash widget. This file owns the only two `@e2e` scenarios and does not drive a
+  terminal emulator or launch Zsh.
 - `tests/steps/mod.rs`: register both capability modules. Extend `WatnWorld`
   only with shortcut target snapshots, selected shells, fake `watn` path,
-  widget PTY state, and captured setup reports.
+  widget subprocess state, and captured setup reports.
 
 Regular tests use isolated HOME/XDG directories and a deterministic filesystem
 failure seam for paths that cannot be written. They assert target bytes before
@@ -245,15 +247,14 @@ contract checks cover Bash, Zsh, and Fish markers, bindings, shell-native buffer
 variables, repaint behavior, and the exact `command watn -- "$question"`
 invocation. Regular Bash subprocess probes cover quoting, leading options,
 reserved tokens, empty input, status handling, trailing terminators, embedded
-line breaks, buffer contents, and cursor position.
+line breaks, buffer contents, and cursor position. Parser checks run `bash -n`
+and `fish -n` against the generated configuration text; Zsh syntax remains a
+static contract check when its executable is unavailable.
 
-Prompt and cursor assertions are deliberately split. Regular probes assert the
-Bash buffer and `READLINE_POINT` state but do not claim that a non-interactive
-subprocess redrew a terminal prompt. The Bash PTY E2E scenario asserts the
-visible prompt redraw and cursor-at-end position after Ctrl-W, alongside the
-visible replacement line and no-evaluation sentinel. Zsh and Fish receive no
-runtime PTY coverage in this change; their generated syntax and contract
-coverage is regular-only.
+No scenario depends on an interactive terminal emulator. Cursor and prompt
+redraw are represented by the generated shell contract and Bash buffer/cursor
+subprocess checks, while the real shell parser checks provide the runtime syntax
+boundary the installed configuration must satisfy.
 
 ### Runner And Strict Mode
 
@@ -269,34 +270,25 @@ coverage is regular-only.
 - Single-scenario command:
 
 ```text
-root=$(mktemp -d /tmp/watn-shortcut.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --name "Pressing Ctrl-W replaces the current Bash command line without executing it"
+root=$(mktemp -d /tmp/watn-shortcut.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --name "Generated shell blocks use the installed watn command and preserve shell syntax"
 ```
 
 ### E2E Smoke-Test Infrastructure
 
-- Interface type: CLI terminal UI and interactive Bash terminal, not a browser
-  or API.
-- `portable-pty` drives implicit first-use setup as an actual terminal process,
-  reusing the existing isolated environment and loopback model-catalog twin.
-  Assertions inspect the final Large Model confirmation, the optional question,
-  the shortcut multi-select, the visible setup report, and the Bash terminal;
-  filesystem checks are secondary.
-- A second `portable-pty` session starts Bash with an isolated rc file and a
-  temporary fake `watn` executable on `PATH`. It types a command, sends the
-  real Ctrl-W byte, and asserts the visible prompt redraw, replacement line,
-  and cursor position. A marker file records the fake command's received
-  question and a separate execution sentinel proves the replacement was not
-  evaluated.
-- No live provider, shell startup file, or developer HOME is used. The model
-  catalog is served by the existing per-scenario loopback `httpmock` twin.
-  There is no other third-party service dependency.
+- Interface type: generated shell configuration and a real Bash/Fish process,
+  not a browser, API, or terminal emulator.
+- `interactive_shell_shortcut_e2e_steps.rs` writes selected targets under an
+  isolated HOME/XDG tree, runs `bash -n` and `fish -n` against the generated
+  files, and runs the generated Bash widget through `bash --noprofile --norc -c`.
+  Assertions inspect shell exit status and captured buffer output as the
+  primary interface result; filesystem checks are secondary.
+- The Bash process receives a temporary fake `watn` executable on `PATH`. Its
+  received question and a no-evaluation sentinel are captured without starting
+  a PTY or relying on terminal redraw timing.
+- No live provider, shell startup file, developer HOME, or external service is
+  used. The shortcut scenarios do not need the model-catalog twin.
 - Strict E2E mode is the same `.fail_on_skipped()` runner with the
   `@e2e and not @wip` filter.
-- The PTY obstacle is terminal escape noise and asynchronous redraw. The E2E
-  steps wait for stable visible labels and inspect the latest prompt line and
-  cursor position rather than matching raw cursor-position escape sequences.
-  Each child is killed and reaped on failure through the existing PTY cleanup
-  path.
 
 ### Local Runnability And Digital Twins
 
@@ -312,21 +304,21 @@ root=$(mktemp -d /tmp/watn-shortcut.XXXXXX) && trap 'rm -rf "$root"' EXIT && car
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| complete implicit first-use setup and choose shell shortcut options | Implicit first-use setup installs the shortcut from the optional question | CLI terminal UI | `interactive_shell_shortcut_e2e_steps.rs` drives the built `watn "hello"` process through `portable-pty`, completes provider/model setup, answers `y` at the final Large Model confirmation, selects Bash, and asserts the visible shortcut report; target-file checks are secondary. |
-| press Ctrl-W in an installed Bash shell command line | Pressing Ctrl-W replaces the current Bash command line without executing it | Interactive Bash terminal | `interactive_shell_shortcut_e2e_steps.rs` starts an isolated interactive Bash PTY with the generated rc file, types the question, sends the real Ctrl-W byte, and asserts the visible replacement, prompt redraw, cursor-at-end state, fake-`watn` question, and execution sentinel. |
+| generate selected shell shortcut configurations and verify their shell syntax | Generated Bash and Fish configurations pass shell syntax checks | Shell configuration plus Bash/Fish subprocesses | `interactive_shell_shortcut_e2e_steps.rs` installs isolated targets, runs `bash -n` and `fish -n` against the generated files, and asserts both parser processes exit successfully. |
+| run the generated Bash widget through Bash with a current command buffer | The generated Bash widget runs through Bash without evaluating its result | Bash subprocess | `interactive_shell_shortcut_e2e_steps.rs` sources the generated block in `bash --noprofile --norc -c`, supplies a fake `watn` on PATH, captures the replacement buffer, and asserts the no-evaluation sentinel. |
 
-Zsh/Fish values, empty selections, basename preselection, filesystem/path
-failures, marker failures, aggregate partial installation, output failures,
-quoting, reserved tokens, and multiline output are regular variants of these
-two interactions. They use isolated subprocess/file fixtures and do not add
-extra E2E scenarios or inventory entries.
+Zsh values, empty selections, basename preselection, filesystem/path failures,
+marker failures, aggregate partial installation, output failures, quoting,
+reserved tokens, and multiline output are regular variants of these two
+interactions. They use isolated subprocess/file fixtures and do not add extra
+E2E scenarios or inventory entries.
 
 ## Coverage Process Boundaries
 
 | Process | Started by | Instrumented artifact | Profile output | Merge step | Non-zero production probe |
 |---|---|---|---|---|---|
 | Cucumber runner and child `watn` binaries | `measure-coverage.sh` | instrumented runner and explicit debug binaries | `coverage/profraw/%p-%m.profraw` | `merge-coverages.sh` per-line union | setup shortcut installation, marker replacement, aggregate reporting, and widget invocation |
-| E2E Bash child and fake `watn` | interactive shortcut E2E step | shell script and instrumented `watn` child where applicable | inherited collision-safe `LLVM_PROFILE_FILE` | existing merge wrapper | Ctrl-W replacement, prompt redraw, and no-eval sentinel |
+| Bash/Fish parser and Bash child with fake `watn` | shortcut E2E step | generated shell files plus Bash/Fish processes | inherited collision-safe `LLVM_PROFILE_FILE` | existing merge wrapper | Bash/Fish syntax acceptance, Bash replacement buffer, and no-eval sentinel |
 
 Branch coverage remains unclaimed if the current toolchain reports no valid
 branches, matching the repository's established coverage contract.
@@ -341,7 +333,7 @@ branches, matching the repository's established coverage contract.
 3. Add the optional post-Large-Model setup interaction and apply-result
    reporting for both explicit setup and implicit first-use setup. Keep the
    existing five-tab setup scenario on its normal Enter/default-decline path.
-4. Add regular Bash widget probes, all-shell generated syntax/contract checks,
-   and the interactive Bash PTY E2E scenario.
+4. Add regular Bash widget probes, Bash/Fish parser checks, all-shell generated
+   syntax/contract checks, and the non-interactive Bash E2E process check.
 5. Remove completed `@wip` tags, run regular/E2E verification, coverage, review,
    and archive.

@@ -623,6 +623,7 @@ fn widget_success_fixture(world: &mut WatnWorld, output: String) {
     world
         .pending_config
         .insert("fake_status".to_string(), "0".to_string());
+    let _ = std::fs::remove_file("/tmp/watn-shortcut-should-not-run");
 }
 
 #[when(regex = r##"^I run the Bash widget with current input \"([^\"]*)\"$"##)]
@@ -689,7 +690,7 @@ fn current_line(world: &mut WatnWorld, line: String) {
         .nth(1)
         .and_then(|value| value.split(">>").next())
         .expect("widget line output");
-    assert_eq!(actual, line);
+    assert_eq!(actual, line.replace("\\n", "\n"));
 }
 
 #[then("the cursor should be at the end of the current command line")]
@@ -708,6 +709,22 @@ fn cursor_end(world: &mut WatnWorld) {
         .and_then(|value| value.split(">>").next())
         .expect("widget line output");
     assert_eq!(point, line.chars().count());
+}
+
+#[then("the embedded line break should remain in the command line buffer")]
+fn embedded_break(world: &mut WatnWorld) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    let line = output
+        .split("LINE<<")
+        .nth(1)
+        .and_then(|value| value.split(">>").next())
+        .expect("widget line output");
+    assert!(line.contains('\n'));
+}
+
+#[then("the replacement text should not have executed")]
+fn no_evaluation(_world: &mut WatnWorld) {
+    assert!(!std::path::Path::new("/tmp/watn-shortcut-should-not-run").exists());
 }
 
 #[given("isolated Bash, Zsh, and Fish shortcut targets")]

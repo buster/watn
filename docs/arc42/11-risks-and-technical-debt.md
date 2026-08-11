@@ -49,7 +49,7 @@
 | R-043 | Reserving `completions` can surprise users whose unquoted question begins with that token | Medium | Medium | Document the intentional reservation and require a quoted question or `--` separator; keep the consequence in the proposal, help contract, feature, and Arc42 docs |
 | R-044 | A shortcut installer could corrupt or duplicate a user shell startup file | Medium | High | Validate exact marker counts before any write, preserve bytes outside one block, use same-directory atomic replacement, reject malformed layouts, and test byte-for-byte failure preservation |
 | R-045 | A selected shell target may fail after another target has been changed | Medium | Medium | Attempt every selected target independently, report every success and OS failure, retain successful changes deliberately, and return an aggregate non-zero result |
-| R-046 | Shell-native widget syntax or key maps differ across Bash, Zsh, and Fish environments | Medium | Medium | Keep one native generated block per shell, use installed-shell parser checks, run a real Bash PTY smoke test, and document that Zsh/Fish runtime PTY coverage is outside this change |
+| R-046 | Shell-native widget syntax or key maps differ across Bash, Zsh, and Fish environments | Medium | Medium | Keep one native generated block per shell, run installed Bash/Fish parser checks, use a real Bash subprocess for buffer behavior, and document that interactive PTY coverage is outside this change |
 | R-047 | A widget could pass a leading option, reserved token, or generated output into an unintended shell path | Medium | High | Use `command watn -- "$question"`, capture stdout without evaluation, preserve stderr, and assert leading-option/reserved-token, multiline, failure, and no-execution scenarios |
 | R-048 | Automatic first-use onboarding could surprise a user by mutating shell files | Medium | High | Make the shortcut question explicit and opt-in; Enter/no and empty selection perform no shell I/O; report every selected target before returning |
 | R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
@@ -173,8 +173,8 @@ The shell-shortcut decision has these durable consequences:
 - Independent targets: Bash, Zsh, and Fish can be partially installed because
   rollback is not promised; R-045 requires every result and aggregate failure.
 - Shell/version dependence: native line-editor APIs and key maps vary, so
-  R-046 combines per-shell syntax checks with one real Bash PTY rather than
-  claiming identical runtime evidence for all shells.
+  R-046 combines installed Bash/Fish syntax checks with one real Bash
+  subprocess rather than claiming identical runtime evidence for all shells.
 - PATH and reserved arguments: `command watn -- "$question"` keeps the
   installed command resolution explicit and prevents leading options or the
   reserved `completions` token from changing the question parse; R-047 covers

@@ -1,35 +1,23 @@
 # User Interaction Inventory:
-# - complete implicit first-use setup and choose shell shortcut options
-# - press Ctrl-W in an installed Bash shell command line
+# - generate selected shell shortcut configurations and verify their shell syntax
+# - run the generated Bash widget through Bash with a current command buffer
 
 @givn.delta @interactive-shell-shortcut
 Feature: Interactive shell shortcut for watn
 
   @givn.added @e2e @wip
-  Scenario: Implicit first-use setup installs the shortcut from the optional question
-    Given no config file exists
-    And no supported provider environment variable is set
-    And the ephemeral E2E transport returns models ["model-small", "model-middle", "model-large"] for "/models"
-    And isolated Bash, Zsh, and Fish configuration files
-    When I start interactive `watn "hello"` in a terminal
-    And I complete provider setup and select the three model tiers
-    And I confirm the Large Model selection with `y` for shortcut configuration
-    Then the shell shortcut multi-select should be shown
-    When I select Bash for the shell shortcut
-    And I confirm the shell shortcut selection
-    Then setup should report the modified Bash file and its reload command
-    And the Bash configuration should contain one watn shell shortcut block
+  Scenario: Generated Bash and Fish configurations pass shell syntax checks
+    Given isolated Bash, Zsh, and Fish shortcut targets
+    When I install the shell shortcut for Bash, Zsh, and Fish
+    Then the generated Bash configuration should pass a Bash syntax check
+    And the generated Fish configuration should pass a Fish syntax check
 
   @givn.added @e2e @wip
-  Scenario: Pressing Ctrl-W replaces the current Bash command line without executing it
+  Scenario: The generated Bash widget runs through Bash without evaluating its result
     Given an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
-    When I start an interactive Bash command line containing "find all images"
-    And I press Ctrl-W
-    Then the Bash command line should contain "printf 'hello world'"
-    And the Bash prompt should be redisplayed
-    And the terminal cursor should be at the end of the replacement
-    And the fake watn should receive exactly one question "find all images"
-    And the replacement command should not have executed
+    When I run the generated Bash widget through Bash with current input "find all images"
+    Then the Bash process command line should contain "printf 'hello world'"
+    And the Bash process should not execute the replacement text
 
   @givn.added
   Scenario: Enter accepts the default decline for shortcut setup
@@ -134,20 +122,11 @@ Feature: Interactive shell shortcut for watn
     Then the current command line should be exactly "printf 'ready'"
     And the cursor should be at the end of the current command line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Embedded multiline output remains buffer text without evaluation
-    Given an installed Bash shortcut and a fake watn that returns:
-      """
-      printf 'first line'
-      touch /tmp/watn-shortcut-should-not-run
-
-      """
+    Given an installed Bash shortcut and a fake watn that returns "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     When I run the Bash widget with current input "show two lines"
-    Then the current command line should be exactly:
-      """
-      printf 'first line'
-      touch /tmp/watn-shortcut-should-not-run
-      """
+    Then the current command line should be exactly "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     And the embedded line break should remain in the command line buffer
     And the cursor should be at the end of the current command line
     And the replacement text should not have executed

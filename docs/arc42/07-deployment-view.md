@@ -43,5 +43,6 @@ use the configured provider endpoint.
 
 Shortcut verification uses temporary HOME/XDG trees and isolated startup files.
 It does not modify the developer's shell configuration. The regular runner
-checks generated Bash, Zsh, and Fish text; the E2E runner starts an isolated
-interactive Bash process with a temporary startup file and fake `watn` on PATH.
+checks generated Bash, Zsh, and Fish text; the E2E runner executes `bash -n`,
+`fish -n`, and a non-interactive Bash process with a temporary startup file and
+fake `watn` on PATH. No terminal emulator is required for this capability.

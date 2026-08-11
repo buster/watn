@@ -40,7 +40,7 @@
 | Configured endpoint | The `<base>/v1` endpoint loaded from provider configuration and retained for readiness, display, and persistence |
 | Competing provider twin | A separate local mock server intentionally configured as the wrong destination so a redirected request is observable as a non-zero hit |
 | Automatic setup completion | Successful first-use provider and model setup that exits after tier selection without sending the original question |
-| Widget | A Ratatui-rendered terminal region with its own layout, border, selection, or text responsibility |
+| Ratatui widget | A Ratatui-rendered terminal region with its own layout, border, selection, or text responsibility |
 | Tier tabs | The visible small, normal, and thinking labels showing which model-assignment level is active |
 | Model table | The aligned model catalog showing model identity and available metadata in columns |
 | Scrollbar | The terminal indicator showing the current position within an overflowing model catalog |
@@ -67,7 +67,7 @@
 | Shell shortcut | An optional Ctrl-W binding installed in a selected Bash, Zsh, or Fish startup file to turn the current command buffer into one `watn` question |
 | Shortcut target | The resolved user startup file for one supported shell: `.bashrc`, `.zshrc`, or Fish `config.fish` under the XDG configuration directory |
 | Generated block | The marker-delimited shell text owned by watn inside a shortcut target; unrelated target bytes remain user-owned |
-| Widget | A shell-native line-editor function that reads the current buffer, calls `command watn -- "$question"`, and assigns successful stdout as text |
+| Shell widget | A shell-native line-editor function that reads the current buffer, calls `command watn -- "$question"`, and assigns successful stdout as text |
 | Marker pair | The exact opening and closing comments `# >>> watn shell shortcut >>>` and `# <<< watn shell shortcut <<<` delimiting one generated block |
 | Target result | The success or failure report for one selected shortcut target, including its path, reason, and reload instruction when applicable |
 | Aggregate installation failure | A non-zero setup result returned after all selected targets have been attempted and one or more target results failed |

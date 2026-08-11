@@ -325,25 +325,30 @@
   ```
 - [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: b259c06
   ```
 
 ## Scenario: Embedded multiline output remains buffer text without evaluation
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:713`, reported `1 feature, 1
+  scenario (1 failed), 4 steps (3 passed, 1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: preserve embedded line breaks as assigned text and prove the
+- [x] GREEN: preserve embedded line breaks as assigned text and prove the
   no-evaluation boundary. Production files: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 6 steps (6
+  passed)`; the embedded line break remained in the Bash buffer and the
+  replacement sentinel was not created.
   ```
-- [ ] REFACTOR: rerun the targeted scenario.
+- [x] REFACTOR: rerun the targeted scenario.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 6 steps (6 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text
@@ -485,7 +490,7 @@
 
 ## E2E Scenarios
 
-## Scenario: Implicit first-use setup installs the shortcut from the optional question
+## Scenario: Generated Bash and Fish configurations pass shell syntax checks
 
 - [ ] RED: remove only this scenario's `@wip`, bind explicit E2E stubs in
   `tests/steps/interactive_shell_shortcut_e2e_steps.rs`, and run the targeted
@@ -493,15 +498,15 @@
   ```text
   pending
   ```
-- [ ] GREEN: drive implicit first-use setup through the real PTY, answer `y`,
-  select Bash, and assert the rendered setup report as the primary result.
-  Production files: `src/setup.rs`, `src/main.rs`.
+- [ ] GREEN: install isolated Bash, Zsh, and Fish targets, run `bash -n` and
+  `fish -n` against the generated configurations, and assert both parser
+  processes exit successfully. Production file reused: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_e2e_steps.rs`.
   ```text
   pending
   ```
-- [ ] REFACTOR: rerun the targeted E2E scenario and keep filesystem checks
-  secondary to visible terminal output.
+- [ ] REFACTOR: rerun the targeted E2E scenario and keep parser exit status as
+  the primary assertion.
   ```text
   pending
   ```
@@ -510,23 +515,23 @@
   commit: pending
   ```
 
-## Scenario: Pressing Ctrl-W replaces the current Bash command line without executing it
+## Scenario: The generated Bash widget runs through Bash without evaluating its result
 
 - [ ] RED: remove only this scenario's `@wip`, bind explicit E2E stubs, and run
   the targeted `./run-tests.sh --e2e` scenario. Evidence:
   ```text
   pending
   ```
-- [ ] GREEN: start isolated interactive Bash through the real PTY, send the
-  Ctrl-W byte, and assert visible replacement, redraw, cursor position, fake
-  `watn` question, and no-evaluation sentinel. Production files:
+- [ ] GREEN: source the generated block through
+  `bash --noprofile --norc -c`, supply a fake `watn` on `PATH`, and assert the
+  replacement buffer plus no-evaluation sentinel. Production file reused:
   `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_e2e_steps.rs`.
   ```text
   pending
   ```
-- [ ] REFACTOR: rerun the targeted E2E scenario and retain the real-interface
-  assertions.
+- [ ] REFACTOR: rerun the targeted E2E scenario and retain the real Bash
+  process assertions.
   ```text
   pending
   ```
