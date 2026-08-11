@@ -348,7 +348,9 @@ _watn_widget() {
         return
     fi
 
-    if result=$(command watn -- "$question"); then
+    result=$(command watn -- "$question")
+    local status=$?
+    if [[ $status -eq 0 ]]; then
         while [[ $result == *$'\r' || $result == *$'\n' ]]; do
             result=${result:0:${#result}-1}
         done
