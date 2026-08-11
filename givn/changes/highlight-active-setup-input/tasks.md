@@ -61,9 +61,8 @@
   record the zero exit. Evidence: `cargo fmt --all -- --check` passed and the
   same full-bootstrap targeted command passed with `1 scenario`, `4 steps`.
 
-- [x] COMMIT: Create one atomic commit for this scenario with a message that
-  references `The initial URL input has a green border` verbatim. Record the
-  hash here: `46e5a62`.
+- [x] COMMIT: Create one atomic commit referencing `The initial URL input has a green border`.
+- Commit hash: `46e5a62597d8777bbea5b36e8ea0671e905983ef`
 
 ## Scenario: The green border follows API key focus
 
@@ -89,9 +88,8 @@
   exit. Evidence: `cargo fmt --all -- --check` passed and the targeted
   full-bootstrap run passed `1 scenario` and `9 steps`.
 
-- [x] COMMIT: Create one atomic commit for this scenario with a message that
-  references `The green border follows API key focus` verbatim. Record the
-  hash here: `3ccb4e3`.
+- [x] COMMIT: Create one atomic commit referencing `The green border follows API key focus`.
+- Commit hash: `3ccb4e3500676e058e64b9ee651f1440cac55c5a`
 
 ## Scenario: The green border follows model focus
 
@@ -116,9 +114,8 @@
   Evidence: `cargo fmt --all -- --check` passed and the targeted full-bootstrap
   run passed `1 scenario` and `12 steps`.
 
-- [x] COMMIT: Create one atomic commit for this scenario with a message that
-  references `The green border follows model focus` verbatim. Record the hash
-  here: `86ac7e4`.
+- [x] COMMIT: Create one atomic commit referencing `The green border follows model focus`.
+- Commit hash: `86ac7e4df835a3564e1b01b01bd19bb26c0fc0e4`
 
 ## Scenario: The green border follows optional shortcut focus
 
@@ -144,6 +141,5 @@
   `cargo fmt --all -- --check` passed and the targeted full-bootstrap run
   passed `1 scenario` and `15 steps`.
 
-- [x] COMMIT: Create one atomic commit for this scenario with a message that
-  references `The green border follows optional shortcut focus` verbatim.
-  Record the hash here: `b2b9a97`.
+- [x] COMMIT: Create one atomic commit referencing `The green border follows optional shortcut focus`.
+- Commit hash: `b2b9a972a4a0e1010517410b7a05217080bc6050`
