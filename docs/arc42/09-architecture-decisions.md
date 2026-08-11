@@ -14,7 +14,7 @@ options, the decision outcome, and consequences.
 | ADR-0006 | LiteLLM-powered model discovery | [docs/adr/0006-litellm-model-discovery.md](../adr/0006-litellm-model-discovery.md) |
 | ADR-0007 | Reasoning support via reasoning_effort parameter | [docs/adr/0007-reasoning-support.md](../adr/0007-reasoning-support.md) |
 | ADR-0008 | Template config generated from code | [docs/adr/0008-template-generated-from-code.md](../adr/0008-template-generated-from-code.md) |
-| ADR-0009 | Server-side filtering for paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
+| ADR-0009 | Hybrid filtering for complete and paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
 | ADR-0010 | SetupWizard model picker and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |
 | ADR-0011 | Interactive provider onboarding with environment-backed credentials | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
 | ADR-0012 | Structured widget composition for terminal setup views | [docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md](../adr/0012-structured-widget-composition-for-terminal-setup-views.md) |

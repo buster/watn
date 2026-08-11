@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
+use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -164,6 +165,8 @@ type SearchMessage = (
     Result<(Vec<ModelEntry>, Option<String>, bool), Error>,
 );
 
+const CATALOG_PAGE_LIMIT: u32 = 50;
+
 fn setup_block<'a>(title: impl Into<Line<'a>>, focused: bool) -> Block<'a> {
     let block = Block::bordered().title(title);
     if focused {
@@ -280,9 +283,11 @@ struct SetupWizard {
     model_focus: ModelFocus,
     search_status: [Option<String>; 3],
     search_pending: [bool; 3],
+    catalog_complete: bool,
     generation: Arc<AtomicU64>,
     search_tx: Sender<SearchMessage>,
     search_rx: Receiver<SearchMessage>,
+    search_workers: Vec<JoinHandle<()>>,
     validation: String,
     save_prompt: bool,
     initial_models: [Option<String>; 3],
@@ -294,6 +299,15 @@ struct SetupWizard {
     shortcut_enabled: bool,
     shortcut_cursor: usize,
     shortcut_selected: [bool; 3],
+}
+
+impl Drop for SetupWizard {
+    fn drop(&mut self) {
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        for worker in self.search_workers.drain(..) {
+            let _ = worker.join();
+        }
+    }
 }
 
 impl SetupWizard {
@@ -380,9 +394,11 @@ impl SetupWizard {
             model_focus: ModelFocus::Table,
             search_status: [None, None, None],
             search_pending: [false, false, false],
+            catalog_complete: false,
             generation,
             search_tx,
             search_rx,
+            search_workers: Vec::new(),
             validation: String::new(),
             save_prompt: false,
             initial_models,
@@ -865,14 +881,19 @@ impl SetupWizard {
         let key = self.request_credential().inspect_err(|error| {
             self.validation = error.to_string();
         })?;
-        let models = match fetch_models_page(&self.endpoint, 1, 50, Some(&key)) {
-            Ok(models) if !models.is_empty() => models,
-            _ => fetch_models(&self.endpoint, Some(&key))?,
-        };
+        let (models, catalog_complete) =
+            match fetch_models_page(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
+                Ok(models) if !models.is_empty() => {
+                    let complete = models.len() < CATALOG_PAGE_LIMIT as usize;
+                    (models, complete)
+                }
+                _ => (fetch_models(&self.endpoint, Some(&key))?, true),
+            };
         if models.is_empty() {
             self.validation = "no models returned from endpoint".to_string();
             return Err(Error::ConfigError(self.validation.clone()));
         }
+        self.catalog_complete = catalog_complete;
         for slot in 0..3 {
             self.models[slot] = models.clone();
             self.suggestions[slot] = models.clone();
@@ -897,6 +918,18 @@ impl SetupWizard {
             self.sync_reasoning(slot);
             return;
         }
+        if self.catalog_complete {
+            self.suggestions[slot] = self.models[slot]
+                .iter()
+                .filter(|model| word_matches(&model.id, &query))
+                .cloned()
+                .collect();
+            self.selection[slot] = 0;
+            self.search_pending[slot] = false;
+            self.search_status[slot] = None;
+            self.sync_reasoning(slot);
+            return;
+        }
         self.suggestions[slot].clear();
         self.selection[slot] = 0;
         self.search_pending[slot] = true;
@@ -906,7 +939,8 @@ impl SetupWizard {
         let models = self.models[slot].clone();
         let generation_ref = Arc::clone(&self.generation);
         let sender = self.search_tx.clone();
-        std::thread::spawn(move || {
+        self.reap_search_workers();
+        let worker = std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(200));
             if generation_ref.load(Ordering::SeqCst) != generation {
                 return;
@@ -923,6 +957,19 @@ impl SetupWizard {
                 let _ = sender.send((slot, generation, result));
             }
         });
+        self.search_workers.push(worker);
+    }
+
+    fn reap_search_workers(&mut self) {
+        let mut active = Vec::new();
+        for worker in self.search_workers.drain(..) {
+            if worker.is_finished() {
+                let _ = worker.join();
+            } else {
+                active.push(worker);
+            }
+        }
+        self.search_workers = active;
     }
 
     fn apply_search_results(&mut self) {
@@ -1209,6 +1256,15 @@ impl SetupWizard {
                 self.selection[slot].min(self.suggestions[slot].len() - 1),
             ));
         }
+        let title = if self.queries[slot].is_empty() {
+            format!("{} (editing)", self.page.title())
+        } else {
+            format!(
+                "{} (editing) | Filter: {}",
+                self.page.title(),
+                self.queries[slot]
+            )
+        };
         let table = Table::new(
             rows,
             [
@@ -1222,10 +1278,7 @@ impl SetupWizard {
             Row::new(["Model", "Context", "Pricing", "Features"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
-        .block(setup_block(
-            format!("{} (editing)", self.page.title()),
-            self.model_focus == ModelFocus::Table,
-        ))
+        .block(setup_block(title, self.model_focus == ModelFocus::Table))
         .row_highlight_style(
             Style::default()
                 .bg(Color::Cyan)

@@ -46,6 +46,9 @@
 | Scrollbar | The terminal indicator showing the current position within an overflowing model catalog |
 | Debounced search | A search started only after the user has stopped changing the filter for the configured short interval |
 | Search generation | The monotonically increasing user-entry identifier used to reject stale model-search results, regardless of completion order |
+| Catalog completeness | Whether the loaded model response contains the complete catalog needed for local filtering or only a page requiring provider-backed search |
+| Local model filter | Per-word filtering over the complete cached catalog without a provider search request |
+| Search worker | The background operation that waits for the debounce interval, performs an incomplete-catalog search, and is joined before setup exits |
 | Setup wizard | The shared five-page terminal flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
 | Setup page | One tab-selected step in the setup wizard; only the active page accepts editing input |
 | Visible cursor | The highlighted block marker showing where the next character or current selection is being edited |

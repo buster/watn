@@ -22,7 +22,7 @@ Top requirements:
 13. Model discovery must preserve credential sources, select LiteLLM independently from chat, and use exact endpoint and Authorization behavior
 14. Provider confirmation must survive catalog failure without changing unconfirmed model tiers or sending the original question
 15. Reasoning defaults and persisted values must resolve consistently across interactive and non-interactive model selection
-16. Overlapping model searches must leave the newest result visible and clean up older search work
+16. Model filtering must keep the typed query visible and responsive, filter complete catalogs locally, use provider search only when the catalog is incomplete, leave the newest result visible, and clean up older search work
 17. Generated command content must become visible and flushed before a delayed provider stream completes
 18. Only an SSE stream terminated by `[DONE]` succeeds; truncated or failed streams preserve visible output and never execute it
 19. Command-output write failures must retain the visible prefix, clean up progress, and use the existing I/O status without success metadata
