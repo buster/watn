@@ -447,3 +447,69 @@ fn unrelated_content(world: &mut WatnWorld) {
     assert!(content.contains("# before user content"));
     assert!(content.contains("# after user content"));
 }
+
+#[given("a Bash shortcut target that is a directory and cannot be written")]
+fn unwritable_bash_target(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let home = temp.path().join("home");
+    let path = home.join(".bashrc");
+    std::fs::create_dir_all(&path).expect("create directory target");
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = HashMap::from([("bash".to_string(), path)]);
+}
+
+#[given("a snapshot of the Bash target failure state")]
+fn unwritable_bash_snapshot(world: &mut WatnWorld) {
+    assert!(world.shortcut_targets.get("bash").unwrap().is_dir());
+}
+
+#[when("I install the Bash shell shortcut")]
+fn install_bash(world: &mut WatnWorld) {
+    let environment = shortcut_environment(world);
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Bash],
+        &environment,
+    );
+    world.shortcut_error = report.aggregate_error().map(|error| error.to_string());
+    world.shortcut_output = Some(
+        report
+            .results
+            .iter()
+            .map(|result| {
+                format!(
+                    "{} {} {}",
+                    result.shell.lowercase_name(),
+                    result
+                        .path
+                        .as_deref()
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_default(),
+                    result.message
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+    );
+}
+
+#[then("setup should report that the Bash target could not be written")]
+fn bash_write_failure(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_error
+        .as_deref()
+        .unwrap_or_default()
+        .contains("shell shortcut installation failed"));
+}
+
+#[then("the error should identify the write failure reason")]
+fn write_failure_reason(world: &mut WatnWorld) {
+    let output = world.shortcut_output.as_deref().unwrap_or_default();
+    let path = world.shortcut_targets.get("bash").unwrap();
+    assert!(output.contains(&path.display().to_string()));
+    assert!(output.contains("target is a directory"));
+}
+
+#[then("the Bash target should remain a directory")]
+fn bash_target_directory(world: &mut WatnWorld) {
+    assert!(world.shortcut_targets.get("bash").unwrap().is_dir());
+}

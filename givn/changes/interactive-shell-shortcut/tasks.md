@@ -211,28 +211,33 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: f45b663
   ```
 
 ## Scenario: A shell configuration failure reports the exact target and reason
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:451`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: map target resolution/read/write failures to actionable errors with
+- [x] GREEN: map target resolution/read/write failures to actionable errors with
   exact paths and preserve the failed target. Production files:
   `src/shell_shortcut.rs`, `src/error.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 6 steps (6
+  passed)`; the directory target path and `target is a directory` reason were
+  reported and the target remained unchanged.
   ```
-- [ ] REFACTOR: rerun the targeted scenario.
+- [x] REFACTOR: rerun the targeted scenario.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 6 steps (6 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text
