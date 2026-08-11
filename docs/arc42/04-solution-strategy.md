@@ -21,7 +21,7 @@
 - Catalog source resolution is explicit: `[litellm]` owns model listing, pagination, and search when present; otherwise the selected provider is used, while chat construction remains provider-only
 - Credential values retain their persisted source representation and are expanded only at the outbound discovery or chat request boundary; a confirmed provider draft is saved before its first catalog request
 - A shared reasoning policy validates closed-set strengths, honors model default-enabled and mandatory metadata, and preserves existing valid reasoning when no replacement exists
-- Search workers carry generations and can update the picker only when current; the test twin coordinates overlapping workers and joins them before exit
+- Model filtering uses the complete cached catalog locally when available and provider-backed search for incomplete catalogs; both paths keep the query visible, debounce remote work by 200 ms, guard results with generations, and join search workers before exit
 - Generate shell completions from `Cli::command()` through a local closed `CompletionShell` selector; render only `bash`, `elvish`, `fish`, `powershell`, or `zsh` to stdout before configuration or provider setup
 - Keep the completion parser contract literal: unsupported values return `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`; the `completions` token is intentionally reserved as a subcommand
 - Offer shortcut configuration as an optional post-Large-Model interaction in both explicit and implicit first-use setup; the default Enter path declines without adding a sixth tab

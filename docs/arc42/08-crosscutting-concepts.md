@@ -273,8 +273,10 @@ borders retain their existing style. Focus changes are derived from the existing
 credential, model, and shortcut focus state, so the terminal layout, keyboard
 events, and visible cursor remain unchanged. The terminal is restored before
 returning a typed result. The `model-picker` module supplies remote search,
-local matching, and stale-generation handling; there is no separate legacy
-model prompt path.
+local matching, and stale-generation handling; complete catalogs use local
+matching while incomplete catalogs use debounced remote search. The wizard
+retains search worker handles, invalidates generations on exit, and joins every
+worker before returning; there is no separate legacy model prompt path.
 
 ## Keyboard-driven SetupWizard model pages
 
@@ -287,6 +289,7 @@ time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
 - A green border around the input block currently receiving keyboard input; the
   border moves between credential storage/value and model/reasoning regions.
 - A filter paragraph and aligned model table on each model page.
+- The current filter query remains visible while suggestions are pending.
 - Model-specific reasoning options derived from the catalog's supported efforts,
   default effort, enabled flag, and mandatory flag.
 - A scrollbar showing position when the catalog exceeds the available rows.

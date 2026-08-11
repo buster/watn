@@ -9,7 +9,8 @@
   - QS-011: Provider setup offers a usable OpenRouter default
   - QS-012: Missing provider automatically chains into model setup
   - QS-019: Setup information is separated into scannable terminal regions
-   - QS-020: Background model search keeps the newest query authoritative
+    - QS-020: Background model search keeps the newest query authoritative
+    - QS-054: Complete catalogs filter locally and delayed searches keep the query visible and responsive
    - QS-021: The setup wizard makes the active page and cursor explicit
    - QS-022: Provider and model setup share one page sequence
    - QS-053: The setup wizard marks the focused input region with a green border
@@ -108,3 +109,4 @@
 | QS-051 | Shell integration / Correctness | User presses Ctrl-W with empty input, non-zero `watn`, or empty output | `watn` is not called for empty input; otherwise the original buffer remains exactly unchanged and stderr remains visible |
 | QS-052 | Shell integration / Safety | User presses Ctrl-W and `watn` returns a successful command containing trailing or embedded line breaks | Trailing CR/LF is removed, embedded breaks remain text in the buffer, the cursor moves to the end, the prompt redraws, and no returned text executes |
 | QS-053 | Onboarding / Usability | User moves between URL, credential, model, reasoning, and optional shortcut inputs in the setup wizard | The widget receiving keyboard input has a green border; inactive input widgets retain their existing border styling; layout, key behavior, and visible cursor remain unchanged |
+| QS-054 | Onboarding / Responsiveness | User types a model filter against a complete or delayed catalog | The query remains visible; complete catalogs update locally without a search request; delayed searches do not block another query; only the newest result is applied and workers are joined on exit |

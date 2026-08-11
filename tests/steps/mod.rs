@@ -15,6 +15,7 @@ pub mod providers_steps;
 pub mod reasoning_policy_steps;
 pub mod release_truth_e2e_steps;
 pub mod release_truth_steps;
+pub mod responsive_setup_model_filtering_steps;
 pub mod search_concurrency_steps;
 pub mod setup_persistence_steps;
 pub mod setup_wizard_steps;

@@ -393,34 +393,45 @@ sequenceDiagram
     participant API as Provider API
 
     User->>Picker: types "o3"
-    Picker->>Picker: increment generation counter
-    Picker->>Worker: spawn: GET /models?search=o3 (gen=N)
-    Picker-->>User: render active model tab, spinner, and previous suggestions
-    API-->>Worker: { data: [{id:"o3-mini"}, {id:"o3-pro"}] }
-    Worker->>Picker: check generation == N → update suggestions
-    Picker-->>User: render table rows with visible selected cursor
+    Picker->>Picker: keep query visible and increment generation
+    alt complete catalog is cached
+        Picker->>Picker: filter cached models locally
+        Picker-->>User: render matching rows without provider search
+    else catalog is incomplete
+        Picker->>Worker: wait 200 ms, then search with generation N
+        Picker-->>User: keep query and current table visible
+        API-->>Worker: { data: [{id:"o3-mini"}, {id:"o3-pro"}] }
+        Worker->>Picker: publish only if generation == N
+        Picker-->>User: render current rows with visible selected cursor
+    end
     User->>Picker: ↓ (arrow down)
     Picker-->>User: move cursor to "o3-pro"
     User->>Picker: Enter
     Picker-->>User: selection confirmed, advance to next wizard page
+    User->>Picker: leave setup
+    Picker->>Worker: invalidate and join retained workers
 ```
 
 **Steps:**
 1. The setup wizard enters raw terminal mode and shows the active page/tab.
 2. Keystrokes append to or remove from the live query string.
-3. Each change bumps an `Arc<AtomicU64>` generation counter and spawns a
-   blocking worker thread that calls `GET /models?search=<query>`.
-4. Worker thread captures the generation at spawn time. On response, if the
-   generation has advanced, the result is discarded (stale-result guard).
-5. Valid results update the suggestion list; the terminal is repainted.
-6. Arrow keys move the table cursor; Ctrl-R toggles reasoning focus and
+3. Each change keeps the query visible and advances the generation counter.
+4. A complete cached catalog is filtered locally. An incomplete catalog starts
+   a blocking worker after a 200 ms quiet interval; the worker calls
+   `GET /models?search=<query>`.
+5. The worker captures the generation at spawn time. Before request, before
+   publish, and before apply, an advanced generation discards the stale result.
+6. Valid results update the suggestion list; the terminal is repainted without
+   blocking further filter input.
+7. Arrow keys move the table cursor; Ctrl-R toggles reasoning focus and
    Up/Down chooses one of the current model's supported efforts.
-7. Enter or Tab confirms the selection and advances; Shift-Tab returns;
+8. Enter or Tab confirms the selection and advances; Shift-Tab returns;
    Escape opens save/discard rather than clearing the query.
-8. A 4xx/5xx on a non-empty search shows "Model search is not supported by
+9. A 4xx/5xx on a non-empty search shows "Model search is not supported by
    this provider" and retains the previous suggestions.
-9. After final selection or save/discard, the wizard restores cooked terminal
-   mode and returns provider/completed model drafts to the caller.
+10. After final selection or save/discard, the wizard invalidates and joins all
+    retained search workers, restores cooked terminal mode, and returns
+    provider/completed model drafts to the caller.
 
 ## Scenario: Config loading
 
