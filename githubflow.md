@@ -156,7 +156,8 @@ The repository has a custom acceptance-test runner:
 - Main integration target: `tests/features_runner.rs`
 - Acceptance scenarios: `givn/specs/`
 - Test commands: `givn/commands.yaml`
-- README development command: `cargo test --test features_runner`
+- README development command: the locked binary-setup command documented in
+  `README.md` and `givn/commands.yaml`
 
 The configured Givn commands build separate debug binaries and use environment
 variables to distinguish normal and `test-support` binaries. The release
@@ -223,6 +224,9 @@ authoritative.
 
 Use `git-cliff` for changelog generation.
 
+The reviewed generator version for this setup is `git-cliff 2.13.1`; verify the
+local tool with `git cliff --version` before preparing a release.
+
 `git-cliff`:
 
 - Reads Git history.
@@ -252,14 +256,17 @@ Recommended release preparation:
 10. Create the annotated tag on that release commit.
 11. Push `main` and the tag.
 
-Conceptual command:
+With no historical `v0.1.2` tag, generate only the commits after the verified
+published source into a review file. Do not overwrite the historical sections
+in `CHANGELOG.md` with an unbounded no-tag generation:
 
 ```text
-git cliff --unreleased --tag v0.1.3 -o CHANGELOG.md
+git cliff d5ddb36..HEAD --tag v0.1.3 -o /tmp/watn-CHANGELOG.md
 ```
 
-The exact `git-cliff` command and configuration must be verified when
-implemented.
+After the historical tag is approved, use `v0.1.2..HEAD` instead of the
+commit range. Review the generated release section, replace the matching
+`[Unreleased]` section, and preserve the historical baseline before committing.
 
 The `cliff.toml` configuration should:
 
@@ -406,7 +413,7 @@ Recommended checks:
 
 ```text
 cargo audit
-cargo deny check advisories bans licenses sources
+cargo deny --locked check advisories bans licenses sources
 actionlint
 zizmor
 ```
@@ -529,7 +536,12 @@ on:
   push:
     tags:
       - "v*.*.*"
+      - "!v0.1.2"
 ```
+
+The repository's existing `v0.1.2` publication is excluded from this trigger;
+it may be recorded as an annotated historical tag, but it must never enter the
+automated publish path again.
 
 Do not publish on:
 
