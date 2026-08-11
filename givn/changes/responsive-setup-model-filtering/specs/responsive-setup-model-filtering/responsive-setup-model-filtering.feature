@@ -14,7 +14,7 @@ Feature: Responsive setup model filtering
     And the suggestions should not contain "o3-mini"
     And the provider should not receive a search request
 
-  @givn.added @wip
+  @givn.added
   Scenario: A catalog requiring more data uses provider-backed filtering
     Given a provider with a catalog larger than one response
     And the provider search returns "o3-pro" for the query "o3"
