@@ -53,7 +53,7 @@ used only behind the renderer mapping and is not exposed as the CLI argument
 type.
 
 The generator obtains the command metadata from `Cli::command()`, then maps the
-validated selector to the corresponding Bash, Zsh, or Fish renderer and writes
+validated selector to the corresponding Bash, Elvish, Fish, PowerShell, or Zsh renderer and writes
 the script directly to stdout. The completion branch returns before config
 loading, config auto-init, provider resolution, model discovery, network access,
 or spinner setup. It writes no file or shell startup configuration and emits no

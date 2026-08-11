@@ -1,6 +1,6 @@
 # watn Improvement Handoff Plan
 
-Handoff snapshot: 2026-08-10
+Handoff snapshot: 2026-08-11
 
 This file is the working handoff for the next agent. It describes the current
 repository state, the decisions already made, and the remaining implementation
@@ -10,13 +10,13 @@ work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: archive and documentation changes staged; this plan update is unstaged
+- Worktree: shell-completions archived and verification complete; this plan update is unstaged
 - Remote/upstream: `origin` configured
 - Active givn change: none
-- Archived transport work: `isolate-test-transport`
-- Completed change pending archive commit: `model-discovery-and-setup-correctness`
+- Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
+- Archived release work: `release-truth-and-repository-cleanup`, `shell-completions`
 - Current package version: `0.1.2` in `Cargo.toml`
-- Current CLI version: still hardcoded as `0.1.0` in `src/main.rs`
+- Current CLI version: read from `CARGO_PKG_VERSION` in `src/main.rs`
 
 Do not amend existing commits. Do not push unless explicitly requested.
 
@@ -68,178 +68,17 @@ through a reviewed proposal and specification:
 - The README must contain the resulting overall line and branch coverage counts
   once, rather than multiple different counts.
 
-## Completed Change
+## Completed Work
 
-- `model-discovery-and-setup-correctness` is implemented and reviewed.
-- The archive transaction and permanent-spec migration are staged.
-- Verification passed: 56 non-E2E scenarios and 52 E2E scenarios.
+- `incremental-sse-rendering` is archived and verified.
+- `release-truth-and-repository-cleanup` is archived and verified.
+- `shell-completions` is implemented, verified, and archived.
+- Current shell-completion verification passed: 74 regular scenarios and 59
+  E2E scenarios. The all-target run passed 133 scenarios and 842 steps.
 
-## Change 3: Incremental SSE Rendering
+## Remaining Work
 
-Create as the next active givn change:
-
-```text
-givn new incremental-sse-rendering
-```
-
-This covers report finding 2, usage-only parsing from finding 7, and the output
-and spinner coverage gaps.
-
-### Provider API
-
-Current defect:
-
-- `src/provider/openai_compat.rs` calls `response.bytes()` and buffers the full
-  response before parsing.
-- `src/provider/mod.rs::Provider` returns only a final `StreamingResponse`.
-- `src/main.rs` prints only after the provider returns.
-
-Required behavior:
-
-- Parse SSE incrementally from the blocking response reader.
-- Emit content and reasoning events as they arrive.
-- Accumulate the same content for final metadata, verbose output, and `-x`.
-- Return final model, usage, elapsed time, accumulated content, and reasoning.
-- Propagate mid-stream transport errors after preserving any already-visible
-  output and cleaning the spinner.
-
-Recommended design:
-
-- Keep `reqwest::blocking`; do not add async solely for streaming.
-- Use a synchronous event sink or callback owned by the single CLI consumer.
-- Parse complete SSE lines/events with a buffered reader.
-- Do not introduce a worker channel unless it is required by a concrete
-  concurrency need.
-
-### SSE Parsing Rules
-
-- Handle `data:` lines and `[DONE]`.
-- Ignore blank and non-data lines.
-- Tolerate malformed nonessential JSON events without crashing the whole stream.
-- Extract `content` and `reasoning` from choice deltas.
-- Extract `usage` from the top-level event even when `choices` is empty.
-- Extract the response model from the top-level event independently of choices.
-- Measure elapsed time from the first received stream event.
-- Preserve correct cost and tok/s when usage appears in a final usage-only event.
-
-### CLI Output Rules
-
-- Start the spinner before request execution.
-- Clear or stop the spinner when the first content token arrives.
-- Flush content to stdout immediately.
-- Print final metadata only after stream completion.
-- Never print the complete command a second time after incremental output.
-- Keep reasoning on stderr and only print it under `-v`.
-- Prompt for `-x` only after the complete command is received.
-
-### Required Tests
-
-- A local provider flushes one SSE event, waits, and then flushes the final
-  event. The test observes the first token before the delayed response ends.
-- Usage-only final event produces non-zero cost/tok-s values when configured.
-- Reasoning and content are emitted separately.
-- `[DONE]` terminates cleanly.
-- Partial network reads are parsed correctly.
-- Malformed nonessential SSE lines are tolerated.
-- Mid-stream failure returns a non-zero status and cleans the spinner.
-- Spinner startup, worker lifecycle, cleanup, and Drop are covered where
-  observable.
-- Raw TTY confirmation is tested separately from piped stdin confirmation.
-
-## Change 4: Release Truth And Repository Cleanup
-
-Create after change 3 is archived:
-
-```text
-givn new release-truth-and-repository-cleanup
-```
-
-This covers findings 9 and 10, documentation drift, and remaining dead-code
-candidates.
-
-### Version
-
-- Replace the hardcoded `0.1.0` in `src/main.rs` with Cargo package metadata.
-- Make the version scenario assert the package version from `Cargo.toml` or
-  equivalent runtime metadata.
-- Do not bump `0.1.2` unless a release is explicitly being prepared.
-
-### Deployment Truth
-
-- Current `cargo build --release` output is dynamically linked.
-- Update `docs/arc42/07-deployment-view.md` to state target-dependent runtime
-  library requirements.
-- Add release verification using `file` and `ldd`.
-- If static artifacts become a requirement, make that a separate release
-  engineering decision involving musl, TLS, compression, and CI artifact
-  verification.
-
-### Documentation Reconciliation
-
-Update the active Arc42 and README claims for:
-
-- Incremental versus buffered streaming.
-- Actual PTY helper names.
-- Ctrl-R rather than plain `r` for reasoning focus.
-- Config-only XDG storage rather than an unimplemented data directory.
-- Historical status of archived Arc42 snapshots.
-
-### Dead Code And Hygiene
-
-- Remove provider setup result wrappers only after confirming there are no
-  external library consumers. This repository is currently structured as a
-  binary application, but public modules exist in `src/lib.rs`.
-- Remove the unused `_config` parameter from `build_registry()`.
-- Reassess whether `ProviderRegistry` is useful for one active provider.
-- Remove write-only fields from `WatnWorld` after their scenarios are corrected.
-- Remove obsolete helper names and archived documentation claims.
-- Decide separately whether to format the entire repository. Avoid mixing a
-  repository-wide rustfmt rewrite into behavioral commits.
-
-## Additional Planned Work
-
-### 4. Watn Bash, Zsh, And Fish Completions Through Clap
-
-Create this as a separate givn change after the release/documentation cleanup
-unless reprioritized:
-
-```text
-givn new shell-completions
-```
-
-Add a `watn completions <shell>` command backed by Clap completion generation.
-The supported shell values are `bash`, `zsh`, and `fish`. The command writes
-only the generated completion script to stdout, does not load configuration,
-does not contact a provider, and reports an unsupported shell as a normal CLI
-error. Do not hand-maintain shell completion scripts when Clap can generate
-them from the authoritative command tree.
-
-Required behavior:
-
-- Completion output includes the current commands, flags, subcommands, and
-  value suggestions exposed by the Clap CLI.
-- Bash, Zsh, and Fish output is deterministic for a fixed CLI definition.
-- `watn completions --help` documents the supported shells and output purpose.
-- Completion generation does not write files or modify shell configuration.
-- The command uses the package's actual CLI metadata and does not duplicate
-  command names in a second registry.
-
-Required tests:
-
-- `watn completions bash` exits successfully and emits Bash completion syntax.
-- `watn completions zsh` exits successfully and emits Zsh completion syntax.
-- `watn completions fish` exits successfully and emits Fish completion syntax.
-- An unsupported shell returns a non-zero status with actionable guidance.
-- The generated output contains the current setup, provider, models, and
-  completion command options.
-- Existing command behavior and stdout/stderr contracts remain unchanged.
-
-The implementation should use the repository's existing CLI test and Gherkin
-fixture conventions. If a completion dependency is required, keep it limited
-to completion generation and verify that the generated scripts are sourced by
-the intended shell versions.
-
-### 5. Interactive Shell Shortcut For Watn
+### 4. Interactive Shell Shortcut For Watn
 
 Create this as a separate givn change after shell completions, unless the
 implementation order is deliberately changed through a reviewed proposal:
@@ -472,13 +311,13 @@ not modify a developer's real configuration. Cover:
 - Reload instructions identify the exact modified file for every selected
   shell.
 
-### 6. Highlight Active Setup Input
+### 5. Highlight Active Setup Input
 
 Improve the setup dialog's visual indication of where user input is currently
 being entered. The border or box surrounding the active input location shall be
 green; inactive input locations retain their existing styling.
 
-### 7. Responsive Setup Model Filtering
+### 6. Responsive Setup Model Filtering
 
 Improve the setup dialog's model filter so the typed query remains visible while
 the user is entering it. Typing must remain responsive while model searches run

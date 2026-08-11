@@ -60,4 +60,4 @@ graph TB
 | Stdout | Raw text or ANSI-rendered | Write |
 | Confirmation prompt | stdin line read | Read
 | Completion selector | Lowercase shell value on the CLI; closed parser contract | Read; invalid values produce a non-zero argument error containing `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` |
-| Completion output | Generated Bash, Zsh, or Fish script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |
+| Completion output | Generated Bash, Elvish, Fish, PowerShell, or Zsh script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |

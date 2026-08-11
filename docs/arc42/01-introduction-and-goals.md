@@ -54,4 +54,4 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | CI/user | Pipe questions in, get clean output with exit codes and metadata
 | Test maintainer | Run deterministic local-provider scenarios without changing release-binary behavior or persisted user configuration |
 | Release maintainer | Verify package version output and target-dependent runtime-library requirements before distribution |
-| Shell user | Install or source a generated Bash, Zsh, or Fish script without configuration writes, provider access, or stderr contamination |
+| Shell user | Install or source a generated Bash, Elvish, Fish, PowerShell, or Zsh script without configuration writes, provider access, or stderr contamination |

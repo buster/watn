@@ -25,7 +25,7 @@
 - [x] RED: Remove only this Scenario Outline's `@wip`, bind explicit stubs, and
   target the outline. Expected non-zero result. Evidence:
   ```text
-  Targeted runner matched the Bash, Zsh, and Fish scenarios, each explicit
+  Targeted runner matched the initial Bash, Zsh, and Fish scenarios, each explicit
   `regular_completion` stub panicked with `not implemented`, and Cargo
   returned `error: test failed`.
   [Summary]
@@ -35,7 +35,7 @@
   ```
 - [x] GREEN: Add the locked compatible `clap_complete` dependency, the closed
   `CompletionShell` parser, the `completions` subcommand, and early dispatch.
-  Generate from `Cli::command()`. Implement Bash/Zsh/Fish regular subprocess
+  Generate from `Cli::command()`. Implement the initial Bash/Zsh/Fish regular subprocess
   assertions for all root options, positional argument, subcommands, selector
   suggestions, stdout purity, stderr emptiness, deterministic repeated output,
   and shell parser/source acceptance. Production files: [list]. Test files:
@@ -203,7 +203,7 @@
 - [x] Confirm the local environment needs no external service, register the
   separate E2E step module, and prove the E2E wrapper is a strict subset:
   ```text
-  ./run-tests.sh: 16 features, 71 scenarios, 415 steps
+  ./run-tests.sh: 16 features, 74 scenarios, 443 steps
   ./run-tests.sh --e2e: 19 features, 59 scenarios, 399 steps
   Result: E2E count is strictly smaller: yes
   ```
@@ -240,25 +240,37 @@
   remained primary and the targeted runner reported 1 feature, 1 scenario (1
   passed), and 9 steps (9 passed).
   ```
-- [ ] COMMIT: `[hash]` - `test(e2e): Built Bash completion generation emits the current command tree`
+- [x] COMMIT: `1409080` - `test(e2e): Built Bash completion generation emits the current command tree`
 
 ## Final Change Verification
 
-- [ ] Remove all completed scenario `@wip` tags and run
+- [x] Remove all completed scenario `@wip` tags and run
   `givn lint --change shell-completions`.
   ```text
-  Result: [output after scope expansion]
+  Result: no `@wip` tags remain; `givn lint --change shell-completions`
+  reported 1 file checked — clean.
   ```
-- [ ] Run `./run-tests.sh` and record the full scenario/step count.
+- [x] Run `./run-tests.sh` and record the full scenario/step count.
   ```text
-  Result: [output after scope expansion]
+  Result: 16 features, 74 scenarios (74 passed), 443 steps (443 passed).
   ```
-- [ ] Run `./run-tests.sh --e2e` and prove the count is strictly smaller.
+- [x] Run `./run-tests.sh --e2e` and prove the count is strictly smaller.
   ```text
-  Result: [output after scope expansion]
+  Result: 19 features, 59 scenarios (59 passed), 399 steps (399 passed).
+  The E2E scenario count is strictly smaller than the regular count: yes.
   ```
-- [ ] Run formatting, compilation, clippy, explicit-binary all-target tests,
+- [x] Run formatting, compilation, clippy, explicit-binary all-target tests,
   docs, release build, coverage measurement/merge, and `git diff --check`.
   ```text
-  Result: [output after scope expansion]
+  Result: `cargo fmt --all -- --check`, `cargo check --all-targets`, and
+  `cargo clippy --all-targets --all-features -- -D warnings` passed. The
+  explicit-binary all-target run with `RUST_TEST_THREADS=1` passed 20 features,
+  133 scenarios, and 842 steps; the serial library run passed 19 tests.
+  `cargo test --doc` passed 0 tests, `cargo build --release` passed, and
+  `git diff --check` passed. `cargo llvm-cov` 0.8.7 produced both scoped
+  Cobertura reports and the merge passed. The merged report has 90.38% overall
+  line coverage, including non-zero `src/main.rs` (247/301, 82.06%) and
+  `tests/features_runner.rs` (72/81, 88.89%) coverage; branch coverage is
+  unavailable on this toolchain. Missing Elvish, PowerShell, and Zsh executables
+  were reported as explicit environment limitations.
   ```
