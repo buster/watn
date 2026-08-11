@@ -116,27 +116,33 @@
   Evidence: `cargo fmt --all -- --check` passed and the targeted full-bootstrap
   run passed `1 scenario` and `12 steps`.
 
-- [ ] COMMIT: Create one atomic commit for this scenario with a message that
+- [x] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows model focus` verbatim. Record the hash
-  here: pending.
+  here: `bcfcd4d`.
 
 ## Scenario: The green border follows optional shortcut focus
 
-- [ ] RED: Remove `@wip` from this scenario only, bind its new shortcut
+- [x] RED: Remove `@wip` from this scenario only, bind its new shortcut
   navigation/assertion steps with `unimplemented!()`, and run the E2E command
   targeted to `The green border follows optional shortcut focus`. Expected
-  result: non-zero. Evidence: pending.
+  result: non-zero. Evidence: the targeted full-bootstrap run passed nine
+  setup/model steps and failed the shortcut transition assertion with `not
+  implemented`; summary was `1 scenario (1 failed)` and `10 steps (9 passed, 1
+  failed)`.
 
-- [ ] GREEN: Drive the final setup page through the live PTY, assert the
+- [x] GREEN: Drive the final setup page through the live PTY, assert the
   shortcut question border is green before `y`, assert the shell list border is
   green after `y`, and assert the inactive question border is not green. Apply
   the minimum corresponding `src/setup.rs` rendering change. Run the targeted
   E2E scenario and record a zero exit. Production files: `src/setup.rs`; test
-  file: `tests/steps/highlight_active_setup_input_steps.rs`. Evidence: pending.
+  file: `tests/steps/highlight_active_setup_input_steps.rs`. Evidence: the
+  targeted full-bootstrap run passed `1 scenario` and `15 steps`, including
+  question/list focus and both inactive baseline assertions.
 
-- [ ] REFACTOR: Remove only assertion duplication, preserve the real PTY
+- [x] REFACTOR: Remove only assertion duplication, preserve the real PTY
   interaction, rerun the targeted scenario, and record a zero exit. Evidence:
-  pending.
+  `cargo fmt --all -- --check` passed and the targeted full-bootstrap run
+  passed `1 scenario` and `15 steps`.
 
 - [ ] COMMIT: Create one atomic commit for this scenario with a message that
   references `The green border follows optional shortcut focus` verbatim.

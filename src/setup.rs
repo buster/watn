@@ -1323,7 +1323,7 @@ impl SetupWizard {
         };
         let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(5)]).split(area);
         let explanation = Paragraph::new(format!("{}\n\n{}", description, question))
-            .block(Block::bordered().title(title))
+            .block(setup_block(title, focus == ShellInstallFocus::Question))
             .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
 
@@ -1342,7 +1342,10 @@ impl SetupWizard {
         let mut state = ListState::default();
         state.select(Some(cursor));
         let list = List::new(items)
-            .block(Block::bordered().title("Select shells"))
+            .block(setup_block(
+                "Select shells",
+                focus == ShellInstallFocus::Shells,
+            ))
             .highlight_style(
                 Style::default()
                     .bg(Color::Cyan)
