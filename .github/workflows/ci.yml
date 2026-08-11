@@ -21,6 +21,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install Fish for shell syntax checks
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish
+
       - name: Cache Cargo dependencies and build artifacts
         if: github.event_name != 'pull_request'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
