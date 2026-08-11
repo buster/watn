@@ -230,14 +230,6 @@ fn shell_parser(world: &mut WatnWorld, shell: String) {
     );
 }
 
-#[then("stdout should contain bash, zsh, and fish value suggestions")]
-fn selector_suggestions(world: &mut WatnWorld) {
-    let output = world.output.as_deref().expect("completion stdout");
-    for shell in ["bash", "zsh", "fish"] {
-        assert!(output.contains(shell), "missing shell suggestion {shell}");
-    }
-}
-
 #[then("the isolated XDG config file should remain absent after the command")]
 fn config_remains_absent(world: &mut WatnWorld) {
     assert!(!config_path(world).exists());
@@ -272,7 +264,13 @@ fn completion_help(world: &mut WatnWorld) {
 
 #[then("stdout should mention bash, zsh, and fish")]
 fn help_shells(world: &mut WatnWorld) {
-    selector_suggestions(world);
+    let output = world.output.as_deref().expect("help stdout");
+    for shell in ["bash", "zsh", "fish"] {
+        assert!(
+            output.contains(shell),
+            "missing shell in help output: {shell}"
+        );
+    }
 }
 
 #[then(expr = "completion help stdout should contain {string}")]

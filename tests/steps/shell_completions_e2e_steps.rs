@@ -36,6 +36,14 @@ fn e2e_root_tree(world: &mut WatnWorld) {
     }
 }
 
+#[then("stdout should contain bash, zsh, and fish value suggestions")]
+fn selector_suggestions(world: &mut WatnWorld) {
+    let output = world.output.as_deref().expect("completion stdout");
+    for shell in ["bash", "zsh", "fish"] {
+        assert!(output.contains(shell), "missing shell suggestion {shell}");
+    }
+}
+
 #[then("a second built Bash generation should be byte-for-byte identical")]
 fn second_built_bash(world: &mut WatnWorld) {
     let first = world.output.clone().expect("first Bash completion output");
