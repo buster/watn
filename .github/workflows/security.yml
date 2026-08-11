@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - deny.toml
+      - rust-toolchain.toml
+      - .github/dependabot.yml
+      - .github/workflows/**
   schedule:
     - cron: "17 3 * * 1"
   workflow_dispatch:
@@ -21,17 +31,41 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Cache pinned security tools
+        if: github.event_name != 'pull_request'
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/go/bin/
+            ~/go/pkg/mod/
+            ~/.cache/watn/zizmor-1.29.0/
+          key: watn-security-tools-${{ runner.os }}-${{ runner.arch }}-cargo-audit-0.22.2-cargo-deny-0.20.2-actionlint-1.7.8-zizmor-1.29.0
+
       - name: Install pinned security tools
         shell: bash
         run: |
           set -euo pipefail
-          cargo install cargo-audit --version 0.22.2 --locked
-          cargo install cargo-deny --version 0.20.2 --locked
-          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.8
-          python3 -m venv "$RUNNER_TEMP/zizmor"
-          "$RUNNER_TEMP/zizmor/bin/pip" install \
-            --disable-pip-version-check zizmor==1.29.0
-          printf '%s\n' "$HOME/go/bin" "$RUNNER_TEMP/zizmor/bin" >> "$GITHUB_PATH"
+          if ! cargo audit --version 2>/dev/null | grep -Fq 'cargo-audit-audit 0.22.2'; then
+            cargo install cargo-audit --version 0.22.2 --locked
+          fi
+          if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
+            cargo install cargo-deny --version 0.20.2 --locked
+          fi
+          if ! "$HOME/go/bin/actionlint" -version 2>/dev/null | grep -Fq '1.7.8'; then
+            go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.8
+          fi
+          zizmor_home="$HOME/.cache/watn/zizmor-1.29.0"
+          if ! "$zizmor_home/bin/zizmor" --version 2>/dev/null | grep -Fq 'zizmor 1.29.0'; then
+            rm -rf "$zizmor_home"
+            python3 -m venv "$zizmor_home"
+            "$zizmor_home/bin/pip" install \
+              --disable-pip-version-check zizmor==1.29.0
+          fi
+          printf '%s\n' "$HOME/go/bin" "$zizmor_home/bin" >> "$GITHUB_PATH"
 
       - name: Audit Rust dependencies
         run: cargo audit
