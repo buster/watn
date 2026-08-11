@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-11
+
+### Bug Fixes
+
+- **release:** Preserve annotated tags during validation
+
 ## [0.1.3] - 2026-08-11
 
 ### Bug Fixes

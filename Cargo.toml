@@ -1,6 +1,6 @@
 [package]
 name = "watn"
-version = "0.1.3"
+version = "0.1.4"
 publish = ["crates-io"]
 edition = "2021"
 description = "Ask in plain language. Get one command."
