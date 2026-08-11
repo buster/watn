@@ -205,6 +205,86 @@ fn provider_search_result(world: &mut WatnWorld, model: String, query: String) {
     assert!(!world.search_mock_ids.is_empty());
 }
 
+#[given(
+    regex = r##"^a provider returns the result for "([^"]+)" after the result for "([^"]+)"$"##
+)]
+fn ordered_search_results(world: &mut WatnWorld, older: String, newer: String) {
+    assert_eq!(older, "gpt");
+    assert_eq!(newer, "o3");
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    let data = (0..50)
+        .map(|index| serde_json::json!({ "id": format!("model-{index}") }))
+        .collect::<Vec<_>>();
+    let catalog = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("page", "1")
+            .query_param("limit", "50");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": data }));
+    });
+    let older_mock = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("search", "gpt");
+        then.delay(Duration::from_millis(700))
+            .status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": [{ "id": "gpt-result" }] }));
+    });
+    let newer_mock = server.mock(|when, then| {
+        when.method(Method::GET)
+            .path("/models")
+            .query_param("search", "o3");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .json_body(serde_json::json!({ "data": [{ "id": "o3-result" }] }));
+    });
+    world.models_mock_id = Some(catalog.id);
+    world.search_mock_ids = vec![older_mock.id, newer_mock.id];
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{base_url}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[when(
+    regex = r##"^I type "([^"]+)" and then replace it with "([^"]+)" before either result is applied$"##
+)]
+fn type_replaced_filter(world: &mut WatnWorld, older: String, newer: String) {
+    assert_eq!(older, "gpt");
+    assert_eq!(newer, "o3");
+    let mut session = start_pty_session(world, &["models"]);
+    pty_wait_for_label(&session, "Small Model");
+    pty_write(&mut session, &older);
+    std::thread::sleep(Duration::from_millis(300));
+    pty_write(&mut session, "\x7f\x7f\x7f");
+    pty_write(&mut session, &newer);
+    world.pty_session = Some(session);
+}
+
+#[then(regex = r##"^the suggestions should show only the results for "([^"]+)"$"##)]
+fn only_newer_suggestions(world: &mut WatnWorld, query: String) {
+    assert_eq!(query, "o3");
+    let current = wait_for_screen(world, &["Filter: o3", "o3-result"]);
+    assert!(!current.contains("gpt-result"), "stale result was visible");
+}
+
+#[then(regex = r##"^a later result for "([^"]+)" should not replace them$"##)]
+fn stale_suggestions_ignored(world: &mut WatnWorld, query: String) {
+    assert_eq!(query, "gpt");
+    std::thread::sleep(Duration::from_millis(800));
+    let current = parse_screen(&pty_snapshot(
+        world.pty_session.as_ref().expect("filter PTY session"),
+    ))
+    .text();
+    assert!(current.contains("Filter: o3"));
+    assert!(current.contains("o3-result"));
+    assert!(!current.contains("gpt-result"));
+}
+
 #[when(regex = r##"^I type "([^"]+)" into the active model filter$"##)]
 fn type_model_filter(world: &mut WatnWorld, query: String) {
     let mut session = start_pty_session(world, &["models"]);
