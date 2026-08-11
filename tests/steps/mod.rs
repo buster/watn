@@ -2,6 +2,7 @@ pub mod ask_steps;
 pub mod catalog_source_steps;
 pub mod config_steps;
 pub mod credentials_steps;
+pub mod highlight_active_setup_input_steps;
 pub mod incremental_sse_rendering_e2e_steps;
 pub mod incremental_sse_rendering_steps;
 pub mod interactive_shell_shortcut_e2e_steps;
@@ -489,6 +490,7 @@ pub(crate) fn apply_env(world: &crate::WatnWorld, cmd: &mut std::process::Comman
     cmd.env_remove("OPENROUTER_API_KEY");
     cmd.env_remove("WATN_API_KEY");
     cmd.env_remove("WATN_TEST_ENDPOINT_OVERRIDE");
+    cmd.env_remove("NO_COLOR");
     for (key, value) in &world.env_vars {
         cmd.env(key, value);
     }

@@ -12,6 +12,7 @@
    - QS-020: Background model search keeps the newest query authoritative
    - QS-021: The setup wizard makes the active page and cursor explicit
    - QS-022: Provider and model setup share one page sequence
+   - QS-053: The setup wizard marks the focused input region with a green border
    - QS-023: Test transport cannot redirect release-profile binaries by source guard
    - QS-024: Test transport assertions identify the exact endpoint and credential
    - QS-027: Normal debug transport ignores a non-empty test override
@@ -106,3 +107,4 @@
 | QS-050 | Shell integration / Integrity | A target contains duplicate, unmatched, or reversed shortcut markers | Installation fails before write; the target and its parent directory remain byte-for-byte unchanged |
 | QS-051 | Shell integration / Correctness | User presses Ctrl-W with empty input, non-zero `watn`, or empty output | `watn` is not called for empty input; otherwise the original buffer remains exactly unchanged and stderr remains visible |
 | QS-052 | Shell integration / Safety | User presses Ctrl-W and `watn` returns a successful command containing trailing or embedded line breaks | Trailing CR/LF is removed, embedded breaks remain text in the buffer, the cursor moves to the end, the prompt redraws, and no returned text executes |
+| QS-053 | Onboarding / Usability | User moves between URL, credential, model, reasoning, and optional shortcut inputs in the setup wizard | The widget receiving keyboard input has a green border; inactive input widgets retain their existing border styling; layout, key behavior, and visible cursor remain unchanged |

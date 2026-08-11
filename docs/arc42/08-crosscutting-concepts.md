@@ -267,10 +267,14 @@ setup guidance go to stderr as plain text (suitable for scripting).
 
 The SetupWizard uses ratatui and crossterm when stdin is a TTY. It reads
 terminal events through crossterm, renders a bordered model page with tier tabs,
-filter/status paragraphs, an aligned metadata table, and a stateful scrollbar,
-then restores the terminal before returning a typed result. The `model-picker`
-module supplies remote search, local matching, and stale-generation handling;
-there is no separate legacy model prompt path.
+filter/status paragraphs, an aligned metadata table, and a stateful scrollbar.
+The widget that currently receives input uses a green border; inactive widget
+borders retain their existing style. Focus changes are derived from the existing
+credential, model, and shortcut focus state, so the terminal layout, keyboard
+events, and visible cursor remain unchanged. The terminal is restored before
+returning a typed result. The `model-picker` module supplies remote search,
+local matching, and stale-generation handling; there is no separate legacy
+model prompt path.
 
 ## Keyboard-driven SetupWizard model pages
 
@@ -280,6 +284,8 @@ time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
 
 - The active page and `Page n of 5` position.
 - A visible block cursor on the active editable line.
+- A green border around the input block currently receiving keyboard input; the
+  border moves between credential storage/value and model/reasoning regions.
 - A filter paragraph and aligned model table on each model page.
 - Model-specific reasoning options derived from the catalog's supported efforts,
   default effort, enabled flag, and mandatory flag.
@@ -316,8 +322,10 @@ The shared setup wizard uses URL, API key, Small Model, Middle Model, and Large
 Model pages. URL input explains OpenAI/LiteLLM compatibility. API key input
 first selects configuration storage or an environment reference, then asks for
 the corresponding value. Model pages use the same searchable table and visible
-cursor. `watn provider` starts at URL and ends after API key; `watn models`
-starts at Small Model; `watn setup` and automatic first use traverse all pages.
+cursor. The currently focused block is marked with a green border while
+inactive blocks retain their normal border styling. `watn provider` starts at
+URL and ends after API key; `watn models` starts at Small Model; `watn setup`
+and automatic first use traverse all pages.
 Escape asks whether to save current valid settings or discard them. The
 terminal is restored on success, validation failure, save/discard, and
 cancellation.

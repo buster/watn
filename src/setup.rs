@@ -1114,8 +1114,11 @@ impl SetupWizard {
         .block(Block::bordered().title("Endpoint explanation"))
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
-        let input = Paragraph::new(format!("> {}█", self.endpoint))
-            .block(Block::bordered().title("URL (editing)"));
+        let input = Paragraph::new(format!("> {}█", self.endpoint)).block(
+            Block::bordered()
+                .border_style(Style::default().fg(Color::Green))
+                .title("URL (editing)"),
+        );
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
