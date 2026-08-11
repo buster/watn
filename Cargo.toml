@@ -22,8 +22,6 @@ exclude = [
     ".github/",
     "PLAN.md",
     "QUESTIONS.md",
-    "githubflow.md",
-    "RELEASE_HANDOVER.md",
     "cliff.toml",
     "deny.toml",
     "rust-toolchain.toml",

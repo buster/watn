@@ -58,5 +58,6 @@ commit_parsers = [
     { message = '^archive', skip = true },
     { message = '^review', skip = true },
     { message = '^Plan:', skip = true },
+    { message = '^Merge (pull request|branch)', skip = true },
     { message = '.*', group = "Other Changes" },
 ]

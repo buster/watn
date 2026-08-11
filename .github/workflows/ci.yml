@@ -33,7 +33,6 @@ jobs:
           key: watn-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             watn-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}-
-            watn-cargo-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Check formatting
         run: cargo fmt --all -- --check
