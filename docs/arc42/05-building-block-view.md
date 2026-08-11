@@ -47,7 +47,7 @@ graph TB
 | Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, and require `[DONE]` |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
-| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, current page, model selection, save/discard prompt, and optional post-confirmation shortcut selection; save a confirmed provider draft before catalog access and return optional provider, completed model drafts, and shortcut choices |
+| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, green border around the focused input region, current page, model selection, save/discard prompt, and optional post-confirmation shortcut selection; save a confirmed provider draft before catalog access and return optional provider, completed model drafts, and shortcut choices |
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
 | Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
 | Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
@@ -107,7 +107,7 @@ empty or partial tier values.
 | Element | Responsibility |
 |---|---|
 | `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response |
-| `SetupWizard` model pages | Own the shared Small, Middle, and Large Model pages, page event loop, reasoning focus, and persistence boundary |
+| `SetupWizard` model pages | Own the shared Small, Middle, and Large Model pages, page event loop, reasoning focus, focused-widget border styling, and persistence boundary |
 | `model-picker` | Provides model-search and local-filter logic; remote search results use a stale-generation guard |
 | `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths through the existing direct writer, enforcing Unix mode `0600` after every save |
 

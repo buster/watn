@@ -27,6 +27,7 @@
 - Offer shortcut configuration as an optional post-Large-Model interaction in both explicit and implicit first-use setup; the default Enter path declines without adding a sixth tab
 - Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, and no evaluation
 - Own startup-file edits through exact marker pairs, atomic same-directory replacement, and independent per-shell result aggregation rather than a multi-file transaction
+- Use the existing SetupWizard focus state to color only the active widget border green, preserving the existing layout, selection styles, and cursor contract
 
 ## Technology choices
 
@@ -36,7 +37,7 @@
 | CLI parsing | clap v4 | Derive macros, `-1`/`-2`/`-3` flag groups, subcommand dispatch |
 | HTTP client | reqwest (blocking) | Blocking SSE with a buffered reader and synchronous content callback for progressive rendering; no worker channel |
 | Config format | TOML via `toml` crate | Rust ecosystem standard |
-| Terminal interaction | ratatui/crossterm `SetupWizard` and the `model-picker` search module | One TTY-only wizard renders URL, API key, and three model pages with `Block`, `Tabs`, `Paragraph`, `Table`, and `Scrollbar`; command entry points choose the starting page |
+| Terminal interaction | ratatui/crossterm `SetupWizard` and the `model-picker` search module | One TTY-only wizard renders URL, API key, and three model pages with `Block`, `Tabs`, `Paragraph`, `Table`, and `Scrollbar`; the focused input block has a green border; command entry points choose the starting page |
 | Filter matching | Per-word, order-independent substring over model id | "dee flash" matches "DeepSeek V4 Flash"; each word must appear anywhere in the id, any order |
 | Gherkin runner | cucumber-rs | Mature Rust cucumber implementation |
 | Pseudo-terminal testing | portable-pty | PTY-based E2E tests for the SetupWizard |
@@ -55,7 +56,7 @@
 | Portability | Release artifacts are verified on the selected host and documented with their dynamic runtime-library requirements; static portability is not claimed |
 | Observability | Model name, tok/s, cost printed after `[DONE]`; buffered reasoning printed only under `-v` after success; exit codes 0/1/2/3/130 |
 | Recovery | Visible content survives network/truncation failures; output I/O failures retain the prefix, clean up progress, omit metadata and execution, and use status 1 |
-| First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
+| First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page and green focused border explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
 | Transport isolation | The configured endpoint remains the source for readiness, persistence, and display; only debug test-support outbound requests may use a non-empty override, with missing/whitespace values falling back |
 | Completion safety | The selector is closed, success writes only deterministic script bytes to stdout, stderr remains empty, shell parsing is verified for each supported shell, and no config/provider operation is entered |
 | Shortcut safety | Setup is opt-in, target markers are validated before writes, existing files are replaced atomically, every selected shell is attempted and reported, and widgets never evaluate their captured result |

@@ -9,7 +9,8 @@ provider/model setup that stops before the original request. The setup flows use
 structured Ratatui widgets so choices, metadata, status, tier tabs, and long
 catalog position remain visible in the terminal.
 Provider and model onboarding now share a five-page setup wizard with explicit
-page, cursor, and save/discard state.
+page, cursor, save/discard state, and a green border around the currently
+focused input region.
 Model discovery resolves a dedicated catalog source: configured LiteLLM is used
 for model listing, pagination, and search, while chat remains on the selected
 provider. Credential sources remain literal values or exact environment

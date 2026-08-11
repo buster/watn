@@ -29,6 +29,7 @@ Top requirements:
 20. `watn --version` must report the Cargo package version, and release documentation must match verified target runtime requirements
 21. `watn completions <SHELL>` must generate the complete current command tree for the closed shell set `bash`, `elvish`, `fish`, `powershell`, and `zsh`, using stdout only without config/provider side effects
 22. Setup may install an optional Ctrl-W command-line widget for selected Bash, Zsh, and Fish targets, including implicit first-use setup, without executing generated output
+23. The setup wizard must mark the input region currently receiving keyboard input with a green border while preserving inactive styling and existing navigation
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 
@@ -36,7 +37,7 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 
 | Priority | Quality attribute | Motivation |
 |---|---|---|
-| 1 | Usability | One-shot shell command generation; confirmation-prompted execution; scannable interactive setup views |
+| 1 | Usability | One-shot shell command generation; confirmation-prompted execution; scannable interactive setup views with an unambiguous active-input indication |
 | 2 | Flexibility | Any OpenAI-compatible API; any model; model tier assignment |
 | 3 | Portability | A single release executable with runtime libraries documented and verified for its target |
 | 4 | Security | Prefer environment-backed credentials, mask pasted credentials, enforce private config permissions, and keep resolved secrets out of diagnostics |

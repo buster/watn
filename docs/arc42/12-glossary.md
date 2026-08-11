@@ -49,6 +49,8 @@
 | Setup wizard | The shared five-page terminal flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
 | Setup page | One tab-selected step in the setup wizard; only the active page accepts editing input |
 | Visible cursor | The highlighted block marker showing where the next character or current selection is being edited |
+| Active input | The setup widget that currently receives keyboard input; its border is rendered green while inactive widget borders retain their normal style |
+| Focused widget | The Ratatui-rendered setup region selected by the current credential, model, or shortcut focus state |
 | Save/discard prompt | The Escape confirmation that persists valid current settings or abandons all unsaved changes |
 | Catalog source | The endpoint used for model listing, pagination, and search; configured LiteLLM takes precedence over the active provider |
 | Credential source | The persisted origin of a secret: literal value, exact `${VARIABLE}` reference, or absent source |

@@ -115,7 +115,9 @@ sequenceDiagram
     participant Files as Selected startup files
 
     User->>Wizard: Confirm Large Model with y
-    Wizard-->>User: Show Bash/Zsh/Fish multi-select
+    Wizard-->>User: Show shortcut question with green focused border
+    User->>Wizard: y
+    Wizard-->>User: Show Bash/Zsh/Fish multi-select with green focused border
     User->>Wizard: Select zero or more shells and confirm
     Wizard->>Config: Persist provider and completed model choices
     loop Each selected shell
@@ -319,12 +321,13 @@ sequenceDiagram
     participant Config as Config
 
     User->>Wizard: runs `watn models` (TTY)
-    Wizard->>Wizard: show five tabs with Small Model active, page position, and cursor
+    Wizard->>Wizard: show five tabs with Small Model active, page position, cursor, and green table border
     User->>Wizard: types "dee flash"
     Wizard->>Worker: spawn: per-word local/remote match (gen=N)
     API-->>Worker: matching models
     Worker->>Wizard: newest result wins → update suggestions
     User->>Wizard: ↓ (select), Ctrl-R, Up/Down (reasoning minimal)
+    Wizard-->>User: move the green border from the model table to reasoning
     User->>Wizard: Enter or Tab (confirm small, advance to Middle Model)
     loop normal, thinking
         User->>Wizard: pick model, Enter or Tab to advance
@@ -337,14 +340,15 @@ sequenceDiagram
 
 **Steps:**
 1. The wizard opens on the Small Model page with five tabs, a border, filter
-   paragraph, aligned model table, visible selected-row cursor, and scrollbar
-   when needed.
+   paragraph, aligned model table, visible selected-row cursor, green border on
+   the focused table, and scrollbar when needed.
 2. Keystrokes update the visible filter; results match per-word,
    order-independent and are debounced with a stale-result guard.
 3. Arrow/page keys move selection; Enter and Tab accept/advance; Shift-Tab
    returns to the previous page.
- 4. Ctrl-R focuses the closed reasoning set (off/low/minimal/medium/high) on a
-       model page; mandatory models exclude off.
+4. Ctrl-R focuses the closed reasoning set (off/low/minimal/medium/high) on a
+   model page, moves the green border to the reasoning block, and leaves the
+   model table in its inactive style; mandatory models exclude off.
 5. Escape opens a save/discard prompt; saving persists the provider and all
    completed model choices.
 
@@ -499,8 +503,9 @@ sequenceDiagram
 
     User->>CLI: watn provider
     CLI->>Setup: open ratatui provider flow
-    Setup-->>User: URL tab, compatibility explanation, and visible cursor
+    Setup-->>User: URL tab, compatibility explanation, visible cursor, and green URL border
     User->>Setup: accept or edit endpoint; choose literal or environment source
+    Setup-->>User: API key source/value widgets with the green border on the focused location
     Setup->>Config: save default provider and credential representation
     Config-->>Setup: save result
     Setup-->>CLI: configured
@@ -524,14 +529,14 @@ sequenceDiagram
     participant Config as Config
 
     User->>Wizard: watn setup
-    Wizard-->>User: URL tab, compatibility explanation, cursor
+    Wizard-->>User: URL tab, compatibility explanation, cursor, and green URL border
     User->>Wizard: Enter endpoint
     Wizard-->>User: API key tab and storage choice
     User->>Wizard: choose configuration or environment reference
     Wizard->>Catalog: GET /models after valid provider credentials
     Catalog-->>Wizard: model rows
     loop Small, Middle, Large Model pages
-        Wizard-->>User: active tab, table, selected row, cursor/page position
+        Wizard-->>User: active tab, table, selected row, cursor/page position, and green border on the focused input
         User->>Wizard: Enter or Tab
     end
     User->>Wizard: save confirmation

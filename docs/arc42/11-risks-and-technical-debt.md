@@ -53,6 +53,7 @@
 | R-047 | A widget could pass a leading option, reserved token, or generated output into an unintended shell path | Medium | High | Use `command watn -- "$question"`, capture stdout without evaluation, preserve stderr, and assert leading-option/reserved-token, multiline, failure, and no-execution scenarios |
 | R-048 | Automatic first-use onboarding could surprise a user by mutating shell files | Medium | High | Make the shortcut question explicit and opt-in; Enter/no and empty selection perform no shell I/O; report every selected target before returning |
 | R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
+| R-050 | A terminal color palette or environment color policy may make the green active border hard to distinguish or suppress ANSI styling | Low | Low | Keep the visible cursor and focus text unchanged, remove inherited `NO_COLOR` in the PTY child, set `TERM=xterm-256color`, parse green SGR foreground parameters semantically, and retain the cursor/focus text as redundant cues |
 
 ## Technical debt
 
