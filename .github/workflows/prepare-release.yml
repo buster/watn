@@ -115,34 +115,15 @@ jobs:
           printf 'RELEASE_TAG=%s\nCURRENT_VERSION=%s\n' \
             "$release_tag" "$current_version" >> "$GITHUB_ENV"
 
-      - name: Install pinned changelog generator
-        run: cargo install git-cliff --version 2.13.1 --locked
-
-      - name: Update Cargo manifest
+      - name: Install pinned release tools
         shell: bash
         run: |
           set -euo pipefail
-          python3 <<'PY'
-          from pathlib import Path
-          import os
-          import re
+          cargo install cargo-release --version 1.1.4 --locked
+          cargo install git-cliff --version 2.13.1 --locked
 
-          path = Path("Cargo.toml")
-          text = path.read_text()
-          version = os.environ["RELEASE_VERSION"]
-          updated, count = re.subn(
-              r'(?m)^(version\s*=\s*)"[^"]+"',
-              lambda match: f'{match.group(1)}"{version}"',
-              text,
-              count=1,
-          )
-          if count != 1:
-              raise SystemExit("could not update the package version in Cargo.toml")
-          path.write_text(updated)
-          PY
-
-      - name: Update Cargo lockfile
-        run: cargo check --all-targets
+      - name: Update Cargo manifest and lockfile
+        run: cargo release version --execute --no-confirm --isolated --allow-branch "$PRIMARY_BRANCH" "$RELEASE_VERSION"
 
       - name: Verify Cargo versions
         shell: bash
@@ -331,8 +312,20 @@ jobs:
           fi
           cargo publish --locked --dry-run
 
-      - name: Create annotated release tag
-        run: git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
+      - name: Create and verify annotated release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git tag --annotate "$RELEASE_TAG" --message "Release $RELEASE_TAG"
+          if [[ "$(git cat-file -t "refs/tags/$RELEASE_TAG")" != tag ]]; then
+            printf 'release tag is not annotated: %s\n' "$RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$(git rev-list -n 1 "refs/tags/$RELEASE_TAG^{commit}")" != "$(git rev-parse HEAD)" ]]; then
+            printf 'release tag does not point to the release commit: %s\n' \
+              "$RELEASE_TAG" >&2
+            exit 1
+          fi
 
       - name: Push release commit and tag
         run: git push --atomic origin "$PRIMARY_BRANCH" "$RELEASE_TAG"

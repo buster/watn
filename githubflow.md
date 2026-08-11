@@ -229,6 +229,10 @@ Use `git-cliff` for changelog generation.
 The reviewed generator version for this setup is `git-cliff 2.13.1`; verify the
 local tool with `git cliff --version` before preparing a release.
 
+The preparation workflow uses `cargo-release 1.1.4` to update `Cargo.toml` and
+the root package entry in `Cargo.lock`; verify it with `cargo release --version`
+when reproducing the workflow locally.
+
 `git-cliff`:
 
 - Reads Git history.
@@ -370,10 +374,11 @@ Actions tab and provide the next version without the `v` prefix, such as
 
 The workflow validates that the version is newer than the manifest version and
 does not already exist on crates.io. It then updates `Cargo.toml`, refreshes
-`Cargo.lock`, generates the versioned changelog section with the pinned
-`git-cliff` tool, runs the locked validation and package checks, commits only
-the release preparation files, and creates an annotated `vX.Y.Z` tag. It pushes
-the release commit and tag atomically with the `RELEASE_PUSH_TOKEN`.
+`Cargo.lock` with pinned `cargo-release`, generates the versioned changelog
+section with the pinned `git-cliff` tool, runs the locked validation and package
+checks, commits only the release preparation files, and creates an annotated
+`vX.Y.Z` tag. It pushes the release commit and tag atomically with the
+`RELEASE_PUSH_TOKEN`.
 
 The existing tag-only `${RELEASE_WORKFLOW}` workflow remains responsible for
 Trusted Publishing. A failed preparation or dry run does not push the tag.

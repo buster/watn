@@ -29,6 +29,8 @@ Release environment: `crates-io`
 - The `Prepare Release` workflow can be started from the Actions tab with an
   explicit version. It updates the manifest, lockfile, and changelog, validates
   the package, commits the preparation, and pushes the annotated tag.
+- Version and lockfile updates use pinned `cargo-release`; changelog generation
+  uses pinned `git-cliff`.
 - Only the publish job receives `id-token: write` and uses crates.io Trusted
   Publishing.
 
