@@ -512,32 +512,36 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 5 steps (5 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: fe55ed8
   ```
 
 ## E2E Scenarios
 
 ## Scenario: Generated Bash and Fish configurations pass shell syntax checks
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit E2E stubs in
+- [x] RED: remove only this scenario's `@wip`, bind explicit E2E stubs in
   `tests/steps/interactive_shell_shortcut_e2e_steps.rs`, and run the targeted
   `./run-tests.sh --e2e` scenario. Evidence:
   ```text
-  pending
+  The targeted E2E runner matched the explicit `unimplemented!()` Bash parser
+  step, reported `1 feature, 1 scenario (1 failed), 1 step (1 failed)`, and
+  returned non-zero.
   ```
-- [ ] GREEN: install isolated Bash, Zsh, and Fish targets, run `bash -n` and
+- [x] GREEN: install isolated Bash, Zsh, and Fish targets, run `bash -n` and
   `fish -n` against the generated configurations, and assert both parser
   processes exit successfully. Production file reused: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_e2e_steps.rs`.
   ```text
-  pending
+  Targeted E2E runner reported `1 feature, 1 scenario (1 passed), 4 steps (4
+  passed)`; both installed Bash and Fish parser processes exited successfully.
   ```
-- [ ] REFACTOR: rerun the targeted E2E scenario and keep parser exit status as
+- [x] REFACTOR: rerun the targeted E2E scenario and keep parser exit status as
   the primary assertion.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted E2E runner again reported `1 feature, 1
+  scenario (1 passed), 4 steps (4 passed)`.
   ```
 - [ ] COMMIT: record the E2E scenario commit hash.
   ```text

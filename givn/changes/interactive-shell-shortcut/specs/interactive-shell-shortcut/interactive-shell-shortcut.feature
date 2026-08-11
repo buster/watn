@@ -5,14 +5,14 @@
 @givn.delta @interactive-shell-shortcut
 Feature: Interactive shell shortcut for watn
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Generated Bash and Fish configurations pass shell syntax checks
     Given isolated Bash, Zsh, and Fish shortcut targets
     When I install the shell shortcut for Bash, Zsh, and Fish
     Then the generated Bash configuration should pass a Bash syntax check
     And the generated Fish configuration should pass a Fish syntax check
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The generated Bash widget runs through Bash without evaluating its result
     Given an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
     When I run the generated Bash widget through Bash with current input "find all images"

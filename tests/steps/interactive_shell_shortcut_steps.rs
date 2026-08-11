@@ -627,7 +627,7 @@ fn widget_success_fixture(world: &mut WatnWorld, output: String) {
 }
 
 #[when(regex = r##"^I run the Bash widget with current input \"([^\"]*)\"$"##)]
-fn run_bash_widget(world: &mut WatnWorld, input: String) {
+pub(crate) fn run_bash_widget(world: &mut WatnWorld, input: String) {
     let temp = world.temp_dir.as_ref().expect("widget temp dir");
     let bin = temp.path().join("bin");
     std::fs::create_dir_all(&bin).expect("create fake watn bin");
