@@ -164,6 +164,15 @@ type SearchMessage = (
     Result<(Vec<ModelEntry>, Option<String>, bool), Error>,
 );
 
+fn setup_block<'a>(title: impl Into<Line<'a>>, focused: bool) -> Block<'a> {
+    let block = Block::bordered().title(title);
+    if focused {
+        block.border_style(Style::default().fg(Color::Green))
+    } else {
+        block
+    }
+}
+
 pub fn run_with_config(
     config: &Config,
     entry: SetupEntryPoint,
@@ -1114,11 +1123,8 @@ impl SetupWizard {
         .block(Block::bordered().title("Endpoint explanation"))
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
-        let input = Paragraph::new(format!("> {}█", self.endpoint)).block(
-            Block::bordered()
-                .border_style(Style::default().fg(Color::Green))
-                .title("URL (editing)"),
-        );
+        let input = Paragraph::new(format!("> {}█", self.endpoint))
+            .block(setup_block("URL (editing)", true));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
@@ -1140,7 +1146,10 @@ impl SetupWizard {
             CredentialStorage::Environment => 1,
         }));
         let list = List::new(items)
-            .block(Block::bordered().title("Where should the API key be stored?"))
+            .block(setup_block(
+                "Where should the API key be stored?",
+                self.credential_focus == CredentialFocus::Storage,
+            ))
             .highlight_style(
                 Style::default()
                     .bg(Color::Cyan)
@@ -1154,8 +1163,10 @@ impl SetupWizard {
         } else {
             self.credential_input.clone()
         };
-        let input = Paragraph::new(format!("> {}█", value))
-            .block(Block::bordered().title("API key / environment name (editing)"));
+        let input = Paragraph::new(format!("> {}█", value)).block(setup_block(
+            "API key / environment name (editing)",
+            self.credential_focus == CredentialFocus::Value,
+        ));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }

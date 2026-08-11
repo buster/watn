@@ -320,6 +320,71 @@ fn assert_green(signature: &[Foreground], title: &str) {
     );
 }
 
+fn assert_default(signature: &[Foreground], title: &str) {
+    assert!(
+        !signature.is_empty(),
+        "empty border signature for {title:?}"
+    );
+    assert!(
+        signature
+            .iter()
+            .all(|foreground| *foreground == Foreground::Default),
+        "border for {title:?} changed from its default styling: {signature:?}"
+    );
+}
+
+fn signature_key(key: &str) -> String {
+    format!("highlight-active-setup-input:{key}")
+}
+
+fn remember_signature(world: &mut WatnWorld, key: &str, signature: &[Foreground]) {
+    let encoded = signature
+        .iter()
+        .map(|foreground| match foreground {
+            Foreground::Default => 'd',
+            Foreground::Green => 'g',
+            Foreground::Other => 'o',
+        })
+        .collect::<String>();
+    let encoded = if encoded
+        .chars()
+        .all(|character| character == encoded.chars().next().unwrap())
+    {
+        encoded.chars().next().unwrap().to_string()
+    } else {
+        encoded
+    };
+    world.pending_config.insert(signature_key(key), encoded);
+}
+
+fn assert_matches_signature(world: &WatnWorld, key: &str, signature: &[Foreground], title: &str) {
+    let expected = world
+        .pending_config
+        .get(&signature_key(key))
+        .unwrap_or_else(|| panic!("missing border baseline for {key:?}"));
+    let actual = signature
+        .iter()
+        .map(|foreground| match foreground {
+            Foreground::Default => 'd',
+            Foreground::Green => 'g',
+            Foreground::Other => 'o',
+        })
+        .collect::<String>();
+    if expected.len() == 1 {
+        assert!(
+            actual
+                .chars()
+                .all(|character| Some(character) == expected.chars().next()),
+            "border for {title:?} did not retain its inactive baseline: {actual:?} vs {expected:?}"
+        );
+    } else {
+        assert_eq!(
+            actual, *expected,
+            "border for {title:?} did not retain its inactive baseline"
+        );
+    }
+}
+
 #[then("the setup wizard should show the active URL input with a green border")]
 fn active_url_border(world: &mut WatnWorld) {
     let signature = wait_for_border(world, "URL (editing)");
@@ -327,23 +392,40 @@ fn active_url_border(world: &mut WatnWorld) {
 }
 
 #[then("the setup wizard should show the active credential location with a green border")]
-fn active_credential_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn active_credential_border(world: &mut WatnWorld) {
+    let storage = wait_for_border(world, "Where should the API key be stored?");
+    assert_green(&storage, "Where should the API key be stored?");
+    let value = wait_for_border(world, "API key / environment name (editing)");
+    remember_signature(world, "credential-value", &value);
 }
 
 #[then("the setup wizard should show the API key input with a green border")]
-fn active_api_key_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn active_api_key_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "API key / environment name (editing)");
+    assert_green(&signature, "API key / environment name (editing)");
 }
 
 #[then("the inactive API key input should retain its default border styling")]
-fn inactive_api_key_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn inactive_api_key_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "API key / environment name (editing)");
+    assert_default(&signature, "API key / environment name (editing)");
+    assert_matches_signature(
+        world,
+        "credential-value",
+        &signature,
+        "API key / environment name (editing)",
+    );
 }
 
 #[then("the inactive credential location should retain its default border styling")]
-fn inactive_credential_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn inactive_credential_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "Where should the API key be stored?");
+    assert_matches_signature(
+        world,
+        "credential-value",
+        &signature,
+        "Where should the API key be stored?",
+    );
 }
 
 #[then("the setup wizard should show the model input with a green border")]
