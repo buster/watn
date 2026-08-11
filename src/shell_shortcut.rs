@@ -391,6 +391,7 @@ _watn_widget() {
 
 zle -N _watn_widget
 bindkey '^W' _watn_widget
+bindkey -M emacs '^W' _watn_widget
 bindkey -M viins '^W' _watn_widget
 # <<< watn shell shortcut <<<
 "#;
