@@ -1,0 +1,233 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "!v0.1.2" # Historical crates.io publication; never publish again.
+
+concurrency:
+  group: crates-io-watn-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    outputs:
+      validated_sha: ${{ steps.release_identity.outputs.tag_commit }}
+    runs-on: ubuntu-24.04
+    env:
+      CRATE_NAME: watn
+      PRIMARY_BRANCH: main
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate release identity
+        id: release_identity
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_TAG" ]]; then
+            printf 'release must run from a version tag, got %s\n' "$GITHUB_REF" >&2
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            printf 'invalid release tag: %s\n' "$RELEASE_TAG" >&2
+            exit 1
+          fi
+          release_version="${BASH_REMATCH[1]}"
+
+          git fetch --no-tags origin \
+            "$PRIMARY_BRANCH:refs/remotes/origin/$PRIMARY_BRANCH"
+
+          if ! git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            printf 'release tag is not available locally: %s\n' "$RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$(git cat-file -t "refs/tags/$RELEASE_TAG")" != tag ]]; then
+            printf 'release tag must be annotated: %s\n' "$RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_TAG^{commit}")"
+          if [[ "$tag_commit" != "$RELEASE_SHA" ]]; then
+            printf 'tag %s resolves to %s, but GitHub checked out %s\n' \
+              "$RELEASE_TAG" "$tag_commit" "$RELEASE_SHA" >&2
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$tag_commit" \
+            "refs/remotes/origin/$PRIMARY_BRANCH"; then
+            printf 'tag commit is not reachable from origin/%s\n' "$PRIMARY_BRANCH" >&2
+            exit 1
+          fi
+
+          metadata="$(cargo metadata --locked --no-deps --format-version 1)"
+          manifest_version="$(jq -er --arg crate "$CRATE_NAME" \
+            '.packages[] | select(.name == $crate) | .version' <<<"$metadata")"
+          if [[ "$manifest_version" != "$release_version" ]]; then
+            printf 'tag version %s does not match Cargo.toml version %s\n' \
+              "$release_version" "$manifest_version" >&2
+            exit 1
+          fi
+
+          lock_version="$(awk '
+            /^\[\[package\]\]$/ { in_watn = 0 }
+            /^name = "watn"$/ { in_watn = 1; next }
+            in_watn && /^version = / {
+              gsub(/"/, "", $3)
+              print $3
+              exit
+            }
+          ' Cargo.lock)"
+          if [[ "$lock_version" != "$release_version" ]]; then
+            printf 'tag version %s does not match Cargo.lock version %s\n' \
+              "$release_version" "$lock_version" >&2
+            exit 1
+          fi
+
+          if ! grep -Eq "^## \[$release_version\]($| - )" CHANGELOG.md; then
+            printf 'CHANGELOG.md has no release heading for %s\n' "$release_version" >&2
+            exit 1
+          fi
+
+          registry_status="$(curl --silent --show-error --location \
+            --user-agent 'watn-release-validation/0.1 (+https://github.com/buster/watn)' \
+            --output /dev/null --write-out '%{http_code}' \
+            "https://crates.io/api/v1/crates/$CRATE_NAME/$release_version")"
+          case "$registry_status" in
+            404)
+              ;;
+            200)
+              printf 'crate %s %s already exists on crates.io\n' \
+                "$CRATE_NAME" "$release_version" >&2
+              exit 1
+              ;;
+            *)
+              printf 'could not verify crates.io status for %s %s (HTTP %s)\n' \
+                "$CRATE_NAME" "$release_version" "$registry_status" >&2
+              exit 1
+              ;;
+          esac
+
+          printf 'RELEASE_VERSION=%s\n' "$release_version" >> "$GITHUB_ENV"
+          printf 'tag_commit=%s\n' "$tag_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check all targets
+        run: cargo check --locked --all-targets
+
+      - name: Run Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Run library tests
+        run: cargo test --locked --lib
+
+      - name: Build release binary
+        run: cargo build --locked --release --bin watn
+
+      - name: Verify CLI version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_output="$(target/release/watn --version)"
+          expected_output="$CRATE_NAME $RELEASE_VERSION"
+          if [[ "$version_output" != "$expected_output" ]]; then
+            printf 'watn --version returned %s, expected %s\n' \
+              "$version_output" "$expected_output" >&2
+            exit 1
+          fi
+
+      - name: Run non-E2E acceptance scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(mktemp -d /tmp/watn-release.XXXXXX)"
+          trap 'rm -rf "$root"' EXIT
+          cargo build --locked --bin watn
+          cp target/debug/watn "$root/default-debug"
+          cargo build --locked --features test-support --bin watn
+          cp target/debug/watn "$root/test-support-debug"
+          WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
+            WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
+            cargo test --locked --test features_runner --features test-support -- \
+            --tags 'not @wip and not @e2e'
+
+      - name: Run E2E acceptance scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(mktemp -d /tmp/watn-release-e2e.XXXXXX)"
+          trap 'rm -rf "$root"' EXIT
+          cargo build --locked --bin watn
+          cp target/debug/watn "$root/default-debug"
+          cargo build --locked --features test-support --bin watn
+          cp target/debug/watn "$root/test-support-debug"
+          WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
+            WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
+            cargo test --locked --test features_runner --features test-support -- \
+            --tags '@e2e and not @wip'
+
+      - name: Install pinned Rust security tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install cargo-audit --version 0.22.2 --locked
+          cargo install cargo-deny --version 0.20.2 --locked
+
+      - name: Audit Rust dependencies
+        run: cargo audit
+
+      - name: Check dependency policy
+        run: cargo deny --locked check advisories bans licenses sources
+
+      - name: Review package contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_list="$(mktemp)"
+          trap 'rm -f "$package_list"' EXIT
+          cargo package --locked --list | tee "$package_list"
+          if grep -Eq '(^|/)(PLAN\.md|QUESTIONS\.md|githubflow\.md|RELEASE_HANDOVER\.md|coverage/|givn/|docs/|\.github/|\.agents/|\.claude/|\.opencode/|\.ralph/)' "$package_list"; then
+            printf 'development-only files are present in the package\n' >&2
+            exit 1
+          fi
+
+      - name: Validate publish package
+        run: cargo publish --locked --dry-run
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment:
+      name: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.validate.outputs.validated_sha }}
+          persist-credentials: false
+
+      - name: Authenticate with crates.io Trusted Publishing
+        id: auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+
+      - name: Publish crate
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

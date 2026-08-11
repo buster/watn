@@ -78,13 +78,26 @@ config stores a reference such as `${OPENROUTER_API_KEY}`.
 
 ## Development
 
-```
-cargo test --test features_runner
+The acceptance runner uses separate default and `test-support` binaries so
+transport tests cannot affect normal requests. Run the non-E2E suite with the
+same setup used by CI:
+
+```sh
+root=$(mktemp -d /tmp/watn-transport.XXXXXX)
+trap 'rm -rf "$root"' EXIT
+cargo build --locked --bin watn
+cp target/debug/watn "$root/default-debug"
+cargo build --locked --features test-support --bin watn
+cp target/debug/watn "$root/test-support-debug"
+WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
+  WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
+  cargo test --locked --test features_runner --features test-support -- \
+  --tags 'not @wip and not @e2e'
 ```
 
 ## Coverage
 
-[![Coverage: 47.2%](https://img.shields.io/badge/coverage-47.2%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+[![Coverage: 47.2%](https://img.shields.io/badge/coverage-47.2%25-brightgreen)](https://github.com/buster/watn)
 
 Coverage runs the acceptance scenarios against the instrumented `watn` executable. The latest non-E2E run covers `1095/2320` lines (`47.2%`); the E2E subset covers `1804/2320` lines (`77.8%`).
 

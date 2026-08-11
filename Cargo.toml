@@ -1,6 +1,7 @@
 [package]
 name = "watn"
 version = "0.1.2"
+publish = ["crates-io"]
 edition = "2021"
 description = "Ask in plain language. Get one command."
 license = "GPL-3.0-or-later"
@@ -10,7 +11,23 @@ documentation = "https://github.com/buster/watn"
 readme = "README.md"
 keywords = ["cli", "shell", "command", "ai", "llm"]
 categories = ["command-line-utilities"]
-exclude = ["coverage/", "givn/", "docs/", ".agents/", ".claude/", ".opencode/", ".ralph/"]
+exclude = [
+    "coverage/",
+    "givn/",
+    "docs/",
+    ".agents/",
+    ".claude/",
+    ".opencode/",
+    ".ralph/",
+    ".github/",
+    "PLAN.md",
+    "QUESTIONS.md",
+    "githubflow.md",
+    "RELEASE_HANDOVER.md",
+    "cliff.toml",
+    "deny.toml",
+    "rust-toolchain.toml",
+]
 
 [features]
 default = []

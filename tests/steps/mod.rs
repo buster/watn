@@ -260,7 +260,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 .and_then(|_| world.env_vars.get("WATN_CUSTOM_API_KEY"))
                 .or_else(|| world.env_vars.get("WATN_OPENAI_API_KEY"))
                 .map(|key| format!("Bearer {}", key));
-            if world.pending_config.get("expect_custom_auth").is_none() {
+            if !world.pending_config.contains_key("expect_custom_auth") {
                 let mock_id = setup_chat_completion_mock(
                     server,
                     &output,
