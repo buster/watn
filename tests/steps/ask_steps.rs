@@ -1414,7 +1414,7 @@ fn paginated_model_catalog(w: &mut WatnWorld) {
                 p1.iter().map(|id| serde_json::json!({"id": id})).collect();
             then.status(200)
                 .header("Content-Type", "application/json")
-                .body(serde_json::json!({"data": data}).to_string());
+                .body(serde_json::json!({"data": data, "meta": {"has_more": true}}).to_string());
         });
         w.search_mock_ids.push(mock1.id);
 
