@@ -216,3 +216,7 @@ Feature: Shell completion generation
     Then the exit status should be 0
     And the output should contain "find"
     And stdout should not contain Bash completion syntax
+    When I run `watn "completions find files"` as a regular subprocess
+    Then the exit status should be 0
+    And the output should contain "find"
+    And stdout should not contain Bash completion syntax

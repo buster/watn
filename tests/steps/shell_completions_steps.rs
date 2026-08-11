@@ -22,6 +22,11 @@ fn reserved_completion_token(world: &mut WatnWorld) {
     run_args(world, &["--", "completions", "find", "files"]);
 }
 
+#[when("I run `watn \"completions find files\"` as a regular subprocess")]
+fn quoted_completion_token(world: &mut WatnWorld) {
+    run_args(world, &["completions find files"]);
+}
+
 #[given("no provider configuration exists in an isolated XDG config directory")]
 fn no_provider_config(world: &mut WatnWorld) {
     let temp = tempfile::tempdir().expect("create isolated XDG directory");

@@ -58,7 +58,7 @@
 
 ## Scenario: Every native clap_complete shell exposes the authoritative command tree
 
-- [ ] RED: Bind explicit stubs for the new Elvish and PowerShell scenarios and
+- [x] RED: Bind explicit stubs for the new Elvish and PowerShell scenarios and
   target only those scenarios. Expected non-zero result. Evidence:
   ```text
   The targeted runner matched the Elvish and PowerShell scenarios; both
@@ -66,7 +66,7 @@
   1 feature, 2 scenarios (2 failed), and 2 steps (2 failed); Cargo returned
   `error: test failed`.
   ```
-- [ ] GREEN: Extend the local selector and renderer mapping to every native
+- [x] GREEN: Extend the local selector and renderer mapping to every native
   `clap_complete 4.6.9` shell: Bash, Elvish, Fish, PowerShell, and Zsh. Assert
   the new Elvish and PowerShell scripts, deterministic repeated output, root
   tree, stdout/stderr contracts, and parser acceptance when the executables
@@ -79,13 +79,13 @@
   (46 passed). Elvish, PowerShell, and Zsh parser availability limitations were
   reported explicitly where executables were absent.
   ```
-- [ ] REFACTOR: Keep the five-shell mapping and shell-parser probing centralized
+- [x] REFACTOR: Keep the five-shell mapping and shell-parser probing centralized
   without duplicating the command tree. Targeted rerun:
   ```text
   `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
   5 scenarios (5 passed), and 46 steps (46 passed).
   ```
-- [ ] COMMIT: `[hash]` - `feat(shell-completions): Every native clap_complete shell exposes the authoritative command tree`
+- [x] COMMIT: `e811e75` - `feat(shell-completions): Every native clap_complete shell exposes the authoritative command tree`
 
 ## Scenario: Unsupported shell returns actionable guidance
 
@@ -171,14 +171,14 @@
 
 ## Scenario: The reserved completion token can remain question text after `--`
 
-- [ ] RED: Bind the reserved-token subprocess step as an explicit stub and
+- [x] RED: Bind the reserved-token subprocess step as an explicit stub and
   target only this scenario. Expected non-zero result. Evidence:
   ```text
   The targeted runner matched `reserved_completion_token`; the explicit stub
   panicked with `not implemented`. The summary was 1 feature, 1 scenario (1
   failed), and 2 steps (1 passed, 1 failed); Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Assert that `watn -- completions find files` reaches the normal
+- [x] GREEN: Assert that `watn -- completions find files` reaches the normal
   question path, returns successfully through the configured test provider,
   emits the generated answer, and does not emit Bash completion syntax.
   Production files: none beyond the early-dispatch implementation. Test files:
@@ -187,14 +187,14 @@
   Production files: none beyond the early-dispatch implementation. Test files:
   `tests/steps/shell_completions_steps.rs` and
   `givn/changes/shell-completions/specs/completions/completions.feature`.
-  The targeted runner reported 1 feature, 1 scenario (1 passed), and 5 steps
-  (5 passed).
+  The targeted runner reported 1 feature, 1 scenario (1 passed), and 9 steps
+  (9 passed), covering both the `--` and quoted escape forms.
   ```
-- [ ] REFACTOR: Keep the reserved-token invocation isolated from completion
+- [x] REFACTOR: Keep the reserved-token invocation isolated from completion
   generation fixtures. Targeted rerun:
   ```text
   `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
-  1 scenario (1 passed), and 5 steps (5 passed).
+  1 scenario (1 passed), and 9 steps (9 passed).
   ```
 - [ ] COMMIT: `[hash]` - `feat(shell-completions): The reserved completion token can remain question text after --`
 
