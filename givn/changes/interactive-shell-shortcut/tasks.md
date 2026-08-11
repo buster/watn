@@ -267,28 +267,33 @@
   `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
   scenario (1 passed), 4 steps (4 passed)`.
   ```
-- [ ] COMMIT: record the scenario commit hash.
+- [x] COMMIT: record the scenario commit hash.
   ```text
-  commit: pending
+  commit: 6c8c0ee
   ```
 
 ## Scenario: Generated shell blocks use the installed watn command and preserve shell syntax
 
-- [ ] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
+- [x] RED: remove only this scenario's `@wip`, bind explicit stubs, and run the
   targeted regular scenario. Evidence:
   ```text
-  pending
+  The targeted runner matched the explicit `unimplemented!()` step at
+  `tests/steps/interactive_shell_shortcut_steps.rs:601`, reported `1 feature, 1
+  scenario (1 failed), 1 step (1 failed)`, and returned non-zero.
   ```
-- [ ] GREEN: complete the native Bash/Zsh/Fish block text, PATH invocation, and
+- [x] GREEN: complete the native Bash/Zsh/Fish block text, PATH invocation, and
   binding contracts. Production files: `src/shell_shortcut.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
-  pending
+  Targeted runner reported `1 feature, 1 scenario (1 passed), 8 steps (8
+  passed)` and verified the three native line-editor contracts and exact
+  `command watn -- "$question"` invocation.
   ```
-- [ ] REFACTOR: rerun the targeted scenario and any available shell parser
+- [x] REFACTOR: rerun the targeted scenario and any available shell parser
   checks.
   ```text
-  pending
+  `cargo fmt --all` passed; the targeted runner again reported `1 feature, 1
+  scenario (1 passed), 8 steps (8 passed)`.
   ```
 - [ ] COMMIT: record the scenario commit hash.
   ```text

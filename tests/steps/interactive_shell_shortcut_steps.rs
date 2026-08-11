@@ -597,3 +597,62 @@ fn malformed_unchanged(world: &mut WatnWorld) {
         );
     }
 }
+
+#[given("isolated Bash, Zsh, and Fish shortcut targets")]
+fn isolated_target_contract(world: &mut WatnWorld) {
+    isolated_shell_paths(world);
+}
+
+#[then("no generated block should contain a repository-local watn path")]
+fn no_local_watn_path(world: &mut WatnWorld) {
+    for path in world.shortcut_targets.values() {
+        let content = std::fs::read_to_string(path).expect("read generated target");
+        assert!(!content.contains("target/debug"));
+        assert!(!content.contains("/home/buster/projects/watn"));
+    }
+}
+
+#[then("every generated widget should invoke `command watn -- \"$question\"`")]
+fn widget_invocation(world: &mut WatnWorld) {
+    for path in world.shortcut_targets.values() {
+        let content = std::fs::read_to_string(path).expect("read generated target");
+        assert!(content.contains(r#"command watn -- "$question""#));
+    }
+}
+
+#[then("the Bash block should use the current Readline line and cursor")]
+fn bash_line_contract(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("bash").unwrap())
+        .expect("read Bash target");
+    assert!(content.contains("READLINE_LINE"));
+    assert!(content.contains("READLINE_POINT"));
+}
+
+#[then("the Zsh block should use the current buffer and cursor")]
+fn zsh_line_contract(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("zsh").unwrap())
+        .expect("read Zsh target");
+    assert!(content.contains("$BUFFER"));
+    assert!(content.contains("CURSOR"));
+}
+
+#[then("the Fish block should replace and repaint the current command line")]
+fn fish_line_contract(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
+        .expect("read Fish target");
+    assert!(content.contains("commandline -r --"));
+    assert!(content.contains("commandline -f repaint"));
+}
+
+#[then("every generated block should bind Ctrl-W")]
+fn all_bindings(world: &mut WatnWorld) {
+    let bash = std::fs::read_to_string(world.shortcut_targets.get("bash").unwrap())
+        .expect("read Bash target");
+    let zsh = std::fs::read_to_string(world.shortcut_targets.get("zsh").unwrap())
+        .expect("read Zsh target");
+    let fish = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
+        .expect("read Fish target");
+    assert!(bash.contains("\\C-w"));
+    assert!(zsh.contains("bindkey '^W'"));
+    assert!(fish.contains("bind \\cw"));
+}

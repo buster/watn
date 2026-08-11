@@ -116,7 +116,7 @@ Feature: Interactive shell shortcut for watn
     Then setup should report malformed watn shell shortcut markers
     And every malformed Bash target should match its snapshot byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: Generated shell blocks use the installed watn command and preserve shell syntax
     Given isolated Bash, Zsh, and Fish shortcut targets
     When I install the shell shortcut for Bash, Zsh, and Fish
