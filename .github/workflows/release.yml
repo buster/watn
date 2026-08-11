@@ -23,6 +23,7 @@ jobs:
   validate:
     outputs:
       validated_sha: ${{ steps.release_identity.outputs.tag_commit }}
+      release_tag: ${{ steps.release_identity.outputs.release_tag }}
     runs-on: ubuntu-24.04
     env:
       CRATE_NAME: watn
@@ -130,7 +131,8 @@ jobs:
           esac
 
           printf 'RELEASE_VERSION=%s\n' "$release_version" >> "$GITHUB_ENV"
-          printf 'tag_commit=%s\n' "$tag_commit" >> "$GITHUB_OUTPUT"
+          printf 'tag_commit=%s\nrelease_tag=%s\n' \
+            "$tag_commit" "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -253,3 +255,21 @@ jobs:
         run: cargo publish --locked
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  github_release:
+    needs: [validate, publish]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
+    steps:
+      - name: Create GitHub release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" \
+            --verify-tag \
+            --generate-notes \
+            --title "$RELEASE_TAG"
