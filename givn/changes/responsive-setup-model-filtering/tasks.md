@@ -47,24 +47,30 @@
 
 ## Scenario: A catalog requiring more data uses provider-backed filtering
 
-- [ ] RED: Remove `@wip` from this scenario only, bind its new provider-search
+- [x] RED: Remove `@wip` from this scenario only, bind its new provider-search
   assertions with `unimplemented!()`, and run the exact targeted command.
   Expected result: non-zero exit.
-  - Evidence: paste the targeted runner output here.
+  - Evidence: the exact targeted command compiled the test runner and exited
+    non-zero with `1 scenario (1 failed)` and `1 step (1 failed)` at the
+    explicit `unimplemented!()` catalog Given step.
 
-- [ ] GREEN: Treat a full catalog page as incomplete, preserve the visible
+- [x] GREEN: Treat a full catalog page as incomplete, preserve the visible
   query, debounce the provider-backed search by 200 ms, and apply its matching
   result. Production files created or modified: list them here. Run the
   targeted scenario and record a zero exit.
-  - Evidence: paste the targeted runner output here.
+  - Evidence: the remote incomplete-catalog path in `src/setup.rs` was reused
+    from the first scenario; the new provider fixture and request assertion
+    passed the targeted runner with `1 scenario` and `6 steps`.
 
-- [ ] REFACTOR: Preserve provider request behavior and current selection/status
+- [x] REFACTOR: Preserve provider request behavior and current selection/status
   rendering, simplify the search-path assertions, rerun the targeted scenario,
   and record a zero exit.
-  - Evidence: paste the targeted runner output and formatting result here.
+  - Evidence: duplicated search-hit diagnostics were removed from the visible
+    suggestion assertion; `cargo fmt --all -- --check` passed and the targeted
+    runner passed `1 scenario` and `6 steps`.
 
-- [ ] COMMIT: Create one atomic commit referencing `A catalog requiring more data uses provider-backed filtering`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `A catalog requiring more data uses provider-backed filtering`.
+- Commit hash: `c88d6fe`
 
 ## Scenario: A newer model query remains authoritative
 
