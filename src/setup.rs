@@ -1327,14 +1327,6 @@ impl SetupWizard {
             .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
 
-        if focus == ShellInstallFocus::Question {
-            let confirmation = Paragraph::new("Press y to install for selected shells, or Enter to skip without changing shell files.")
-                .block(Block::bordered().title("Confirmation"))
-                .wrap(Wrap { trim: true });
-            frame.render_widget(confirmation, chunks[1]);
-            return;
-        }
-
         let items = Shell::ALL.iter().enumerate().map(|(index, shell)| {
             let marker = if selected[index] { "[x]" } else { "[ ]" };
             ListItem::new(format!("{} {}", marker, shell.name()))

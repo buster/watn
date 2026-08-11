@@ -469,6 +469,11 @@ fn inactive_model_border(world: &mut WatnWorld) {
 
 #[when("I confirm the Large Model selection and configure the shortcut")]
 fn confirm_large_model_and_configure_shortcut(world: &mut WatnWorld) {
+    {
+        let session = world.pty_session.as_mut().expect("setup PTY session");
+        pty_write(session, "\r");
+    }
+    let _ = wait_for_border(world, "Shell completion");
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
     let _ = wait_for_border(world, "Shell shortcut");
