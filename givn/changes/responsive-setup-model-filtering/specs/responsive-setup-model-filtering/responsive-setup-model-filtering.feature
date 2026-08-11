@@ -23,7 +23,7 @@ Feature: Responsive setup model filtering
     And the suggestions should contain "o3-pro"
     And the provider should receive a search request for "o3"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A newer model query remains authoritative
     Given a provider returns the result for "gpt" after the result for "o3"
     When I type "gpt" and then replace it with "o3" before either result is applied
