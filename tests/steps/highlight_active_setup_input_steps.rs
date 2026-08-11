@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use cucumber::{then, when};
 
-use super::pty_snapshot;
+use super::{pty_snapshot, pty_write};
 use crate::WatnWorld;
 
 const SCREEN_WIDTH: usize = 120;
@@ -429,28 +429,42 @@ fn inactive_credential_border(world: &mut WatnWorld) {
 }
 
 #[then("the setup wizard should show the model input with a green border")]
-fn active_model_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn active_model_border(world: &mut WatnWorld) {
+    let model = wait_for_border(world, "Small Model (editing)");
+    assert_green(&model, "Small Model (editing)");
+    let reasoning = wait_for_border(world, "Model reasoning");
+    remember_signature(world, "model-reasoning", &reasoning);
 }
 
 #[then("the inactive reasoning input should retain its default border styling")]
-fn inactive_reasoning_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn inactive_reasoning_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "Model reasoning");
+    assert_default(&signature, "Model reasoning");
+    assert_matches_signature(world, "model-reasoning", &signature, "Model reasoning");
 }
 
 #[when("I toggle reasoning focus in the setup wizard")]
-fn toggle_reasoning_focus(_world: &mut WatnWorld) {
-    unimplemented!()
+fn toggle_reasoning_focus(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\x12");
+    std::thread::sleep(Duration::from_millis(100));
 }
 
 #[then("the setup wizard should show the reasoning input with a green border")]
-fn active_reasoning_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn active_reasoning_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "Model reasoning");
+    assert_green(&signature, "Model reasoning");
 }
 
 #[then("the inactive model input should retain its default border styling")]
-fn inactive_model_border(_world: &mut WatnWorld) {
-    unimplemented!()
+fn inactive_model_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "Small Model (editing)");
+    assert_matches_signature(
+        world,
+        "model-reasoning",
+        &signature,
+        "Small Model (editing)",
+    );
 }
 
 #[when("I confirm the Large Model selection and configure the shortcut")]
