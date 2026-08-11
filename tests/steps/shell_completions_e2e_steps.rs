@@ -11,6 +11,7 @@ fn run_built_bash(world: &mut WatnWorld) {
 #[then("stdout should contain the authoritative root options and subcommands")]
 fn e2e_root_tree(world: &mut WatnWorld) {
     let output = world.output.as_deref().expect("completion stdout");
+    assert!(output.contains("_watn"), "missing generated Bash function");
     for value in [
         "-1",
         "--small",

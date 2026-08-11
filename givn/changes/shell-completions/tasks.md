@@ -196,7 +196,7 @@
   `cargo fmt --all -- --check` passed; the targeted runner reported 1 feature,
   1 scenario (1 passed), and 9 steps (9 passed).
   ```
-- [ ] COMMIT: `[hash]` - `feat(shell-completions): The reserved completion token can remain question text after --`
+- [x] COMMIT: `95381a9` - `feat(shell-completions): The reserved completion token can remain question text after --`
 
 ## E2E Setup
 
@@ -212,24 +212,33 @@
 
 ## Scenario: Built Bash completion generation emits the current command tree
 
-- [ ] RED: Remove only this scenario's `@wip`, bind the E2E stub, and target it
+- [x] RED: Remove only this scenario's `@wip`, bind the E2E stub, and target it
   through `./run-tests.sh --e2e`/the single-scenario equivalent. Expected
   non-zero result. Evidence:
   ```text
-  [targeted E2E output]
+  The single-scenario runner matched `tests/steps/shell_completions_e2e_steps.rs:6`,
+  where the explicit stub panicked with `not implemented`. The summary was 1
+  feature, 1 scenario (1 failed), and 1 step (1 failed); Cargo returned
+  `error: test failed`.
   ```
-- [ ] GREEN: Invoke the explicit built binary through a real subprocess and
+- [x] GREEN: Invoke the explicit built binary through a real subprocess and
   assert Bash script output, exact root tree, all five selector suggestions, stdout-only
   output, deterministic second generation, Bash parser acceptance, and status
   0. Production files: none beyond the regular implementation. Test files:
   [list]. Targeted result:
   ```text
-  [targeted E2E output]
+  Production files: none beyond the regular implementation. Test files:
+  `tests/steps/shell_completions_e2e_steps.rs` and
+  `tests/steps/shell_completions_steps.rs`.
+  The targeted runner reported 1 feature, 1 scenario (1 passed), and 9 steps
+  (9 passed).
   ```
-- [ ] REFACTOR: Keep the E2E output assertions primary and distinct from the
+- [x] REFACTOR: Keep the E2E output assertions primary and distinct from the
   regular shell variants. Targeted rerun:
   ```text
-  [targeted E2E output]
+  `cargo fmt --all -- --check` passed; the generated Bash-function assertion
+  remained primary and the targeted runner reported 1 feature, 1 scenario (1
+  passed), and 9 steps (9 passed).
   ```
 - [ ] COMMIT: `[hash]` - `test(e2e): Built Bash completion generation emits the current command tree`
 
