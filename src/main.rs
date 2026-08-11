@@ -12,7 +12,7 @@ use watn::provider::{Message, RequestOptions};
 use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
 
 #[derive(clap::Parser)]
-#[command(name = "watn", version = "0.1.0")]
+#[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Ask in plain language. Get one command.")]
 struct Cli {
     #[arg(group = "input", num_args = 1..)]

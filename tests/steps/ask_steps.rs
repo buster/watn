@@ -658,9 +658,11 @@ fn api_request_not_include_reasoning(w: &mut WatnWorld) {
 #[then("the output should contain a version number")]
 fn output_contains_version(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
+    let expected = env!("CARGO_PKG_VERSION");
     assert!(
-        out.contains("0.1.0"),
-        "expected output to contain version '0.1.0', got: '{}'",
+        out.contains(expected),
+        "expected output to contain package version '{}', got: '{}'",
+        expected,
         out
     );
 }
