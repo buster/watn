@@ -131,7 +131,7 @@ Feature: Interactive shell shortcut for watn
     And the cursor should be at the end of the current command line
     And the replacement text should not have executed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Empty input does not invoke watn or change the command line
     Given an installed Bash shortcut and a fake watn that records invocations
     When I run the Bash widget with empty input

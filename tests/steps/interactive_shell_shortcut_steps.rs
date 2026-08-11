@@ -634,7 +634,7 @@ fn run_bash_widget(world: &mut WatnWorld, input: String) {
     let fake = bin.join("watn");
     std::fs::write(
         &fake,
-        "#!/bin/sh\nprintf '%s' \"$WATN_FAKE_OUTPUT\"\nexit \"${WATN_FAKE_STATUS:-0}\"\n",
+        "#!/bin/sh\nif test -n \"$WATN_FAKE_LOG\"; then printf '%s\\n' \"$2\" >> \"$WATN_FAKE_LOG\"; fi\nprintf '%s' \"$WATN_FAKE_OUTPUT\"\nexit \"${WATN_FAKE_STATUS:-0}\"\n",
     )
     .expect("write fake watn");
     #[cfg(unix)]
@@ -675,6 +675,14 @@ printf 'POINT<<%s>>\n' "$READLINE_POINT"
                 .cloned()
                 .unwrap_or_else(|| "0".to_string()),
         )
+        .env(
+            "WATN_FAKE_LOG",
+            world
+                .pending_config
+                .get("fake_log")
+                .cloned()
+                .unwrap_or_default(),
+        )
         .output()
         .expect("run Bash widget");
     world.shortcut_output = Some(String::from_utf8_lossy(&result.stdout).to_string());
@@ -709,6 +717,158 @@ fn cursor_end(world: &mut WatnWorld) {
         .and_then(|value| value.split(">>").next())
         .expect("widget line output");
     assert_eq!(point, line.chars().count());
+}
+
+#[given("an installed Bash shortcut and a fake watn that records invocations")]
+fn widget_recording_fixture(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create recording widget temp dir");
+    let home = temp.path().join("home");
+    std::fs::create_dir_all(&home).expect("create recording widget home");
+    let target = home.join(".bashrc");
+    let environment = watn::shell_shortcut::ShellEnvironment {
+        home: home.clone(),
+        xdg_config_home: None,
+        shell: Some("/bin/bash".to_string()),
+    };
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Bash],
+        &environment,
+    );
+    assert!(report.is_success(), "recording fixture report: {report:?}");
+    let log = temp.path().join("watn-invocations.log");
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = HashMap::from([("bash".to_string(), target)]);
+    world
+        .pending_config
+        .insert("fake_output".to_string(), String::new());
+    world
+        .pending_config
+        .insert("fake_status".to_string(), "0".to_string());
+    world
+        .pending_config
+        .insert("fake_log".to_string(), log.display().to_string());
+}
+
+#[then("the fake watn should not have been invoked")]
+fn fake_not_invoked(world: &mut WatnWorld) {
+    let temp = world.temp_dir.as_ref().expect("recording widget temp dir");
+    let log = temp.path().join("watn-invocations.log");
+    assert!(!log.exists() || std::fs::read_to_string(log).unwrap().is_empty());
+}
+
+#[then("the current command line should remain empty")]
+fn empty_line(world: &mut WatnWorld) {
+    current_line(world, String::new());
+}
+
+#[when("I run the Bash widget with empty input")]
+fn run_empty_bash_widget(world: &mut WatnWorld) {
+    run_bash_widget(world, String::new());
+}
+
+#[given("an installed Bash shortcut and a fake watn that fails")]
+fn widget_failure_fixture(world: &mut WatnWorld) {
+    widget_recording_fixture(world);
+    world
+        .pending_config
+        .insert("fake_output".to_string(), "partial".to_string());
+    world
+        .pending_config
+        .insert("fake_status".to_string(), "1".to_string());
+}
+
+#[then(regex = r##"^the current command line should remain \"([^\"]*)\"$"##)]
+fn current_line_remains(world: &mut WatnWorld, line: String) {
+    current_line(world, line);
+}
+
+#[when("the fake watn returns empty output")]
+fn empty_output(world: &mut WatnWorld) {
+    world
+        .pending_config
+        .insert("fake_output".to_string(), String::new());
+    world
+        .pending_config
+        .insert("fake_status".to_string(), "0".to_string());
+}
+
+#[given("an installed Bash shortcut and a fake watn that writes \"partial\" to stdout and exits non-zero")]
+fn partial_stdout_fixture(world: &mut WatnWorld) {
+    widget_recording_fixture(world);
+    world
+        .pending_config
+        .insert("fake_output".to_string(), "partial".to_string());
+    world
+        .pending_config
+        .insert("fake_status".to_string(), "1".to_string());
+}
+
+#[then("the partial stdout should not be inserted")]
+fn partial_stdout_not_inserted(world: &mut WatnWorld) {
+    current_line(world, "show partial result".to_string());
+}
+
+#[given("an installed Bash shortcut and a fake watn that records its question")]
+fn question_recording_fixture(world: &mut WatnWorld) {
+    widget_recording_fixture(world);
+}
+
+#[then(regex = r##"^the fake watn should receive exactly one question \"([^\"]*)\"$"##)]
+fn exact_question(world: &mut WatnWorld, question: String) {
+    let temp = world.temp_dir.as_ref().expect("question fixture temp dir");
+    let log = temp.path().join("watn-invocations.log");
+    let calls = std::fs::read_to_string(log).expect("read fake watn log");
+    assert_eq!(calls, format!("{question}\n"));
+}
+
+#[then("the wildcard should not be expanded before watn receives the question")]
+fn wildcard_not_expanded(world: &mut WatnWorld) {
+    let temp = world.temp_dir.as_ref().expect("question fixture temp dir");
+    let log = std::fs::read_to_string(temp.path().join("watn-invocations.log"))
+        .expect("read fake watn log");
+    assert!(log.contains("*"));
+}
+
+#[then(
+    regex = r##"^the fake watn should have received exactly two questions \"([^\"]*)\" and \"([^\"]*)\"$"##
+)]
+fn two_questions(world: &mut WatnWorld, first: String, second: String) {
+    let temp = world.temp_dir.as_ref().expect("question fixture temp dir");
+    let log = std::fs::read_to_string(temp.path().join("watn-invocations.log"))
+        .expect("read fake watn log");
+    assert_eq!(log, format!("{first}\n{second}\n"));
+}
+
+#[given("an installed Bash shortcut and a fake watn that records each question")]
+fn each_question_fixture(world: &mut WatnWorld) {
+    widget_recording_fixture(world);
+}
+
+#[then("setup should report \"source ~/.bashrc\" for Bash")]
+fn bash_reload(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("Run: source ~/.bashrc"));
+}
+
+#[then("setup should report \"source ~/.zshrc\" for Zsh")]
+fn zsh_reload(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("Run: source ~/.zshrc"));
+}
+
+#[then("setup should report \"source ~/.config/fish/config.fish\" for Fish")]
+fn fish_reload(world: &mut WatnWorld) {
+    assert!(world
+        .shortcut_output
+        .as_deref()
+        .unwrap_or_default()
+        .contains("Run: source ~/.config/fish/config.fish"));
 }
 
 #[then("the embedded line break should remain in the command line buffer")]

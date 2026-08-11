@@ -36,12 +36,8 @@ impl Shell {
         }
     }
 
-    pub fn reload_instruction(self, path: &Path) -> String {
-        match self {
-            Self::Bash => format!("Run: source {}", display_home_path(path)),
-            Self::Zsh => format!("Run: source {}", display_home_path(path)),
-            Self::Fish => format!("Run: source {}", display_home_path(path)),
-        }
+    pub fn reload_instruction(self, path: &Path, home: &Path) -> String {
+        format!("Run: source {}", display_home_path(path, home))
     }
 
     pub fn generated_block(self) -> &'static str {
@@ -186,7 +182,7 @@ fn install_one(shell: Shell, environment: &ShellEnvironment) -> TargetResult {
     match replace_target(shell, &path) {
         Ok(()) => TargetResult {
             shell,
-            reload: Some(shell.reload_instruction(&path)),
+            reload: Some(shell.reload_instruction(&path, &environment.home)),
             path: Some(path),
             success: true,
             message: format!("Configured {}", shell.name()),
@@ -335,12 +331,9 @@ fn sync_directory(path: &Path) -> std::io::Result<()> {
     }
 }
 
-fn display_home_path(path: &Path) -> String {
-    let home = std::env::var_os("HOME").map(PathBuf::from);
-    if let Some(home) = home {
-        if let Ok(relative) = path.strip_prefix(home) {
-            return format!("~/{}", relative.display());
-        }
+fn display_home_path(path: &Path, home: &Path) -> String {
+    if let Ok(relative) = path.strip_prefix(home) {
+        return format!("~/{}", relative.display());
     }
     path.display().to_string()
 }
