@@ -207,18 +207,28 @@
     The title-targeted E2E runner passed both real Bash subprocess copies with
     `2 scenarios (2 passed)` and `9 steps (9 passed)`.
 
-- [ ] Commit the modified-scenario verifications atomically referencing the
+- [x] Commit the modified-scenario verifications atomically referencing the
   modified scenario titles.
-- Commit hash: pending
+- Commit hash: `793be0e`
 
 ## Full Verification
 
-- [ ] `givn lint --change preserve-ctrl-w-requests-in-shell-config` clean with
+- [x] `givn lint --change preserve-ctrl-w-requests-in-shell-config` clean with
   no `@wip` remaining.
-- [ ] `./run-tests.sh` and `./run-tests.sh --e2e` pass with the E2E count
+- [x] `./run-tests.sh` and `./run-tests.sh --e2e` pass with the E2E count
   strictly smaller.
-- [ ] `./measure-coverage.sh` and `./merge-coverages.sh` produce fresh reports
+- [x] `./measure-coverage.sh` and `./merge-coverages.sh` produce fresh reports
   covering the runner and instrumented PTY/child processes.
-- [ ] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features --
+- [x] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features --
   -D warnings`, and `git diff --check` pass.
-- Evidence:
+- Evidence: `givn lint --change preserve-ctrl-w-requests-in-shell-config`:
+  `1 file(s) checked — clean`.
+  Regular verify command passed: `19 features`, `105 scenarios`, `604
+  steps`. E2E verify command passed: `23 features`, `68 scenarios`, `473
+  steps`. The E2E scenario count is strictly smaller than the regular count.
+  `./measure-coverage.sh` and `./merge-coverages.sh` completed and refreshed
+  the three Cobertura reports. Merged coverage is `9164/10128` lines
+  (`90.48%`); `src/shell_shortcut.rs` is `271/319` lines (`84.95%`).
+  After `cargo fmt --all`, `cargo fmt --all -- --check`,
+  `cargo clippy --all-targets --all-features -- -D warnings`, and
+  `git diff --check` all passed.

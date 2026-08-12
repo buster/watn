@@ -75,7 +75,10 @@ fn bash_process_no_eval(_world: &mut WatnWorld) {
 #[then("the Bash process should preserve the request as a comment")]
 fn bash_process_preserves_request(world: &mut WatnWorld) {
     let line = captured_bash_line(world);
-    assert!(line.starts_with("# "), "the request should be a shell comment");
+    assert!(
+        line.starts_with("# "),
+        "the request should be a shell comment"
+    );
     assert_eq!(
         line.matches('\n').count(),
         1,
