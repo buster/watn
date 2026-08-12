@@ -19,7 +19,7 @@ use crate::config::types::Config;
 use crate::config::{self, PersistedConfig};
 use crate::error::Error;
 use crate::models::dialog::{LevelChoice, ReasoningStrength};
-use crate::models::list::{fetch_models, ModelEntry};
+use crate::models::list::{fetch_models, word_matches, ModelEntry};
 use crate::provider::setup::{
     build_provider_draft_for_identity, normalize_endpoint, ProviderDraft, ProviderIdentity,
     SetupCancellation, OPENROUTER_ENDPOINT,
@@ -152,6 +152,13 @@ enum ProviderFocus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ModelFocus {
+    Roles,
+    Search,
+    List,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RoleReview {
     Loaded,
     Suggested,
@@ -168,6 +175,7 @@ struct RoleDraft {
     reasoning: ReasoningStrength,
     metadata: Option<crate::models::list::ModelReasoning>,
     query: String,
+    selection: usize,
 }
 
 impl Default for RoleDraft {
@@ -179,6 +187,7 @@ impl Default for RoleDraft {
             reasoning: ReasoningStrength::Off,
             metadata: None,
             query: String::new(),
+            selection: 0,
         }
     }
 }
@@ -310,6 +319,7 @@ struct SetupWizard {
     credential_candidates: Vec<CredentialCandidate>,
     credential_choice: Option<usize>,
     provider_focus: ProviderFocus,
+    model_focus: ModelFocus,
     roles: [RoleDraft; 3],
     catalog: Vec<ModelEntry>,
     catalog_status: CatalogStatus,
@@ -399,6 +409,7 @@ impl SetupWizard {
             credential_candidates: candidates,
             credential_choice,
             provider_focus,
+            model_focus: ModelFocus::Roles,
             roles,
             catalog: Vec::new(),
             catalog_status: CatalogStatus::NotStarted,
@@ -537,6 +548,7 @@ impl SetupWizard {
             }
             KeyCode::Tab | KeyCode::Enter if self.advance_provider()? => {
                 self.page = SetupPage::ModelRoles;
+                self.model_focus = ModelFocus::Roles;
                 self.start_catalog();
             }
             KeyCode::Tab | KeyCode::Enter => {}
@@ -662,10 +674,13 @@ impl SetupWizard {
         }
         self.credential_candidates = discover_credentials(self.provider_identity.name());
         self.credential_choice = None;
-        self.credential_input.clear();
-        self.credential_origin = FieldOrigin::Recommended;
-        self.storage = CredentialStorage::Environment;
-        self.select_single_detected_credential();
+        let preserve_loaded = !self.first_run && self.credential_origin == FieldOrigin::Loaded;
+        if !preserve_loaded {
+            self.credential_input.clear();
+            self.credential_origin = FieldOrigin::Recommended;
+            self.storage = CredentialStorage::Environment;
+            self.select_single_detected_credential();
+        }
         self.invalidate_roles();
     }
 
@@ -759,29 +774,66 @@ impl SetupWizard {
     }
 
     fn handle_model_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
+        if (key.code == KeyCode::Char('f') && key.modifiers.contains(KeyModifiers::CONTROL))
+            || (key.code == KeyCode::Char('/') && self.model_focus == ModelFocus::Roles)
+        {
+            self.model_focus = ModelFocus::Search;
+            return Ok(None);
+        }
         if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
             self.cycle_reasoning(1);
             return Ok(None);
         }
         match key.code {
-            KeyCode::Up => {
-                self.active_role = self.active_role.saturating_sub(1);
-                self.sync_role_metadata();
-            }
-            KeyCode::Down => {
-                self.active_role = (self.active_role + 1).min(2);
-                self.sync_role_metadata();
-            }
-            KeyCode::Backspace => self.edit_role(None),
-            KeyCode::Char(character) => self.edit_role(Some(character)),
-            KeyCode::Tab | KeyCode::Enter if self.confirm_role()? => {
-                if self.active_role < 2 {
-                    self.active_role += 1;
+            KeyCode::Up => match self.model_focus {
+                ModelFocus::Roles => {
+                    self.active_role = self.active_role.saturating_sub(1);
+                    self.sync_role_metadata();
+                }
+                ModelFocus::List => self.move_model_selection(-1),
+                ModelFocus::Search => {}
+            },
+            KeyCode::Down => match self.model_focus {
+                ModelFocus::Roles => {
+                    self.active_role = (self.active_role + 1).min(2);
+                    self.sync_role_metadata();
+                }
+                ModelFocus::List => self.move_model_selection(1),
+                ModelFocus::Search => {}
+            },
+            KeyCode::Backspace => {
+                if self.model_focus == ModelFocus::Search {
+                    self.edit_search(None);
                 } else {
-                    self.page = SetupPage::ShellIntegration;
+                    self.edit_role(None);
                 }
             }
-            KeyCode::Tab | KeyCode::Enter => {}
+            KeyCode::Char(character) => {
+                if self.model_focus == ModelFocus::Search {
+                    self.edit_search(Some(character));
+                } else {
+                    self.edit_role(Some(character));
+                }
+            }
+            KeyCode::Tab | KeyCode::Enter => match self.model_focus {
+                ModelFocus::Roles if key.code == KeyCode::Tab => {
+                    self.model_focus = ModelFocus::Search;
+                }
+                ModelFocus::Roles => {
+                    if self.confirm_role()? {
+                        if self.active_role < 2 {
+                            self.active_role += 1;
+                        } else {
+                            self.page = SetupPage::ShellIntegration;
+                        }
+                    }
+                }
+                ModelFocus::Search => self.model_focus = ModelFocus::List,
+                ModelFocus::List => {
+                    self.choose_model_from_list();
+                    self.model_focus = ModelFocus::Roles;
+                }
+            },
             _ => {}
         }
         Ok(None)
@@ -800,6 +852,48 @@ impl SetupWizard {
             role.query.pop();
             role.model = (!role.query.is_empty()).then(|| role.query.clone());
         }
+    }
+
+    fn edit_search(&mut self, character: Option<char>) {
+        let role = &mut self.roles[self.active_role];
+        if let Some(character) = character {
+            role.query.push(character);
+        } else {
+            role.query.pop();
+        }
+        role.selection = 0;
+    }
+
+    fn filtered_models(&self) -> Vec<&ModelEntry> {
+        let query = &self.roles[self.active_role].query;
+        self.catalog
+            .iter()
+            .filter(|model| word_matches(&model.id, query))
+            .collect()
+    }
+
+    fn move_model_selection(&mut self, direction: i32) {
+        let count = self.filtered_models().len();
+        if count == 0 {
+            return;
+        }
+        let role = &mut self.roles[self.active_role];
+        role.selection = (role.selection as i32 + direction).rem_euclid(count as i32) as usize;
+    }
+
+    fn choose_model_from_list(&mut self) {
+        let matches = self.filtered_models();
+        let Some(model) = matches.get(self.roles[self.active_role].selection) else {
+            return;
+        };
+        let model = (*model).clone();
+        let reasoning = default_reasoning(&model);
+        let role = &mut self.roles[self.active_role];
+        role.model = Some(model.id);
+        role.metadata = model.reasoning.clone();
+        role.origin = FieldOrigin::User;
+        role.review = RoleReview::Confirmed;
+        role.reasoning = reasoning;
     }
 
     fn confirm_role(&mut self) -> Result<bool, Error> {
@@ -927,19 +1021,19 @@ impl SetupWizard {
                     ProviderFocus::CredentialInput => ProviderFocus::CredentialChoice,
                 };
             }
-            SetupPage::ModelRoles => {
-                if self.active_role > 0 {
-                    self.active_role -= 1;
-                } else {
-                    self.page = SetupPage::Provider;
-                }
-            }
+            SetupPage::ModelRoles => match self.model_focus {
+                ModelFocus::List => self.model_focus = ModelFocus::Search,
+                ModelFocus::Search => self.model_focus = ModelFocus::Roles,
+                ModelFocus::Roles if self.active_role > 0 => self.active_role -= 1,
+                ModelFocus::Roles => self.page = SetupPage::Provider,
+            },
             SetupPage::ShellIntegration => {
                 if self.shell_cursor > 0 {
                     self.shell_cursor -= 1;
                 } else {
                     self.page = SetupPage::ModelRoles;
                     self.active_role = 2;
+                    self.model_focus = ModelFocus::Roles;
                 }
             }
             SetupPage::Review => self.page = SetupPage::ShellIntegration,
@@ -955,9 +1049,14 @@ impl SetupWizard {
                 ProviderFocus::Identity | ProviderFocus::CredentialChoice => {}
             },
             SetupPage::ModelRoles => {
-                self.roles[self.active_role].query.clear();
-                self.roles[self.active_role].model = None;
-                self.roles[self.active_role].review = RoleReview::Manual;
+                if self.model_focus == ModelFocus::Search {
+                    self.roles[self.active_role].query.clear();
+                    self.roles[self.active_role].selection = 0;
+                } else {
+                    self.roles[self.active_role].query.clear();
+                    self.roles[self.active_role].model = None;
+                    self.roles[self.active_role].review = RoleReview::Manual;
+                }
             }
             SetupPage::ShellIntegration | SetupPage::Review => {}
         }
@@ -1050,6 +1149,11 @@ impl SetupWizard {
                     role.reasoning = default_reasoning(entry);
                 }
             } else {
+                role.selection = role
+                    .model
+                    .as_deref()
+                    .and_then(|id| self.catalog.iter().position(|entry| entry.id == id))
+                    .unwrap_or(0);
                 role.metadata = role
                     .model
                     .as_deref()
@@ -1189,7 +1293,8 @@ impl SetupWizard {
         }
         self.roles.iter().all(|role| {
             role.model.is_some()
-                && !matches!(role.review, RoleReview::NeedsReview | RoleReview::Suggested)
+                && (role.origin == FieldOrigin::User
+                    || !matches!(role.review, RoleReview::NeedsReview | RoleReview::Suggested))
         })
     }
 
@@ -1263,11 +1368,14 @@ impl SetupWizard {
                 "Suggested values are ready for review. Nothing is saved until Finish setup.",
             ));
         }
-        lines.push(Line::from(format!(
-            "{} Provider: {}",
-            focus_marker(self.provider_focus == ProviderFocus::Identity),
-            self.provider_identity.name()
-        )));
+        lines.push(setting_line(
+            format!(
+                "{} Provider: {}",
+                focus_marker(self.provider_focus == ProviderFocus::Identity),
+                self.provider_identity.name()
+            ),
+            self.provider_focus == ProviderFocus::Identity,
+        ));
         lines.push(Line::from(format!(
             "  1 OpenRouter  2 OpenAI  3 Custom{}",
             if self.provider_focus == ProviderFocus::Identity {
@@ -1276,51 +1384,71 @@ impl SetupWizard {
                 ""
             }
         )));
-        lines.push(Line::from(format!(
-            "{} Endpoint: {} [{}]",
-            focus_marker(self.provider_focus == ProviderFocus::Endpoint),
-            cursor_value(&self.endpoint),
-            self.endpoint_origin.label()
-        )));
-        lines.push(Line::from(format!(
-            "{} Credential source: {}",
-            focus_marker(self.provider_focus == ProviderFocus::CredentialChoice),
-            match self.storage {
-                CredentialStorage::Configuration => "configuration value",
-                CredentialStorage::Environment => "environment variable",
-            }
-        )));
+        lines.push(setting_line(
+            format!(
+                "{} Endpoint: {} [{}]",
+                focus_marker(self.provider_focus == ProviderFocus::Endpoint),
+                cursor_value(&self.endpoint),
+                self.endpoint_origin.label()
+            ),
+            self.provider_focus == ProviderFocus::Endpoint,
+        ));
+        lines.push(setting_line(
+            format!(
+                "{} Credential source: {}",
+                focus_marker(self.provider_focus == ProviderFocus::CredentialChoice),
+                match self.storage {
+                    CredentialStorage::Configuration => "configuration value",
+                    CredentialStorage::Environment => "environment variable",
+                }
+            ),
+            self.provider_focus == ProviderFocus::CredentialChoice,
+        ));
         for (index, candidate) in self.credential_candidates.iter().enumerate() {
             let selected = self.credential_choice == Some(index);
-            lines.push(Line::from(format!(
-                "  {} {} [{}] {}",
-                if selected { ">" } else { " " },
-                candidate.name,
-                if candidate.detected {
-                    "detected"
-                } else {
-                    "not found"
-                },
-                if selected {
-                    self.credential_origin.label()
-                } else if self.credential_origin == FieldOrigin::Recommended
-                    && self.credential_input == candidate.name
-                {
-                    FieldOrigin::Recommended.label()
-                } else {
-                    ""
-                }
-            )));
+            lines.push(setting_line(
+                format!(
+                    "  {} {} [{}] {}",
+                    if selected { ">" } else { " " },
+                    candidate.name,
+                    if candidate.detected {
+                        "detected"
+                    } else {
+                        "not found"
+                    },
+                    if selected {
+                        self.credential_origin.label()
+                    } else if self.credential_origin == FieldOrigin::Recommended
+                        && self.credential_input == candidate.name
+                    {
+                        FieldOrigin::Recommended.label()
+                    } else {
+                        ""
+                    }
+                ),
+                selected && self.provider_focus == ProviderFocus::CredentialChoice,
+            ));
         }
+        lines.push(setting_line(
+            format!(
+                "{} Credential / variable: {} [{}]",
+                focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
+                if self.storage == CredentialStorage::Configuration {
+                    "*".repeat(self.credential_input.chars().count())
+                } else {
+                    cursor_value(&self.credential_input)
+                },
+                self.credential_origin.label()
+            ),
+            self.provider_focus == ProviderFocus::CredentialInput,
+        ));
         lines.push(Line::from(format!(
-            "{} Credential / variable: {} [{}]",
-            focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
-            if self.storage == CredentialStorage::Configuration {
-                "*".repeat(self.credential_input.chars().count())
+            "Finish setup: {}",
+            if self.can_finish() {
+                "available"
             } else {
-                cursor_value(&self.credential_input)
-            },
-            self.credential_origin.label()
+                "unavailable until a credential source is supplied"
+            }
         )));
         let block = Block::default()
             .borders(Borders::ALL)
@@ -1336,35 +1464,88 @@ impl SetupWizard {
 
     fn draw_model_roles(&self, frame: &mut Frame, area: Rect) {
         let (settings, help) = split_settings_help(area);
+        let role = &self.roles[self.active_role];
+        let matches = self.filtered_models();
+        let focus = match self.model_focus {
+            ModelFocus::Roles => format!("{} role row", role_label(self.active_role)),
+            ModelFocus::Search => "model search field".to_string(),
+            ModelFocus::List => "model list".to_string(),
+        };
         let mut lines = vec![Line::from(format!(
-            "Catalog: {}",
+            "Catalog: {}  |  Focus: {}",
             match self.catalog_status {
                 CatalogStatus::NotStarted => "not started",
                 CatalogStatus::Loading => "loading...",
                 CatalogStatus::Available => "available",
                 CatalogStatus::Unavailable => "unavailable; manual entry enabled",
-            }
+            },
+            focus
         ))];
         for index in 0..3 {
             let role = &self.roles[index];
             let active = self.active_role == index;
-            lines.push(Line::from(format!(
-                "{} {}  {}  Reasoning: {}  [{}]",
-                focus_marker(active),
-                role_label(index),
-                role.model.as_deref().unwrap_or("Needs selection"),
-                role.reasoning.as_str(),
-                match role.review {
-                    RoleReview::Loaded => "Loaded from config",
-                    RoleReview::Suggested => "Suggested",
-                    RoleReview::Manual => "Entered by you",
-                    RoleReview::NeedsReview => "Needs attention",
-                    RoleReview::Confirmed => "Reviewed",
-                }
-            )));
+            lines.push(Line::styled(
+                format!(
+                    "{} {}  {}  Reasoning: {}  [{}]",
+                    focus_marker(active),
+                    role_label(index),
+                    role.model.as_deref().unwrap_or("Needs selection"),
+                    role.reasoning.as_str(),
+                    match role.review {
+                        RoleReview::Loaded => "Loaded from config",
+                        RoleReview::Suggested => "Suggested",
+                        RoleReview::Manual => "Entered by you",
+                        RoleReview::NeedsReview => "Needs attention",
+                        RoleReview::Confirmed => "Reviewed",
+                    }
+                ),
+                focus_style(active && self.model_focus == ModelFocus::Roles),
+            ));
+        }
+        lines.push(setting_line(
+            format!(
+                "{} Search models: {}█  (press / or Ctrl-F; Enter opens list)",
+                focus_marker(self.model_focus == ModelFocus::Search),
+                role.query
+            ),
+            self.model_focus == ModelFocus::Search,
+        ));
+        lines.push(Line::from(format!(
+            "Model list: {} match{}  (Up/Down select, Enter choose)",
+            matches.len(),
+            if matches.len() == 1 { "" } else { "es" }
+        )));
+        for (index, model) in matches.iter().take(8).enumerate() {
+            let selected = index == role.selection.min(matches.len().saturating_sub(1));
+            let style = if selected && self.model_focus == ModelFocus::List {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else if selected {
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            lines.push(Line::styled(
+                format!(
+                    "{} {} {}",
+                    if selected { ">>" } else { "  " },
+                    model.id,
+                    model_metadata_label(model)
+                ),
+                style,
+            ));
+        }
+        if matches.is_empty() {
+            lines.push(Line::from(
+                "No models match this search. Enter a model ID manually or clear the query.",
+            ));
         }
         lines.push(Line::from(
-            "Type a model ID to enter manually; Ctrl-R changes reasoning when metadata exists.",
+            "Enter confirms the active role; Ctrl-R cycles reasoning; Tab moves focus.",
         ));
         if let Some(warning) = &self.catalog_warning {
             lines.push(Line::from(Span::styled(
@@ -1382,7 +1563,11 @@ impl SetupWizard {
         )));
         frame.render_widget(
             Paragraph::new(Text::from(lines))
-                .block(Block::default().borders(Borders::ALL).title("Model roles"))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Model roles [active setting highlighted in green]"),
+                )
                 .wrap(Wrap { trim: true }),
             settings,
         );
@@ -1395,38 +1580,44 @@ impl SetupWizard {
             "Optional. Existing marker blocks determine the initial selections.",
         )];
         for index in 0..3 {
-            lines.push(Line::from(format!(
-                "{} Completion in {} [{}]{}",
-                focus_marker(self.shell_cursor == index),
-                Shell::ALL[index].name(),
-                if self.completion_selected[index] {
-                    "x"
-                } else {
-                    " "
-                },
-                if self.completion_attention[index] {
-                    " Needs attention"
-                } else {
-                    ""
-                }
-            )));
+            lines.push(Line::styled(
+                format!(
+                    "{} Completion in {} [{}]{}",
+                    focus_marker(self.shell_cursor == index),
+                    Shell::ALL[index].name(),
+                    if self.completion_selected[index] {
+                        "x"
+                    } else {
+                        " "
+                    },
+                    if self.completion_attention[index] {
+                        " Needs attention"
+                    } else {
+                        ""
+                    }
+                ),
+                focus_style(self.shell_cursor == index),
+            ));
         }
         for index in 0..3 {
-            lines.push(Line::from(format!(
-                "{} Ctrl-W shortcut in {} [{}]{}",
-                focus_marker(self.shell_cursor == index + 3),
-                Shell::ALL[index].name(),
-                if self.shortcut_selected[index] {
-                    "x"
-                } else {
-                    " "
-                },
-                if self.shortcut_attention[index] {
-                    " Needs attention"
-                } else {
-                    ""
-                }
-            )));
+            lines.push(Line::styled(
+                format!(
+                    "{} Ctrl-W shortcut in {} [{}]{}",
+                    focus_marker(self.shell_cursor == index + 3),
+                    Shell::ALL[index].name(),
+                    if self.shortcut_selected[index] {
+                        "x"
+                    } else {
+                        " "
+                    },
+                    if self.shortcut_attention[index] {
+                        " Needs attention"
+                    } else {
+                        ""
+                    }
+                ),
+                focus_style(self.shell_cursor == index + 3),
+            ));
         }
         lines.push(Line::from("Space toggles the selected integration. It never executes generated commands automatically."));
         frame.render_widget(
@@ -1490,8 +1681,21 @@ impl SetupWizard {
                 format!("Warning: {}", warning),
                 Style::default().fg(Color::Yellow),
             )));
+        } else {
+            lines.push(Line::from("Warnings: none"));
         }
-        lines.push(Line::from("Press Enter to Finish setup. Finish is blocked while required settings need attention."));
+        lines.push(setting_line(
+            format!(
+                "{} Finish setup action. Press Enter to finish. Finish is {}.",
+                focus_marker(true),
+                if self.can_finish() {
+                    "available"
+                } else {
+                    "blocked while required settings need attention"
+                }
+            ),
+            true,
+        ));
         frame.render_widget(
             Paragraph::new(Text::from(lines))
                 .block(Block::default().borders(Borders::ALL).title("Review"))
@@ -1505,12 +1709,13 @@ impl SetupWizard {
         let text = format!(
             "About this setting: {active}\n\nWhat it is\nThe {active} value used by watn.\n\nWhat it enables\nProvider requests, model discovery, or safe shell integration.\n\nRecommendation\nReview detected values and prefer environment-backed credentials.\n\nRequirement / tradeoff\nThe endpoint must be HTTP(S); catalog and shell failures remain visible and may require attention."
         );
+        let placement = if area.x > 10 { "beside" } else { "below" };
         frame.render_widget(
             Paragraph::new(text)
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("About this setting"),
+                        .title(format!("About this setting ({placement})")),
                 )
                 .wrap(Wrap { trim: true }),
             area,
@@ -1685,10 +1890,25 @@ fn split_settings_help(area: Rect) -> (Rect, Rect) {
 
 fn focus_marker(focused: bool) -> &'static str {
     if focused {
-        ">"
+        ">> ACTIVE"
     } else {
-        " "
+        "         "
     }
+}
+
+fn focus_style(focused: bool) -> Style {
+    if focused {
+        Style::default()
+            .fg(Color::Black)
+            .bg(Color::Green)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    }
+}
+
+fn setting_line(text: String, focused: bool) -> Line<'static> {
+    Line::styled(text, focus_style(focused))
 }
 
 fn cursor_value(value: &str) -> String {
@@ -1700,6 +1920,24 @@ fn role_label(index: usize) -> &'static str {
         0 => "Small / fast",
         1 => "Balanced / normal",
         _ => "Thinking",
+    }
+}
+
+fn model_metadata_label(model: &ModelEntry) -> String {
+    let mut parts = Vec::new();
+    if let Some(context) = model.context_length {
+        parts.push(format!("ctx {}K", context / 1000));
+    }
+    if let Some(pricing) = &model.pricing {
+        parts.push(format!("${:.2}/${:.2}", pricing.input, pricing.output));
+    }
+    if !model.supported_features.is_empty() {
+        parts.push(model.supported_features.join(","));
+    }
+    if parts.is_empty() {
+        String::new()
+    } else {
+        format!("({})", parts.join(" | "))
     }
 }
 

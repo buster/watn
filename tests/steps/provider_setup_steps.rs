@@ -399,6 +399,7 @@ fn config_is_byte_for_byte_unchanged(world: &mut WatnWorld) {
     let before = world
         .pending_config
         .get("config_before")
+        .or_else(|| world.pending_config.get("before_bytes"))
         .cloned()
         .expect("original config");
     let after = std::fs::read_to_string(config_path(world)).expect("config file");
@@ -733,14 +734,20 @@ fn no_original_chat_completion(world: &mut WatnWorld) {
 #[given("the request transport returns a successful response for the implicit OpenRouter request")]
 fn implicit_openrouter_transport(world: &mut WatnWorld) {
     world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let expected_key = world
+        .env_vars
+        .get("OPENROUTER_API_KEY")
+        .cloned()
+        .unwrap_or_else(|| "sk-or-v1-test".to_string());
     let (base_url, mock_id) = {
         let server = world.mock_server.0.as_ref().expect("mock server");
         let base_url = format!("http://127.0.0.1:{}", server.port());
         let mock_id = {
+            let expected_key = expected_key.clone();
             let mock = server.mock(|when, then| {
             when.method(httpmock::Method::POST)
                 .path("/chat/completions")
-                .header("Authorization", "Bearer sk-or-v1-test");
+                .header("Authorization", format!("Bearer {expected_key}"));
             then.status(200)
                 .header("Content-Type", "text/event-stream")
                 .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"some output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");

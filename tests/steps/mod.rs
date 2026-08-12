@@ -20,6 +20,7 @@ pub mod release_truth_steps;
 pub mod responsive_setup_model_filtering_steps;
 pub mod search_concurrency_steps;
 pub mod setup_persistence_steps;
+pub mod setup_refactoring_e2e_steps;
 pub mod setup_refactoring_steps;
 pub mod setup_wizard_steps;
 pub mod shell_completions_e2e_steps;
@@ -536,6 +537,7 @@ pub(crate) fn run_binary_with_state(
 /// steps so an interactive multi-tier flow can be driven incrementally.
 pub(crate) struct PtySession {
     pub child: Box<dyn portable_pty::Child + Send + Sync>,
+    pub master: Option<Box<dyn portable_pty::MasterPty + Send>>,
     pub writer: Option<Box<dyn Write + Send>>,
     pub output_buffer: Arc<Mutex<Vec<u8>>>,
     pub reader_handle: Option<std::thread::JoinHandle<()>>,
@@ -598,7 +600,8 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
     drop(pair.slave);
 
     let mut reader = pair.master.try_clone_reader().expect("pty reader");
-    let writer = pair.master.take_writer().expect("pty writer");
+    let master = pair.master;
+    let writer = master.take_writer().expect("pty writer");
 
     let output_buffer = Arc::new(Mutex::new(Vec::new()));
     let reader_buffer = Arc::clone(&output_buffer);
@@ -616,11 +619,26 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
 
     PtySession {
         child,
+        master: Some(master),
         writer: Some(writer),
         output_buffer,
         reader_handle: Some(reader_handle),
         finished: false,
     }
+}
+
+pub(crate) fn resize_pty_session(session: &PtySession, cols: u16, rows: u16) {
+    session
+        .master
+        .as_ref()
+        .expect("pty master")
+        .resize(portable_pty::PtySize {
+            rows,
+            cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .expect("resize pty");
 }
 
 /// Write a keystroke sequence into a live PTY session.

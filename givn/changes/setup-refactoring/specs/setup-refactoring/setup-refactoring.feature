@@ -8,7 +8,7 @@
 @givn.delta @setup-refactoring
 Feature: Reviewed first-run setup
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Interactive first use reviews a detected credential before saving
     Given no config file exists
     And environment variable OPENROUTER_API_KEY is set to "sk-detected-secret"
@@ -26,7 +26,7 @@ Feature: Reviewed first-run setup
     And the exit status should be 0
     And no original chat completion request should be sent
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: First use without a credential shows a missing recommendation
     Given no config file exists
     And no recognized credential environment variable is set
@@ -36,7 +36,7 @@ Feature: Reviewed first-run setup
     And Finish setup should be unavailable until a credential source is supplied
     And no config file should exist before Finish
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Multiple discovered credentials require an explicit selection
     Given no config file exists
     And environment variable OPENROUTER_API_KEY is set to "sk-openrouter-secret"
@@ -46,7 +46,7 @@ Feature: Reviewed first-run setup
     And the Provider topic should not select either detected credential automatically
     And the setup terminal should not contain "sk-openrouter-secret" or "sk-generic-secret"
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: A deliberately named credential variable persists only its reference
     Given no config file exists
     And environment variable CUSTOM_LLM_TOKEN is set to "sk-custom-secret"
@@ -56,7 +56,7 @@ Feature: Reviewed first-run setup
     Then the config file should contain api_key exactly "${CUSTOM_LLM_TOKEN}"
     And the config file should not contain "sk-custom-secret"
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: A legacy commented template is existing configuration
     Given a legacy commented config template exists
     And environment variable OPENROUTER_API_KEY is set to "sk-existing-secret"
@@ -102,22 +102,27 @@ Feature: Reviewed first-run setup
     When I run a request with the complete persisted configuration
     Then the persisted provider and model roles should remain the request selection
 
-  @givn.added @wip @e2e
-  Scenario Outline: Contextual help remains visible at every supported width
+  @givn.added @e2e
+  Scenario: Contextual help remains visible beside settings on wide terminals
     Given a setup draft with an active Provider endpoint field
-    When I render `watn setup` in a <layout> terminal
+    When I render `watn setup` in a wide terminal
     Then the active-setting help should explain what the endpoint is
     And the active-setting help should explain what it enables
     And the active-setting help should include a recommendation
     And the active-setting help should include a requirement or tradeoff
-    And the help should appear <placement> the settings
+    And the help should appear beside the settings
 
-    Examples:
-      | layout | placement |
-      | wide | beside |
-      | narrow | below |
+  @givn.added @e2e
+  Scenario: Contextual help remains visible below settings on narrow terminals
+    Given a setup draft with an active Provider endpoint field
+    When I render `watn setup` in a narrow terminal
+    Then the active-setting help should explain what the endpoint is
+    And the active-setting help should explain what it enables
+    And the active-setting help should include a recommendation
+    And the active-setting help should include a requirement or tradeoff
+    And the help should appear below the settings
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Model roles are reviewed together after a provider change
     Given a complete config has model roles "old-small", "old-normal", and "old-thinking"
     And the configured provider catalog returns models ["new-small", "new-normal", "new-thinking"]
@@ -129,7 +134,7 @@ Feature: Reviewed first-run setup
     When I select or explicitly retain each model role
     Then the Model roles topic should be complete
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Manual roles may finish with an unverified catalog warning
     Given no config file exists
     And the model catalog transport fails for "/models"
@@ -153,7 +158,7 @@ Feature: Reviewed first-run setup
     When I discard setup from Review
     Then no config file should exist
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Cancelling an existing setup keeps its configuration byte-for-byte unchanged
     Given an existing config contains provider "custom" with credential "sk-old-key"
     And the config contains known tiers, reasoning, pricing, and LiteLLM settings
