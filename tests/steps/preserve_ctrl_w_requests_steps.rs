@@ -1,6 +1,9 @@
 use cucumber::{then, when};
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
+
+use cucumber::given;
 
 use crate::WatnWorld;
 
@@ -62,4 +65,43 @@ fn preserved_request_comment_single_line(world: &mut WatnWorld) {
         "the request comment should contain no embedded line breaks"
     );
     assert!(buffer.starts_with("# "), "the preserved request should be a comment");
+}
+
+#[given("an installed Zsh and Fish shortcut")]
+fn installed_zsh_and_fish_shortcut(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create Zsh and Fish temp dir");
+    let home = temp.path().join("home");
+    let fish_config = home.join(".config/fish");
+    std::fs::create_dir_all(&fish_config).expect("create Fish config directory");
+    let environment = watn::shell_shortcut::ShellEnvironment {
+        home: home.clone(),
+        xdg_config_home: Some(home.join(".config")),
+        shell: Some("/bin/bash".to_string()),
+    };
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Zsh, watn::shell_shortcut::Shell::Fish],
+        &environment,
+    );
+    assert!(report.is_success(), "Zsh and Fish fixture report: {report:?}");
+    world.temp_dir = Some(temp);
+    world.shortcut_targets = HashMap::from([
+        ("zsh".to_string(), home.join(".zshrc")),
+        ("fish".to_string(), fish_config.join("config.fish")),
+    ]);
+}
+
+#[then("the Zsh configuration should keep the request above the generated command")]
+fn zsh_request_comment(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("zsh").unwrap())
+        .expect("read Zsh target");
+    assert!(content.contains("comment=${question//$'\\n'/ }"));
+    assert!(content.contains("BUFFER=\"# $comment\"$'\\n'\"$result\""));
+}
+
+#[then("the Fish configuration should keep the request above the generated command")]
+fn fish_request_comment(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
+        .expect("read Fish target");
+    assert!(content.contains("set -l comment (string replace -a '\\n' ' ' -- \"$question\")"));
+    assert!(content.contains("commandline -r -- \"# $comment\\n$result\""));
 }

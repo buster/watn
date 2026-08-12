@@ -35,13 +35,13 @@ Feature: Preserve Ctrl-W requests in shell config
     And I run the Bash widget with current input "show files"
     Then the current command line should be exactly "show files"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Zsh and Fish widgets preserve the request as a comment
     Given an installed Zsh and Fish shortcut
     Then the Zsh configuration should keep the request above the generated command
     And the Fish configuration should keep the request above the generated command
-    And the Zsh configuration should pass a Zsh syntax check
-    And the Fish configuration should pass a Fish syntax check
+    And the generated Zsh configuration should pass a Zsh syntax check
+    And the generated Fish configuration should pass a Fish syntax check
 
   @givn.added @e2e @wip
   Scenario: The generated Bash widget keeps the request visible and does not evaluate the command

@@ -465,10 +465,10 @@ bind -x '"\C-w":_watn_widget'
 # <<< watn shell shortcut <<<
 "##;
 
-const ZSH_BLOCK: &str = r#"# >>> watn shell shortcut >>>
+const ZSH_BLOCK: &str = r##"# >>> watn shell shortcut >>>
 _watn_widget() {
     local question="$BUFFER"
-    local result
+    local result comment
 
     if [[ -z $question ]]; then
         zle redisplay
@@ -481,7 +481,10 @@ _watn_widget() {
             result=${result%$'\n'}
         done
         if [[ -n $result ]]; then
-            BUFFER=$result
+            comment=${question//$'\n'/ }
+            comment=${comment//$'\r'/ }
+            comment=${comment//$'\t'/ }
+            BUFFER="# $comment"$'\n'"$result"
             CURSOR=${#BUFFER}
         fi
     fi
@@ -494,9 +497,9 @@ bindkey '^W' _watn_widget
 bindkey -M emacs '^W' _watn_widget
 bindkey -M viins '^W' _watn_widget
 # <<< watn shell shortcut <<<
-"#;
+"##;
 
-const FISH_BLOCK: &str = r#"# >>> watn shell shortcut >>>
+const FISH_BLOCK: &str = r##"# >>> watn shell shortcut >>>
 function _watn_widget
     set -l question (commandline)
     if test -z "$question"
@@ -509,7 +512,10 @@ function _watn_widget
     if test $status_code -eq 0
         set result (string replace -r '[\r\n]+$' '' -- "$result")
         if test -n "$result"
-            commandline -r -- "$result"
+            set -l comment (string replace -a '\n' ' ' -- "$question")
+            set comment (string replace -a '\r' ' ' -- "$comment")
+            set comment (string replace -a '\t' ' ' -- "$comment")
+            commandline -r -- "# $comment\n$result"
         end
     end
     commandline -f repaint
@@ -518,4 +524,4 @@ end
 bind \cw _watn_widget
 bind -M insert \cw _watn_widget
 # <<< watn shell shortcut <<<
-"#;
+"##;
