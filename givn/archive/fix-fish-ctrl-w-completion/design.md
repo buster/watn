@@ -30,12 +30,13 @@ No data model, persistence, provider, or network changes are required.
 
 ## Step Definitions
 
+| Capability | File | Responsibility |
+|---|---|---|
+| Fish Ctrl-W e2e buffer | `tests/steps/fish_ctrl_w_completion_e2e_steps.rs` | Install the Fish fixture, drive Ctrl-W through a real interactive process under `portable-pty`, capture the editable buffer, and assert the actual newline. |
+| Existing Fish source contract | `tests/steps/preserve_ctrl_w_requests_steps.rs` | Assert the generated Fish source after the buffer assembly change through in-process generated-block inspection. |
+
 The capability has one end-to-end scenario and no separate in-process step
-file. New bindings live in
-`tests/steps/fish_ctrl_w_completion_e2e_steps.rs`, separate from the existing
-Bash/Zsh shortcut steps. The existing Fish source contract remains in
-`tests/steps/preserve_ctrl_w_requests_steps.rs` and is updated for the named
-buffer value. The new steps will:
+file for the new behavior. The new e2e steps will:
 
 - install the generated Fish shortcut into an isolated temporary home;
 - place a deterministic fake `watn` executable first on `PATH`;

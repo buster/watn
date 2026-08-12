@@ -4,10 +4,13 @@
 
 - [x] Configure and prove the strict Gherkin runner, register the capability's
   step-definition file, and confirm the main and e2e commands remain distinct.
-  Strict-mode proof command:
+  Strict-mode proof command (with the current scenario and a temporary
+  `unimplemented!()` stub):
   `cargo test --locked --test features_runner --features test-support -- --name '^Fish inserts a real line break after Ctrl-W$'`
-  Proof output: non-zero exit; `Step doesn't match any function`, followed by
-  `1 scenario (1 failed)` and `error: test failed`.
+  Proof output: non-zero exit; the matched Given step panicked with `not
+  implemented: strict-mode proof`, followed by `1 scenario (1 failed)` and
+  `error: test failed`. The production step body was restored before the green
+  run.
   The runner uses `.fail_on_skipped()` in `tests/features_runner.rs`; the
   existing `givn/commands.yaml` entries provide separate non-e2e and `@e2e`
   tag-filtered commands. Full-run evidence: the non-e2e command completed with
@@ -44,5 +47,6 @@
 - [x] COMMIT: Create one atomic commit whose message references the scenario
   title verbatim and record the commit hash here. The implementation commit
   predates the design-review scope narrowing and uses the former title in its
-  message.
-  Commit hash: `1ebd11e`
+  message. The follow-up hardening commit uses the current scenario title
+  verbatim.
+  Commit hashes: implementation `d4423cf`; hardening `9d38698`

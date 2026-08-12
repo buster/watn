@@ -1,6 +1,7 @@
 Feature: Interactive shell shortcut for watn
 
   @e2e
+
   Scenario: Generated Bash, Zsh, and Fish configurations pass shell syntax checks
     Given  isolated Bash, Zsh, and Fish shortcut targets
     When  I install the shell shortcut for Bash, Zsh, and Fish
@@ -206,3 +207,8 @@ Feature: Interactive shell shortcut for watn
     Then  the Bash process command line should contain "# find all images\nprintf 'hello world'"
     And  the Bash process should preserve the request as a comment
     And  the Bash process should not execute the replacement text
+  @e2e
+  Scenario: Fish inserts a real line break after Ctrl-W
+    Given  an installed Fish shortcut and a fake watn that returns "df -h"
+    When  I press Ctrl-W in the Fish shortcut with current input "show available diskspace"
+    Then  the Fish command line should be exactly "# show available diskspace\ndf -h"
