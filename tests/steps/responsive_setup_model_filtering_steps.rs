@@ -49,7 +49,7 @@ fn parse_screen(output: &str) -> Screen {
             match characters.next() {
                 Some('[') => {
                     let mut params = String::new();
-                    while let Some(next) = characters.next() {
+                    for next in characters.by_ref() {
                         if ('@'..='~').contains(&next) {
                             let values = params
                                 .split(';')
@@ -105,7 +105,7 @@ fn parse_screen(output: &str) -> Screen {
                     }
                 }
                 Some(']') => {
-                    while let Some(next) = characters.next() {
+                    for next in characters.by_ref() {
                         if next == '\x07' {
                             break;
                         }

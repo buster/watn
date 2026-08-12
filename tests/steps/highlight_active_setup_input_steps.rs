@@ -246,7 +246,7 @@ fn parse_screen(output: &str) -> Screen {
             match characters.next() {
                 Some('[') => {
                     let mut sequence = String::new();
-                    while let Some(next) = characters.next() {
+                    for next in characters.by_ref() {
                         sequence.push(next);
                         if ('@'..='~').contains(&next) {
                             let command = sequence.pop().expect("CSI command");
@@ -374,7 +374,7 @@ fn assert_matches_signature(world: &WatnWorld, key: &str, signature: &[Foregroun
         assert!(
             actual
                 .chars()
-                .all(|character| Some(character) == expected.chars().next()),
+                .all(|character| expected.starts_with(character)),
             "border for {title:?} did not retain its inactive baseline: {actual:?} vs {expected:?}"
         );
     } else {
