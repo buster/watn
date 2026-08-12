@@ -4,7 +4,7 @@
 
 ### Step and tag audit
 
-- Delta feature file scanned: `givn/changes/preserve-ctrl-w-requests-in-shell-config/specs/preserve-ctrl-w-requests-in-shell-config/preserve-ctrl-w-requests-in-shell-config.feature`.
+- Delta feature file scanned: `givn/changes/preserve-ctrl-w-requests-in-shell-config/specs/interactive-shell-shortcut/interactive-shell-shortcut.feature`.
 - The added Bash E2E scenario retains `@e2e`.
 - The modified permanent Bash E2E scenario retains `@e2e`.
 - No `@e2e` tag was removed from the delta feature history.
