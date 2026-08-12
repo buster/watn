@@ -1,7 +1,7 @@
 # User Interaction Inventory:
 # - press Ctrl-W in an installed Bash, Zsh, or Fish widget and observe the original request preserved as a comment above the generated command in the editable buffer
 #
-@givn.delta @preserve-ctrl-w-requests-in-shell-config
+@givn.delta @interactive-shell-shortcut
 Feature: Interactive shell shortcut for watn
 
   @givn.added
