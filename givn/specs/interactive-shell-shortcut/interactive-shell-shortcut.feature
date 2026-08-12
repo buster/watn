@@ -12,7 +12,8 @@ Feature: Interactive shell shortcut for watn
   Scenario: The generated Bash widget runs through Bash without evaluating its result
     Given  an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
     When  I run the generated Bash widget through Bash with current input "find all images"
-    Then  the Bash process command line should contain "printf 'hello world'"
+    Then  the Bash process command line should contain "# find all images\nprintf 'hello world'"
+    And  the Bash process should preserve the request as a comment
     And  the Bash process should not execute the replacement text
 
   Scenario: Enter accepts the default decline for shortcut setup
@@ -110,13 +111,13 @@ Feature: Interactive shell shortcut for watn
   Scenario: A successful widget inserts one normalized command and moves the cursor to its end
     Given  an installed Bash shortcut and a fake watn that returns "printf 'ready'\n\n"
     When  I run the Bash widget with current input "show status"
-    Then  the current command line should be exactly "printf 'ready'"
+    Then  the current command line should be exactly "# show status\nprintf 'ready'"
     And  the cursor should be at the end of the current command line
 
   Scenario: Embedded multiline output remains buffer text without evaluation
     Given  an installed Bash shortcut and a fake watn that returns "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     When  I run the Bash widget with current input "show two lines"
-    Then  the current command line should be exactly "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
+    Then  the current command line should be exactly "# show two lines\nprintf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     And  the embedded line break should remain in the command line buffer
     And  the cursor should be at the end of the current command line
     And  the replacement text should not have executed

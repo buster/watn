@@ -180,22 +180,32 @@
     assertions. The unchanged scenario-name E2E runner passed with `1 scenario
     (1 passed)` and `5 steps (5 passed)`.
 
-- [ ] COMMIT: Create one atomic commit referencing `The generated Bash widget keeps the request visible and does not evaluate the command`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `The generated Bash widget keeps the request visible and does not evaluate the command`.
+- Commit hash: `d7ecebc`
 
 ## Modified permanent scenarios
 
-- [ ] Remove `@wip` from `A successful widget inserts one normalized command and moves the cursor to its end` (modified) and verify it passes with the shared
+- [x] Remove `@wip` from `A successful widget inserts one normalized command and moves the cursor to its end` (modified) and verify it passes with the shared
   steps. Run the exact targeted command and record zero exit.
-  - Evidence:
+  - Evidence: Removed only `@wip` from this `@givn.modified` scenario. The
+    targeted runner used `--tags '@givn.modified and not @wip'` because
+    cucumber-rs cannot combine `--tags` with `--name` and the permanent spec
+    has the same title; it passed with `1 scenario (1 passed)` and `4 steps (4
+    passed)` using the shared Bash widget steps.
 
-- [ ] Remove `@wip` from `Embedded multiline output remains buffer text without evaluation` (modified) and verify it passes. Run the exact targeted command
+- [x] Remove `@wip` from `Embedded multiline output remains buffer text without evaluation` (modified) and verify it passes. Run the exact targeted command
   and record zero exit.
-  - Evidence:
+  - Evidence: Removed only `@wip` from this `@givn.modified` scenario and
+    updated the durable permanent expectation to the same comment-preserving
+    buffer. The title-targeted runner passed both the delta and permanent
+    copies with `2 scenarios (2 passed)` and `12 steps (12 passed)`.
 
-- [ ] Remove `@wip` from `The generated Bash widget runs through Bash without evaluating its result` (modified e2e) and verify it passes. Run the E2E command
+- [x] Remove `@wip` from `The generated Bash widget runs through Bash without evaluating its result` (modified e2e) and verify it passes. Run the E2E command
   targeted by name and record zero exit.
-  - Evidence:
+  - Evidence: Removed only `@wip` from the `@givn.modified @e2e` scenario and
+    updated the durable permanent scenario to the comment-preserving buffer.
+    The title-targeted E2E runner passed both real Bash subprocess copies with
+    `2 scenarios (2 passed)` and `9 steps (9 passed)`.
 
 - [ ] Commit the modified-scenario verifications atomically referencing the
   modified scenario titles.
