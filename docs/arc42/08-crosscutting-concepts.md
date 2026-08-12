@@ -60,7 +60,12 @@ and cursor APIs. They call `command watn -- "$question"` through `PATH`, so a
 leading option or the reserved `completions` token remains one question. Only
 stdout is captured; stderr remains visible. A zero-status non-empty result has
 trailing CR/LF characters removed, while embedded line breaks remain buffer
-text. Empty input, non-zero status, empty output, and malformed target files do
+text. On success the widget replaces the buffer with a `#`-prefixed comment
+line containing the flattened original request followed by a newline and the
+generated text, with the cursor at the end; pressing Enter runs only the
+generated command because the shell ignores the comment. Requests are
+flattened by replacing CR, LF, and TAB with spaces so they stay one comment
+line. Empty input, non-zero status, empty output, and malformed target files do
 not replace user content. The result is assigned as text and never evaluated.
 
 ## Completion generation

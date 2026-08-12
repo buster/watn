@@ -152,7 +152,7 @@ sequenceDiagram
         Editor->>Watn: command watn -- "$question"
         Watn-->>Editor: stdout text, stderr diagnostics, exit status
         alt zero status and non-empty stdout after trailing CR/LF trim
-            Editor->>Editor: Insert text, set cursor to end, never evaluate
+            Editor->>Editor: Buffer = "# flattened request" + newline + generated text; cursor to end; never evaluate
         else failure or empty output
             Editor->>Editor: Preserve original buffer
         end
@@ -160,9 +160,12 @@ sequenceDiagram
     end
 ```
 
-Embedded line breaks are retained as buffer text. The shell never passes the
-captured result to an evaluator, so text that resembles a second command is
-not executed by the shortcut.
+The request is flattened (CR, LF, and TAB become spaces) so it forms exactly
+one comment line. Embedded line breaks in the generated result remain buffer
+text. When the user presses Enter, the shell ignores the comment and executes
+only the generated command. The shell never passes the captured result to an
+evaluator, so text that resembles a second command is not executed by the
+shortcut.
 
 ## Scenario: Ask with execution (`-x`)
 

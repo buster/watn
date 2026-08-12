@@ -74,10 +74,15 @@ command watn -- "$question"
 ```
 
 Only stdout is captured. A zero-status non-empty result has trailing CR/LF
-characters removed and is assigned as text; embedded line breaks remain in the
-buffer. Empty input, non-zero status, and empty output preserve the original
-buffer. The prompt is redrawn and the cursor moves to the end after every
-shortcut event. The captured result is never evaluated.
+characters removed. On success the widget replaces the buffer with a
+`#`-prefixed comment line containing the flattened original request followed
+by a newline and the generated text, with the cursor at the end. Flattening
+replaces CR, LF, and TAB with spaces so the request stays one comment line;
+pressing Enter therefore ignores the comment and executes only the generated
+command. Embedded line breaks in the generated result remain in the buffer.
+Empty input, non-zero status, and empty output preserve the original buffer.
+The prompt is redrawn after every shortcut event. The captured result is
+assigned as text and never evaluated.
 
 ## Consequences
 
@@ -109,6 +114,9 @@ shortcut event. The captured result is never evaluated.
   every platform-specific file attribute or symlink behavior.
 - Embedded line breaks are retained in the editable buffer, so the inserted
   value may be multiline even though it is never evaluated by the widget.
+- The preserved request is a flattened comment, so a request containing newlines
+  cannot be reproduced verbatim on the first line; the original wording remains
+  readable with separators replaced by spaces.
 - Supporting another shell requires a new native block, target rule, parser
   checks, and setup choice.
 

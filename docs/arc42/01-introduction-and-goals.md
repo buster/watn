@@ -30,6 +30,7 @@ Top requirements:
 21. `watn completions <SHELL>` must generate the complete current command tree for the closed shell set `bash`, `elvish`, `fish`, `powershell`, and `zsh`, using stdout only without config/provider side effects
 22. Setup may install an optional Ctrl-W command-line widget for selected Bash, Zsh, and Fish targets, including implicit first-use setup, without executing generated output
 23. The setup wizard must mark the input region currently receiving keyboard input with a green border while preserving inactive styling and existing navigation
+24. The Ctrl-W widget must keep the original request visible as a comment above the generated command while never evaluating the command
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 

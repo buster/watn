@@ -45,12 +45,13 @@
   - QS-045: Unsupported shell errors contain the literal actionable contract
   - QS-046: Successful completion writes only the script to stdout
   - QS-047: The reserved `completions` token consequence is documented and stable
-- **Shell integration safety** — Optional setup, safe startup-file ownership, and non-evaluating line replacement
+- **Shell integration safety** — Optional setup, safe startup-file ownership, non-evaluating line replacement, and request preservation
   - QS-048: Shortcut setup is opt-in and independent of provider/model selection
   - QS-049: Selected targets are installed independently and every result is reported
   - QS-050: Marker validation prevents malformed or duplicate block writes
   - QS-051: The widget preserves the buffer on empty, failed, or empty results
   - QS-052: The widget inserts successful output without evaluating it
+  - QS-055: The widget keeps the original request visible as a comment above the generated command, and only the generated command runs on Enter
 
 ## Quality scenarios
 
@@ -110,3 +111,4 @@
 | QS-052 | Shell integration / Safety | User presses Ctrl-W and `watn` returns a successful command containing trailing or embedded line breaks | Trailing CR/LF is removed, embedded breaks remain text in the buffer, the cursor moves to the end, the prompt redraws, and no returned text executes |
 | QS-053 | Onboarding / Usability | User moves between URL, credential, model, reasoning, and optional shortcut inputs in the setup wizard | The widget receiving keyboard input has a green border; inactive input widgets retain their existing border styling; layout, key behavior, and visible cursor remain unchanged |
 | QS-054 | Onboarding / Responsiveness | User types a model filter against a complete or delayed catalog | The query remains visible; complete catalogs update locally without a search request; delayed searches do not block another query; only the newest result is applied and workers are joined on exit |
+| QS-055 | Shell integration / Correctness and safety | User presses Ctrl-W and `watn` returns a successful, empty, or failed result | On success the buffer shows `# flattened request` above the generated command, only the generated command runs on Enter, and the text is never evaluated; on failure or empty output the original buffer remains unchanged |

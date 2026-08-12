@@ -72,7 +72,9 @@
 | Shell shortcut | An optional Ctrl-W binding installed in a selected Bash, Zsh, or Fish startup file to turn the current command buffer into one `watn` question |
 | Shortcut target | The resolved user startup file for one supported shell: `.bashrc`, `.zshrc`, or Fish `config.fish` under the XDG configuration directory |
 | Generated block | The marker-delimited shell text owned by watn inside a shortcut target; unrelated target bytes remain user-owned |
-| Shell widget | A shell-native line-editor function that reads the current buffer, calls `command watn -- "$question"`, and assigns successful stdout as text |
+| Shell widget | A shell-native line-editor function that reads the current buffer, calls `command watn -- "$question"`, and replaces the buffer with a request comment above the generated text without evaluation |
+| Request comment | The flattened original request prefixed with `#` that the widget places above the generated command so pressing Enter runs only the generated command |
+| Request flattening | Replacing CR, LF, and TAB in the captured request with spaces so it forms exactly one comment line |
 | Marker pair | The exact opening and closing comments `# >>> watn shell shortcut >>>` and `# <<< watn shell shortcut <<<` delimiting one generated block |
 | Target result | The success or failure report for one selected shortcut target, including its path, reason, and reload instruction when applicable |
 | Aggregate installation failure | A non-zero setup result returned after all selected targets have been attempted and one or more target results failed |

@@ -25,7 +25,7 @@
 - Generate shell completions from `Cli::command()` through a local closed `CompletionShell` selector; render only `bash`, `elvish`, `fish`, `powershell`, or `zsh` to stdout before configuration or provider setup
 - Keep the completion parser contract literal: unsupported values return `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`; the `completions` token is intentionally reserved as a subcommand
 - Offer shortcut configuration as an optional post-Large-Model interaction in both explicit and implicit first-use setup; the default Enter path declines without adding a sixth tab
-- Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, and no evaluation
+- Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, a preserved request comment above the generated command, and no evaluation
 - Own startup-file edits through exact marker pairs, atomic same-directory replacement, and independent per-shell result aggregation rather than a multi-file transaction
 - Use the existing SetupWizard focus state to color only the active widget border green, preserving the existing layout, selection styles, and cursor contract
 
