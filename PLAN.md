@@ -9,12 +9,12 @@ repository state, completed decisions, and remaining implementation work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: clean on `main` after archiving and pushing `highlight-active-setup-input`
+- Worktree: clean on `main` after archiving and pushing `responsive-setup-model-filtering`
 - Remote/upstream: `origin` configured
 - Active givn change: none
 - Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
 - Archived release work: `release-truth-and-repository-cleanup`, `shell-completions`
-- Archived setup work: `interactive-shell-shortcut`, `highlight-active-setup-input`
+- Archived setup work: `interactive-shell-shortcut`, `highlight-active-setup-input`, `responsive-setup-model-filtering`
 - Current package version: `0.1.4` in `Cargo.toml`
 - Current CLI version: read from `CARGO_PKG_VERSION` in `src/main.rs`
 
@@ -78,48 +78,22 @@ through a reviewed proposal and specification:
 - `highlight-active-setup-input` is implemented, reviewed, archived, and pushed
   in commit `81bdf63`. Its four PTY scenarios cover URL, credential,
   model/reasoning, and shortcut focus borders while preserving inactive styling.
+- `responsive-setup-model-filtering` is implemented, reviewed, archived, and
+  pushed in commit `eb4149c`. Complete catalogs filter locally, incomplete
+  catalogs use debounced provider search, the current query stays visible, stale
+  results are discarded, and search workers are joined on exit.
 - The shortcut supports optional setup selection for Bash, Zsh, and Fish,
   marked atomic startup-file replacement, idempotent installation, independent
   target reporting, native generated widgets, and non-evaluating
   `command watn -- "$question"` invocation.
-- The current verification passed 95 regular scenarios and 69 E2E scenarios,
-  with 553 regular steps and 494 E2E steps.
-- Merged coverage is 90.22% line coverage (`8688/9630`); branch coverage is
+- The current verification passed 98 regular scenarios and 66 E2E scenarios,
+  with 570 regular steps and 463 E2E steps.
+- Merged coverage is 90.40% line coverage (`9077/10041`); branch coverage is
   unavailable (`0/0`).
 - `givn lint`, formatting, compilation, clippy, documentation tests, release
   build, coverage measurement/merge, and review passed.
 
 ## Remaining Work
-
-### Responsive Setup Model Filtering
-
-Improve the setup dialog's model filter so the typed query remains visible while
-the user is entering it. Typing must remain responsive while model searches run
-in the background, and filter updates shall be debounced by 200 ms. The model
-list shall update continuously as the debounced query changes, without blocking
-further input on an in-flight search.
-
-The source currently has a 200 ms search delay and a generation guard. It still
-launches remote search for every non-empty query, loads only the first catalog
-page, and does not choose client-side filtering when the complete catalog fits
-in one request. Search worker handles are not retained and joined when the
-wizard exits; the current cleanup steps only assert state or process exit.
-
-When the complete model list fits in one catalog request, load the list once and
-filter it client-side instead of making server-side search requests. Use
-server-side filtering when the catalog requires multiple requests or otherwise
-cannot be loaded in one request. Results from an older in-flight search must not
-replace the results for a newer query, and all worker lifecycle paths must be
-joined or otherwise cleaned up before the wizard exits.
-
-Create this as the next separate givn change:
-
-```text
-givn new responsive-setup-model-filtering
-```
-
-The existing generation guard is part of the baseline. Worker lifecycle cleanup
-is still open work. Do not regress the current newest-result-wins behavior.
 
 ### Preserve Ctrl-W Requests In Shell Config
 
