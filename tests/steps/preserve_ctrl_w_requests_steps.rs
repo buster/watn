@@ -53,7 +53,10 @@ fn file_should_exist(_world: &mut WatnWorld, path: String) {
 
 #[then(regex = r##"^the file \"([^\"]*)\" should not exist$"##)]
 fn file_should_not_exist(_world: &mut WatnWorld, path: String) {
-    assert!(!Path::new(&path).exists(), "expected file not to exist: {path}");
+    assert!(
+        !Path::new(&path).exists(),
+        "expected file not to exist: {path}"
+    );
 }
 
 #[then("the preserved request comment should be a single line")]
@@ -64,7 +67,10 @@ fn preserved_request_comment_single_line(world: &mut WatnWorld) {
         1,
         "the request comment should contain no embedded line breaks"
     );
-    assert!(buffer.starts_with("# "), "the preserved request should be a comment");
+    assert!(
+        buffer.starts_with("# "),
+        "the preserved request should be a comment"
+    );
 }
 
 #[given("an installed Zsh and Fish shortcut")]
@@ -79,10 +85,16 @@ fn installed_zsh_and_fish_shortcut(world: &mut WatnWorld) {
         shell: Some("/bin/bash".to_string()),
     };
     let report = watn::shell_shortcut::install_with_environment(
-        &[watn::shell_shortcut::Shell::Zsh, watn::shell_shortcut::Shell::Fish],
+        &[
+            watn::shell_shortcut::Shell::Zsh,
+            watn::shell_shortcut::Shell::Fish,
+        ],
         &environment,
     );
-    assert!(report.is_success(), "Zsh and Fish fixture report: {report:?}");
+    assert!(
+        report.is_success(),
+        "Zsh and Fish fixture report: {report:?}"
+    );
     world.temp_dir = Some(temp);
     world.shortcut_targets = HashMap::from([
         ("zsh".to_string(), home.join(".zshrc")),
