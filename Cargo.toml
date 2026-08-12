@@ -13,6 +13,7 @@ keywords = ["cli", "shell", "command", "ai", "llm"]
 categories = ["command-line-utilities"]
 exclude = [
     "coverage/",
+    "ctrlw.gif",
     "givn/",
     "docs/",
     ".agents/",
@@ -24,7 +25,13 @@ exclude = [
     "QUESTIONS.md",
     "cliff.toml",
     "deny.toml",
+    "measure-coverage.sh",
+    "merge-coverages.sh",
+    "run-tests.sh",
+    "setuprefactoring.md",
     "rust-toolchain.toml",
+    "watncmd.gif",
+    "watnsetup.png",
 ]
 
 [features]
