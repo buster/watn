@@ -69,24 +69,33 @@
     passed)` and `5 steps (5 passed)`; no behavior-changing refactor was
     necessary.
 
-- [ ] COMMIT: Create one atomic commit referencing `Only the generated command executes when the buffer is committed`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `Only the generated command executes when the buffer is committed`.
+- Commit hash: `c806db3`
 
 ## Scenario: Requests with metacharacters and embedded newlines remain one comment line
 
-- [ ] RED: Remove `@wip` from this scenario only, bind the flattening assertion
+- [x] RED: Remove `@wip` from this scenario only, bind the flattening assertion
   with `unimplemented!()`, and run the exact targeted command. Expected
   non-zero.
-  - Evidence:
+  - Evidence: After adding the escaped-control-character fixture step, the
+    targeted runner passed the Given, When, and exact line assertion, then
+    matched `the preserved request comment should be a single line` and
+    exited non-zero on its `not implemented` body.
 
-- [ ] GREEN: Ensure the widget flattens CR/LF/TAB to spaces in the comment.
+- [x] GREEN: Ensure the widget flattens CR/LF/TAB to spaces in the comment.
   Production files: `src/shell_shortcut.rs`. Run the targeted scenario and
   record zero exit.
-  - Evidence:
+  - Evidence: `cargo check --locked --test features_runner --features
+    test-support` passed. The targeted runner passed with `1 scenario (1
+    passed)` and `4 steps (4 passed)`, including an input containing an
+    embedded newline and metacharacters; the request became one `#` comment
+    line with the control character replaced by a space.
 
-- [ ] REFACTOR: Keep behavior unchanged; rerun the targeted scenario and record
+- [x] REFACTOR: Keep behavior unchanged; rerun the targeted scenario and record
   zero exit.
-  - Evidence:
+  - Evidence: The unchanged targeted runner passed again with `1 scenario (1
+    passed)` and `4 steps (4 passed)`; the shared buffer parser is reused by
+    the execution and comment assertions.
 
 - [ ] COMMIT: Create one atomic commit referencing `Requests with metacharacters and embedded newlines remain one comment line`.
 - Commit hash: pending

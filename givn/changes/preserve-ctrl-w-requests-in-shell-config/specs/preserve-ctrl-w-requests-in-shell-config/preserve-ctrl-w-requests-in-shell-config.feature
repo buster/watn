@@ -19,11 +19,12 @@ Feature: Preserve Ctrl-W requests in shell config
     Then the file "/tmp/watn-shortcut-executed" should exist
     And the file "/tmp/watn-shortcut-comment-should-not-run" should not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Requests with metacharacters and embedded newlines remain one comment line
     Given an installed Bash shortcut and a fake watn that returns "ls"
-    When I run the Bash widget with current input "show files; echo unsafe *\nsecond line"
+    When I run the Bash widget with current input containing "show files; echo unsafe *\nsecond line"
     Then the current command line should be exactly "# show files; echo unsafe * second line\nls"
+    And the preserved request comment should be a single line
 
   @givn.added @wip
   Scenario: Failed or empty generation preserves the original buffer
