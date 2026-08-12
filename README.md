@@ -1,10 +1,11 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
-![Crates.io Version](https://img.shields.io/crates/v/watn)
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 90%](https://img.shields.io/badge/line%20coverage-90%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 91%](https://img.shields.io/badge/line%20coverage-91%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
+
+![Crates.io Version](https://img.shields.io/crates/v/watn)
 
 You know what you want. watn knows how to type it.
 Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
@@ -147,7 +148,7 @@ GPL-3.0-or-later
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 90% (9321/10302)
+Line coverage: 91% (9589/10578)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
