@@ -1,5 +1,6 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
+![Crates.io Version](https://img.shields.io/crates/v/watn)
 <!-- givn:begin:coverage-badge -->
 [![Line Coverage: 90%](https://img.shields.io/badge/line%20coverage-90%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
@@ -31,10 +32,9 @@ Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
 watn find all files modified in the last day
 ```
 
-Pass a question as a positional argument or via stdin. watn streams generated
-command content incrementally to stdout and writes final metadata (model,
-tokens/s, cost) to stderr. Reasoning is buffered during the stream and is
-printed to stderr only after successful completion when `-v` is set.
+Pass a question as a positional argument or via stdin. watn prints generated
+command to stdout and writes final metadata (model, tokens/s, cost) to stderr.
+Reasoning is printed to stderr only after successful completion when `-v` is set.
 
 ### Positional argument
 
@@ -95,11 +95,8 @@ model table and reasoning strength.
 
 ## Release artifacts
 
-`cargo build --release` produces one executable for the selected target. Release
-artifacts are dynamically linked on the verified host and require that target's
-runtime libraries. On Linux, inspect them with `file target/release/watn` and
-`ldd target/release/watn`; on macOS, use `otool -L`. The project does not claim a
-universal static deployment artifact.
+`cargo build --release` produces one executable for the selected target
+and are pushed to crates.io.
 
 ## Development
 
