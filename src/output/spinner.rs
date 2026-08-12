@@ -11,14 +11,6 @@ use crossterm::{
 };
 
 const FRAME_INTERVAL: Duration = Duration::from_millis(100);
-const THINKING_FRAMES: [&str; 6] = [
-    "(._.)",
-    "(._. )",
-    "( ._.)",
-    "( ._. )",
-    "( ._.)",
-    "(._. )",
-];
 const PULSE_COLORS: [Color; 13] = [
     Color::Rgb {
         r: 24,
@@ -146,12 +138,7 @@ fn terminal_is_usable() -> bool {
 fn draw_frame(model: &str, started: Instant, frame: usize, color_enabled: bool) {
     let mut stderr = io::stderr();
     let elapsed = started.elapsed().as_secs_f64();
-    let status = format!(
-        "  Asking {} · {:.1}s  {}",
-        model,
-        elapsed,
-        THINKING_FRAMES[frame % THINKING_FRAMES.len()]
-    );
+    let status = format!("  Asking {} · {:.1}s", model, elapsed);
 
     if color_enabled {
         let _ = execute!(
