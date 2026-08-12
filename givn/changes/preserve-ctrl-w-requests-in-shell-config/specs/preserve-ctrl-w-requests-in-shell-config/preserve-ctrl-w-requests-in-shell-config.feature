@@ -2,7 +2,7 @@
 # - press Ctrl-W in an installed Bash, Zsh, or Fish widget and observe the original request preserved as a comment above the generated command in the editable buffer
 #
 @givn.delta @preserve-ctrl-w-requests-in-shell-config
-Feature: Preserve Ctrl-W requests in shell config
+Feature: Interactive shell shortcut for watn
 
   @givn.added
   Scenario: A successful generation keeps the original request visible as a comment
