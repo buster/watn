@@ -26,7 +26,7 @@ Feature: Preserve Ctrl-W requests in shell config
     Then the current command line should be exactly "# show files; echo unsafe * second line\nls"
     And the preserved request comment should be a single line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Failed or empty generation preserves the original buffer
     Given an installed Bash shortcut and a fake watn that fails
     When I run the Bash widget with current input "list files"

@@ -97,25 +97,31 @@
     passed)` and `4 steps (4 passed)`; the shared buffer parser is reused by
     the execution and comment assertions.
 
-- [ ] COMMIT: Create one atomic commit referencing `Requests with metacharacters and embedded newlines remain one comment line`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `Requests with metacharacters and embedded newlines remain one comment line`.
+- Commit hash: `7d37e64`
 
 ## Scenario: Failed or empty generation preserves the original buffer
 
-- [ ] RED: Remove `@wip` from this scenario only, bind its steps by reusing the
+- [x] RED: Remove `@wip` from this scenario only, bind its steps by reusing the
   existing failure/empty fixture and `current line` steps, and run the exact
   targeted command. If all steps are reused, record the zero exit as immediate
   GREEN evidence.
-  - Evidence:
+  - Evidence: `@wip` was removed and every step reused an existing strict
+    binding; the targeted runner passed with `1 scenario (1 passed)` and `6
+    steps (6 passed)`, so no new RED stub was required.
 
-- [ ] GREEN: Confirm the failure/empty preservation contract is unchanged by the
+- [x] GREEN: Confirm the failure/empty preservation contract is unchanged by the
   widget updates. Production files: `src/shell_shortcut.rs` (verification only).
   Run the targeted scenario and record zero exit.
-  - Evidence:
+  - Evidence: The same targeted run passed with `1 scenario (1 passed)` and `6
+    steps (6 passed)`; both non-zero and empty generation left the original
+    buffer unchanged. No production change was needed.
 
-- [ ] REFACTOR: Preserve behavior; rerun the targeted scenario and record zero
+- [x] REFACTOR: Preserve behavior; rerun the targeted scenario and record zero
   exit.
-  - Evidence:
+  - Evidence: The unchanged targeted runner passed again with `1 scenario (1
+    passed)` and `6 steps (6 passed)`; the existing failure and empty-output
+    fixture remains sufficient.
 
 - [ ] COMMIT: Create one atomic commit referencing `Failed or empty generation preserves the original buffer`.
 - Commit hash: pending
