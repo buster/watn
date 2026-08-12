@@ -168,7 +168,7 @@ Feature: Reviewed first-run setup
     Then the config file should be byte-for-byte unchanged
     And no original chat completion request should be sent
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Finish reconciles shell marker blocks without persisting shell state in TOML
     Given shell startup files contain user content and existing watn completion and shortcut marker blocks
     When I start `watn setup` in a terminal

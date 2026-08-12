@@ -504,9 +504,14 @@ fn shell_selection_from_markers(world: &mut WatnWorld) {
 fn toggle_shell_marker_intents(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(100));
-    pty_write(session, "\r\r\r");
-    wait_for_fragments(session, &["Shell", "integration"]);
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    pty_write(session, "\r");
+    wait_for_fragments(session, &["Catalog:", "Model list"]);
+    for _ in 0..3 {
+        pty_write(session, "\r");
+        std::thread::sleep(std::time::Duration::from_millis(150));
+    }
+    wait_for_fragments(session, &["Completion", "Bash"]);
     pty_write(session, " \x1b[B\x1b[B\x1b[B ");
     pty_write(session, "\r");
     wait_for_fragments(session, &["Review"]);
