@@ -1366,6 +1366,10 @@ impl SetupWizard {
 
     fn draw_provider(&self, frame: &mut Frame, area: Rect) {
         let (settings, help) = split_settings_help(area);
+        let endpoint_active = matches!(
+            self.provider_focus,
+            ProviderFocus::Identity | ProviderFocus::Endpoint
+        );
         let credential_active = matches!(
             self.provider_focus,
             ProviderFocus::CredentialChoice | ProviderFocus::CredentialInput
@@ -1375,43 +1379,22 @@ impl SetupWizard {
             && (self.storage == CredentialStorage::Configuration
                 || (valid_environment_name(&self.credential_input)
                     && env_present(&self.credential_input)));
-        let mut lines = vec![Line::from(Span::styled(
-            "Configure the two required provider settings",
-            Style::default().add_modifier(Modifier::BOLD),
-        ))];
-        if self.first_run {
-            lines.push(Line::from(Span::styled(
-                "No watn configuration found.",
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            )));
-            lines.push(Line::from(
-                "Suggested values are ready for review. Nothing is saved until Finish setup.",
-            ));
-        }
+        let narrow = settings.height < 25;
+        let sections = Layout::vertical([
+            Constraint::Length(if narrow { 8 } else { 10 }),
+            Constraint::Min(if narrow { 9 } else { 13 }),
+            Constraint::Length(1),
+        ])
+        .split(settings);
 
-        lines.push(Line::from("Required settings"));
-        lines.push(setting_line(
-            format!(
-                "{} [{}] 1. Endpoint: {}",
-                focus_marker(self.provider_focus == ProviderFocus::Endpoint),
-                if endpoint_ready { "x" } else { " " },
-                clipped(&self.endpoint, 38)
-            ),
-            self.provider_focus == ProviderFocus::Endpoint,
-        ));
-        lines.push(setting_line(
-            format!(
-                "{} [{}] 2. Credential source: {}",
-                focus_marker(credential_active),
-                if credential_ready { "x" } else { " " },
-                credential_summary(self.storage, &self.credential_input)
-            ),
-            credential_active,
-        ));
-        lines.push(Line::from(""));
-        lines.push(setting_line(
+        let mut endpoint_lines = Vec::new();
+        if self.first_run {
+            endpoint_lines.push(Line::from(Span::styled(
+                "No config file. Nothing is saved until Finish setup.",
+                Style::default().fg(Color::Yellow),
+            )));
+        }
+        endpoint_lines.push(setting_line(
             format!(
                 "{} Provider type: {}",
                 focus_marker(self.provider_focus == ProviderFocus::Identity),
@@ -1419,77 +1402,112 @@ impl SetupWizard {
             ),
             self.provider_focus == ProviderFocus::Identity,
         ));
-        lines.push(Line::from(
+        endpoint_lines.push(Line::from(
             if self.provider_focus == ProviderFocus::Identity {
-                "  Choose with Up/Down: OpenRouter | OpenAI | Custom"
+                "  Up/Down chooses OpenRouter | OpenAI | Custom"
             } else {
-                "  Provider type is changed before endpoint details"
+                "  Choose the provider identity before editing endpoint"
             },
         ));
-        lines.push(setting_line(
+        endpoint_lines.push(setting_line(
             format!(
-                "{} Endpoint value: {} ({})",
+                "{} Endpoint: {} ({})",
                 focus_marker(self.provider_focus == ProviderFocus::Endpoint),
                 cursor_value(&self.endpoint),
                 origin_tag(self.endpoint_origin)
             ),
             self.provider_focus == ProviderFocus::Endpoint,
         ));
-        lines.push(Line::from(format!(
-            "  Endpoint provenance: {}",
+        endpoint_lines.push(Line::from(format!(
+            "  Provenance: {}",
             self.endpoint_origin.label()
         )));
-        lines.push(setting_line(
+
+        frame.render_widget(
+            Paragraph::new(Text::from(endpoint_lines))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(panel_border_style(endpoint_active))
+                        .title(format!(
+                            "1. Endpoint [{}]{}",
+                            if endpoint_ready { "x" } else { " " },
+                            if endpoint_active { " | active" } else { "" }
+                        )),
+                )
+                .wrap(Wrap { trim: true }),
+            sections[0],
+        );
+
+        let mut credential_lines = vec![setting_line(
             format!(
-                "{} Credential value: {} ({})",
+                "{} Credential source: {}",
+                focus_marker(self.provider_focus == ProviderFocus::CredentialChoice),
+                match self.storage {
+                    CredentialStorage::Configuration => "stored value",
+                    CredentialStorage::Environment => "environment variable",
+                }
+            ),
+            self.provider_focus == ProviderFocus::CredentialChoice,
+        )];
+        credential_lines.push(Line::from("  Choose one source with Up/Down:"));
+        for (index, candidate) in self.credential_candidates.iter().enumerate() {
+            let selected = self.credential_choice == Some(index);
+            credential_lines.push(Line::from(format!(
+                "    {} {} [{}]",
+                if selected { ">" } else { " " },
+                candidate.name,
+                if candidate.detected {
+                    "detected"
+                } else {
+                    "not found"
+                }
+            )));
+        }
+        credential_lines.push(setting_line(
+            format!(
+                "{} Credential value: {}",
                 focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
-                credential_value_display(self.storage, &self.credential_input),
-                origin_tag(self.credential_origin)
+                credential_value_display(self.storage, &self.credential_input)
             ),
             self.provider_focus == ProviderFocus::CredentialInput,
         ));
-        lines.push(Line::from(format!(
-            "  Credential provenance: {}",
+        credential_lines.push(Line::from(format!(
+            "  Provenance: {}",
             self.credential_origin.label()
         )));
-        lines.push(Line::from("Credential choices (choose one with Up/Down)"));
-        for (index, candidate) in self.credential_candidates.iter().enumerate() {
-            let selected = self.credential_choice == Some(index);
-            lines.push(setting_line(
-                format!(
-                    "  {} {} [{}]",
-                    if selected { ">" } else { " " },
-                    candidate.name,
-                    if candidate.detected {
-                        "detected"
-                    } else {
-                        "not found"
-                    }
-                ),
-                selected && self.provider_focus == ProviderFocus::CredentialChoice,
-            ));
-        }
-        lines.push(Line::from(
-            "  Or press P for a stored value, E for an environment variable",
+        credential_lines.push(Line::from(
+            "  P stores a value | E uses an environment variable",
         ));
-        lines.push(Line::from(""));
-        lines.push(Line::from(format!(
-            "Finish setup: {} | Enter/Tab advances, Shift-Tab goes back",
-            if self.can_finish() {
-                "available"
-            } else {
-                "unavailable until both required settings are ready"
-            }
-        )));
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title("Provider | 2 required settings");
+
         frame.render_widget(
-            Paragraph::new(Text::from(lines))
-                .block(block)
+            Paragraph::new(Text::from(credential_lines))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(panel_border_style(credential_active))
+                        .title(format!(
+                            "2. Credential source [{}]{}",
+                            if credential_ready { "x" } else { " " },
+                            if credential_active { " | active" } else { "" }
+                        )),
+                )
                 .wrap(Wrap { trim: true }),
-            settings,
+            sections[1],
         );
+
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Finish setup: {}",
+                if self.can_finish() {
+                    "available"
+                } else {
+                    "unavailable until both required settings are ready"
+                }
+            )),
+            sections[2],
+        );
+
         self.draw_help(frame, help, "endpoint");
     }
 
@@ -1538,7 +1556,7 @@ impl SetupWizard {
                     if self.can_finish() {
                         "available"
                     } else {
-                        "review needed"
+                        "unavailable"
                     }
                 )))
                 .wrap(Wrap { trim: true }),
@@ -1966,6 +1984,14 @@ fn focus_style(focused: bool) -> Style {
     }
 }
 
+fn panel_border_style(active: bool) -> Style {
+    if active {
+        Style::default().fg(Color::Green)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    }
+}
+
 fn setting_line(text: String, focused: bool) -> Line<'static> {
     Line::styled(text, focus_style(focused))
 }
@@ -1995,14 +2021,6 @@ fn origin_tag(origin: FieldOrigin) -> &'static str {
         FieldOrigin::Detected => "detected",
         FieldOrigin::Recommended => "recommended",
         FieldOrigin::User => "entered",
-    }
-}
-
-fn credential_summary(storage: CredentialStorage, input: &str) -> String {
-    match storage {
-        CredentialStorage::Configuration => "stored value".to_string(),
-        CredentialStorage::Environment if input.is_empty() => "choose a variable".to_string(),
-        CredentialStorage::Environment => clipped(input, 28),
     }
 }
 

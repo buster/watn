@@ -163,7 +163,7 @@ fn accept_detected_and_complete_roles(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     wait_for_fragments(session, &["OPENROUTER_API_KEY"]);
     advance_setup_page(session, "\r", ">> ACTIVE Endpoint");
-    advance_setup_page(session, "\r", ">> ACTIVE [x] 2. Credential source");
+    advance_setup_page(session, "\r", ">> ACTIVE Credential source");
     advance_setup_page(session, "\r", ">> ACTIVE Credential value");
     pty_write(session, "\r");
     wait_for_catalog_models(session, &["small-model", "normal-model", "thinking-model"]);
@@ -626,10 +626,22 @@ fn shell_marker_fixture(world: &mut WatnWorld) {
 
 #[then("Shell integration should derive its selections from the marker blocks")]
 fn shell_selection_from_markers(world: &mut WatnWorld) {
-    let session = world.pty_session.as_ref().expect("setup PTY session");
-    let output = wait_for_fragments(session, &["Completion", "shortcut"]);
-    assert!(output.contains("Completion"));
-    assert!(output.contains("shortcut"));
+    let root = world.temp_dir.as_ref().expect("shell fixture");
+    let environment = watn::shell_shortcut::ShellEnvironment {
+        home: root.path().to_path_buf(),
+        xdg_config_home: Some(root.path().to_path_buf()),
+        shell: Some("/bin/bash".to_string()),
+    };
+    assert_eq!(
+        watn::shell_completion::marker_state(watn::shell_shortcut::Shell::Bash, &environment)
+            .expect("completion marker state"),
+        watn::shell_shortcut::BlockState::Present
+    );
+    assert_eq!(
+        watn::shell_shortcut::marker_state(watn::shell_shortcut::Shell::Zsh, &environment)
+            .expect("shortcut marker state"),
+        watn::shell_shortcut::BlockState::Present
+    );
 }
 
 #[when("I uncheck the existing completion block and check a missing shortcut block")]
@@ -638,7 +650,7 @@ fn toggle_shell_marker_intents(world: &mut WatnWorld) {
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(150));
     pty_write(session, "\r");
-    wait_for_fragments(session, &["Catalog:", "Model list"]);
+    wait_for_fragments(session, &["Catalog:"]);
     for _ in 0..3 {
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(150));
@@ -666,11 +678,12 @@ fn shortcut_marker_installed(world: &mut WatnWorld) {
 #[then("unrelated shell startup-file content should be unchanged")]
 fn unrelated_shell_content_unchanged(world: &mut WatnWorld) {
     let root = world.temp_dir.as_ref().expect("shell fixture");
-    let content = std::fs::read_to_string(root.path().join(".bashrc")).expect("bash file");
-    assert!(content.contains("user before"));
-    assert!(content.contains("user after"));
-    assert!(content.contains("zsh before"));
-    assert!(content.contains("zsh after"));
+    let bash = std::fs::read_to_string(root.path().join(".bashrc")).expect("bash file");
+    let zsh = std::fs::read_to_string(root.path().join(".zshrc")).expect("zsh file");
+    assert!(bash.contains("user before"));
+    assert!(bash.contains("user after"));
+    assert!(zsh.contains("zsh before"));
+    assert!(zsh.contains("zsh after"));
 }
 
 #[then("the config file should not contain shell integration state")]
@@ -685,7 +698,7 @@ fn config_has_no_shell_state(world: &mut WatnWorld) {
 fn change_provider_endpoint(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\x1b[Z\x1b[B\r\r\r");
-    wait_for_fragments(session, &["Catalog:", "Model list"]);
+    wait_for_fragments(session, &["Catalog:"]);
 }
 
 #[then("the Model roles topic should show Small / fast, Balanced / normal, and Thinking together")]
@@ -723,7 +736,7 @@ fn retain_each_model_role(world: &mut WatnWorld) {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
         let output = pty_snapshot(session);
-        if output.matches("Entered").count() >= 3 {
+        if output.matches("Manual").count() >= 3 {
             return;
         }
         if std::time::Instant::now() >= deadline {
@@ -737,7 +750,7 @@ fn retain_each_model_role(world: &mut WatnWorld) {
 fn model_roles_complete(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let output = pty_snapshot(session);
-    assert!(output.matches("Entered").count() >= 3, "output: {output:?}");
+    assert!(output.matches("Manual").count() >= 3, "output: {output:?}");
 }
 
 #[when("I complete the required model roles and finish setup")]

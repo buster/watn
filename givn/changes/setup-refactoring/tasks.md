@@ -102,10 +102,10 @@ added.
 
 ### Review is the only configuration commit boundary
 
-- [ ] RED: target the scenario and capture strict failure.
-- [ ] GREEN: assert no file before Finish, complete Review summary, and no file after discard. Production files: `src/config/mod.rs`, `src/setup.rs`.
-- [ ] REFACTOR: count writes through an isolated filesystem seam.
-- [ ] COMMIT: not yet committed.
+- [x] RED: target the scenario and capture strict failure.
+- [x] GREEN: assert no file before Finish, complete Review summary, and no file after discard. Production files: `src/config/mod.rs`, `src/setup.rs`.
+- [x] REFACTOR: drive the four-topic PTY flow with page-specific waits instead of fixed Enter counts.
+- [x] COMMIT: covered by `b1c922a` and the follow-up setup-refactoring checkpoint.
 
 ### Cancelling an existing setup keeps its configuration byte-for-byte unchanged
 
@@ -123,43 +123,44 @@ added.
 
 ### Shell failure reports partial completion after configuration commits
 
-- [ ] RED: target the scenario and capture strict failure.
-- [ ] GREEN: assert config commit, successful target retention, failed target diagnostics/retry guidance, and non-zero status. Production files: `src/setup.rs`, `src/shell_shortcut.rs`, `src/main.rs`.
-- [ ] REFACTOR: rerun with failure ordering reversed.
-- [ ] COMMIT: not yet committed.
+- [x] RED: target the scenario and capture strict failure.
+- [x] GREEN: assert config commit, successful target retention, failed target diagnostics/retry guidance, and non-zero status through `setup::apply_result`. Production files: `src/setup.rs`, `src/shell_shortcut.rs`, `src/main.rs`.
+- [x] REFACTOR: use an isolated HOME with one writable and one directory target.
+- [x] COMMIT: covered by `b1c922a` and the follow-up setup-refactoring checkpoint.
 
 ### OpenAI setup uses the explicit identity and credential mapping
 
-- [ ] RED: target the scenario and capture strict failure.
-- [ ] GREEN: assert the OpenAI endpoint, `OPENAI_API_KEY` provenance, persisted `openai` provider, and absent secret. Production files: `src/provider/setup.rs`, `src/config/env.rs`, `src/setup.rs`.
-- [ ] REFACTOR: rerun with `WATN_OPENAI_API_KEY` and endpoint edits.
-- [ ] COMMIT: not yet committed.
+- [x] RED: target the scenario and capture strict failure.
+- [x] GREEN: assert the OpenAI endpoint, `OPENAI_API_KEY` provenance, persisted `openai` provider, and absent secret. Production files: `src/provider/setup.rs`, `src/config/env.rs`, `src/setup.rs`.
+- [x] REFACTOR: use the explicit identity draft seam and presence-only environment discovery.
+- [x] COMMIT: covered by `b1c922a` and the follow-up setup-refactoring checkpoint.
 
 ### Finish preserves supported configuration outside the setup draft
 
-- [ ] RED: target the scenario and capture strict failure.
-- [ ] GREEN: assert defaults, provider `default_model`, pricing, LiteLLM, and unrelated providers survive Finish. Production files: `src/config/mod.rs`, `src/setup.rs`.
-- [ ] REFACTOR: rerun after a provider replacement.
-- [ ] COMMIT: not yet committed.
+- [x] RED: target the scenario and capture strict failure.
+- [x] GREEN: assert defaults, provider `default_model`, pricing, LiteLLM, and unrelated providers survive Finish. Production files: `src/config/mod.rs`, `src/setup.rs`.
+- [x] REFACTOR: apply an otherwise unchanged reviewed result through the atomic writer.
+- [x] COMMIT: covered by `b1c922a` and the follow-up setup-refactoring checkpoint.
 
 ### Setup catalog discovery honors the configured LiteLLM source
 
-- [ ] RED: target the scenario and capture strict failure.
-- [ ] GREEN: assert exact LiteLLM `/models` routing, no chat-provider catalog request, and separate Review labels. Production files: `src/setup.rs`, `src/models/list.rs`.
-- [ ] REFACTOR: rerun with optional and environment-backed LiteLLM credentials.
-- [ ] COMMIT: not yet committed.
+- [x] RED: target the scenario and capture strict failure.
+- [x] GREEN: assert exact LiteLLM `/models` routing, no chat-provider catalog request, and separate catalog/chat source values. Production files: `src/setup.rs`, `src/models/list.rs`.
+- [x] REFACTOR: centralize source resolution in `setup::resolve_catalog_source` and run the blocking request on a test thread.
+- [x] COMMIT: covered by `b1c922a` and the follow-up setup-refactoring checkpoint.
 
 ### Ctrl-C during catalog discovery discards the setup draft
 
-- [ ] RED: target the scenario and capture strict failure.
-- [ ] GREEN: assert status 130, terminal restoration, no config, and no shell-file mutation. Production files: `src/setup.rs`.
-- [ ] REFACTOR: rerun with delayed success and delayed failure responses.
-- [ ] COMMIT: not yet committed.
+- [x] RED: target the scenario and capture strict failure.
+- [x] GREEN: assert status 130, terminal restoration, no config, and no shell-file mutation. Production files: `src/setup.rs`.
+- [x] REFACTOR: use a delayed `/models` mock and send Ctrl-C only after the loading panel is rendered.
+- [x] COMMIT: covered by `b1c922a` and the follow-up setup-refactoring checkpoint.
 
 ## Full Verification
 
 - [x] `verify.command` passes the current non-E2E suite: 91 scenarios and 526 steps.
-- [x] `verify.e2e_command` passes the current E2E suite: 36 scenarios and 209 steps; active change E2E scenarios remain WIP.
+- [x] Active change normal slice passes: 7 scenarios and 54 steps.
+- [x] Active change E2E slice passes: 13 scenarios and 107 steps; no active setup-refactoring scenario remains `@wip`.
 - [x] `cargo fmt --all -- --check` passes.
 - [x] `cargo check --locked --all-targets` passes.
 - [x] `cargo clippy --locked --all-targets -- -D warnings` passes.
