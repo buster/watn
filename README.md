@@ -149,3 +149,8 @@ Reproduce the result:
 ./merge-coverages.sh
 ```
 <!-- givn:end:coverage -->
+
+Branch coverage is reported as `n/a (0/0)` because the stable-toolchain
+`cargo llvm-cov`/grcov export contains no branch counters; the source reports
+are merged as-is rather than inventing a number. Branch-coverage mode requires
+a nightly toolchain.
