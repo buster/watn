@@ -18,13 +18,14 @@
   ./run-tests.sh --e2e
 
   strict proof:
-  root=$(mktemp -d /tmp/watn-cancel.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --tags '@e2e and not @wip' --name "One Ctrl+C cancels a completion waiting for streamed output"
-  Result: TBD (must be non-zero while step bodies are `unimplemented!()`).
+  root=$(mktemp -d /tmp/watn-cancel.XXXXXX) && trap 'rm -rf "$root"' EXIT && cargo build --bin watn && cp target/debug/watn "$root/default-debug" && cargo build --features test-support --bin watn && cp target/debug/watn "$root/test-support-debug" && WATN_DEFAULT_DEBUG_BIN="$root/default-debug" WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" cargo test --test features_runner --features test-support -- --name 'One Ctrl\+C cancels a completion waiting for streamed output'
+  Result: non-zero. `1 feature`, `2 steps (1 passed, 1 failed)`, panicked with `not implemented: start watn in a PTY`, and Cargo returned `error: test failed`.
   ```
-- [ ] Run `givn lint --change cancel-running-completion` after setup and record
+- [x] Run `givn lint --change cancel-running-completion` after setup and record
   the expected `@wip` findings only.
   ```text
-  Result: TBD (exit 2 with 2 expected @wip findings; no structural findings).
+  Result: exit 2 with 1 feature checked and 1 expected @wip finding (the
+  connection scenario); no structural findings.
   ```
 
 ## E2E Scenarios
@@ -35,16 +36,19 @@ black-hole listener per scenario; no external network or service required.
 
 ## Scenario: One Ctrl+C cancels a completion waiting for streamed output
 
-- [ ] RED: Remove `@wip` from this scenario, bind every step with explicit
+- [x] RED: Remove `@wip` from this scenario, bind every step with explicit
   `unimplemented!()` stubs, and run only this scenario via the
   single-scenario E2E command from `design.md`. Expected result: non-zero
   exit caused by a matched stub. Evidence:
   ```text
-  Targeted E2E command exited non-zero after matching a
-  `cancel_completion_steps.rs` stub; reported `1 step failed` and Cargo
-  returned `error: test failed`.
+  WATN_DEFAULT_DEBUG_BIN=$root/default-debug WATN_TEST_SUPPORT_DEBUG_BIN=$root/test-support-debug \
+    cargo test --test features_runner --features test-support -- \
+    --name 'One Ctrl\+C cancels a completion waiting for streamed output'
+  Result: `1 feature`, `2 steps (1 passed, 1 failed)`, step panicked at
+  `tests/steps/cancel_completion_steps.rs` with `not implemented: start watn in a PTY`,
+  Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Drive the real binary in a PTY against the held-open streaming
+- [x] GREEN: Drive the real binary in a PTY against the held-open streaming
   twin, wait for "printf first" to appear, press `\x03` (Ctrl+C), then
   assert exit status 130, that the merged PTY output still contains
   "printf first", and that no error text or final metadata appears.
@@ -53,16 +57,21 @@ black-hole listener per scenario; no external network or service required.
   field and `parse_sse_stream` flag check in `src/provider/openai_compat.rs`,
   and the worker-thread + grace + interrupt wiring in `src/main.rs`.
   Test files: `tests/steps/cancel_completion_steps.rs`,
-  `tests/steps/mod.rs` (module registration). Targeted result:
-  ```text
-  TBD (1 feature, 1 scenario, N steps passed).
-  ```
-- [ ] REFACTOR: Remove fixture/assertion duplication without changing the
+  `tests/steps/mod.rs` (module registration).
+  Result: `1 feature, 1 scenario (1 passed), 8 steps (8 passed)`.
+  Notes: the initial attempt returned status 3 (`network error: stream ended
+  before [DONE]`) because the held-open fixture declared `Content-Length`, so
+  the client hit clean EOF; added a no-`Content-Length` held-open mode
+  (`StreamingServer::start_held_open`). Reading a partially-`Interrupted`
+  read map raced the flag, so `io::ErrorKind::Interrupted` is mapped to
+  `Error::Interrupted` unconditionally.
+- [x] REFACTOR: Remove fixture/assertion duplication without changing the
   observable contract. Rerun this scenario and record a passing result:
   ```text
-  TBD.
+  Factored the worker-outcome tuple into `StreamOutcome` and reran the
+  targeted command: `1 scenario (1 passed), 8 steps (8 passed)`.
   ```
-- [ ] COMMIT: `TBD` - `feat(cancel-running-completion): One Ctrl+C cancels a completion waiting for streamed output`
+- [x] COMMIT: `a55e930` - `feat(cancel-running-completion): One Ctrl+C cancels a completion waiting for streamed output`
 
 ## Scenario: One Ctrl+C cancels a completion waiting for a connection
 
