@@ -88,7 +88,7 @@ Show the relationship between the three model assignments on one page:
 Model roles
 
 > Small / fast       <model>       Reasoning: off
-  Balanced/default   <model>       Reasoning: medium
+  Balanced/normal    <model>       Reasoning: medium
   Thinking           <model>       Reasoning: high
 ```
 
@@ -99,9 +99,10 @@ wizard page to become a full-screen model browser permanently.
 
 The help for each role should explain the runtime behavior:
 
-- Small / fast is used by `watn -1` and is intended for lower cost or quicker
-  responses.
-- Balanced/default is the normal general-purpose choice.
+- Small / fast is the default model tier and is also selected explicitly by
+  `watn -1`; it is intended for lower cost or quicker responses.
+- Balanced/normal is selected by `watn -2` and is the general-purpose
+  alternative when the user wants a different model tier.
 - Thinking is used by `watn -3` and is intended for more complex requests; it
   may use more time or cost more.
 - Reasoning choices are model-specific and must reflect catalog metadata.
