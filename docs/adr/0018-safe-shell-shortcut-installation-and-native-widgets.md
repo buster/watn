@@ -82,7 +82,9 @@ pressing Enter therefore ignores the comment and executes only the generated
 command. Embedded line breaks in the generated result remain in the buffer.
 Empty input, non-zero status, and empty output preserve the original buffer.
 The prompt is redrawn after every shortcut event. The captured result is
-assigned as text and never evaluated.
+assigned as text and never evaluated. Fish builds the comment and generated
+text as one collected buffer with a shell-produced actual newline; a literal
+`\\n` sequence is not used as the separator.
 
 ## Consequences
 
@@ -108,8 +110,8 @@ assigned as text and never evaluated.
 - The installation is not a multi-file transaction. A later target failure does
   not roll back an earlier successful rename.
 - Shell syntax, key maps, `PATH`, and startup-file conventions vary by shell and
-  environment. Runtime E2E covers Bash; Zsh and Fish rely on generated syntax
-  and contract checks in this change.
+  environment. Runtime E2E covers Bash and the Fish editable-buffer contract;
+  Zsh still relies on generated syntax and contract checks in this change.
 - Atomic replacement requires a writable target directory and may not preserve
   every platform-specific file attribute or symlink behavior.
 - Embedded line breaks are retained in the editable buffer, so the inserted
@@ -127,8 +129,9 @@ selection, basename-only preselection, all three generated blocks, exact marker
 validation, atomic failure preservation, independent aggregate reporting,
 reload guidance, leading-option/reserved-token quoting, status handling,
 trailing and embedded newline behavior, cursor placement, and no-evaluation
-behavior. Installed Bash and Fish parsers validate generated configuration, and
-a non-interactive Bash process exercises the generated widget; regular
-isolated tests cover Zsh generation and shell contracts. The existing
+behavior. Installed Bash and Fish parsers validate generated configuration, a
+non-interactive Bash process exercises the generated widget, and a real Fish
+pseudo-terminal captures the corrected editable buffer; regular isolated tests
+cover Zsh generation and shell contracts. The existing
 `./run-tests.sh` and `./run-tests.sh --e2e` wrappers remain the verification
 commands.

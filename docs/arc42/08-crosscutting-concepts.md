@@ -67,6 +67,9 @@ generated command because the shell ignores the comment. Requests are
 flattened by replacing CR, LF, and TAB with spaces so they stay one comment
 line. Empty input, non-zero status, empty output, and malformed target files do
 not replace user content. The result is assigned as text and never evaluated.
+For Fish, the comment and generated text are assembled with a shell-produced
+newline inside one collected buffer value; a literal `\\n` sequence is not
+treated as a newline and is therefore not emitted.
 
 ## Completion generation
 

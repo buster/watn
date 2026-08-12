@@ -14,6 +14,9 @@ double-quoted escape because Fish inserts those characters literally.
 The implementation changes `src/shell_shortcut.rs` only. The regression
 scenario is driven through Fish's interactive reader in a pseudo-terminal so
 the assertion observes the same command-line buffer a user sees after Ctrl-W.
+This change asserts buffer representation only; committing the buffer and
+Fish-specific failure, empty-output, and multiline-output branches remain out
+of scope.
 
 ## Architecture Impact
 
@@ -21,15 +24,18 @@ the assertion observes the same command-line buffer a user sees after Ctrl-W.
 - `givn/changes/fix-fish-ctrl-w-completion/specs/fish-ctrl-w-completion/fish-ctrl-w-completion.feature`: executable delta scenario.
 - `tests/steps/fish_ctrl_w_completion_e2e_steps.rs`: Fish-specific end-to-end step definitions.
 - `tests/steps/mod.rs`: register the Fish-specific step module.
+- `tests/steps/preserve_ctrl_w_requests_steps.rs`: update the existing Fish generated-source contract assertion.
 
 No data model, persistence, provider, or network changes are required.
 
 ## Step Definitions
 
 The capability has one end-to-end scenario and no separate in-process step
-file. All bindings live in
+file. New bindings live in
 `tests/steps/fish_ctrl_w_completion_e2e_steps.rs`, separate from the existing
-Bash/Zsh shortcut steps. The steps will:
+Bash/Zsh shortcut steps. The existing Fish source contract remains in
+`tests/steps/preserve_ctrl_w_requests_steps.rs` and is updated for the named
+buffer value. The new steps will:
 
 - install the generated Fish shortcut into an isolated temporary home;
 - place a deterministic fake `watn` executable first on `PATH`;
@@ -59,7 +65,7 @@ root=$(mktemp -d /tmp/watn-transport.XXXXXX) && trap 'rm -rf "$root"' EXIT && ca
 The exact single-scenario command is:
 
 ```sh
-cargo test --locked --test features_runner --features test-support -- --name '^Fish keeps the generated command executable after Ctrl-W$'
+cargo test --locked --test features_runner --features test-support -- --name '^Fish inserts a real line break after Ctrl-W$'
 ```
 
 Strict mode is enforced by `Cucumber::<WatnWorld>::fail_on_skipped()` in
@@ -90,4 +96,4 @@ session is terminated and the captured terminal buffer is asserted.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| press Ctrl-W in an installed Fish shortcut and observe the generated command in the editable command line | Fish keeps the generated command executable after Ctrl-W | CLI / terminal | `portable-pty` drives the real interactive Fish process with the request text, Ctrl-W, and a capture binding; the captured `commandline` buffer is asserted |
+| press Ctrl-W in an installed Fish shortcut and observe the generated command in the editable command line | Fish inserts a real line break after Ctrl-W | CLI / terminal | `portable-pty` drives the real interactive Fish process with the request text, Ctrl-W, and a capture binding; the captured `commandline` buffer is asserted |

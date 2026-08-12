@@ -54,6 +54,10 @@ fn press_ctrl_w_in_fish(world: &mut WatnWorld, input: String) {
         .shortcut_targets
         .get("fish")
         .expect("Fish shortcut target");
+    let home = target
+        .parent()
+        .and_then(|config_dir| config_dir.parent())
+        .expect("Fish shortcut home");
     let capture = temp.path().join("fish-command-line");
     let fake_bin = world
         .pending_config
@@ -94,6 +98,11 @@ echo FISH_READY >&2
     command.arg(init_command);
     command.env("PATH", &path);
     command.env("TERM", "xterm-256color");
+    command.env("HOME", home.display().to_string());
+    command.env(
+        "XDG_CONFIG_HOME",
+        home.join(".config").display().to_string(),
+    );
     command.env("WATN_SHORTCUT_FILE", target.display().to_string());
     command.env("WATN_CAPTURE_FILE", capture.display().to_string());
     command.env("WATN_FAKE_OUTPUT", fake_output);

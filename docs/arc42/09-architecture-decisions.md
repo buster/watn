@@ -108,8 +108,10 @@ marker-owned Bash, Zsh, and Fish widgets using atomic same-directory replacement
 The widgets invoke `command watn -- "$question"` through `PATH`, capture only
 stdout, preserve stderr, trim trailing CR/LF characters, and replace the buffer
 with a flattened request comment above the generated command, without
-evaluation. Pressing Enter executes only the generated command because the
-comment is ignored by the shell. The installer attempts selected targets
+evaluation. Fish assembles the comment and generated text as one collected
+buffer with a shell-produced actual newline; a literal `\\n` sequence is not
+used as the separator. Pressing Enter executes only the generated command
+because the comment is ignored by the shell. The installer attempts selected targets
 independently and reports every success or failure; it does not roll back a
 successful target when a later target fails. The optional interaction is also
 available in implicit first-use setup, while the default Enter path preserves
