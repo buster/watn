@@ -17,9 +17,11 @@ Feature: Reviewed first-run setup
     Then the setup wizard should show topics "Provider", "Model roles", "Shell integration", and "Review"
     And the Provider topic should identify "OPENROUTER_API_KEY" as "Detected from environment"
     And the Provider topic should show required settings "Endpoint" and "Credential source"
+    And the Provider topic should explain that the provider preset is editable
     And the setup terminal should not contain "sk-detected-secret"
     When I accept the detected credential and complete the required model roles
     Then the Model roles topic should show three roles, the model catalog, and reasoning controls
+    And the Model roles topic should explain why reasoning may be limited to off
     When I finish setup from Review
     Then the config file should contain api_key exactly "${OPENROUTER_API_KEY}"
     And the config file should not contain "sk-detected-secret"

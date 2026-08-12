@@ -84,8 +84,9 @@ fn help_placement(world: &mut WatnWorld, placement: String) {
 fn multiple_credential_choices(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let output = wait_for_fragments(session, &["OPENROUTER_API_KEY", "WATN_API_KEY"]);
+    let lowercase = output.to_ascii_lowercase();
     assert!(
-        output.matches("detected").count() >= 2,
+        lowercase.matches("detected").count() >= 2,
         "output: {output:?}"
     );
 }
@@ -158,19 +159,26 @@ fn provider_required_settings(world: &mut WatnWorld) {
     assert!(output.contains("2."), "credential step missing: {output:?}");
 }
 
+#[then("the Provider topic should explain that the provider preset is editable")]
+fn provider_preset_editable_help(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = wait_for_fragments(session, &["Provider preset", "Can I change it?"]);
+    assert!(output.contains("Up/Down changes it"), "output: {output:?}");
+}
+
 #[when("I accept the detected credential and complete the required model roles")]
 fn accept_detected_and_complete_roles(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     wait_for_fragments(session, &["OPENROUTER_API_KEY"]);
     advance_setup_page(session, "\r", ">> ACTIVE Endpoint");
     advance_setup_page(session, "\r", ">> ACTIVE Credential source");
-    advance_setup_page(session, "\r", ">> ACTIVE Credential value");
+    advance_setup_page(session, "\r", ">> ACTIVE Credential reference");
     pty_write(session, "\r");
     wait_for_catalog_models(session, &["small-model", "normal-model", "thinking-model"]);
     advance_setup_page(session, "\r", "> 2. Balanced / normal");
     advance_setup_page(session, "\r", "> 3. Thinking");
-    advance_setup_page(session, "\r", "Completion in Bash");
-    advance_setup_page(session, "\r", "Review draft before Finish setup");
+    advance_setup_page(session, "\r", "Bash [On]");
+    advance_setup_page(session, "\r", "What will be saved");
     let output = pty_snapshot(session);
     assert!(
         output.contains("Roles"),
@@ -197,6 +205,13 @@ fn model_roles_guidance_visible(world: &mut WatnWorld) {
         output.contains("Ctrl-R"),
         "reasoning control missing: {output:?}"
     );
+}
+
+#[then("the Model roles topic should explain why reasoning may be limited to off")]
+fn model_roles_reasoning_limit_help(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = wait_for_fragments(session, &["Why", "off"]);
+    assert!(output.contains("Why"), "output: {output:?}");
 }
 
 fn advance_setup_page(session: &mut super::PtySession, key: &str, fragment: &str) {
@@ -406,7 +421,7 @@ fn start_setup_and_interrupt_discovery(world: &mut WatnWorld) {
     pty_write(&mut session, "\r");
     wait_for_fragments(&session, &["Credential source"]);
     pty_write(&mut session, "\r");
-    wait_for_fragments(&session, &["Credential value"]);
+    wait_for_fragments(&session, &["Credential reference"]);
     pty_write(&mut session, "\r");
     wait_for_fragments(&session, &["Catalog:"]);
     pty_write(&mut session, "\x03");

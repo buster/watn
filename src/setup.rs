@@ -1396,7 +1396,7 @@ impl SetupWizard {
         }
         endpoint_lines.push(setting_line(
             format!(
-                "{} Provider type: {}",
+                "{} Provider preset: {}",
                 focus_marker(self.provider_focus == ProviderFocus::Identity),
                 self.provider_identity.name()
             ),
@@ -1404,9 +1404,9 @@ impl SetupWizard {
         ));
         endpoint_lines.push(Line::from(
             if self.provider_focus == ProviderFocus::Identity {
-                "  Up/Down chooses OpenRouter | OpenAI | Custom"
+                "  Up/Down chooses; Enter confirms the preset"
             } else {
-                "  Choose the provider identity before editing endpoint"
+                "  OpenRouter/OpenAI are built-in; Custom is editable"
             },
         ));
         endpoint_lines.push(setting_line(
@@ -1430,8 +1430,12 @@ impl SetupWizard {
                         .borders(Borders::ALL)
                         .border_style(panel_border_style(endpoint_active))
                         .title(format!(
-                            "1. Endpoint [{}]{}",
-                            if endpoint_ready { "x" } else { " " },
+                            "1. API base URL (endpoint) [{}]{}",
+                            if endpoint_ready {
+                                "Ready"
+                            } else {
+                                "Needs input"
+                            },
                             if endpoint_active { " | active" } else { "" }
                         )),
                 )
@@ -1444,13 +1448,15 @@ impl SetupWizard {
                 "{} Credential source: {}",
                 focus_marker(self.provider_focus == ProviderFocus::CredentialChoice),
                 match self.storage {
-                    CredentialStorage::Configuration => "stored value",
-                    CredentialStorage::Environment => "environment variable",
+                    CredentialStorage::Configuration => "Configuration",
+                    CredentialStorage::Environment => "Environment variable",
                 }
             ),
             self.provider_focus == ProviderFocus::CredentialChoice,
         )];
-        credential_lines.push(Line::from("  Choose one source with Up/Down:"));
+        credential_lines.push(Line::from(
+            "  Choose one source with Up/Down; Enter confirms:",
+        ));
         for (index, candidate) in self.credential_candidates.iter().enumerate() {
             let selected = self.credential_choice == Some(index);
             credential_lines.push(Line::from(format!(
@@ -1458,15 +1464,15 @@ impl SetupWizard {
                 if selected { ">" } else { " " },
                 candidate.name,
                 if candidate.detected {
-                    "detected"
+                    "Detected"
                 } else {
-                    "not found"
+                    "Suggested / not found"
                 }
             )));
         }
         credential_lines.push(setting_line(
             format!(
-                "{} Credential value: {}",
+                "{} Credential reference: {}",
                 focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
                 credential_value_display(self.storage, &self.credential_input)
             ),
@@ -1477,7 +1483,7 @@ impl SetupWizard {
             self.credential_origin.label()
         )));
         credential_lines.push(Line::from(
-            "  P stores a value | E uses an environment variable",
+            "  P stores a literal | E stores an environment reference ${NAME}",
         ));
 
         frame.render_widget(
@@ -1488,7 +1494,11 @@ impl SetupWizard {
                         .border_style(panel_border_style(credential_active))
                         .title(format!(
                             "2. Credential source [{}]{}",
-                            if credential_ready { "x" } else { " " },
+                            if credential_ready {
+                                "Ready"
+                            } else {
+                                "Needs input"
+                            },
                             if credential_active { " | active" } else { "" }
                         )),
                 )
@@ -1508,7 +1518,13 @@ impl SetupWizard {
             sections[2],
         );
 
-        self.draw_help(frame, help, "endpoint");
+        let help_topic = match self.provider_focus {
+            ProviderFocus::Identity => "provider preset",
+            ProviderFocus::Endpoint => "endpoint",
+            ProviderFocus::CredentialChoice => "credential source",
+            ProviderFocus::CredentialInput => "credential reference",
+        };
+        self.draw_help(frame, help, help_topic);
     }
 
     fn draw_model_roles(&self, frame: &mut Frame, area: Rect) {
@@ -1519,7 +1535,7 @@ impl SetupWizard {
         let sections = Layout::vertical([
             Constraint::Length(if narrow { 7 } else { 9 }),
             Constraint::Min(if narrow { 8 } else { 10 }),
-            Constraint::Length(if narrow { 5 } else { 6 }),
+            Constraint::Length(if narrow { 6 } else { 7 }),
         ])
         .split(settings);
 
@@ -1629,6 +1645,11 @@ impl SetupWizard {
             "Choices: {}",
             reasoning_options_label(role.metadata.as_ref(), role.reasoning)
         )));
+        reasoning_lines.push(Line::from(if role.metadata.is_some() {
+            "Choices come from the model catalog metadata."
+        } else {
+            "Why only off? No catalog reasoning metadata is available."
+        }));
         reasoning_lines.push(Line::from(
             "Ctrl-R changes reasoning | Enter confirms model + reasoning",
         ));
@@ -1642,61 +1663,73 @@ impl SetupWizard {
                 .wrap(Wrap { trim: true }),
             sections[2],
         );
-        self.draw_help(frame, help, "model role");
+        let help_topic = match self.model_focus {
+            ModelFocus::Roles => "model role",
+            ModelFocus::Search | ModelFocus::List => "model catalog",
+        };
+        self.draw_help(frame, help, help_topic);
     }
 
     fn draw_shell_integration(&self, frame: &mut Frame, area: Rect) {
         let (settings, help) = split_settings_help(area);
-        let mut lines = vec![Line::from(
-            "Optional. Existing marker blocks determine the initial selections.",
-        )];
+        let environment = ShellEnvironment::from_process();
+        let mut lines = vec![Line::from(Span::styled(
+            "Existing marker blocks determine the initial selections.",
+            Style::default().add_modifier(Modifier::BOLD),
+        ))];
+        lines.push(Line::from("Completion loaders"));
         for index in 0..3 {
             lines.push(Line::styled(
                 format!(
-                    "{} Completion in {} [{}]{}",
+                    "{} {} [{}] {} -> {}",
                     focus_marker(self.shell_cursor == index),
                     Shell::ALL[index].name(),
                     if self.completion_selected[index] {
-                        "x"
+                        "On"
                     } else {
-                        " "
+                        "Off"
                     },
-                    if self.completion_attention[index] {
-                        " Needs attention"
-                    } else {
-                        ""
-                    }
+                    shell_action(
+                        self.completion_initial[index],
+                        self.completion_selected[index],
+                        self.completion_attention[index],
+                    ),
+                    shell_target_label(&environment, Shell::ALL[index]),
                 ),
                 focus_style(self.shell_cursor == index),
             ));
         }
+        lines.push(Line::from("Ctrl-W shortcuts"));
         for index in 0..3 {
             lines.push(Line::styled(
                 format!(
-                    "{} Ctrl-W shortcut in {} [{}]{}",
+                    "{} {} [{}] {} -> {}",
                     focus_marker(self.shell_cursor == index + 3),
                     Shell::ALL[index].name(),
                     if self.shortcut_selected[index] {
-                        "x"
+                        "On"
                     } else {
-                        " "
+                        "Off"
                     },
-                    if self.shortcut_attention[index] {
-                        " Needs attention"
-                    } else {
-                        ""
-                    }
+                    shell_action(
+                        self.shortcut_initial[index],
+                        self.shortcut_selected[index],
+                        self.shortcut_attention[index],
+                    ),
+                    shell_target_label(&environment, Shell::ALL[index]),
                 ),
                 focus_style(self.shell_cursor == index + 3),
             ));
         }
-        lines.push(Line::from("Space toggles the selected integration. It never executes generated commands automatically."));
+        lines.push(Line::from(
+            "Space toggles the selected row. Enter/Tab continues; no shell commands run here.",
+        ));
         frame.render_widget(
             Paragraph::new(Text::from(lines))
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("Shell integration"),
+                        .title("Shell integration | targets and actions"),
                 )
                 .wrap(Wrap { trim: true }),
             settings,
@@ -1706,26 +1739,30 @@ impl SetupWizard {
 
     fn draw_review(&self, frame: &mut Frame, area: Rect) {
         let (settings, help) = split_settings_help(area);
-        let mut lines = vec![Line::from(Span::styled(
-            "Review draft before Finish setup",
-            Style::default().add_modifier(Modifier::BOLD),
-        ))];
+        let credential = match self.storage {
+            CredentialStorage::Configuration => "Stored literal: ****************".to_string(),
+            CredentialStorage::Environment => {
+                format!("Environment reference: ${{{}}}", self.credential_input)
+            }
+        };
+        let mut lines = vec![Line::styled("What will be saved", help_heading_style())];
         lines.push(Line::from(format!(
-            "Provider: {}  Endpoint: {}",
+            "Provider preset: {}",
             self.provider_identity.name(),
+        )));
+        lines.push(Line::from(format!(
+            "API base URL (endpoint): {}",
             self.endpoint
         )));
         lines.push(Line::from(format!(
             "Credential: {} ({})",
-            match self.storage {
-                CredentialStorage::Configuration => "configuration value",
-                CredentialStorage::Environment => self.credential_input.as_str(),
-            },
+            credential,
             self.credential_origin.label()
         )));
+        lines.push(Line::styled("Model roles", help_heading_style()));
         for index in 0..3 {
             lines.push(Line::from(format!(
-                "{}: {}  Reasoning: {}",
+                "  {}: {} | Reasoning: {}",
                 role_label(index),
                 self.roles[index]
                     .model
@@ -1734,10 +1771,17 @@ impl SetupWizard {
                 self.roles[index].reasoning.as_str()
             )));
         }
+        lines.push(Line::styled(
+            "Will change outside TOML",
+            help_heading_style(),
+        ));
         lines.push(Line::from(format!(
-            "Shell changes: completion {}, shortcut {}",
+            "Shell completion changes: {}",
             changed_count(&self.completion_initial, &self.completion_selected),
-            changed_count(&self.shortcut_initial, &self.shortcut_selected)
+        )));
+        lines.push(Line::from(format!(
+            "Shell shortcut changes: {}",
+            changed_count(&self.shortcut_initial, &self.shortcut_selected),
         )));
         lines.push(Line::from(format!(
             "Catalog source: {}",
@@ -1747,6 +1791,7 @@ impl SetupWizard {
                 .map(|catalog| catalog.endpoint.as_str())
                 .unwrap_or("selected provider endpoint")
         )));
+        lines.push(Line::styled("Warnings", help_heading_style()));
         if let Some(warning) = &self.catalog_warning {
             lines.push(Line::from(Span::styled(
                 format!("Warning: {}", warning),
@@ -1757,42 +1802,60 @@ impl SetupWizard {
         }
         lines.push(setting_line(
             format!(
-                "{} Finish setup action. Press Enter to finish. Finish is {}.",
+                "{} Finish setup. Press Enter to commit. Status: {}.",
                 focus_marker(true),
                 if self.can_finish() {
                     "available"
                 } else {
-                    "blocked while required settings need attention"
+                    "blocked; required settings need attention"
                 }
             ),
             true,
         ));
         frame.render_widget(
             Paragraph::new(Text::from(lines))
-                .block(Block::default().borders(Borders::ALL).title("Review"))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Review | what will be saved"),
+                )
                 .wrap(Wrap { trim: true }),
             settings,
         );
         self.draw_help(frame, help, "review");
     }
 
-    fn draw_help(&self, frame: &mut Frame, area: Rect, active: &str) {
-        let text = if area.height < 12 {
-            format!(
-                "About this setting: {active}\nWhat it is: the {active} value used by watn.\nWhat it enables: provider requests, model discovery, or shell integration.\nRecommendation: review detected values and prefer environment-backed credentials.\nRequirement / tradeoff: endpoints must be HTTP(S); failures remain visible."
-            )
-        } else {
-            format!(
-                "About this setting: {active}\n\nWhat it is\nThe {active} value used by watn.\n\nWhat it enables\nProvider requests, model discovery, or safe shell integration.\n\nRecommendation\nReview detected values and prefer environment-backed credentials.\n\nRequirement / tradeoff\nThe endpoint must be HTTP(S); catalog and shell failures remain visible and may require attention."
-            )
-        };
+    fn draw_help(&self, frame: &mut Frame, area: Rect, topic: &str) {
+        let copy = help_copy(topic);
         let placement = if area.x > 10 { "beside" } else { "below" };
+        let mut lines = Vec::new();
+        if area.height < 12 {
+            lines.extend([
+                help_compact_line("What it is", copy.what),
+                help_compact_line("Can I change it?", copy.change),
+                help_compact_line("What it enables", copy.enables),
+                help_compact_line("Recommendation", copy.recommendation),
+                help_compact_line("Requirement / tradeoff", copy.requirement),
+            ]);
+        } else {
+            for (heading, body) in [
+                ("What it is", copy.what),
+                ("Can I change it?", copy.change),
+                ("What it enables", copy.enables),
+                ("Recommendation", copy.recommendation),
+                ("Requirement / tradeoff", copy.requirement),
+            ] {
+                lines.push(Line::styled(heading, help_heading_style()));
+                lines.push(Line::styled(body, help_body_style()));
+                lines.push(Line::from(""));
+            }
+        }
         frame.render_widget(
-            Paragraph::new(text)
+            Paragraph::new(Text::from(lines))
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(format!("About this setting ({placement})")),
+                        .title(format!("Help | {} ({placement})", copy.title)),
                 )
                 .wrap(Wrap { trim: true }),
             area,
@@ -1992,6 +2055,139 @@ fn panel_border_style(active: bool) -> Style {
     }
 }
 
+fn shell_action(initial: Option<bool>, selected: bool, attention: bool) -> &'static str {
+    if attention {
+        return "Needs attention";
+    }
+    match initial {
+        Some(value) if value == selected => "Keep",
+        Some(_) if selected => "Install",
+        Some(_) => "Remove",
+        None if selected => "Install",
+        None => "No change",
+    }
+}
+
+fn shell_target_label(environment: &ShellEnvironment, shell: Shell) -> String {
+    let Ok(path) = environment.target_path(shell) else {
+        return "target unavailable".to_string();
+    };
+    path.strip_prefix(&environment.home)
+        .map(|relative| format!("~/{}", relative.display()))
+        .unwrap_or_else(|_| path.display().to_string())
+}
+
+struct HelpCopy {
+    title: &'static str,
+    what: &'static str,
+    change: &'static str,
+    enables: &'static str,
+    recommendation: &'static str,
+    requirement: &'static str,
+}
+
+fn help_copy(topic: &str) -> HelpCopy {
+    match topic {
+        "provider preset" => HelpCopy {
+            title: "Provider preset",
+            what: "Selects OpenRouter, OpenAI, or a user-defined Custom provider.",
+            change: "Yes. Up/Down changes it; Enter confirms the preset.",
+            enables: "Sets the endpoint and credential suggestions for the provider.",
+            recommendation: "Use a built-in preset unless you use another OpenAI-compatible API.",
+            requirement: "Changing the preset may require reviewing all model roles again.",
+        },
+        "endpoint" => HelpCopy {
+            title: "API base URL",
+            what: "The API base URL used for chat requests and model discovery.",
+            change: "Yes. Editing a built-in URL changes the preset to Custom.",
+            enables: "watn appends /models and /chat/completions beneath this URL.",
+            recommendation: "Keep the provider's documented OpenAI-compatible base URL.",
+            requirement: "The URL must use HTTP or HTTPS and include the correct API base path.",
+        },
+        "credential source" => HelpCopy {
+            title: "Credential source",
+            what: "Chooses where the provider credential comes from, not the secret itself.",
+            change: "Yes. Select a detected variable, press E for an environment reference, or P for a stored value.",
+            enables: "Authentication for model discovery and provider requests.",
+            recommendation: "Prefer an environment-backed reference so the secret stays out of TOML.",
+            requirement: "A detected or explicitly supplied credential source is required before Finish.",
+        },
+        "credential reference" => HelpCopy {
+            title: "Credential reference",
+            what: "The variable name stored as ${NAME}, or a masked literal stored in configuration.",
+            change: "Yes. Type the variable name or value; Ctrl-U clears the field.",
+            enables: "Lets watn resolve the credential only when a request needs it.",
+            recommendation: "Store a variable reference instead of pasting a literal secret.",
+            requirement: "Environment names use uppercase letters, digits, and underscores.",
+        },
+        "model role" => HelpCopy {
+            title: "Model role",
+            what: "Assigns one model to the active Small, Balanced, or Thinking role.",
+            change: "Yes. Choose a catalog model or type an ID manually, then press Enter.",
+            enables: "Tier-specific model selection for requests.",
+            recommendation: "Review all three roles after changing the provider or endpoint.",
+            requirement: "Each role needs an explicit model and review before Finish.",
+        },
+        "model catalog" => HelpCopy {
+            title: "Model catalog",
+            what: "The models returned by the configured catalog source.",
+            change: "Yes. Press / or Ctrl-F to search; Up/Down selects and Enter chooses.",
+            enables: "Fast, searchable model selection for the active role.",
+            recommendation: "Search by words from the model ID instead of typing the full ID.",
+            requirement: "If discovery fails, enter all three IDs manually; reasoning defaults to off.",
+        },
+        "reasoning" => HelpCopy {
+            title: "Reasoning",
+            what: "The reasoning effort sent with the active model request.",
+            change: "Yes. Ctrl-R cycles the choices shown in the Reasoning panel.",
+            enables: "Controls how much reasoning effort a compatible model receives.",
+            recommendation: "Use the model's supported choices; keep off when metadata is unavailable.",
+            requirement: "Mandatory reasoning models cannot use off.",
+        },
+        "shell integration" => HelpCopy {
+            title: "Shell integration",
+            what: "Marker blocks installed in shell startup files.",
+            change: "Yes. Space toggles the selected completion or Ctrl-W integration.",
+            enables: "Shell completion or the Ctrl-W command-line shortcut.",
+            recommendation: "Install only the integrations you will use and review each target path.",
+            requirement: "Malformed or unreadable marker blocks require attention before replacement.",
+        },
+        "review" => HelpCopy {
+            title: "Review",
+            what: "A final summary of the in-memory setup draft.",
+            change: "Use Shift-Tab to go back and edit; Enter commits the draft.",
+            enables: "One configuration commit followed by any selected shell changes.",
+            recommendation: "Check the credential reference, all roles, reasoning, and warnings.",
+            requirement: "Nothing is saved until Finish setup succeeds.",
+        },
+        _ => HelpCopy {
+            title: "Setup",
+            what: "A value in the setup draft.",
+            change: "Use the displayed controls to edit it.",
+            enables: "The selected setup behavior.",
+            recommendation: "Review the draft before Finish.",
+            requirement: "Required values must be valid before Finish.",
+        },
+    }
+}
+
+fn help_compact_line(heading: &'static str, body: &'static str) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(format!("{heading}: "), help_heading_style()),
+        Span::styled(body, help_body_style()),
+    ])
+}
+
+fn help_heading_style() -> Style {
+    Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD)
+}
+
+fn help_body_style() -> Style {
+    Style::default().fg(Color::Gray)
+}
+
 fn setting_line(text: String, focused: bool) -> Line<'static> {
     Line::styled(text, focus_style(focused))
 }
@@ -2084,7 +2280,7 @@ fn reasoning_options_label(
         }
     }
     if options.is_empty() {
-        "off only".to_string()
+        "[off] only".to_string()
     } else {
         options
             .into_iter()
