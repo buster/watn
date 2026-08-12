@@ -461,6 +461,7 @@ _watn_widget() {
     fi
 }
 
+stty werase undef
 bind -x '"\C-w":_watn_widget'
 # <<< watn shell shortcut <<<
 "##;
