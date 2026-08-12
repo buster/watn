@@ -115,5 +115,7 @@ fn fish_request_comment(world: &mut WatnWorld) {
     let content = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
         .expect("read Fish target");
     assert!(content.contains("set -l comment (string replace -a '\\n' ' ' -- \"$question\")"));
-    assert!(content.contains("commandline -r -- \"# $comment\\n$result\""));
+    assert!(content
+        .contains("set -l buffer (printf '%s\\n%s' \"# $comment\" \"$result\" | string collect)"));
+    assert!(content.contains("commandline -r -- \"$buffer\""));
 }

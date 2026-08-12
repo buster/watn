@@ -515,7 +515,8 @@ function _watn_widget
             set -l comment (string replace -a '\n' ' ' -- "$question")
             set comment (string replace -a '\r' ' ' -- "$comment")
             set comment (string replace -a '\t' ' ' -- "$comment")
-            commandline -r -- "# $comment\n$result"
+            set -l buffer (printf '%s\n%s' "# $comment" "$result" | string collect)
+            commandline -r -- "$buffer"
         end
     end
     commandline -f repaint

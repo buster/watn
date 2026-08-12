@@ -2,6 +2,7 @@ pub mod ask_steps;
 pub mod catalog_source_steps;
 pub mod config_steps;
 pub mod credentials_steps;
+pub mod fish_ctrl_w_completion_e2e_steps;
 pub mod highlight_active_setup_input_steps;
 pub mod incremental_sse_rendering_e2e_steps;
 pub mod incremental_sse_rendering_steps;
