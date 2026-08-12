@@ -1,7 +1,7 @@
 use cucumber::{given, then, when};
 use std::fmt;
-use std::io::{self, Read};
-use std::net::{Shutdown, TcpListener, TcpStream};
+use std::io;
+use std::net::{Shutdown, TcpListener};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
@@ -11,6 +11,8 @@ use super::{
     finish_pty_session, pty_snapshot, pty_write, start_pty_session,
 };
 use crate::WatnWorld;
+
+use super::incremental_sse_rendering_steps::read_request_headers;
 
 /// A black-hole provider twin: accepts one TCP connection, reads the request
 /// headers, and never writes a response until torn down.
@@ -75,20 +77,6 @@ impl HangServer {
             stop,
             handle: Some(handle),
         }
-    }
-}
-
-fn read_request_headers(stream: &mut TcpStream) {
-    let mut request = Vec::new();
-    let mut chunk = [0_u8; 1024];
-    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-        let Ok(bytes_read) = stream.read(&mut chunk) else {
-            return;
-        };
-        if bytes_read == 0 {
-            return;
-        }
-        request.extend_from_slice(&chunk[..bytes_read]);
     }
 }
 

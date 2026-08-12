@@ -294,7 +294,7 @@ fn reset_connection(stream: TcpStream) {
     let _ = stream.shutdown(std::net::Shutdown::Both);
 }
 
-fn read_request_headers(stream: &mut TcpStream) {
+pub(crate) fn read_request_headers(stream: &mut TcpStream) {
     let mut request = Vec::new();
     let mut chunk = [0_u8; 1024];
     while !request.windows(4).any(|window| window == b"\r\n\r\n") {
