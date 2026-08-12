@@ -436,7 +436,7 @@ fn display_home_path(path: &Path, home: &Path) -> String {
     path.display().to_string()
 }
 
-const BASH_BLOCK: &str = r#"# >>> watn shell shortcut >>>
+const BASH_BLOCK: &str = r##"# >>> watn shell shortcut >>>
 _watn_widget() {
     local question="$READLINE_LINE"
     local result
@@ -452,7 +452,10 @@ _watn_widget() {
             result=${result:0:${#result}-1}
         done
         if [[ -n $result ]]; then
-            READLINE_LINE=$result
+            local comment="${question//$'\n'/ }"
+            comment="${comment//$'\r'/ }"
+            comment="${comment//$'\t'/ }"
+            READLINE_LINE="# $comment"$'\n'"$result"
             READLINE_POINT=${#READLINE_LINE}
         fi
     fi
@@ -460,7 +463,7 @@ _watn_widget() {
 
 bind -x '"\C-w":_watn_widget'
 # <<< watn shell shortcut <<<
-"#;
+"##;
 
 const ZSH_BLOCK: &str = r#"# >>> watn shell shortcut >>>
 _watn_widget() {

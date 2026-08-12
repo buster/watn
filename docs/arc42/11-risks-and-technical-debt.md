@@ -54,6 +54,7 @@
 | R-048 | Automatic first-use onboarding could surprise a user by mutating shell files | Medium | High | Make the shortcut question explicit and opt-in; Enter/no and empty selection perform no shell I/O; report every selected target before returning |
 | R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
 | R-050 | A terminal color palette or environment color policy may make the green active border hard to distinguish or suppress ANSI styling | Low | Low | Keep the visible cursor and focus text unchanged, remove inherited `NO_COLOR` in the PTY child, set `TERM=xterm-256color`, parse green SGR foreground parameters semantically, and retain the cursor/focus text as redundant cues |
+| R-055 | Flattened comment construction or interactive-buffer redraw could misrepresent the request or not reflect wrapped input | Low | Low | Replace only CR, LF, and TAB with spaces so the request stays one comment line; verify commit-time execution and no-evaluation in a real Bash subprocess; document that interactive wrapped-line redraw is not separately measurable in a non-interactive runner |
 
 ## Technical debt
 
@@ -183,6 +184,10 @@ The shell-shortcut decision has these durable consequences:
 - Multiline output: embedded line breaks remain text in the buffer while only
   trailing CR/LF is normalized; R-047 and the quality scenarios verify that the
   text is never evaluated.
+- Request preservation: the buffer is replaced with a flattened `#`-comment of
+  the request followed by the generated command; the shell executes only the
+  command on Enter. R-055 covers comment flattening and interactive-buffer
+  testability limits, while QS-055 and the real-Bash E2E verify the contract.
 
 ## ADR-0016 consequence coverage
 

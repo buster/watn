@@ -106,8 +106,10 @@ beginning with it must be quoted or passed after `--`.
 ADR-0018 chooses an opt-in, post-setup shell shortcut that writes exact
 marker-owned Bash, Zsh, and Fish widgets using atomic same-directory replacement.
 The widgets invoke `command watn -- "$question"` through `PATH`, capture only
-stdout, preserve stderr, trim trailing CR/LF characters, and assign the result
-as text without evaluation. The installer attempts selected targets
+stdout, preserve stderr, trim trailing CR/LF characters, and replace the buffer
+with a flattened request comment above the generated command, without
+evaluation. Pressing Enter executes only the generated command because the
+comment is ignored by the shell. The installer attempts selected targets
 independently and reports every success or failure; it does not roll back a
 successful target when a later target fails. The optional interaction is also
 available in implicit first-use setup, while the default Enter path preserves
