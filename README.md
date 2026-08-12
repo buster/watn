@@ -39,9 +39,10 @@ watn setup
 watn "find all files modified in the last day"
 ```
 
-Use `watn provider` instead of `watn setup` when configuring only an endpoint
-and credential. Setup also assigns model tiers and can install shell
-completion or the optional Ctrl-W shortcut.
+Use `watn provider` for only the endpoint and credential; use `watn setup` for
+the full wizard. Setup also assigns model tiers and can install shell
+completion or the optional Ctrl-W shortcut. Ctrl-W turns the current shell
+prompt into a command.
 
 ## Usage
 
