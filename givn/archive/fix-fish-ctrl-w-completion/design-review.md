@@ -36,8 +36,8 @@ passed)` and the e2e run completed with `68 scenarios (68 passed)`.
 ## Arc42 Review
 
 The independent twelve-row assessment marks context and scope, building blocks,
-runtime view, cross-cutting concepts, architecture decisions, quality
-requirements, and risks as affected. The change assessment and durable docs
+runtime view, deployment verification, cross-cutting concepts, architecture
+decisions, quality requirements, and risks as affected. The change assessment and durable docs
 agree on those rows. Chapter 9 updates ADR-0018 rather than creating a second
 decision; chapter 11 updates the existing shell-version and PTY risk
 mitigations. All twelve chapter files contain substantive content and use
