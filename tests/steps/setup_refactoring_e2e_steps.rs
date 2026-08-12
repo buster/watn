@@ -175,9 +175,15 @@ fn accept_detected_and_complete_roles(world: &mut WatnWorld) {
     advance_setup_page(session, "\r", ">> ACTIVE Credential reference");
     pty_write(session, "\r");
     wait_for_catalog_models(session, &["small-model", "normal-model", "thinking-model"]);
-    advance_setup_page(session, "\r", "> 2. Balanced / normal");
-    advance_setup_page(session, "\r", "> 3. Thinking");
-    advance_setup_page(session, "\r", "Bash [On]");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    advance_setup_page(session, "\t", "> 2. Balanced / normal");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    advance_setup_page(session, "\t", "> 3. Thinking");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    advance_setup_page(session, "\t", "Bash [On]");
     advance_setup_page(session, "\r", "What will be saved");
     let output = pty_snapshot(session);
     assert!(
@@ -204,6 +210,14 @@ fn model_roles_guidance_visible(world: &mut WatnWorld) {
     assert!(
         output.contains("Ctrl-R"),
         "reasoning control missing: {output:?}"
+    );
+    assert!(
+        output.contains("Tab") && output.contains("next"),
+        "tab navigation guidance missing: {output:?}"
+    );
+    assert!(
+        output.contains("Enter") && output.contains("choose"),
+        "enter selection guidance missing: {output:?}"
     );
 }
 
@@ -455,11 +469,17 @@ fn provide_custom_endpoint_and_credential(world: &mut WatnWorld) {
 #[when(regex = r##"^I enter manual model IDs \"([^\"]+)\", \"([^\"]+)\", and \"([^\"]+)\"$"##)]
 fn enter_manual_model_ids(world: &mut WatnWorld, small: String, normal: String, thinking: String) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for model in [small, normal, thinking] {
+    for (index, model) in [small, normal, thinking].into_iter().enumerate() {
         pty_write(session, &model);
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(75));
+        if index < 2 {
+            pty_write(session, "\t");
+            std::thread::sleep(std::time::Duration::from_millis(75));
+        }
     }
+    pty_write(session, "\t");
+    std::thread::sleep(std::time::Duration::from_millis(75));
     pty_write(session, "\r");
     wait_for_fragments(session, &["Review", "Unverified"]);
 }
@@ -666,10 +686,15 @@ fn toggle_shell_marker_intents(world: &mut WatnWorld) {
     std::thread::sleep(std::time::Duration::from_millis(150));
     pty_write(session, "\r");
     wait_for_fragments(session, &["Catalog:"]);
-    for _ in 0..3 {
+    for index in 0..3 {
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(150));
+        if index < 2 {
+            pty_write(session, "\t");
+            std::thread::sleep(std::time::Duration::from_millis(150));
+        }
     }
+    pty_write(session, "\t");
     wait_for_fragments(session, &["Completion", "Bash"]);
     pty_write(session, " \x1b[B\x1b[B\x1b[B ");
     pty_write(session, "\r");
@@ -743,9 +768,13 @@ fn finish_unavailable_roles(world: &mut WatnWorld) {
 #[when("I select or explicitly retain each model role")]
 fn retain_each_model_role(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for _ in 0..3 {
+    for index in 0..3 {
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(200));
+        if index < 2 {
+            pty_write(session, "\t");
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
     }
     pty_write(session, "\x1b[Z");
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
@@ -771,11 +800,20 @@ fn model_roles_complete(world: &mut WatnWorld) {
 #[when("I complete the required model roles and finish setup")]
 fn complete_manual_roles_and_finish(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for model in ["manual-small", "manual-normal", "manual-thinking"] {
+    for (index, model) in ["manual-small", "manual-normal", "manual-thinking"]
+        .into_iter()
+        .enumerate()
+    {
         pty_write(session, model);
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(75));
+        if index < 2 {
+            pty_write(session, "\t");
+            std::thread::sleep(std::time::Duration::from_millis(75));
+        }
     }
+    pty_write(session, "\t");
+    std::thread::sleep(std::time::Duration::from_millis(75));
     pty_write(session, "\r");
     wait_for_fragments(session, &["Review", "Finish"]);
     pty_write(session, "\r");

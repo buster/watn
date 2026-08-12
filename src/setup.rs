@@ -834,18 +834,14 @@ impl SetupWizard {
                     self.edit_role(Some(character));
                 }
             }
-            KeyCode::Tab | KeyCode::Enter => match self.model_focus {
-                ModelFocus::Roles if key.code == KeyCode::Tab => {
-                    self.model_focus = ModelFocus::Search;
-                }
+            KeyCode::Tab => match self.model_focus {
+                ModelFocus::Roles => self.next_model_role(),
+                ModelFocus::Search => self.model_focus = ModelFocus::List,
+                ModelFocus::List => self.next_model_role(),
+            },
+            KeyCode::Enter => match self.model_focus {
                 ModelFocus::Roles => {
-                    if self.confirm_role()? {
-                        if self.active_role < 2 {
-                            self.active_role += 1;
-                        } else {
-                            self.page = SetupPage::ShellIntegration;
-                        }
-                    }
+                    self.confirm_role()?;
                 }
                 ModelFocus::Search => self.model_focus = ModelFocus::List,
                 ModelFocus::List => {
@@ -856,6 +852,17 @@ impl SetupWizard {
             _ => {}
         }
         Ok(None)
+    }
+
+    fn next_model_role(&mut self) {
+        if self.active_role < 2 {
+            self.active_role += 1;
+            self.model_focus = ModelFocus::Roles;
+            self.sync_role_metadata();
+        } else {
+            self.page = SetupPage::ShellIntegration;
+            self.shell_cursor = 0;
+        }
     }
 
     fn edit_role(&mut self, character: Option<char>) {
@@ -1540,7 +1547,7 @@ impl SetupWizard {
         .split(settings);
 
         let mut role_lines = vec![Line::from(format!(
-            "Step {}/3 | Choose a model, set reasoning, press Enter",
+            "Step {}/3 | Enter confirms this role | Tab goes to next role",
             self.active_role + 1
         ))];
         for index in 0..3 {
@@ -1586,13 +1593,13 @@ impl SetupWizard {
             CatalogStatus::Unavailable => "manual entry enabled",
         };
         let mut catalog_lines = vec![Line::from(format!(
-            "{} Search models: {}█ (/ or Ctrl-F)",
+            "{} Search models: {}█ (/ or Ctrl-F; Enter opens list)",
             focus_marker(self.model_focus == ModelFocus::Search),
             role.query
         ))];
         let visible_models = matches.len().min(if narrow { 3 } else { 6 });
         catalog_lines.push(Line::from(format!(
-            "Model list: {} match{} (showing {}) | Up/Down, Enter choose",
+            "Model list: {} match{} (showing {}) | Up/Down select, Enter choose, Tab next",
             matches.len(),
             if matches.len() == 1 { "" } else { "es" },
             visible_models
@@ -1651,7 +1658,7 @@ impl SetupWizard {
             "Why only off? No catalog reasoning metadata is available."
         }));
         reasoning_lines.push(Line::from(
-            "Ctrl-R changes reasoning | Enter confirms model + reasoning",
+            "Ctrl-R changes reasoning | Enter confirms | Tab goes next",
         ));
         frame.render_widget(
             Paragraph::new(Text::from(reasoning_lines))
