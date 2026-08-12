@@ -11,7 +11,7 @@ Feature: Preserve Ctrl-W requests in shell config
     Then the current command line should be exactly "# show status\nprintf 'ready'"
     And the cursor should be at the end of the current command line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Only the generated command executes when the buffer is committed
     Given an installed Bash shortcut and a fake watn that returns "touch /tmp/watn-shortcut-executed"
     When I run the Bash widget with current input "run the task; touch /tmp/watn-shortcut-comment-should-not-run"
