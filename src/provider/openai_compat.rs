@@ -42,6 +42,10 @@ impl Provider for OpenAICompatibleProvider {
         options: &RequestOptions,
         sink: &mut dyn FnMut(StreamEvent) -> Result<(), Error>,
     ) -> Result<StreamingResponse, Error> {
+        if self.interrupt.load(Ordering::SeqCst) {
+            return Err(Error::Interrupted);
+        }
+
         let url = chat_completions_url(&self.endpoint);
 
         let mut body = serde_json::json!({
@@ -67,7 +71,9 @@ impl Provider for OpenAICompatibleProvider {
             .json(&body)
             .send()
             .map_err(|e| {
-                if e.is_timeout() || e.is_connect() {
+                if self.interrupt.load(Ordering::SeqCst) {
+                    Error::Interrupted
+                } else if e.is_timeout() || e.is_connect() {
                     Error::NetworkError(e.to_string())
                 } else if let Some(status) = e.status() {
                     if status.as_u16() == 401 {
@@ -83,10 +89,16 @@ impl Provider for OpenAICompatibleProvider {
                 }
             })?;
 
+        if self.interrupt.load(Ordering::SeqCst) {
+            return Err(Error::Interrupted);
+        }
+
         let status = response.status();
         if !status.is_success() {
             let body_text = response.text().unwrap_or_default();
-            return if status.as_u16() == 401 {
+            return if self.interrupt.load(Ordering::SeqCst) {
+                Err(Error::Interrupted)
+            } else if status.as_u16() == 401 {
                 Err(Error::AuthError("authentication failed".to_string()))
             } else {
                 Err(Error::ApiError {
@@ -133,6 +145,9 @@ fn parse_sse_stream<R: BufRead>(
             }
         })?;
         if bytes_read == 0 {
+            if interrupt.load(Ordering::SeqCst) {
+                return Err(Error::Interrupted);
+            }
             break;
         }
 
@@ -184,6 +199,9 @@ fn parse_sse_stream<R: BufRead>(
     }
 
     if !completed {
+        if interrupt.load(Ordering::SeqCst) {
+            return Err(Error::Interrupted);
+        }
         return Err(Error::NetworkError(
             "stream ended before [DONE]".to_string(),
         ));
@@ -211,7 +229,8 @@ mod tests {
     use super::parse_sse_stream;
     use crate::provider::StreamEvent;
     use std::io::{self, BufReader, Cursor, Read};
-    use std::sync::atomic::AtomicBool;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
 
     struct ErrorReader {
         kind: io::ErrorKind,
@@ -220,6 +239,23 @@ mod tests {
     impl Read for ErrorReader {
         fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
             Err(io::Error::new(self.kind, "controlled read failure"))
+        }
+    }
+
+    struct InterruptOnEofReader {
+        body: Cursor<Vec<u8>>,
+        interrupt: Arc<AtomicBool>,
+    }
+
+    impl Read for InterruptOnEofReader {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            let body_len = u64::try_from(self.body.get_ref().len()).expect("body length fits");
+            if self.body.position() < body_len {
+                self.body.read(buffer)
+            } else {
+                self.interrupt.store(true, Ordering::SeqCst);
+                Ok(0)
+            }
         }
     }
 
@@ -307,6 +343,23 @@ data: [DONE]
         let interrupt = AtomicBool::new(true);
         let error = parse_sse_stream(reader, "model", &mut |_| Ok(()), &interrupt)
             .expect_err("read error with interrupt flag should map to interrupted");
+        assert!(matches!(error, crate::error::Error::Interrupted));
+    }
+
+    #[test]
+    fn eof_after_interrupt_maps_to_interrupted() {
+        let interrupt = Arc::new(AtomicBool::new(false));
+        let reader = BufReader::new(InterruptOnEofReader {
+            body: Cursor::new(
+                br#"data: {"model":"model","choices":[{"delta":{"content":"printf"}}]}
+
+"#
+                .to_vec(),
+            ),
+            interrupt: Arc::clone(&interrupt),
+        });
+        let error = parse_sse_stream(reader, "model", &mut |_| Ok(()), &interrupt)
+            .expect_err("EOF after interrupt should be treated as cancellation");
         assert!(matches!(error, crate::error::Error::Interrupted));
     }
 }
