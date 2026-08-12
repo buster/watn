@@ -51,14 +51,14 @@ Feature: Preserve Ctrl-W requests in shell config
     And the Bash process should preserve the request as a comment
     And the Bash process should not execute the replacement text
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A successful widget inserts one normalized command and moves the cursor to its end
     Given an installed Bash shortcut and a fake watn that returns "printf 'ready'\n\n"
     When I run the Bash widget with current input "show status"
     Then the current command line should be exactly "# show status\nprintf 'ready'"
     And the cursor should be at the end of the current command line
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Embedded multiline output remains buffer text without evaluation
     Given an installed Bash shortcut and a fake watn that returns "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     When I run the Bash widget with current input "show two lines"
@@ -67,7 +67,7 @@ Feature: Preserve Ctrl-W requests in shell config
     And the cursor should be at the end of the current command line
     And the replacement text should not have executed
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: The generated Bash widget runs through Bash without evaluating its result
     Given an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
     When I run the generated Bash widget through Bash with current input "find all images"
