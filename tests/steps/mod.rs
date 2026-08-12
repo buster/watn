@@ -1,4 +1,5 @@
 pub mod ask_steps;
+pub mod cancel_completion_steps;
 pub mod catalog_source_steps;
 pub mod config_steps;
 pub mod credentials_steps;

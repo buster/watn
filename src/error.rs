@@ -8,6 +8,7 @@ pub enum Error {
     ApiError { status: u16, message: String },
     NetworkError(String),
     IoError(std::io::Error),
+    Interrupted,
 }
 
 impl fmt::Display for Error {
@@ -21,6 +22,7 @@ impl fmt::Display for Error {
             }
             Error::NetworkError(msg) => write!(f, "network error: {}", msg),
             Error::IoError(e) => write!(f, "I/O error: {}", e),
+            Error::Interrupted => write!(f, "interrupted"),
         }
     }
 }
@@ -39,5 +41,6 @@ pub fn exit_code(err: &Error) -> i32 {
         Error::AuthError(_) | Error::ApiError { .. } => 2,
         Error::NetworkError(_) => 3,
         Error::IoError(_) => 1,
+        Error::Interrupted => 130,
     }
 }

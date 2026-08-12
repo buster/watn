@@ -55,6 +55,8 @@
 | R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
 | R-050 | A terminal color palette or environment color policy may make the green active border hard to distinguish or suppress ANSI styling | Low | Low | Keep the visible cursor and focus text unchanged, remove inherited `NO_COLOR` in the PTY child, set `TERM=xterm-256color`, parse green SGR foreground parameters semantically, and retain the cursor/focus text as redundant cues |
 | R-055 | Flattened comment construction or interactive-buffer redraw could misrepresent the request or not reflect wrapped input | Low | Low | Replace only CR, LF, and TAB with spaces so the request stays one comment line; verify the actual Fish buffer newline while retaining existing Bash commit-time execution and no-evaluation coverage; interactive wrapped-line redraw remains outside the measured contract |
+| R-056 | The 500 ms grace hard-exit can cut off final buffered bytes in a stalled or connecting stream | Medium | Low | Keep the parse-loop flag check for the common streaming case, preserve visible content, and exit 130 without an error; a partial tail is an accepted cost of hard cancellation |
+| R-057 | The detached worker thread can outlive the main thread by microseconds after the grace expires, racing process teardown | Low | Low | Stdout writes are internally locked; the process exits immediately after the flag-driven cleanup so no shared mutable state is exposed |
 
 ## Technical debt
 
@@ -65,6 +67,7 @@
 | TD-003 | Crossterm terminal event behavior varies across terminal emulators | Low | Key bindings use standard sequences (arrows, backspace, enter, escape, ctrl-c); non-standard terminals may require `TERM` detection fallbacks |
 | TD-004 | Reasoning config parsing edge cases (unknown strength values read from an edited config) | Low | Parse leniently; only `off`/`low`/`minimal`/`medium`/`high` map to `reasoning_effort`, unknown values fall back to no reasoning |
 | TD-005 | E2E tests need a non-persisted endpoint override to exercise configured-provider paths without live network access | Medium | Keep the override behind the debug-plus-feature guard; use reachable loopback twins and explicit binary paths; assert the exact persisted configured URL before and after routing |
+| TD-009 | Cancellation uses a fixed 500 ms grace heuristic because the blocking reqwest client cannot split connect and read timeouts | Low | Migrate to an async client with `tokio::select!` if a future change makes the grace heuristic or partial-bytes truncation unacceptable |
 
 ## ADR-0011 bad-consequence coverage
 
@@ -201,6 +204,22 @@ The release-truth decision has these durable consequences:
   verified target rather than promising one universal list.
 - No static artifact is introduced. Static portability remains a separate
   release-engineering decision.
+
+## ADR-0019 consequence coverage
+
+The interruptible-completion decision has these durable consequences:
+
+- Blocking provider: no async runtime was introduced; the SSE parser checks the
+  shared interrupt flag at each loop iteration, so a flowing stream cancels on
+  the next SSE line.
+- Worker watchdog: the streaming call runs on a worker thread and the main
+  thread bounds the unreachable phases with a 500 ms grace before detaching the
+  worker and exiting 130; R-056 and R-057 track the fixed-heuristic and
+  short-lived-detached-worker costs, and TD-009 records the async migration if
+  the heuristic becomes unacceptable.
+- Interrupted status: a new error variant exits 130 with no error text. On the
+  join path the spinner and partial output still finish and the already-streamed
+  prefix remains visible; the grace path exits 130 directly without cleanup.
 
 ## Cleanup boundary
 

@@ -10,8 +10,14 @@ use watn::error::exit_code;
 use watn::output::render;
 use watn::provider::openai_compat::OpenAICompatibleProvider;
 use watn::provider::registry::ProviderRegistry;
-use watn::provider::{Message, RequestOptions, StreamEvent};
+use watn::provider::{Message, RequestOptions, StreamEvent, StreamingResponse};
 use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
+
+type StreamOutcome = (
+    Result<StreamingResponse, watn::error::Error>,
+    Option<watn::output::spinner::Spinner>,
+    render::StreamRenderer<io::Stdout>,
+);
 
 #[derive(clap::Parser)]
 #[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
@@ -214,15 +220,16 @@ fn main() {
         }
     };
 
+    let interrupt = Arc::new(AtomicBool::new(false));
+
     let mut registry = ProviderRegistry::new();
     build_registry(
         &mut registry,
         provider_name,
         &provider_config.endpoint,
         &api_key,
+        Arc::clone(&interrupt),
     );
-
-    let provider = registry.get(provider_name).unwrap();
 
     let system_prompt = format!(
         "You are a direct answer engine. Output ONLY the requested information.\n\
@@ -264,8 +271,7 @@ fn main() {
         reasoning_effort,
     };
 
-    let interrupted = Arc::new(AtomicBool::new(false));
-    let int_flag = interrupted.clone();
+    let int_flag = Arc::clone(&interrupt);
     ctrlc::set_handler(move || {
         int_flag.store(true, Ordering::SeqCst);
     })
@@ -273,26 +279,41 @@ fn main() {
 
     let mut spinner = Some(watn::output::spinner::Spinner::start(&model));
     let mut output = render::StreamRenderer::new(io::stdout());
-    let stream_result = {
-        let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
-            match event {
-                StreamEvent::Content(content) if !content.is_empty() => {
-                    if !output.has_content() {
-                        if let Some(active_spinner) = spinner.take() {
-                            active_spinner.finish();
+
+    let (stream_result, mut spinner, mut output) = {
+        let worker_provider_name = provider_name.to_string();
+        let worker_messages = messages;
+        let worker_options = options;
+        let stream_handle = std::thread::spawn(move || {
+            let provider = registry.get(&worker_provider_name).unwrap();
+            let result = {
+                let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
+                    match event {
+                        StreamEvent::Content(content) if !content.is_empty() => {
+                            if !output.has_content() {
+                                if let Some(active_spinner) = spinner.take() {
+                                    active_spinner.finish();
+                                }
+                            }
+
+                            output
+                                .write_content(&content)
+                                .map_err(watn::error::Error::IoError)?;
                         }
+                        StreamEvent::Content(_) => {}
                     }
+                    Ok(())
+                };
 
-                    output
-                        .write_content(&content)
-                        .map_err(watn::error::Error::IoError)?;
-                }
-                StreamEvent::Content(_) => {}
-            }
-            Ok(())
-        };
-
-        provider.chat_completions_streaming(&messages, &options, &mut emit_content)
+                provider.chat_completions_streaming(
+                    &worker_messages,
+                    &worker_options,
+                    &mut emit_content,
+                )
+            };
+            (result, spinner, output)
+        });
+        wait_for_stream_result(stream_handle, &interrupt)
     };
 
     match stream_result {
@@ -368,14 +389,43 @@ fn main() {
             if output.has_content() {
                 let _ = output.finish_partial();
             }
+            if matches!(e, watn::error::Error::Interrupted) {
+                std::process::exit(130);
+            }
             let code = exit_code(&e);
             eprintln!("{}", e);
             std::process::exit(code);
         }
     }
 
-    if interrupted.load(Ordering::SeqCst) {
+    if interrupt.load(Ordering::SeqCst) {
         std::process::exit(130);
+    }
+}
+
+fn wait_for_stream_result(
+    handle: std::thread::JoinHandle<StreamOutcome>,
+    interrupt: &AtomicBool,
+) -> StreamOutcome {
+    const GRACE: std::time::Duration = std::time::Duration::from_millis(500);
+    const POLL: std::time::Duration = std::time::Duration::from_millis(20);
+
+    loop {
+        if handle.is_finished() {
+            return handle.join().expect("stream worker panicked");
+        }
+        if interrupt.load(Ordering::SeqCst) {
+            let deadline = std::time::Instant::now() + GRACE;
+            while !handle.is_finished() && std::time::Instant::now() < deadline {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            if !handle.is_finished() {
+                drop(handle);
+                std::process::exit(130);
+            }
+            return handle.join().expect("stream worker panicked");
+        }
+        std::thread::sleep(POLL);
     }
 }
 
@@ -402,12 +452,14 @@ fn build_registry(
     active_provider: &str,
     endpoint: &str,
     api_key: &str,
+    interrupt: Arc<AtomicBool>,
 ) {
     registry.register(
         active_provider.to_string(),
         Box::new(OpenAICompatibleProvider::new(
             endpoint.to_string(),
             api_key.to_string(),
+            interrupt,
         )),
     );
 }

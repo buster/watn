@@ -29,6 +29,9 @@ synchronous content callback with no worker channel. Command content is flushed
 incrementally, reasoning is buffered and printed only after successful
 completion under `-v`, and `[DONE]` is mandatory; truncated or failed streams
 preserve visible prefixes but do not print success metadata or execute.
+A run in progress is cancellable: Ctrl+C stops the stream on the next SSE event
+via a worker-thread watchdog bounded by a 500 ms grace, exits 130 without an
+error message, and preserves already-streamed output.
 The CLI also generates completions with `watn completions <SHELL>` for the closed
 set `bash`, `elvish`, `fish`, `powershell`, and `zsh`. Scripts come from the authoritative Clap command
 definition, are deterministic, are written only to stdout, and bypass config
@@ -68,3 +71,5 @@ changes.
 Completion generation is further recorded in [ADR-0017](../adr/0017-completion-generation-from-authoritative-command-definition.md).
 Shell shortcut installation and widget safety are recorded in
 [ADR-0018](../adr/0018-safe-shell-shortcut-installation-and-native-widgets.md).
+Interruptible streaming cancellation is recorded in
+[ADR-0019](../adr/0019-interruptible-completion-via-worker-thread.md).

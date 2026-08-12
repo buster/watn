@@ -165,6 +165,28 @@ impl StreamingServer {
         initial_delay: Duration,
         reset_after: bool,
     ) -> Self {
+        Self::start_with_behavior_opt(events, hold_after, bytewise_first, initial_delay, reset_after, false)
+    }
+
+    /// Like `start_with_behavior`, but omits `Content-Length` so the body
+    /// is delimited only by connection close: the client keeps waiting past
+    /// the last event until the server releases the socket.
+    fn start_held_open(
+        events: Vec<Vec<u8>>,
+        hold_after: Option<usize>,
+        initial_delay: Duration,
+    ) -> Self {
+        Self::start_with_behavior_opt(events, hold_after, false, initial_delay, false, true)
+    }
+
+    fn start_with_behavior_opt(
+        events: Vec<Vec<u8>>,
+        hold_after: Option<usize>,
+        bytewise_first: bool,
+        initial_delay: Duration,
+        reset_after: bool,
+        omit_length: bool,
+    ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
         listener
             .set_nonblocking(true)
@@ -192,10 +214,14 @@ impl StreamingServer {
             };
             read_request_headers(&mut stream);
 
-            let body_len: usize = events.iter().map(Vec::len).sum();
-            let headers = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {body_len}\r\nConnection: close\r\n\r\n"
-            );
+            let headers = if omit_length {
+                "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n".to_string()
+            } else {
+                let body_len: usize = events.iter().map(Vec::len).sum();
+                format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {body_len}\r\nConnection: close\r\n\r\n"
+                )
+            };
             stream
                 .write_all(headers.as_bytes())
                 .expect("write streaming provider headers");
@@ -413,6 +439,15 @@ pub(crate) fn configure_command_content(world: &mut WatnWorld, content: String) 
     world.streaming.server = Some(StreamingServer::start(
         vec![content_event("test-model", &content), done_event()],
         None,
+    ));
+    update_config(world);
+}
+
+pub(crate) fn configure_held_open_without_done(world: &mut WatnWorld, content: String) {
+    world.streaming.server = Some(StreamingServer::start_held_open(
+        vec![content_event("test-model", &content)],
+        Some(0),
+        Duration::from_millis(200),
     ));
     update_config(world);
 }

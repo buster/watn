@@ -13,16 +13,23 @@ each variant to an exit code and prints a diagnostic to stderr:
 | `ApiError` | 2 | Rate limit (429), server error (5xx) |
 | `NetworkError` | 3 | DNS failure, connection refused, timeout |
 | `IoError` | 1 | Cannot write config file |
+| `Interrupted` | 130 | Cancelled by Ctrl+C |
 
-Error messages are human-readable and include context.
+Error messages are human-readable and include context. `Interrupted` is the
+exception: it is a user-cancellation marker, printed as no error and mapping
+directly to exit 130.
 
-Streaming adds two completion and output rules. A provider response is
+Streaming adds completion and output rules. A provider response is
 successful only after `[DONE]`; clean EOF or a reader failure before that marker
 is `NetworkError` (exit 3), even when command content was already flushed.
 Already visible content is preserved and the spinner is finished, but final
 success metadata, buffered verbose reasoning, and execution confirmation are
 omitted. A stdout/stderr write or flush failure is `IoError` (exit 1), with the
-same prefix-preservation and cleanup guarantees.
+same prefix-preservation and cleanup guarantees. A user Ctrl+C is `Interrupted`
+(exit 130): on the join path the SSE parser stops at the next event once the
+flag is set, then the spinner and partial output are finished and no error text
+is printed; a stalled or pending stream that cannot be joined exits within the
+500 ms grace without cleanup.
 
 Provider setup and model setup return typed results rather than exiting inside
 their lower-level functions. Escape cancellation maps to status 1; Ctrl-C maps
@@ -269,7 +276,7 @@ setup guidance go to stderr as plain text (suitable for scripting).
 | 1 | User error | Bad argument, bad config, unknown provider, I/O error, setup Escape cancellation, or non-TTY onboarding guidance |
 | 2 | API error | Auth failure, rate limit, server error |
 | 3 | Network error | DNS, connection, timeout |
-| 130 | Interrupted | SIGINT (Ctrl+C) during streaming |
+| 130 | Interrupted | SIGINT (Ctrl+C) while a completion is in flight; bounded by the 500 ms grace when the worker is unreachable |
 
 ## Model interaction modes
 
