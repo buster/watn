@@ -43,11 +43,12 @@ Feature: Preserve Ctrl-W requests in shell config
     And the generated Zsh configuration should pass a Zsh syntax check
     And the generated Fish configuration should pass a Fish syntax check
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The generated Bash widget keeps the request visible and does not evaluate the command
     Given an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
     When I run the generated Bash widget through Bash with current input "find all images"
     Then the Bash process command line should contain "# find all images\nprintf 'hello world'"
+    And the Bash process should preserve the request as a comment
     And the Bash process should not execute the replacement text
 
   @givn.modified @wip

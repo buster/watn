@@ -151,24 +151,34 @@
     passed)` and `5 steps (5 passed)`; no behavior-changing refactor was
     needed.
 
-- [ ] COMMIT: Create one atomic commit referencing `Zsh and Fish widgets preserve the request as a comment`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `Zsh and Fish widgets preserve the request as a comment`.
+- Commit hash: `8b7e722`
 
 ## Scenario: The generated Bash widget keeps the request visible and does not evaluate the command (@e2e)
 
-- [ ] REMOVE `@wip` from this scenario only, bind the E2E assertions, and run the
+- [x] REMOVE `@wip` from this scenario only, bind the E2E assertions, and run the
   E2E command targeted by name. Expected non-zero.
-  - Evidence:
+  - Evidence: The targeted E2E runner command used the real Bash subprocess
+    path and passed the Given, When, and existing exact-buffer assertion before
+    matching the new `the Bash process should preserve the request as a
+    comment` step, which exited non-zero on `not implemented`. The configured
+    tag-filter command cannot combine `--tags` with `--name` in cucumber-rs, so
+    the scenario-name invocation was used for this RED run.
 
-- [ ] GREEN: Use the existing E2E Bash subprocess to assert the buffer contains
+- [x] GREEN: Use the existing E2E Bash subprocess to assert the buffer contains
   `# find all images` above `printf 'hello world'` and that the replacement
   text is not executed. Production files: `src/shell_shortcut.rs`. Run the
   targeted E2E scenario and record zero exit.
-  - Evidence:
+  - Evidence: `cargo check --locked --test features_runner --features
+    test-support` passed. The scenario-name E2E runner passed with `1 scenario
+    (1 passed)` and `5 steps (5 passed)` through the real Bash subprocess; it
+    asserted the comment-plus-command buffer and no replacement evaluation.
 
-- [ ] REFACTOR: Remove assertion duplication; rerun the targeted E2E scenario
+- [x] REFACTOR: Remove assertion duplication; rerun the targeted E2E scenario
   and record zero exit.
-  - Evidence:
+  - Evidence: The shared `captured_bash_line` helper now serves both E2E
+    assertions. The unchanged scenario-name E2E runner passed with `1 scenario
+    (1 passed)` and `5 steps (5 passed)`.
 
 - [ ] COMMIT: Create one atomic commit referencing `The generated Bash widget keeps the request visible and does not evaluate the command`.
 - Commit hash: pending
