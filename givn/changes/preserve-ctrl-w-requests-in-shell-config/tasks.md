@@ -123,24 +123,33 @@
     passed)` and `6 steps (6 passed)`; the existing failure and empty-output
     fixture remains sufficient.
 
-- [ ] COMMIT: Create one atomic commit referencing `Failed or empty generation preserves the original buffer`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `Failed or empty generation preserves the original buffer`.
+- Commit hash: `6735dbd`
 
 ## Scenario: Zsh and Fish widgets preserve the request as a comment
 
-- [ ] RED: Remove `@wip` from this scenario only, bind new Zsh/Fish content and
+- [x] RED: Remove `@wip` from this scenario only, bind new Zsh/Fish content and
   syntax steps with `unimplemented!()`, and run the exact targeted command.
   Expected non-zero.
-  - Evidence:
+  - Evidence: The targeted runner passed the installed Zsh/Fish fixture, then
+    matched the new Zsh content assertion and exited non-zero on its
+    `not implemented` body. Syntax steps were bound to the existing strict
+    shell-check helpers.
 
-- [ ] GREEN: Update `ZSH_BLOCK` and `FISH_BLOCK` in `src/shell_shortcut.rs` to
+- [x] GREEN: Update `ZSH_BLOCK` and `FISH_BLOCK` in `src/shell_shortcut.rs` to
   build the comment + result buffer. Production files: `src/shell_shortcut.rs`.
   Run the targeted scenario and record zero exit.
-  - Evidence:
+  - Evidence: `cargo check --locked --test features_runner --features
+    test-support` passed. The targeted runner passed with `1 scenario (1
+    passed)` and `5 steps (5 passed)`, asserting comment-plus-command
+    construction for both generated configurations and invoking the existing
+    Zsh/Fish syntax-check steps.
 
-- [ ] REFACTOR: Keep behavior unchanged; rerun the targeted scenario and record
+- [x] REFACTOR: Keep behavior unchanged; rerun the targeted scenario and record
   zero exit.
-  - Evidence:
+  - Evidence: The unchanged targeted runner passed again with `1 scenario (1
+    passed)` and `5 steps (5 passed)`; no behavior-changing refactor was
+    needed.
 
 - [ ] COMMIT: Create one atomic commit referencing `Zsh and Fish widgets preserve the request as a comment`.
 - Commit hash: pending
