@@ -269,6 +269,25 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
     }
 }
 
+pub fn resolve_catalog_source(
+    config: &Config,
+    provider_endpoint: &str,
+    provider_credential: Option<&str>,
+) -> Result<(String, Option<String>), Error> {
+    let (endpoint, credential) = if let Some(litellm) = &config.litellm {
+        (litellm.endpoint.clone(), litellm.api_key.clone())
+    } else {
+        (
+            provider_endpoint.to_string(),
+            provider_credential.map(str::to_string),
+        )
+    };
+    let credential = credential
+        .map(|source| config::expand_api_key(&source))
+        .transpose()?;
+    Ok((endpoint, credential))
+}
+
 fn build_intents(
     present: &[Shell],
     absent: &[Shell],
@@ -1091,22 +1110,13 @@ impl SetupWizard {
     }
 
     fn catalog_source(&self) -> Result<(String, Option<String>), String> {
-        let (endpoint, source) = if let Some(litellm) = &self.persisted.litellm {
-            (litellm.endpoint.clone(), litellm.api_key.clone())
-        } else {
-            let source = match self.storage {
-                CredentialStorage::Configuration => Some(self.credential_input.clone()),
-                CredentialStorage::Environment => Some(format!("${{{}}}", self.credential_input)),
-            };
-            (self.endpoint.clone(), source)
+        let source = match self.storage {
+            CredentialStorage::Configuration => Some(self.credential_input.clone()),
+            CredentialStorage::Environment => Some(format!("${{{}}}", self.credential_input)),
         };
-        let key = match source {
-            Some(source) => config::expand_api_key(&source).map(Some).map_err(|_| {
-                "credential is unavailable; enter a valid source or manual model roles".to_string()
-            })?,
-            None => None,
-        };
-        Ok((endpoint, key))
+        resolve_catalog_source(&self.persisted, &self.endpoint, source.as_deref()).map_err(|_| {
+            "credential is unavailable; enter a valid source or manual model roles".to_string()
+        })
     }
 
     fn apply_catalog_result(&mut self) {
@@ -1356,7 +1366,19 @@ impl SetupWizard {
 
     fn draw_provider(&self, frame: &mut Frame, area: Rect) {
         let (settings, help) = split_settings_help(area);
-        let mut lines = Vec::new();
+        let credential_active = matches!(
+            self.provider_focus,
+            ProviderFocus::CredentialChoice | ProviderFocus::CredentialInput
+        );
+        let endpoint_ready = normalize_endpoint(&self.endpoint).is_ok();
+        let credential_ready = !self.credential_input.trim().is_empty()
+            && (self.storage == CredentialStorage::Configuration
+                || (valid_environment_name(&self.credential_input)
+                    && env_present(&self.credential_input)));
+        let mut lines = vec![Line::from(Span::styled(
+            "Configure the two required provider settings",
+            Style::default().add_modifier(Modifier::BOLD),
+        ))];
         if self.first_run {
             lines.push(Line::from(Span::styled(
                 "No watn configuration found.",
@@ -1368,91 +1390,100 @@ impl SetupWizard {
                 "Suggested values are ready for review. Nothing is saved until Finish setup.",
             ));
         }
+
+        lines.push(Line::from("Required settings"));
         lines.push(setting_line(
             format!(
-                "{} Provider: {}",
-                focus_marker(self.provider_focus == ProviderFocus::Identity),
-                self.provider_identity.name()
-            ),
-            self.provider_focus == ProviderFocus::Identity,
-        ));
-        lines.push(Line::from(format!(
-            "  1 OpenRouter  2 OpenAI  3 Custom{}",
-            if self.provider_focus == ProviderFocus::Identity {
-                "  (choose with Up/Down)"
-            } else {
-                ""
-            }
-        )));
-        lines.push(setting_line(
-            format!(
-                "{} Endpoint: {} [{}]",
+                "{} [{}] 1. Endpoint: {}",
                 focus_marker(self.provider_focus == ProviderFocus::Endpoint),
-                cursor_value(&self.endpoint),
-                self.endpoint_origin.label()
+                if endpoint_ready { "x" } else { " " },
+                clipped(&self.endpoint, 38)
             ),
             self.provider_focus == ProviderFocus::Endpoint,
         ));
         lines.push(setting_line(
             format!(
-                "{} Credential source: {}",
-                focus_marker(self.provider_focus == ProviderFocus::CredentialChoice),
-                match self.storage {
-                    CredentialStorage::Configuration => "configuration value",
-                    CredentialStorage::Environment => "environment variable",
-                }
+                "{} [{}] 2. Credential source: {}",
+                focus_marker(credential_active),
+                if credential_ready { "x" } else { " " },
+                credential_summary(self.storage, &self.credential_input)
             ),
-            self.provider_focus == ProviderFocus::CredentialChoice,
+            credential_active,
         ));
+        lines.push(Line::from(""));
+        lines.push(setting_line(
+            format!(
+                "{} Provider type: {}",
+                focus_marker(self.provider_focus == ProviderFocus::Identity),
+                self.provider_identity.name()
+            ),
+            self.provider_focus == ProviderFocus::Identity,
+        ));
+        lines.push(Line::from(
+            if self.provider_focus == ProviderFocus::Identity {
+                "  Choose with Up/Down: OpenRouter | OpenAI | Custom"
+            } else {
+                "  Provider type is changed before endpoint details"
+            },
+        ));
+        lines.push(setting_line(
+            format!(
+                "{} Endpoint value: {} ({})",
+                focus_marker(self.provider_focus == ProviderFocus::Endpoint),
+                cursor_value(&self.endpoint),
+                origin_tag(self.endpoint_origin)
+            ),
+            self.provider_focus == ProviderFocus::Endpoint,
+        ));
+        lines.push(Line::from(format!(
+            "  Endpoint provenance: {}",
+            self.endpoint_origin.label()
+        )));
+        lines.push(setting_line(
+            format!(
+                "{} Credential value: {} ({})",
+                focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
+                credential_value_display(self.storage, &self.credential_input),
+                origin_tag(self.credential_origin)
+            ),
+            self.provider_focus == ProviderFocus::CredentialInput,
+        ));
+        lines.push(Line::from(format!(
+            "  Credential provenance: {}",
+            self.credential_origin.label()
+        )));
+        lines.push(Line::from("Credential choices (choose one with Up/Down)"));
         for (index, candidate) in self.credential_candidates.iter().enumerate() {
             let selected = self.credential_choice == Some(index);
             lines.push(setting_line(
                 format!(
-                    "  {} {} [{}] {}",
+                    "  {} {} [{}]",
                     if selected { ">" } else { " " },
                     candidate.name,
                     if candidate.detected {
                         "detected"
                     } else {
                         "not found"
-                    },
-                    if selected {
-                        self.credential_origin.label()
-                    } else if self.credential_origin == FieldOrigin::Recommended
-                        && self.credential_input == candidate.name
-                    {
-                        FieldOrigin::Recommended.label()
-                    } else {
-                        ""
                     }
                 ),
                 selected && self.provider_focus == ProviderFocus::CredentialChoice,
             ));
         }
-        lines.push(setting_line(
-            format!(
-                "{} Credential / variable: {} [{}]",
-                focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
-                if self.storage == CredentialStorage::Configuration {
-                    "*".repeat(self.credential_input.chars().count())
-                } else {
-                    cursor_value(&self.credential_input)
-                },
-                self.credential_origin.label()
-            ),
-            self.provider_focus == ProviderFocus::CredentialInput,
+        lines.push(Line::from(
+            "  Or press P for a stored value, E for an environment variable",
         ));
+        lines.push(Line::from(""));
         lines.push(Line::from(format!(
-            "Finish setup: {}",
+            "Finish setup: {} | Enter/Tab advances, Shift-Tab goes back",
             if self.can_finish() {
                 "available"
             } else {
-                "unavailable until a credential source is supplied"
+                "unavailable until both required settings are ready"
             }
         )));
         let block = Block::default()
             .borders(Borders::ALL)
-            .title("Provider settings");
+            .title("Provider | 2 required settings");
         frame.render_widget(
             Paragraph::new(Text::from(lines))
                 .block(block)
@@ -1466,56 +1497,73 @@ impl SetupWizard {
         let (settings, help) = split_settings_help(area);
         let role = &self.roles[self.active_role];
         let matches = self.filtered_models();
-        let focus = match self.model_focus {
-            ModelFocus::Roles => format!("{} role row", role_label(self.active_role)),
-            ModelFocus::Search => "model search field".to_string(),
-            ModelFocus::List => "model list".to_string(),
-        };
-        let mut lines = vec![Line::from(format!(
-            "Catalog: {}  |  Focus: {}",
-            match self.catalog_status {
-                CatalogStatus::NotStarted => "not started",
-                CatalogStatus::Loading => "loading...",
-                CatalogStatus::Available => "available",
-                CatalogStatus::Unavailable => "unavailable; manual entry enabled",
-            },
-            focus
+        let narrow = settings.height < 25;
+        let sections = Layout::vertical([
+            Constraint::Length(if narrow { 7 } else { 9 }),
+            Constraint::Min(if narrow { 8 } else { 10 }),
+            Constraint::Length(if narrow { 5 } else { 6 }),
+        ])
+        .split(settings);
+
+        let mut role_lines = vec![Line::from(format!(
+            "Step {}/3 | Choose a model, set reasoning, press Enter",
+            self.active_role + 1
         ))];
         for index in 0..3 {
             let role = &self.roles[index];
             let active = self.active_role == index;
-            lines.push(Line::styled(
+            let model = role
+                .model
+                .as_deref()
+                .map(|value| clipped(value, 32))
+                .unwrap_or_else(|| "Needs selection".to_string());
+            role_lines.push(Line::styled(
                 format!(
-                    "{} {}  {}  Reasoning: {}  [{}]",
-                    focus_marker(active),
+                    "{} {}. {}: {} [{}] {}",
+                    if active { ">>" } else { "  " },
+                    index + 1,
                     role_label(index),
-                    role.model.as_deref().unwrap_or("Needs selection"),
+                    model,
                     role.reasoning.as_str(),
-                    match role.review {
-                        RoleReview::Loaded => "Loaded from config",
-                        RoleReview::Suggested => "Suggested",
-                        RoleReview::Manual => "Entered by you",
-                        RoleReview::NeedsReview => "Needs attention",
-                        RoleReview::Confirmed => "Reviewed",
-                    }
+                    role_review_tag(role.review)
                 ),
                 focus_style(active && self.model_focus == ModelFocus::Roles),
             ));
         }
-        lines.push(setting_line(
-            format!(
-                "{} Search models: {}█  (press / or Ctrl-F; Enter opens list)",
-                focus_marker(self.model_focus == ModelFocus::Search),
-                role.query
-            ),
-            self.model_focus == ModelFocus::Search,
-        ));
-        lines.push(Line::from(format!(
-            "Model list: {} match{}  (Up/Down select, Enter choose)",
+
+        frame.render_widget(
+            Paragraph::new(Text::from(role_lines))
+                .block(Block::default().borders(Borders::ALL).title(format!(
+                    "Roles | 3 required | Finish setup: {}",
+                    if self.can_finish() {
+                        "available"
+                    } else {
+                        "review needed"
+                    }
+                )))
+                .wrap(Wrap { trim: true }),
+            sections[0],
+        );
+
+        let catalog_status = match self.catalog_status {
+            CatalogStatus::NotStarted => "not started",
+            CatalogStatus::Loading => "loading...",
+            CatalogStatus::Available => "available",
+            CatalogStatus::Unavailable => "manual entry enabled",
+        };
+        let mut catalog_lines = vec![Line::from(format!(
+            "{} Search models: {}█ (/ or Ctrl-F)",
+            focus_marker(self.model_focus == ModelFocus::Search),
+            role.query
+        ))];
+        let visible_models = matches.len().min(if narrow { 3 } else { 6 });
+        catalog_lines.push(Line::from(format!(
+            "Model list: {} match{} (showing {}) | Up/Down, Enter choose",
             matches.len(),
-            if matches.len() == 1 { "" } else { "es" }
+            if matches.len() == 1 { "" } else { "es" },
+            visible_models
         )));
-        for (index, model) in matches.iter().take(8).enumerate() {
+        for (index, model) in matches.iter().take(visible_models).enumerate() {
             let selected = index == role.selection.min(matches.len().saturating_sub(1));
             let style = if selected && self.model_focus == ModelFocus::List {
                 Style::default()
@@ -1529,47 +1577,52 @@ impl SetupWizard {
             } else {
                 Style::default()
             };
-            lines.push(Line::styled(
+            catalog_lines.push(Line::styled(
                 format!(
-                    "{} {} {}",
+                    "  {} {}",
                     if selected { ">>" } else { "  " },
-                    model.id,
-                    model_metadata_label(model)
+                    clipped(&model.id, 42)
                 ),
                 style,
             ));
         }
         if matches.is_empty() {
-            lines.push(Line::from(
-                "No models match this search. Enter a model ID manually or clear the query.",
+            catalog_lines.push(Line::from(
+                "No matches. Type a model ID manually or clear the search.",
             ));
         }
-        lines.push(Line::from(
-            "Enter confirms the active role; Ctrl-R cycles reasoning; Tab moves focus.",
-        ));
-        if let Some(warning) = &self.catalog_warning {
-            lines.push(Line::from(Span::styled(
-                warning.as_str(),
-                Style::default().fg(Color::Yellow),
-            )));
-        }
-        lines.push(Line::from(format!(
-            "Finish setup: {}",
-            if self.can_finish() {
-                "available"
-            } else {
-                "unavailable until required settings are reviewed"
-            }
-        )));
         frame.render_widget(
-            Paragraph::new(Text::from(lines))
+            Paragraph::new(Text::from(catalog_lines))
+                .block(Block::default().borders(Borders::ALL).title(format!(
+                    "Catalog: {} | {} models | model list",
+                    catalog_status,
+                    self.catalog.len()
+                )))
+                .wrap(Wrap { trim: true }),
+            sections[1],
+        );
+
+        let mut reasoning_lines = vec![Line::from(format!(
+            "Current: {} | {}",
+            role.reasoning.as_str(),
+            role.model.as_deref().unwrap_or("no model selected")
+        ))];
+        reasoning_lines.push(Line::from(format!(
+            "Choices: {}",
+            reasoning_options_label(role.metadata.as_ref(), role.reasoning)
+        )));
+        reasoning_lines.push(Line::from(
+            "Ctrl-R changes reasoning | Enter confirms model + reasoning",
+        ));
+        frame.render_widget(
+            Paragraph::new(Text::from(reasoning_lines))
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("Model roles [active setting highlighted in green]"),
+                        .title(format!("Reasoning | {}", role_label(self.active_role))),
                 )
                 .wrap(Wrap { trim: true }),
-            settings,
+            sections[2],
         );
         self.draw_help(frame, help, "model role");
     }
@@ -1706,9 +1759,15 @@ impl SetupWizard {
     }
 
     fn draw_help(&self, frame: &mut Frame, area: Rect, active: &str) {
-        let text = format!(
-            "About this setting: {active}\n\nWhat it is\nThe {active} value used by watn.\n\nWhat it enables\nProvider requests, model discovery, or safe shell integration.\n\nRecommendation\nReview detected values and prefer environment-backed credentials.\n\nRequirement / tradeoff\nThe endpoint must be HTTP(S); catalog and shell failures remain visible and may require attention."
-        );
+        let text = if area.height < 12 {
+            format!(
+                "About this setting: {active}\nWhat it is: the {active} value used by watn.\nWhat it enables: provider requests, model discovery, or shell integration.\nRecommendation: review detected values and prefer environment-backed credentials.\nRequirement / tradeoff: endpoints must be HTTP(S); failures remain visible."
+            )
+        } else {
+            format!(
+                "About this setting: {active}\n\nWhat it is\nThe {active} value used by watn.\n\nWhat it enables\nProvider requests, model discovery, or safe shell integration.\n\nRecommendation\nReview detected values and prefer environment-backed credentials.\n\nRequirement / tradeoff\nThe endpoint must be HTTP(S); catalog and shell failures remain visible and may require attention."
+            )
+        };
         let placement = if area.x > 10 { "beside" } else { "below" };
         frame.render_widget(
             Paragraph::new(text)
@@ -1878,12 +1937,12 @@ fn attention_shells(attention: &[bool; 3], selected: &[bool; 3]) -> Vec<Shell> {
 
 fn split_settings_help(area: Rect) -> (Rect, Rect) {
     if area.width >= WIDE_LAYOUT_COLUMNS {
-        let chunks = Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)])
+        let chunks = Layout::horizontal([Constraint::Percentage(66), Constraint::Percentage(34)])
             .split(area);
         (chunks[0], chunks[1])
     } else {
         let chunks =
-            Layout::vertical([Constraint::Percentage(56), Constraint::Percentage(44)]).split(area);
+            Layout::vertical([Constraint::Percentage(68), Constraint::Percentage(32)]).split(area);
         (chunks[0], chunks[1])
     }
 }
@@ -1915,6 +1974,57 @@ fn cursor_value(value: &str) -> String {
     format!("{}█", value)
 }
 
+fn clipped(value: &str, max_chars: usize) -> String {
+    let mut chars = value.chars();
+    let value = chars.by_ref().take(max_chars).collect::<String>();
+    if chars.next().is_some() {
+        let mut shortened = value
+            .chars()
+            .take(max_chars.saturating_sub(3))
+            .collect::<String>();
+        shortened.push_str("...");
+        shortened
+    } else {
+        value
+    }
+}
+
+fn origin_tag(origin: FieldOrigin) -> &'static str {
+    match origin {
+        FieldOrigin::Loaded => "loaded",
+        FieldOrigin::Detected => "detected",
+        FieldOrigin::Recommended => "recommended",
+        FieldOrigin::User => "entered",
+    }
+}
+
+fn credential_summary(storage: CredentialStorage, input: &str) -> String {
+    match storage {
+        CredentialStorage::Configuration => "stored value".to_string(),
+        CredentialStorage::Environment if input.is_empty() => "choose a variable".to_string(),
+        CredentialStorage::Environment => clipped(input, 28),
+    }
+}
+
+fn credential_value_display(storage: CredentialStorage, input: &str) -> String {
+    match storage {
+        CredentialStorage::Configuration => {
+            if input.is_empty() {
+                "enter a value".to_string()
+            } else {
+                "****************".to_string()
+            }
+        }
+        CredentialStorage::Environment => {
+            if input.is_empty() {
+                "choose a variable".to_string()
+            } else {
+                cursor_value(&clipped(input, 28))
+            }
+        }
+    }
+}
+
 fn role_label(index: usize) -> &'static str {
     match index {
         0 => "Small / fast",
@@ -1923,21 +2033,52 @@ fn role_label(index: usize) -> &'static str {
     }
 }
 
-fn model_metadata_label(model: &ModelEntry) -> String {
-    let mut parts = Vec::new();
-    if let Some(context) = model.context_length {
-        parts.push(format!("ctx {}K", context / 1000));
+fn role_review_tag(review: RoleReview) -> &'static str {
+    match review {
+        RoleReview::Loaded => "Loaded",
+        RoleReview::Suggested => "Suggested",
+        RoleReview::Manual => "Manual",
+        RoleReview::NeedsReview => "Needs attention",
+        RoleReview::Confirmed => "Reviewed",
     }
-    if let Some(pricing) = &model.pricing {
-        parts.push(format!("${:.2}/${:.2}", pricing.input, pricing.output));
+}
+
+fn reasoning_options_label(
+    metadata: Option<&crate::models::list::ModelReasoning>,
+    current: ReasoningStrength,
+) -> String {
+    let Some(metadata) = metadata else {
+        return if current == ReasoningStrength::Off {
+            "[off] only (manual or no catalog metadata)".to_string()
+        } else {
+            format!("[{}] (manual or no catalog metadata)", current.as_str())
+        };
+    };
+    let mut options = Vec::new();
+    if !metadata.mandatory {
+        options.push("off".to_string());
     }
-    if !model.supported_features.is_empty() {
-        parts.push(model.supported_features.join(","));
+    for effort in &metadata.supported_efforts {
+        if ReasoningStrength::parse(effort).is_some()
+            && !options.iter().any(|value| value == effort)
+        {
+            options.push(effort.clone());
+        }
     }
-    if parts.is_empty() {
-        String::new()
+    if options.is_empty() {
+        "off only".to_string()
     } else {
-        format!("({})", parts.join(" | "))
+        options
+            .into_iter()
+            .map(|option| {
+                if option == current.as_str() {
+                    format!("[{option}]")
+                } else {
+                    option
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 }
 

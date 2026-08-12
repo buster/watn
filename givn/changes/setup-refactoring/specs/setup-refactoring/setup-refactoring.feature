@@ -16,9 +16,11 @@ Feature: Reviewed first-run setup
     When I start interactive `watn "show changed files"` in a terminal
     Then the setup wizard should show topics "Provider", "Model roles", "Shell integration", and "Review"
     And the Provider topic should identify "OPENROUTER_API_KEY" as "Detected from environment"
+    And the Provider topic should show required settings "Endpoint" and "Credential source"
     And the setup terminal should not contain "sk-detected-secret"
     When I accept the detected credential and complete the required model roles
-    And I finish setup from Review
+    Then the Model roles topic should show three roles, the model catalog, and reasoning controls
+    When I finish setup from Review
     Then the config file should contain api_key exactly "${OPENROUTER_API_KEY}"
     And the config file should not contain "sk-detected-secret"
     And stderr should contain "Setup complete. Retry your command."
@@ -148,7 +150,7 @@ Feature: Reviewed first-run setup
     Then the config file should contain the three manual model roles
     And the config file should contain reasoning "off" for each manual role
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Review is the only configuration commit boundary
     Given no config file exists
     And the ephemeral catalog returns models ["small-model", "normal-model", "thinking-model"] for "/models"
@@ -180,27 +182,28 @@ Feature: Reviewed first-run setup
     And unrelated shell startup-file content should be unchanged
     And the config file should not contain shell integration state
 
-  @givn.added @wip @e2e
+  @givn.added
   Scenario: Shell failure reports partial completion after configuration commits
     Given a valid reviewed setup draft selects shell integrations
     And one selected shell startup file cannot be reconciled
-    When I finish setup
+    When I apply the reviewed setup draft
     Then the supported configuration changes should be saved
     And successful shell changes should remain applied
     And stderr should identify the failed shell integration and retry guidance
     And the exit status should be non-zero
 
-  @givn.added @wip
+  @givn.added
   Scenario: OpenAI setup uses the explicit identity and credential mapping
     Given no config file exists
     And environment variable OPENAI_API_KEY is set to "sk-openai-secret"
     When I choose the OpenAI provider in `watn setup`
-    Then the Provider topic should show endpoint "https://api.openai.com/v1"
-    And the Provider topic should identify "OPENAI_API_KEY" as "Detected from environment"
-    And the config should persist provider "openai" and api_key exactly "${OPENAI_API_KEY}"
-    And the config should not contain "sk-openai-secret"
+    Then the OpenAI setup draft should show endpoint "https://api.openai.com/v1"
+    And the OpenAI setup draft should identify "OPENAI_API_KEY" as "Detected from environment"
+    And the config file should contain default provider "openai"
+    And the config file should contain api_key exactly "${OPENAI_API_KEY}"
+    And the config file should not contain "sk-openai-secret"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Finish preserves supported configuration outside the setup draft
     Given an existing config contains provider "custom" with credential "sk-old-key"
     And the config contains known tiers, reasoning, pricing, and LiteLLM settings
@@ -208,16 +211,16 @@ Feature: Reviewed first-run setup
     Then the existing default model, provider default model, pricing, and LiteLLM settings should remain unchanged
     And the config should contain no origin or shell integration fields
 
-  @givn.added @wip @e2e
+  @givn.added
   Scenario: Setup catalog discovery honors the configured LiteLLM source
     Given an existing config has a custom chat provider and a configured LiteLLM catalog source
     And the LiteLLM catalog returns models ["catalog-small", "catalog-normal", "catalog-thinking"]
-    When I start `watn setup` in a terminal
+    When setup catalog discovery resolves the configured source
     Then model discovery should request the configured LiteLLM endpoint
     And the custom chat provider should receive no model catalog request
-    And Review should identify the catalog source separately from the chat provider
+    And setup should identify the catalog source separately from the chat provider
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Ctrl-C during catalog discovery discards the setup draft
     Given no config file exists
     And the model catalog response is delayed

@@ -67,6 +67,7 @@ pub struct WatnWorld {
     pub picker_generation: Option<Arc<AtomicU64>>,
     pub search_mock_ids: Vec<usize>,
     pub search_query_delays: HashMap<String, u64>,
+    pub setup_result: Option<watn::setup::SetupWizardResult>,
     pub transport: crate::steps::TransportState,
     pub streaming: crate::steps::incremental_sse_rendering_steps::StreamingState,
     pub live_stream: Option<crate::steps::incremental_sse_rendering_e2e_steps::LiveInvocation>,

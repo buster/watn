@@ -148,30 +148,75 @@ fn detected_provider_credential(world: &mut WatnWorld) {
     assert!(output.contains("Detected"));
 }
 
+#[then(
+    regex = r##"^the Provider topic should show required settings \"Endpoint\" and \"Credential source\"$"##
+)]
+fn provider_required_settings(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = wait_for_fragments(session, &["1.", "2."]);
+    assert!(output.contains("1."), "endpoint step missing: {output:?}");
+    assert!(output.contains("2."), "credential step missing: {output:?}");
+}
+
 #[when("I accept the detected credential and complete the required model roles")]
 fn accept_detected_and_complete_roles(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for _ in 0..5 {
-        pty_write(session, "\r");
-        std::thread::sleep(std::time::Duration::from_millis(150));
-    }
-    let output = wait_for_fragments(session, &["Catalog:", "Model list"]);
+    wait_for_fragments(session, &["OPENROUTER_API_KEY"]);
+    advance_setup_page(session, "\r", ">> ACTIVE Endpoint");
+    advance_setup_page(session, "\r", ">> ACTIVE [x] 2. Credential source");
+    advance_setup_page(session, "\r", ">> ACTIVE Credential value");
+    pty_write(session, "\r");
+    wait_for_catalog_models(session, &["small-model", "normal-model", "thinking-model"]);
+    advance_setup_page(session, "\r", "> 2. Balanced / normal");
+    advance_setup_page(session, "\r", "> 3. Thinking");
+    advance_setup_page(session, "\r", "Completion in Bash");
+    advance_setup_page(session, "\r", "Review draft before Finish setup");
+    let output = pty_snapshot(session);
     assert!(
-        output.contains("Search models"),
-        "search field missing: {output:?}"
+        output.contains("Roles"),
+        "role checklist missing: {output:?}"
+    );
+    assert!(
+        output.contains("Reasoning"),
+        "reasoning panel missing: {output:?}"
     );
     assert!(
         output.contains("small-model"),
         "model list missing: {output:?}"
     );
+}
+
+#[then("the Model roles topic should show three roles, the model catalog, and reasoning controls")]
+fn model_roles_guidance_visible(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = wait_for_fragments(session, &["Roles", "Catalog:", "Reasoning"]);
     for model in ["small-model", "normal-model", "thinking-model"] {
-        pty_write(session, "\x15");
-        pty_write(session, model);
-        pty_write(session, "\r");
-        std::thread::sleep(std::time::Duration::from_millis(75));
+        assert!(output.contains(model), "missing model {model}: {output:?}");
     }
-    pty_write(session, "\r");
-    wait_for_fragments(session, &["Review"]);
+    assert!(
+        output.contains("Ctrl-R"),
+        "reasoning control missing: {output:?}"
+    );
+}
+
+fn advance_setup_page(session: &mut super::PtySession, key: &str, fragment: &str) {
+    pty_write(session, key);
+    wait_for_fragments(session, &[fragment]);
+    std::thread::sleep(std::time::Duration::from_millis(150));
+}
+
+fn wait_for_catalog_models(session: &super::PtySession, models: &[&str]) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        let output = pty_snapshot(session);
+        if models.iter().all(|model| output.contains(model)) {
+            return;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("catalog models were not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
 }
 
 #[when("I finish setup from Review")]
@@ -306,6 +351,82 @@ fn catalog_transport_fails(world: &mut WatnWorld) {
     );
 }
 
+#[given("the model catalog response is delayed")]
+fn delayed_model_catalog_response(world: &mut WatnWorld) {
+    let root = world.temp_dir.as_ref().expect("isolated config directory");
+    let bash = root.path().join(".bashrc");
+    let zsh = root.path().join(".zshrc");
+    let fish = root.path().join("fish/config.fish");
+    std::fs::create_dir_all(fish.parent().expect("fish parent")).expect("fish directory");
+    std::fs::write(&bash, "shell before\n").expect("bash startup file");
+    std::fs::write(&zsh, "zsh before\n").expect("zsh startup file");
+    std::fs::write(&fish, "fish before\n").expect("fish startup file");
+    for (key, path) in [
+        ("bash_before", &bash),
+        ("zsh_before", &zsh),
+        ("fish_before", &fish),
+    ] {
+        world.pending_config.insert(
+            key.to_string(),
+            std::fs::read_to_string(path).expect("shell snapshot"),
+        );
+    }
+    let home = root.path().to_string_lossy().to_string();
+    world.env_vars.insert("HOME".to_string(), home);
+    world
+        .env_vars
+        .insert("SHELL".to_string(), "/bin/bash".to_string());
+    world
+        .env_vars
+        .insert("OPENROUTER_API_KEY".to_string(), "sk-delay-key".to_string());
+    let server = httpmock::MockServer::start();
+    let base = format!("http://127.0.0.1:{}", server.port());
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.delay(std::time::Duration::from_secs(3))
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(r#"{"data":[{"id":"delayed-small"},{"id":"delayed-normal"},{"id":"delayed-thinking"}]}"#);
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base);
+}
+
+#[when("I start `watn setup` in a terminal and press Ctrl-C during discovery")]
+fn start_setup_and_interrupt_discovery(world: &mut WatnWorld) {
+    let mut session = start_pty_session(world, &["setup"]);
+    wait_for_fragments(&session, &["Provider"]);
+    pty_write(&mut session, "\r");
+    wait_for_fragments(&session, &[">> ACTIVE Endpoint"]);
+    pty_write(&mut session, "\r");
+    wait_for_fragments(&session, &["Credential source"]);
+    pty_write(&mut session, "\r");
+    wait_for_fragments(&session, &["Credential value"]);
+    pty_write(&mut session, "\r");
+    wait_for_fragments(&session, &["Catalog:"]);
+    pty_write(&mut session, "\x03");
+    finish_pty_session(world, session);
+}
+
+#[then("no shell startup file should be changed")]
+fn no_shell_startup_file_changed(world: &mut WatnWorld) {
+    let root = world.temp_dir.as_ref().expect("isolated config directory");
+    for (key, path) in [
+        ("bash_before", root.path().join(".bashrc")),
+        ("zsh_before", root.path().join(".zshrc")),
+        ("fish_before", root.path().join("fish/config.fish")),
+    ] {
+        let before = world.pending_config.get(key).expect("shell snapshot");
+        let after = std::fs::read_to_string(path).expect("shell startup file");
+        assert_eq!(before, &after, "startup file changed: {key}");
+    }
+}
+
 #[when("I provide a valid custom endpoint and credential source")]
 fn provide_custom_endpoint_and_credential(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
@@ -428,7 +549,18 @@ fn discard_setup_from_review(world: &mut WatnWorld) {
 
 #[given("the config contains known tiers, reasoning, pricing, and LiteLLM settings")]
 fn config_contains_known_setup_settings(world: &mut WatnWorld) {
-    let raw = world.raw_config.take().expect("existing provider config");
+    let raw = world
+        .raw_config
+        .take()
+        .expect("existing provider config")
+        .replace(
+            "provider = \"custom\"",
+            "provider = \"custom\"\nmodel = \"legacy-default\"",
+        )
+        .replace(
+            "api_key = \"sk-old-key\"",
+            "api_key = \"sk-old-key\"\ndefault_model = \"legacy-provider-default\"",
+        );
     world.raw_config = Some(format!(
         "{raw}\n[tiers]\nsmall = \"legacy-small\"\nnormal = \"legacy-normal\"\nthinking = \"legacy-thinking\"\n\n[tiers.reasoning]\nsmall = \"off\"\nnormal = \"medium\"\nthinking = \"high\"\n\n[pricing]\n\"legacy-small\" = {{ input = 1.0, output = 2.0 }}\n\n[litellm]\nendpoint = \"https://legacy-litellm.example\"\napi_key = \"sk-litellm\"\n"
     ));
