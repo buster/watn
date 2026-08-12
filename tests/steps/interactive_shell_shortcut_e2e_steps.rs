@@ -5,6 +5,17 @@ use std::process::Command;
 
 use crate::WatnWorld;
 
+fn captured_bash_line(world: &WatnWorld) -> &str {
+    world
+        .shortcut_output
+        .as_deref()
+        .unwrap_or_default()
+        .split("LINE<<")
+        .nth(1)
+        .and_then(|value| value.split(">>").next())
+        .expect("Bash process line output")
+}
+
 fn assert_shell_syntax(shell: &str, name: &str, path: &Path, required: bool) {
     let result = Command::new(shell)
         .args(["-n", path.to_str().expect("UTF-8 shell target path")])
@@ -48,13 +59,8 @@ fn run_generated_bash(world: &mut WatnWorld, input: String) {
 
 #[then(regex = r##"^the Bash process command line should contain \"([^\"]*)\"$"##)]
 fn bash_process_line(world: &mut WatnWorld, expected: String) {
-    let output = world.shortcut_output.as_deref().unwrap_or_default();
-    let line = output
-        .split("LINE<<")
-        .nth(1)
-        .and_then(|value| value.split(">>").next())
-        .expect("Bash process line output");
-    assert_eq!(line, expected);
+    let line = captured_bash_line(world);
+    assert_eq!(line, expected.replace("\\n", "\n"));
     let temp = world.temp_dir.as_ref().expect("Bash E2E temp dir");
     let log = std::fs::read_to_string(temp.path().join("watn-invocations.log"))
         .expect("Bash E2E invocation log");
@@ -64,4 +70,15 @@ fn bash_process_line(world: &mut WatnWorld, expected: String) {
 #[then("the Bash process should not execute the replacement text")]
 fn bash_process_no_eval(_world: &mut WatnWorld) {
     assert!(!std::path::Path::new("/tmp/watn-shortcut-should-not-run").exists());
+}
+
+#[then("the Bash process should preserve the request as a comment")]
+fn bash_process_preserves_request(world: &mut WatnWorld) {
+    let line = captured_bash_line(world);
+    assert!(line.starts_with("# "), "the request should be a shell comment");
+    assert_eq!(
+        line.matches('\n').count(),
+        1,
+        "the request comment should occupy one line"
+    );
 }
