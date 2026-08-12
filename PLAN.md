@@ -1,6 +1,6 @@
 # watn Improvement Handoff Plan
 
-Handoff snapshot: 2026-08-11
+Handoff snapshot: 2026-08-12
 
 This file is the working handoff for the next agent. It describes the current
 repository state, completed decisions, and remaining implementation work.
@@ -9,7 +9,7 @@ repository state, completed decisions, and remaining implementation work.
 
 - Repository: `/home/buster/projects/watn`
 - Branch: `main`
-- Worktree: clean on `main` after archiving and pushing `responsive-setup-model-filtering`
+- Worktree: clean on `main` after archiving `preserve-ctrl-w-requests-in-shell-config`
 - Remote/upstream: `origin` configured
 - Active givn change: none
 - Archived transport work: `incremental-sse-rendering`, `isolate-test-transport`
@@ -58,6 +58,9 @@ through a reviewed proposal and specification:
 - Saved literal credentials and exact environment references are authoritative.
 - A missing saved environment reference is an authentication error and does not
   fall through to another environment variable.
+- Successful Ctrl-W generation displays the flattened request as a shell comment
+  above the generated command; failed or empty generation preserves the original
+  buffer, and generated text is never evaluated during replacement.
 
 ## Coverage And Test Command Contract
 
@@ -75,6 +78,10 @@ through a reviewed proposal and specification:
 - `shell-completions` is implemented, verified, and archived.
 - `interactive-shell-shortcut` is implemented, verified, and archived in
   commit `fe8b0f9`.
+- `preserve-ctrl-w-requests-in-shell-config` is implemented, reviewed, verified,
+  and archived in commit `ce6a7fb`. Bash, Zsh, and Fish widgets now preserve the
+  request comment, flatten CR/LF/TAB safely, isolate commit-time execution, and
+  preserve the original buffer on failure or empty output.
 - `highlight-active-setup-input` is implemented, reviewed, archived, and pushed
   in commit `81bdf63`. Its four PTY scenarios cover URL, credential,
   model/reasoning, and shortcut focus borders while preserving inactive styling.
@@ -86,60 +93,24 @@ through a reviewed proposal and specification:
   marked atomic startup-file replacement, idempotent installation, independent
   target reporting, native generated widgets, and non-evaluating
   `command watn -- "$question"` invocation.
-- The current verification passed 98 regular scenarios and 66 E2E scenarios,
-  with 570 regular steps and 463 E2E steps.
-- Merged coverage is 90.40% line coverage (`9077/10041`); branch coverage is
+- The final archive verification passed 110 regular scenarios and 69 E2E
+  scenarios, with 628 regular steps and 477 E2E steps.
+- Merged coverage is 90% line coverage (`9171/10135`); branch coverage is
   unavailable (`0/0`).
 - `givn lint`, formatting, compilation, clippy, documentation tests, release
-  build, coverage measurement/merge, and review passed.
+  build, coverage measurement/merge, review, and archive gates passed.
+- Zsh and Fish syntax checks are optional when those executables are absent from
+  local environments. CI installs both dependencies and requires their checks.
+- Interactive ZLE/Fish redraw behavior and wrapped-line rendering remain
+  classified as legitimately hard to measure outside real interactive shells;
+  generated-block assertions, syntax checks, and the real Bash subprocess cover
+  the implemented contract.
 
 ## Remaining Work
 
-### Preserve Ctrl-W Requests In Shell Config
-
-Extend the shell shortcut so the request that triggered Ctrl-W remains visible
-after command generation. This must be implemented entirely in the generated Bash,
-Zsh, and Fish configuration; `watn` itself should not change.
-
-The current generated widgets replace `READLINE_LINE`, `BUFFER`, or the Fish
-command line with the generated result and do not retain the original request.
-Existing tests cover replacement, failure preservation, quoting, and no
-evaluation, but not request preservation.
-
-Investigate whether the widget can preserve the existing rendered shell line and
-place the generated command on a new editable line without executing either line
-during replacement. Account for shell-specific line-editor redraw behavior,
-wrapped input, multiline input, terminal resizing, and stderr output.
-
-At minimum, implement the portable shell-buffer fallback: replace the current
-buffer with the original request as a shell comment, followed by a newline and
-the generated command:
-
-```text
-# original request
-generated command
-```
-
-Pressing Enter must ignore the comment and execute only the generated command.
-Flatten or otherwise safely represent embedded newlines and control characters in
-the original request so it remains one comment line. Preserve the original plain
-buffer when `watn` fails or returns empty output. Do not evaluate the generated
-command during replacement.
-
-Do not promise shell-history persistence unless it is verified separately for
-Bash, Zsh, and Fish. The required behavior is that the request remains visible in
-the editable buffer and terminal transcript after Ctrl-W succeeds.
-
-Required tests:
-
-- Successful generation leaves the original request visible as a comment.
-- Pressing Enter executes the generated command but not the comment.
-- Requests containing spaces, shell metacharacters, and embedded newlines remain
-  comments.
-- Failed or empty generation preserves the original buffer.
-- The generated command remains editable and is never executed automatically.
-- Bash, Zsh, and Fish redraw the resulting multiline buffer correctly.
-- The behavior is tested with wrapped input and visible stderr output.
+No active implementation work remains. Start a new reviewed givn change for any
+additional shell-history, interactive redraw, wrapped-line, or terminal-resize
+behavior.
 
 ## Handoff Rules
 
