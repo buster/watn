@@ -103,6 +103,22 @@ impl ReleaseGate {
         }
     }
 
+    /// Hold like `wait`, but keep writing SSE keep-alive lines to `stream`
+    /// while held so a client blocked on a read keeps iterating its parse
+    /// loop and can observe an interrupt flag.
+    fn drip_wait(&self, stream: &mut TcpStream) {
+        let mut released = self.released.lock().expect("lock release gate");
+        while !*released {
+            let _ = stream.write_all(b"data: {\"choices\":[]}\n\n");
+            let _ = stream.flush();
+            let (guard, _) = self
+                .changed
+                .wait_timeout(released, Duration::from_millis(30))
+                .expect("drip wait for release gate");
+            released = guard;
+        }
+    }
+
     fn release(&self) {
         let mut released = self.released.lock().expect("lock release gate");
         *released = true;
@@ -172,18 +188,22 @@ impl StreamingServer {
             initial_delay,
             reset_after,
             false,
+            false,
         )
     }
 
     /// Like `start_with_behavior`, but omits `Content-Length` so the body
     /// is delimited only by connection close: the client keeps waiting past
-    /// the last event until the server releases the socket.
+    /// the last event until the server releases the socket. With `drip`,
+    /// keep-alive SSE lines are written while held so the client's parse
+    /// loop keeps iterating.
     fn start_held_open(
         events: Vec<Vec<u8>>,
         hold_after: Option<usize>,
         initial_delay: Duration,
+        drip: bool,
     ) -> Self {
-        Self::start_with_behavior_opt(events, hold_after, false, initial_delay, false, true)
+        Self::start_with_behavior_opt(events, hold_after, false, initial_delay, false, true, drip)
     }
 
     fn start_with_behavior_opt(
@@ -193,6 +213,7 @@ impl StreamingServer {
         initial_delay: Duration,
         reset_after: bool,
         omit_length: bool,
+        drip: bool,
     ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind streaming provider twin");
         listener
@@ -259,10 +280,14 @@ impl StreamingServer {
                     stream.flush().expect("flush streaming provider event");
                 }
                 if hold_after == Some(index) {
-                    thread_release
+                    let gate = thread_release
                         .as_ref()
-                        .expect("release gate for held stream")
-                        .wait();
+                        .expect("release gate for held stream");
+                    if drip {
+                        gate.drip_wait(&mut stream);
+                    } else {
+                        gate.wait();
+                    }
                 }
             }
             if reset_after {
@@ -456,6 +481,7 @@ pub(crate) fn configure_held_open_without_done(world: &mut WatnWorld, content: S
         vec![content_event("test-model", &content)],
         Some(0),
         Duration::from_millis(200),
+        true,
     ));
     update_config(world);
 }
