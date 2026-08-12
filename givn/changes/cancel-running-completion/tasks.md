@@ -2,7 +2,7 @@
 
 ## Setup
 
-- [ ] Configure and prove the existing strict Cucumber runner. Confirm that
+- [x] Configure and prove the existing strict Cucumber runner. Confirm that
   `tests/features_runner.rs` executes both `givn/specs/` and this change's
   `specs/` tree, retains `.fail_on_skipped()`, and uses `unimplemented!()`
   for RED step bodies. Create the capability step file
@@ -104,21 +104,22 @@ black-hole listener per scenario; no external network or service required.
 
 ## Final Change Verification
 
-- [ ] Remove all completed scenario `@wip` tags and run
+- [x] Remove all completed scenario `@wip` tags and run
   `givn lint --change cancel-running-completion`.
   ```text
-  Result: TBD (clean; 1 file checked and no findings).
+  Result: clean; `1 file(s) checked — clean`.
   ```
-- [ ] Run `verify.command` and record its full scenario/step count and output.
+- [x] Run `verify.command` and record its full scenario/step count and output.
   ```text
-  Result: TBD.
+  Result: `./run-tests.sh` passed: 18 features, 103 scenarios, 594 steps.
   ```
-- [ ] Run `verify.e2e_command` and record its full scenario/step count. Confirm
+- [x] Run `verify.e2e_command` and record its full scenario/step count. Confirm
   it is a strict subset of `verify.command`.
   ```text
-  Result: TBD.
+  Result: `./run-tests.sh --e2e` passed: 23 features, 70 scenarios, 485
+  steps. The e2e count (70) is strictly below the full run (103).
   ```
-- [ ] Run formatting, compilation, lint, unit, documentation, release-build,
+- [x] Run formatting, compilation, lint, unit, documentation, release-build,
   and diff checks appropriate to the repository, recording all results:
   ```text
   cargo fmt --all -- --check
@@ -129,5 +130,15 @@ black-hole listener per scenario; no external network or service required.
   cargo test --doc
   cargo build --release
   git diff --check
-  Result: TBD.
+  Result: all passed. `cargo fmt --all -- --check`, `cargo check
+  --all-targets`, `cargo clippy --all-targets --all-features` (clean), and
+  the explicit-binary all-target run passed 24 features, 173 scenarios, 1079
+  steps plus 20 unit tests. `cargo test --doc` passed 0 tests, `cargo build
+  --release` passed, and `git diff --check` passed. One transient all-target
+  invocation reported 4 unit-test failures while cargo built under a lock;
+  three repeat runs were clean with 20 passed — noted as environmental.
+  Note: the feature runner is not coverage-instrumented in this repository
+  (`run-tests.sh` and `measure-coverage.sh` scope is coverage addon); new
+  code coverage is verified by the parser unit tests
+  (`aborts_when_interrupt_flag_is_set`) and the two e2e scenarios.
   ```
