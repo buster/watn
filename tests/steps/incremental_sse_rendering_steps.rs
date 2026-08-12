@@ -165,7 +165,14 @@ impl StreamingServer {
         initial_delay: Duration,
         reset_after: bool,
     ) -> Self {
-        Self::start_with_behavior_opt(events, hold_after, bytewise_first, initial_delay, reset_after, false)
+        Self::start_with_behavior_opt(
+            events,
+            hold_after,
+            bytewise_first,
+            initial_delay,
+            reset_after,
+            false,
+        )
     }
 
     /// Like `start_with_behavior`, but omits `Content-Length` so the body
@@ -215,7 +222,8 @@ impl StreamingServer {
             read_request_headers(&mut stream);
 
             let headers = if omit_length {
-                "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n".to_string()
+                "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n"
+                    .to_string()
             } else {
                 let body_len: usize = events.iter().map(Vec::len).sum();
                 format!(

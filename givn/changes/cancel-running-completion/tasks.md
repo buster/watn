@@ -75,30 +75,32 @@ black-hole listener per scenario; no external network or service required.
 
 ## Scenario: One Ctrl+C cancels a completion waiting for a connection
 
-- [ ] RED: Remove `@wip` from this scenario, bind explicit `unimplemented!()`
+- [x] RED: Remove `@wip` from this scenario, bind explicit `unimplemented!()`
   stubs, and run only this scenario via the single-scenario E2E command.
-  Expected result: non-zero exit. Evidence:
+  Expected result: non-zero exit. Evidence — genuine control run with the
+  interrupt-flag setting temporarily disabled in the `ctrlc` handler:
   ```text
-  Targeted E2E command exited non-zero after matching a
-  `cancel_completion_steps.rs` stub; reported `1 step failed` and Cargo
-  returned `error: test failed`.
+  Targeted command reported `1 scenario (1 failed)`, `5 steps (4 passed,
+  1 failed)` failed on `expected exit status 130, got Some(1)`: without the
+  interrupt handling the connect-phase Ctrl+C is ignored, the 10 s PTY
+  reaper kills the child, and Cargo returned `error: test failed`.
   ```
-- [ ] GREEN: Start the black-hole listener, run the real binary in a PTY,
+- [x] GREEN: Start the black-hole listener, run the real binary in a PTY,
   wait for the `Asking` spinner, press `\x03`, then assert exit status 130
   and no reported error. The black-hole listener accepts one connection,
   reads the request headers, holds, and is released/joined on drop. Production
   code was supplied by the streamed-output scenario; the grace/detach path in
-  `src/main.rs` (`wait_for_stream_result`) is exercised here. Test files:
-  `tests/steps/cancel_completion_steps.rs`. Targeted result:
+  `src/main.rs` (`wait_for_stream_result`) is exercised here. Result:
   ```text
-  TBD (1 feature, 1 scenario, N steps passed).
+  `1 scenario (1 passed), 6 steps (6 passed)`.
   ```
-- [ ] REFACTOR: Keep the black-hole listener and PTY waits deterministic
+- [x] REFACTOR: Keep the black-hole listener and PTY waits deterministic
   without weakening the no-error assertion. Targeted rerun:
   ```text
-  TBD.
+  Reused `read_request_headers` from the streaming twin module and reran:
+  `1 scenario (1 passed), 6 steps (6 passed)`; clippy clean.
   ```
-- [ ] COMMIT: `TBD` - `feat(cancel-running-completion): One Ctrl+C cancels a completion waiting for a connection`
+- [x] COMMIT: `0d1130e` - `feat(cancel-running-completion): One Ctrl+C cancels a completion waiting for a connection`
 
 ## Final Change Verification
 
