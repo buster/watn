@@ -165,7 +165,9 @@ one comment line. Embedded line breaks in the generated result remain buffer
 text. When the user presses Enter, the shell ignores the comment and executes
 only the generated command. The shell never passes the captured result to an
 evaluator, so text that resembles a second command is not executed by the
-shortcut.
+shortcut. Fish constructs the replacement as one collected buffer with an
+actual line break; the visible characters `\\n` are never used as the
+separator.
 
 ## Scenario: Ask with execution (`-x`)
 

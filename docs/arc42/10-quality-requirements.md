@@ -50,8 +50,9 @@
   - QS-049: Selected targets are installed independently and every result is reported
   - QS-050: Marker validation prevents malformed or duplicate block writes
   - QS-051: The widget preserves the buffer on empty, failed, or empty results
-  - QS-052: The widget inserts successful output without evaluating it
-  - QS-055: The widget keeps the original request visible as a comment above the generated command, and only the generated command runs on Enter
+   - QS-052: The widget inserts successful output without evaluating it
+   - QS-055: The widget keeps the original request visible as a comment above the generated command, and only the generated command runs on Enter
+   - QS-056: Fish Ctrl-W uses a real line break between the request comment and generated command
 
 ## Quality scenarios
 
@@ -112,3 +113,4 @@
 | QS-053 | Onboarding / Usability | User moves between URL, credential, model, reasoning, and optional shortcut inputs in the setup wizard | The widget receiving keyboard input has a green border; inactive input widgets retain their existing border styling; layout, key behavior, and visible cursor remain unchanged |
 | QS-054 | Onboarding / Responsiveness | User types a model filter against a complete or delayed catalog | The query remains visible; complete catalogs update locally without a search request; delayed searches do not block another query; only the newest result is applied and workers are joined on exit |
 | QS-055 | Shell integration / Correctness and safety | User presses Ctrl-W and `watn` returns a successful, empty, or failed result | On success the buffer shows `# flattened request` above the generated command, only the generated command runs on Enter, and the text is never evaluated; on failure or empty output the original buffer remains unchanged |
+| QS-056 | Shell integration / Fish compatibility | User presses Ctrl-W in Fish and `watn` returns `df -h` | The editable buffer is exactly `# show available diskspace`, one actual line break, and `df -h`; the generated command is not part of the comment |
