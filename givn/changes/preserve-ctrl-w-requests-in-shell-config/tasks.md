@@ -41,25 +41,33 @@
      passed)` and `4 steps (4 passed)` after the implementation was reviewed;
      no additional refactor was needed.
 
-- [ ] COMMIT: Create one atomic commit referencing `A successful generation keeps the original request visible as a comment`.
-- Commit hash: pending
+- [x] COMMIT: Create one atomic commit referencing `A successful generation keeps the original request visible as a comment`.
+- Commit hash: `3ac22d8`
 
 ## Scenario: Only the generated command executes when the buffer is committed
 
-- [ ] RED: Remove `@wip` from this scenario only, bind new commit/execution steps
+- [x] RED: Remove `@wip` from this scenario only, bind new commit/execution steps
   with `unimplemented!()`, and run the exact targeted command. Expected
   non-zero.
-  - Evidence:
+  - Evidence: The targeted runner exited non-zero after the Given and initial
+    When passed. The registered `I execute the resulting Bash buffer` step
+    matched and panicked with `not implemented`.
 
-- [ ] GREEN: Add a step that executes the produced Bash buffer with `bash -c`
+- [x] GREEN: Add a step that executes the produced Bash buffer with `bash -c`
   and asserts the generated command side effect runs while a comment-embedded
   command does not. Production files: (none; step infrastructure only).
   Run the targeted scenario and record zero exit.
-  - Evidence:
+  - Evidence: `cargo check --locked --test features_runner --features
+    test-support` passed. The targeted runner passed with `1 scenario (1
+    passed)` and `5 steps (5 passed)`; it executed the returned buffer through
+    `bash -c`, found the generated-command file, and confirmed the
+    comment-embedded command file was absent.
 
-- [ ] REFACTOR: Preserve behavior; rerun the targeted scenario and record zero
+- [x] REFACTOR: Preserve behavior; rerun the targeted scenario and record zero
   exit.
-  - Evidence:
+  - Evidence: The unchanged targeted runner passed again with `1 scenario (1
+    passed)` and `5 steps (5 passed)`; no behavior-changing refactor was
+    necessary.
 
 - [ ] COMMIT: Create one atomic commit referencing `Only the generated command executes when the buffer is committed`.
 - Commit hash: pending
