@@ -1,4 +1,6 @@
-use std::io::{BufRead, BufReader};
+use std::io::{self, BufRead, BufReader};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::error::Error;
@@ -9,6 +11,7 @@ use crate::provider::{
 pub struct OpenAICompatibleProvider {
     pub endpoint: String,
     pub api_key: String,
+    interrupt: Arc<AtomicBool>,
     client: reqwest::blocking::Client,
 }
 
@@ -18,7 +21,7 @@ pub fn chat_completions_url(endpoint: &str) -> String {
 }
 
 impl OpenAICompatibleProvider {
-    pub fn new(endpoint: String, api_key: String) -> Self {
+    pub fn new(endpoint: String, api_key: String, interrupt: Arc<AtomicBool>) -> Self {
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(120))
             .build()
@@ -26,6 +29,7 @@ impl OpenAICompatibleProvider {
         Self {
             endpoint,
             api_key,
+            interrupt,
             client,
         }
     }
@@ -92,7 +96,7 @@ impl Provider for OpenAICompatibleProvider {
             };
         }
 
-        parse_sse_stream(BufReader::new(response), &options.model, sink)
+        parse_sse_stream(BufReader::new(response), &options.model, sink, &self.interrupt)
     }
 }
 
@@ -100,6 +104,7 @@ fn parse_sse_stream<R: BufRead>(
     mut reader: R,
     requested_model: &str,
     sink: &mut dyn FnMut(StreamEvent) -> Result<(), Error>,
+    interrupt: &AtomicBool,
 ) -> Result<StreamingResponse, Error> {
     let mut full_content = String::new();
     let mut reasoning_content = String::new();
@@ -111,10 +116,15 @@ fn parse_sse_stream<R: BufRead>(
     let mut completed = false;
 
     loop {
+        if interrupt.load(Ordering::SeqCst) {
+            return Err(Error::Interrupted);
+        }
         line.clear();
-        let bytes_read = reader
-            .read_line(&mut line)
-            .map_err(|e| Error::NetworkError(e.to_string()))?;
+        let bytes_read = reader.read_line(&mut line).map_err(|e| match e.kind() {
+            io::ErrorKind::Interrupted => Error::Interrupted,
+            _ if interrupt.load(Ordering::SeqCst) => Error::Interrupted,
+            _ => Error::NetworkError(e.to_string()),
+        })?;
         if bytes_read == 0 {
             break;
         }
@@ -194,6 +204,7 @@ mod tests {
     use super::parse_sse_stream;
     use crate::provider::StreamEvent;
     use std::io::Cursor;
+    use std::sync::atomic::AtomicBool;
 
     #[test]
     fn accepts_data_without_space_and_done_without_trailing_newline() {
@@ -202,13 +213,18 @@ mod tests {
 
 data: [DONE]"#;
         let mut content = String::new();
-        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |event| {
+        let response = parse_sse_stream(
+        Cursor::new(body),
+        "requested-model",
+        &mut |event| {
             match event {
                 StreamEvent::Content(value) => content.push_str(&value),
             }
             Ok(())
-        })
-        .expect("valid stream should parse");
+        },
+        &AtomicBool::new(false),
+    )
+    .expect("valid stream should parse");
 
         assert_eq!(content, "printf test");
         assert_eq!(response.full_content, "printf test");
@@ -222,13 +238,13 @@ data: [DONE]"#;
 
 data: [DONE]
 "#;
-        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()))
+        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()), &AtomicBool::new(false))
             .expect("valid reasoning stream should parse");
 
         assert_eq!(response.reasoning_content.as_deref(), Some("inspect"));
     }
 
-    #[test]
+#[test]
     fn final_usage_event_replaces_earlier_usage() {
         let body = br#"data: {"model":"requested-model","choices":[{"delta":{"content":"printf"}}],"usage":{"prompt_tokens":1,"completion_tokens":1}}
 
@@ -236,12 +252,25 @@ data: {"model":"response-model","choices":[],"usage":{"prompt_tokens":10,"comple
 
 data: [DONE]
 "#;
-        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()))
+        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()), &AtomicBool::new(false))
             .expect("valid usage stream should parse");
         let usage = response.final_usage.expect("usage should be present");
 
         assert_eq!(usage.prompt_tokens, 10);
         assert_eq!(usage.completion_tokens, 20);
         assert_eq!(response.model, "response-model");
+    }
+
+    #[test]
+    fn aborts_when_interrupt_flag_is_set() {
+        let body =
+            br#"data: {"model":"model","choices":[{"delta":{"content":"printf"}}]}
+
+data: [DONE]
+"#;
+        let interrupt = AtomicBool::new(true);
+        let error = parse_sse_stream(Cursor::new(body), "model", &mut |_| Ok(()), &interrupt)
+            .expect_err("parse should abort on interrupt");
+        assert!(matches!(error, crate::error::Error::Interrupted));
     }
 }

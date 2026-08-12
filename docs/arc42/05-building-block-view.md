@@ -42,9 +42,9 @@ graph TB
 
 | Building block | Responsibility |
 |---|---|
-| CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
+| CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes; run the streaming call on a worker thread, poll completion and the interrupt flag, and bound cancellation by a 500 ms grace before exiting 130 |
 | Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources and resolve the catalog source |
-| Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, and require `[DONE]` |
+| Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, require `[DONE]`, and abort with `Interrupted` when the shared interrupt flag is set |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
 | Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
 | Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, green border around the focused input region, visible model filter query, current page, model selection, save/discard prompt, and optional post-confirmation shortcut selection; save a confirmed provider draft before catalog access and return optional provider, completed model drafts, and shortcut choices |
@@ -65,7 +65,7 @@ graph TB
 | Element | Responsibility |
 |---|---|
 | `Provider` trait | Defines `chat_completions_streaming()` with a synchronous content-event sink |
-| `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses buffered SSE lines, extracts content/reasoning/model/usage, invokes the content sink, and rejects EOF without `[DONE]` |
+| `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses buffered SSE lines, extracts content/reasoning/model/usage, invokes the content sink, rejects EOF without `[DONE]`, and returns `Interrupted` at the next SSE line when the shared interrupt flag is set |
 | `ProviderRegistry` | Public provider lookup boundary that maps provider names (from config) to `Box<dyn Provider>` instances; it remains useful even when the binary currently registers one active provider |
 
 The transport boundary is the only production endpoint-resolution seam. URL

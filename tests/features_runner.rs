@@ -69,6 +69,7 @@ pub struct WatnWorld {
     pub search_query_delays: HashMap<String, u64>,
     pub transport: crate::steps::TransportState,
     pub streaming: crate::steps::incremental_sse_rendering_steps::StreamingState,
+    pub hanging_server: Option<crate::steps::cancel_completion_steps::HangServer>,
     pub live_stream: Option<crate::steps::incremental_sse_rendering_e2e_steps::LiveInvocation>,
     pub release_truth: crate::steps::release_truth_steps::ReleaseTruthState,
 }

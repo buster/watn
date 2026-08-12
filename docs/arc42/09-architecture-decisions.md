@@ -24,6 +24,7 @@ options, the decision outcome, and consequences.
 | ADR-0016 | Release truth and target-dependent runtime requirements | [docs/adr/0016-release-truth-and-target-dependent-runtime-requirements.md](../adr/0016-release-truth-and-target-dependent-runtime-requirements.md) |
 | ADR-0017 | Completion generation from authoritative command definition | [docs/adr/0017-completion-generation-from-authoritative-command-definition.md](../adr/0017-completion-generation-from-authoritative-command-definition.md) |
 | ADR-0018 | Safe shell shortcut installation and native widgets | [docs/adr/0018-safe-shell-shortcut-installation-and-native-widgets.md](../adr/0018-safe-shell-shortcut-installation-and-native-widgets.md) |
+| ADR-0019 | Interruptible completion via worker thread and bounded grace | [docs/adr/0019-interruptible-completion-via-worker-thread.md](../adr/0019-interruptible-completion-via-worker-thread.md) |
 
 ## ADR-0011 summary
 
@@ -116,6 +117,18 @@ independently and reports every success or failure; it does not roll back a
 successful target when a later target fails. The optional interaction is also
 available in implicit first-use setup, while the default Enter path preserves
 the existing five-tab flow.
+
+## ADR-0019 summary
+
+ADR-0019 makes a single Ctrl+C stop an in-flight completion in every phase. The
+reqwest blocking client cannot split connect and read timeouts, so the
+streaming call runs on a worker thread and the SSE parser checks a shared
+interrupt flag at every line; the main thread bounds the unreachable phases
+(stalled stream, connection pending) with a 500 ms grace before detaching the
+worker and exiting 130. `Interrupted` is a new error variant that suppresses the
+error message but finishes the spinner and partial output. The tradeoff is a
+fixed grace heuristic and possible truncation of the final buffered bytes in the
+hard-exit case.
 
 <!--
 MADR template for future decisions:

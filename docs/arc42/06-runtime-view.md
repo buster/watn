@@ -714,3 +714,45 @@ sequenceDiagram
 The direct output-writer test observes the prefix, status 1, spinner lifecycle,
 absence of final metadata, and absence of the execute prompt without relying on
 a platform-specific closed-pipe behavior.
+
+## Scenario: Cancelling a running completion
+
+Ctrl+C is acknowledged while a completion is in flight: the SSE parser checks
+the shared interrupt flag at every line, and a worker-thread watchdog bounds the
+remaining phases (stalled stream, connection pending) by a 500 ms grace before
+a hard exit. The already-streamed stdout prefix stays and no error is printed.
+On the join path the spinner is finished and partial output is completed; on
+the grace path the process exits 130 directly without cleanup. Exit status 130
+in both cases.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant CLI as watn CLI (main)
+    participant Worker as Streaming worker thread
+    participant Prov as Provider
+    participant API as LLM API
+
+    CLI->>Worker: spawn chat_completions_streaming(..., interrupt flag)
+    Worker->>Prov: request with content sink
+    Prov->>API: POST /v1/chat/completions
+    API-->>Prov: SSE events
+    Prov-->>Worker: content callback
+    Worker-->>CLI: flushed command content (stdout)
+    User--xCLI: Ctrl+C (SIGINT)
+    CLI->>CLI: set interrupt flag
+    alt stream flowing
+        Worker->>Worker: next SSE line sees the flag
+        Worker-->>CLI: Err(Interrupted)
+        CLI->>CLI: finish spinner, finish partial output
+        CLI-->>User: exit 130, no error text
+    else stream stalled or connection pending
+        CLI->>CLI: wait up to 500 ms for worker
+        CLI->>CLI: detach worker and exit 130
+    end
+```
+
+The streaming case (join path) preserves the visible prefix and finishes the
+spinner; the grace path terminates bounded by the grace window without cleanup.
+Neither prints final success metadata (`model · tok/s`), runs execution
+confirmation, or reports an error message.
