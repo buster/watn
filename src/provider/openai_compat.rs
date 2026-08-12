@@ -1,4 +1,4 @@
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -125,10 +125,12 @@ fn parse_sse_stream<R: BufRead>(
             return Err(Error::Interrupted);
         }
         line.clear();
-        let bytes_read = reader.read_line(&mut line).map_err(|e| match e.kind() {
-            io::ErrorKind::Interrupted => Error::Interrupted,
-            _ if interrupt.load(Ordering::SeqCst) => Error::Interrupted,
-            _ => Error::NetworkError(e.to_string()),
+        let bytes_read = reader.read_line(&mut line).map_err(|e| {
+            if interrupt.load(Ordering::SeqCst) {
+                Error::Interrupted
+            } else {
+                Error::NetworkError(e.to_string())
+            }
         })?;
         if bytes_read == 0 {
             break;
@@ -208,8 +210,18 @@ fn parse_sse_stream<R: BufRead>(
 mod tests {
     use super::parse_sse_stream;
     use crate::provider::StreamEvent;
-    use std::io::Cursor;
+    use std::io::{self, BufReader, Cursor, Read};
     use std::sync::atomic::AtomicBool;
+
+    struct ErrorReader {
+        kind: io::ErrorKind,
+    }
+
+    impl Read for ErrorReader {
+        fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
+            Err(io::Error::new(self.kind, "controlled read failure"))
+        }
+    }
 
     #[test]
     fn accepts_data_without_space_and_done_without_trailing_newline() {
@@ -275,7 +287,6 @@ data: [DONE]
         assert_eq!(usage.completion_tokens, 20);
         assert_eq!(response.model, "response-model");
     }
-
     #[test]
     fn aborts_when_interrupt_flag_is_set() {
         let body = br#"data: {"model":"model","choices":[{"delta":{"content":"printf"}}]}
@@ -285,6 +296,17 @@ data: [DONE]
         let interrupt = AtomicBool::new(true);
         let error = parse_sse_stream(Cursor::new(body), "model", &mut |_| Ok(()), &interrupt)
             .expect_err("parse should abort on interrupt");
+        assert!(matches!(error, crate::error::Error::Interrupted));
+    }
+
+    #[test]
+    fn read_error_with_flag_set_maps_to_interrupted() {
+        let reader = BufReader::new(ErrorReader {
+            kind: io::ErrorKind::Other,
+        });
+        let interrupt = AtomicBool::new(true);
+        let error = parse_sse_stream(reader, "model", &mut |_| Ok(()), &interrupt)
+            .expect_err("read error with interrupt flag should map to interrupted");
         assert!(matches!(error, crate::error::Error::Interrupted));
     }
 }

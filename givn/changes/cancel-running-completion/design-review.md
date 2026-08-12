@@ -73,6 +73,22 @@ findings ranked by severity.
 - Arc42 file integrity: all 12 chapters exist with substantive content and no
   ASCII diagrams; re-derived 12-row table matches arc42.md.
 
+## Implementation-time adjustments (recorded, reviewed)
+
+- **Held-open twin needs no `Content-Length`.** The "held open without
+  `[DONE]`" fixture originally planned the existing
+  `StreamingServer::start_with_initial_delay` + `hold_after`. During GREEN
+  the client returned clean EOF after the single event: with
+  `Content-Length` the message body is complete at the delimiter even while
+  the socket stays open. Added `StreamingServer::start_held_open`
+  (no-`Content-Length`, connection-close delimited) in
+  `tests/steps/incremental_sse_rendering_steps.rs`. Test-twin detail; no
+  production change. `design.md` updated to match.
+- **`io::ErrorKind::Interrupted` maps to `Error::Interrupted` even before
+  the flag is observable.** The first GREEN attempt returned status 3 when
+  the blocked read was interrupted by SIGINT microseconds before the flag
+  store was visible. Ramification of the same design, not a new decision.
+
 ## Decisions requiring user attention
 
 - **Double press dropped**: A single Ctrl+C now terminates within ~500 ms in

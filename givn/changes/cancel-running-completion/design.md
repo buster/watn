@@ -132,11 +132,15 @@ match.
 - **Capability step files** (one per capability):
   - `tests/steps/cancel_completion_steps.rs` — all steps for this change,
     registered in `tests/features_runner.rs`.
-  - Reuses, without modifying: `tests/steps/mod.rs` (PTY session helpers,
-    binary bootstrap), the release-gated streaming twin
-    `StreamingServer::start_with_initial_delay` with `hold_after` in
-    `tests/steps/incremental_sse_rendering_steps.rs`, and its `update_config`
-    config wiring (provider name `streaming`).
+  - Reuses the release-gated streaming twin in
+    `tests/steps/incremental_sse_rendering_steps.rs`. To make a "held
+    open without `[DONE]`" stream the client keeps waiting on, the twin
+    gained a no-`Content-Length` mode (`StreamingServer::start_held_open`):
+    with `Content-Length` the client treats the delimiter as complete and
+    returns clean EOF despite the socket staying open. This is a test-twin
+    detail, not a production design change (recorded in review).
+  - Reuses `update_config` config wiring (provider name `streaming`) and
+    `read_request_headers` from the same module.
 - **New fixture**: a black-hole listener that accepts one TCP connection,
   reads the request headers, and never answers; released/joined on drop.
   Lives in `tests/steps/cancel_completion_steps.rs`.
