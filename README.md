@@ -22,15 +22,16 @@ Ask in plain language. Get one command. Run it with `-x`, or pipe it anywhere.
 ```
 
 ## Screencasts
-
-![watn setup page](watnsetup.png)
 *Interactive `watn setup` wizard — configure provider, model, and reasoning strength.*
+![watn setup page](watnsetup.png)
 
-![shell shortcut](ctrlw.gif)
+
 *Ctrl-W shell shortcut to ask watn directly from the terminal prompt.*
+![shell shortcut](ctrlw.gif)
 
-![completion](watncmd.gif)
 *Query completion with copy-and-run flow.*
+![completion](watncmd.gif)
+
 
 ## Prerequisites
 
