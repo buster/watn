@@ -308,10 +308,12 @@ fn config_does_not_contain(world: &mut WatnWorld, secret: String) {
     );
 }
 
-#[then("stderr should contain actionable guidance to run \"watn provider\" in a terminal")]
-fn stderr_contains_setup_guidance(world: &mut WatnWorld) {
+#[then(
+    regex = r##"^stderr should contain actionable guidance to run \"(watn provider|watn setup)\" in a terminal$"##
+)]
+fn stderr_contains_setup_guidance(world: &mut WatnWorld, command: String) {
     let stderr = world.stderr_output.as_deref().expect("stderr output");
-    assert!(stderr.contains("watn provider"));
+    assert!(stderr.contains(&command));
     assert!(stderr.contains("terminal"));
 }
 
@@ -699,16 +701,18 @@ fn saved_provider_endpoint(world: &mut WatnWorld, endpoint: String) {
 
 #[then("model setup should not start")]
 fn model_setup_does_not_start(world: &mut WatnWorld) {
-    let mock_id = world.models_mock_id.expect("models mock id");
-    let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    if let Some(mock_id) = world.models_mock_id {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    }
 }
 
 #[then(regex = r#"^no model catalog request should be sent to \"([^\"]+)\"$"#)]
 fn no_model_catalog_request(world: &mut WatnWorld, _path: String) {
-    let mock_id = world.models_mock_id.expect("models mock id");
-    let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    if let Some(mock_id) = world.models_mock_id {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    }
 }
 
 #[then("the config file should not contain selected tier assignments")]

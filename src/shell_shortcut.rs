@@ -56,6 +56,22 @@ pub struct ShellEnvironment {
     pub shell: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockIntent {
+    EnsurePresent,
+    EnsureAbsent,
+    Unchanged,
+    NeedsAttention,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockState {
+    Present,
+    Absent,
+    Malformed,
+    Unreadable,
+}
+
 impl ShellEnvironment {
     pub fn from_process() -> Self {
         Self {
@@ -175,6 +191,94 @@ pub fn install_with_environment(shells: &[Shell], environment: &ShellEnvironment
     )
 }
 
+pub fn marker_state(shell: Shell, environment: &ShellEnvironment) -> Result<BlockState, Error> {
+    inspect_block_with_environment(shell, environment, OPEN_MARKER, CLOSE_MARKER)
+}
+
+pub fn reconcile_with_environment(
+    intents: &[(Shell, BlockIntent)],
+    environment: &ShellEnvironment,
+) -> InstallReport {
+    reconcile_blocks_with_environment(
+        intents,
+        environment,
+        "shell shortcut",
+        OPEN_MARKER,
+        CLOSE_MARKER,
+        Shell::generated_block,
+    )
+}
+
+pub fn reconcile_blocks_with_environment<F>(
+    intents: &[(Shell, BlockIntent)],
+    environment: &ShellEnvironment,
+    kind: &'static str,
+    open_marker: &'static str,
+    close_marker: &'static str,
+    generated_block: F,
+) -> InstallReport
+where
+    F: Fn(Shell) -> &'static str,
+{
+    let mut report = InstallReport {
+        results: Vec::new(),
+        kind,
+    };
+    let mut selected = intents.to_vec();
+    selected.sort_by_key(|(shell, _)| *shell);
+    selected.dedup_by_key(|(shell, _)| *shell);
+    for (shell, intent) in selected {
+        report.results.push(reconcile_one(
+            shell,
+            intent,
+            environment,
+            kind,
+            open_marker,
+            close_marker,
+            generated_block(shell),
+        ));
+    }
+    report
+}
+
+pub fn inspect_block_with_environment(
+    shell: Shell,
+    environment: &ShellEnvironment,
+    open_marker: &str,
+    close_marker: &str,
+) -> Result<BlockState, Error> {
+    let path = environment.target_path(shell)?;
+    let target = resolve_target(shell, "shell integration", &path)?;
+    let content = match fs::read(&target) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(BlockState::Absent)
+        }
+        Err(error) => {
+            return Err(target_io_error(
+                shell,
+                "shell integration",
+                &path,
+                "read",
+                error,
+            ))
+        }
+    };
+    let open_count = count_marker(&content, open_marker.as_bytes());
+    let close_count = count_marker(&content, close_marker.as_bytes());
+    if open_count == 0 && close_count == 0 {
+        Ok(BlockState::Absent)
+    } else if open_count == 1
+        && close_count == 1
+        && find_marker(&content, open_marker.as_bytes())
+            < find_marker(&content, close_marker.as_bytes())
+    {
+        Ok(BlockState::Present)
+    } else {
+        Ok(BlockState::Malformed)
+    }
+}
+
 pub(crate) fn install_blocks_with_environment<F>(
     shells: &[Shell],
     environment: &ShellEnvironment,
@@ -245,6 +349,228 @@ fn install_one(
                 message,
             }
         }
+        Err(error) => TargetResult {
+            shell,
+            path: Some(path),
+            success: false,
+            message: error.to_string(),
+            reload: None,
+        },
+    }
+}
+
+fn reconcile_one(
+    shell: Shell,
+    intent: BlockIntent,
+    environment: &ShellEnvironment,
+    kind: &'static str,
+    open_marker: &str,
+    close_marker: &str,
+    generated_block: &str,
+) -> TargetResult {
+    let path = match environment.target_path(shell) {
+        Ok(path) => path,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: None,
+                success: false,
+                message: error.to_string(),
+                reload: None,
+            }
+        }
+    };
+    if intent == BlockIntent::NeedsAttention {
+        return TargetResult {
+            shell,
+            path: Some(path.clone()),
+            success: false,
+            message: format!(
+                "{} {} target requires attention before it can be reconciled",
+                shell.name(),
+                kind
+            ),
+            reload: None,
+        };
+    }
+    if intent == BlockIntent::Unchanged {
+        return TargetResult {
+            shell,
+            path: Some(path),
+            success: true,
+            message: format!("{} {} left unchanged", shell.name(), kind),
+            reload: None,
+        };
+    }
+
+    let target = match resolve_target(shell, kind, &path) {
+        Ok(target) => target,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: Some(path),
+                success: false,
+                message: error.to_string(),
+                reload: None,
+            }
+        }
+    };
+    let existing = match fs::symlink_metadata(&target) {
+        Ok(metadata) if metadata.is_dir() => {
+            return TargetResult {
+                shell,
+                path: Some(path.clone()),
+                success: false,
+                message: target_error(shell, kind, &path, "target is a directory").to_string(),
+                reload: None,
+            }
+        }
+        Ok(_) => match fs::read(&target) {
+            Ok(content) => Some(content),
+            Err(error) => {
+                return TargetResult {
+                    shell,
+                    path: Some(path.clone()),
+                    success: false,
+                    message: target_io_error(shell, kind, &path, "read", error).to_string(),
+                    reload: None,
+                }
+            }
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: Some(path.clone()),
+                success: false,
+                message: target_io_error(shell, kind, &path, "inspect", error).to_string(),
+                reload: None,
+            }
+        }
+    };
+
+    if existing.is_none() && intent == BlockIntent::EnsureAbsent {
+        return TargetResult {
+            shell,
+            path: Some(path),
+            success: true,
+            message: format!("{} {} already absent", shell.name(), kind),
+            reload: None,
+        };
+    }
+
+    let content_result = match intent {
+        BlockIntent::EnsurePresent => build_content(
+            existing.as_deref().unwrap_or_default(),
+            kind,
+            open_marker,
+            close_marker,
+            generated_block,
+        ),
+        BlockIntent::EnsureAbsent => remove_content(
+            existing.as_deref().unwrap_or_default(),
+            kind,
+            open_marker,
+            close_marker,
+        ),
+        BlockIntent::Unchanged | BlockIntent::NeedsAttention => unreachable!(),
+    };
+    let content = match content_result {
+        Ok(content) => content,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: Some(path),
+                success: false,
+                message: error.to_string(),
+                reload: None,
+            }
+        }
+    };
+
+    if existing.as_deref() == Some(content.as_slice()) {
+        return TargetResult {
+            shell,
+            path: Some(path),
+            success: true,
+            message: format!("{} {} already reconciled", shell.name(), kind),
+            reload: None,
+        };
+    }
+    let parent = match target.parent() {
+        Some(parent) => parent,
+        None => {
+            return TargetResult {
+                shell,
+                path: Some(path.clone()),
+                success: false,
+                message: target_error(shell, kind, &path, "target has no parent directory")
+                    .to_string(),
+                reload: None,
+            }
+        }
+    };
+    if let Err(error) = fs::create_dir_all(parent) {
+        return TargetResult {
+            shell,
+            path: Some(path.clone()),
+            success: false,
+            message: target_io_error(shell, kind, &path, "create parent", error).to_string(),
+            reload: None,
+        };
+    }
+    let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let file_name = target
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("config");
+    let temporary = parent.join(format!(
+        ".{file_name}.watn-{counter}-{}.tmp",
+        std::process::id()
+    ));
+    let result = (|| {
+        let mut options = OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            if existing.is_some() {
+                let mode = fs::metadata(&target)
+                    .map_err(|error| {
+                        target_io_error(shell, kind, &path, "inspect permissions", error)
+                    })?
+                    .permissions();
+                options.mode(std::os::unix::fs::PermissionsExt::mode(&mode));
+            }
+        }
+        let mut file = options.open(&temporary).map_err(|error| {
+            target_io_error(shell, kind, &path, "create temporary target", error)
+        })?;
+        file.write_all(&content)
+            .map_err(|error| target_io_error(shell, kind, &path, "write", error))?;
+        file.sync_all()
+            .map_err(|error| target_io_error(shell, kind, &path, "sync", error))?;
+        fs::rename(&temporary, &target)
+            .map_err(|error| target_io_error(shell, kind, &path, "replace", error))?;
+        let _ = sync_directory(parent);
+        Ok::<(), Error>(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    match result {
+        Ok(()) => TargetResult {
+            shell,
+            reload: Some(shell.reload_instruction(&path, &environment.home)),
+            path: Some(path),
+            success: true,
+            message: format!(
+                "Configured {} {} in {}",
+                shell.name(),
+                kind,
+                target.display()
+            ),
+        },
         Err(error) => TargetResult {
             shell,
             path: Some(path),
@@ -375,6 +701,37 @@ fn build_content(
     let mut result = Vec::with_capacity(existing.len() + generated_block.len());
     result.extend_from_slice(&existing[..open]);
     result.extend_from_slice(generated_block.as_bytes());
+    result.extend_from_slice(&existing[close_end..]);
+    Ok(result)
+}
+
+fn remove_content(
+    existing: &[u8],
+    kind: &str,
+    open_marker: &str,
+    close_marker: &str,
+) -> Result<Vec<u8>, Error> {
+    let open_count = count_marker(existing, open_marker.as_bytes());
+    let close_count = count_marker(existing, close_marker.as_bytes());
+    if open_count == 0 && close_count == 0 {
+        return Ok(existing.to_vec());
+    }
+    if open_count != 1 || close_count != 1 {
+        return Err(Error::ConfigError(format!(
+            "malformed watn {kind} markers: expected zero markers or one ordered pair, found {} opening and {} closing markers",
+            open_count, close_count
+        )));
+    }
+    let open = find_marker(existing, open_marker.as_bytes()).expect("marker count checked");
+    let close = find_marker(existing, close_marker.as_bytes()).expect("marker count checked");
+    if close < open {
+        return Err(Error::ConfigError(format!(
+            "malformed watn {kind} markers: closing marker precedes opening marker"
+        )));
+    }
+    let close_end = close + close_marker.len();
+    let mut result = Vec::with_capacity(existing.len());
+    result.extend_from_slice(&existing[..open]);
     result.extend_from_slice(&existing[close_end..]);
     Ok(result)
 }
@@ -527,3 +884,36 @@ bind \cw _watn_widget
 bind -M insert \cw _watn_widget
 # <<< watn shell shortcut <<<
 "##;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removing_a_marker_block_preserves_unrelated_bytes() {
+        let content = format!("before\n{}\nowned\n{}\nafter\n", OPEN_MARKER, CLOSE_MARKER);
+        let removed = remove_content(
+            &content.into_bytes(),
+            "shell shortcut",
+            OPEN_MARKER,
+            CLOSE_MARKER,
+        )
+        .unwrap();
+        assert_eq!(String::from_utf8(removed).unwrap(), "before\n\nafter\n");
+    }
+
+    #[test]
+    fn malformed_marker_removal_does_not_produce_content() {
+        let content = format!("{}\n{}\n{}\n", OPEN_MARKER, OPEN_MARKER, CLOSE_MARKER);
+        let error = remove_content(
+            content.as_bytes(),
+            "shell shortcut",
+            OPEN_MARKER,
+            CLOSE_MARKER,
+        )
+        .expect_err("duplicate markers must fail");
+        assert!(error
+            .to_string()
+            .contains("malformed watn shell shortcut markers"));
+    }
+}

@@ -1,11 +1,15 @@
 pub mod env;
 pub mod types;
 
+use std::io::Write;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::config::types::*;
 use crate::error::Error;
 use crate::provider::setup::ProviderDraft;
+
+static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub fn xdg_config_path() -> PathBuf {
     let base = if let Ok(dir) = std::env::var("XDG_CONFIG_HOME") {
@@ -18,28 +22,30 @@ pub fn xdg_config_path() -> PathBuf {
     base.join("watn").join("config.toml")
 }
 
-fn write_template_config() -> Result<(), Error> {
-    let config_path = xdg_config_path();
-    if let Some(parent) = config_path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
-    }
-    std::fs::write(&config_path, Config::template_content())
-        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
-    }
-    Ok(())
+#[derive(Debug, Clone)]
+pub struct PersistedConfig {
+    pub config: Config,
+    pub exists: bool,
 }
 
-pub fn load_config() -> Result<Config, Error> {
+pub fn read_config() -> Result<PersistedConfig, Error> {
     let config_path = xdg_config_path();
 
-    if !config_path.exists() {
-        write_template_config()?;
+    let exists = match std::fs::symlink_metadata(&config_path) {
+        Ok(_) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(error) => {
+            return Err(Error::ConfigError(format!(
+                "cannot inspect config path: {}",
+                error
+            )))
+        }
+    };
+    if !exists {
+        return Ok(PersistedConfig {
+            config: Config::default(),
+            exists: false,
+        });
     }
 
     let content = std::fs::read_to_string(&config_path)
@@ -51,7 +57,7 @@ pub fn load_config() -> Result<Config, Error> {
         !line.is_empty() && !line.starts_with('#')
     });
 
-    let mut config = if content.trim().is_empty() {
+    let config = if content.trim().is_empty() {
         Config::default()
     } else {
         toml::from_str(&content).map_err(|e| Error::ConfigError(format!("parse error: {}", e)))?
@@ -71,30 +77,28 @@ pub fn load_config() -> Result<Config, Error> {
         }
     }
 
-    let env_overrides = env::read_env_overrides();
+    Ok(PersistedConfig {
+        config,
+        exists: true,
+    })
+}
 
-    if let Some(provider) = env_overrides.get("provider") {
-        config.defaults.provider = Some(provider.clone());
-    }
-    if let Some(model) = env_overrides.get("model") {
-        config.defaults.model = Some(model.clone());
-    }
+pub fn load_config_with_status() -> Result<PersistedConfig, Error> {
+    read_config()
+}
 
-    Ok(config)
+pub fn load_config() -> Result<Config, Error> {
+    read_config().map(|result| result.config)
 }
 
 pub fn resolve_provider(config: &Config, provider_name: &str) -> Result<ProviderConfig, Error> {
     if provider_name == "openai" {
         if let Some(pc) = config.providers.get("openai") {
-            let mut pc = pc.clone();
-            if pc.api_key.is_none() {
-                pc.api_key = std::env::var("WATN_OPENAI_API_KEY").ok();
-            }
-            return Ok(pc);
+            return Ok(pc.clone());
         }
         return Ok(ProviderConfig {
             endpoint: "https://api.openai.com/v1".to_string(),
-            api_key: std::env::var("WATN_OPENAI_API_KEY").ok(),
+            api_key: None,
             default_model: None,
         });
     }
@@ -189,30 +193,79 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
         std::fs::create_dir_all(parent)
             .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
     }
-    std::fs::write(&config_path, content)
-        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
+    let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let temporary = config_path.with_file_name(format!(
+        ".{}.watn-{}-{}.tmp",
+        config_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("config.toml"),
+        std::process::id(),
+        counter
+    ));
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
+    let write_result = (|| {
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = options.open(&temporary).map_err(|e| {
+            Error::ConfigError(format!("cannot create config temporary file: {}", e))
+        })?;
+        file.write_all(content.as_bytes())
+            .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
+        file.flush()
+            .map_err(|e| Error::ConfigError(format!("cannot flush config: {}", e)))?;
+        file.sync_all()
+            .map_err(|e| Error::ConfigError(format!("cannot sync config: {}", e)))?;
+        std::fs::rename(&temporary, &config_path)
+            .map_err(|e| Error::ConfigError(format!("cannot replace config: {}", e)))?;
+        if let Some(parent) = config_path.parent() {
+            sync_directory(parent);
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
+                .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
+        }
+        Ok::<(), Error>(())
+    })();
+    if write_result.is_err() {
+        let _ = std::fs::remove_file(&temporary);
     }
-
-    Ok(())
+    write_result
 }
 
 pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result<(), Error> {
     config.defaults.provider = Some(draft.name.clone());
+    let default_model = config
+        .providers
+        .get(&draft.name)
+        .and_then(|provider| provider.default_model.clone());
     config.providers.insert(
         draft.name.clone(),
         ProviderConfig {
             endpoint: draft.endpoint.clone(),
             api_key: Some(draft.api_key.clone()),
-            default_model: None,
+            default_model,
         },
     );
     save_config(config)
+}
+
+fn sync_directory(path: &std::path::Path) {
+    #[cfg(unix)]
+    {
+        if let Ok(file) = std::fs::File::open(path) {
+            let _ = file.sync_all();
+        }
+    }
+    #[cfg(not(unix))]
+    let _ = path;
 }
 
 fn environment_reference(value: &str) -> Option<&str> {

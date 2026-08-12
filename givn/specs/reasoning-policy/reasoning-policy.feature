@@ -28,16 +28,3 @@ Feature: Reasoning default and persistence policy
     When  I run `watn -2 "summarise the changes"`
     Then  the exit status should be 0
     And  the API request should not include reasoning
-
-  Scenario: Non-TTY model assignment never persists empty reasoning values
-    Given  a configured provider "test" with models endpoint
-    And  the endpoint returns models ["model-a", "model-b", "model-c"]
-    When  I run `watn models` and select "model-a" for small, "model-b" for normal, and "model-c" for thinking
-    Then  the config file should not contain an empty reasoning value
-
-  Scenario: Existing reasoning survives selection without a valid replacement
-    Given  a configured provider "test" with models that have no reasoning metadata
-    And  the existing small tier reasoning is "medium"
-    When  I select a new model for the small tier through the non-TTY model assignment
-    Then  the saved small tier reasoning should remain "medium"
-    And  the new small-tier model should be persisted

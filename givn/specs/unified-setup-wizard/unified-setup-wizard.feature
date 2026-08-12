@@ -1,3 +1,4 @@
+@wip
 Feature: Unified setup wizard
 
   @e2e

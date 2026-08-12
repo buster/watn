@@ -1,5 +1,71 @@
 # 6. Runtime View
 
+## Scenario: Interactive first use and reviewed Finish
+
+**Trigger:** An interactive user runs `watn "show changed files"` with no
+physical config file.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant ConfigRead as Config read
+    participant Discovery
+    participant Wizard
+    participant Catalog
+    participant Writer
+    participant Chat
+
+    User->>CLI: implicit request
+    CLI->>ConfigRead: read path and parse without initialization
+    ConfigRead-->>CLI: exists=false, empty draft source
+    CLI->>Discovery: inspect allowlisted variable names
+    Discovery-->>Wizard: names and presence flags only
+    Wizard-->>User: Provider -> Model roles -> Shell integration -> Review
+    Wizard->>Catalog: discover models using draft endpoint/source
+    Catalog-->>Wizard: suggestions or unverified failure
+    User->>Wizard: Finish setup
+    Wizard->>Writer: validate and atomically commit draft once
+    Writer-->>CLI: saved
+    CLI-->>User: stderr "Setup complete. Retry your command."
+    Note over CLI,Chat: Original chat request is not replayed
+```
+
+With a non-TTY stdin, the CLI reports `watn setup` guidance and exits 1 before
+Ratatui, catalog, config, or chat initialization. A legacy comment-only file is
+an existing file and therefore follows the normal request path rather than this
+first-run branch.
+
+## Scenario: Review cancellation and shell reconciliation
+
+**Trigger:** A user edits an existing setup draft or finishes a draft with shell
+integration selections.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Wizard
+    participant Writer
+    participant ShellFiles
+
+    User->>Wizard: edit values and press Escape
+    Wizard-->>User: discard prompt
+    User->>Wizard: discard
+    Note over Writer,ShellFiles: No durable operation occurs
+    User->>Wizard: Finish a reviewed draft
+    Wizard->>Writer: commit supported config once
+    Writer-->>Wizard: committed
+    loop Each shell intent
+        Wizard->>ShellFiles: install/remove owned marker block
+        ShellFiles-->>Wizard: independent success or failure
+    end
+    Wizard-->>User: complete or saved-with-shell-failures report
+```
+
+Existing configuration bytes remain unchanged on cancellation. Shell files are
+not represented in TOML, unrelated bytes remain unchanged, and a failure in one
+target does not roll back successful targets or hide the partial result.
+
 ## Scenario: Ask a question with default tier
 
 **Trigger:** User runs `watn "find files modified today"`.
@@ -313,9 +379,9 @@ sequenceDiagram
 9. When `-v` is active, print buffered reasoning to stderr, then final metadata;
    on failure, print neither
 
-## Scenario: Keyboard-driven SetupWizard model pages
+## Scenario: Keyboard-driven Model roles topic
 
-**Trigger:** User runs `watn models` from a terminal.
+**Trigger:** User runs `watn setup` from a terminal.
 
 ```mermaid
 sequenceDiagram
@@ -325,8 +391,8 @@ sequenceDiagram
     participant API as Provider API
     participant Config as Config
 
-    User->>Wizard: runs `watn models` (TTY)
-    Wizard->>Wizard: show five tabs with Small Model active, page position, cursor, and green table border
+    User->>Wizard: runs `watn setup` (TTY)
+    Wizard->>Wizard: show four topics with Model roles active, cursor, and contextual help
     User->>Wizard: types "dee flash"
     Wizard->>Worker: spawn: per-word local/remote match (gen=N)
     API-->>Worker: matching models
@@ -339,14 +405,14 @@ sequenceDiagram
     end
     User->>Wizard: Shift-Tab → previous page
     User->>Wizard: Escape → save/discard prompt
-    Wizard->>Config: persist [tiers] + [tiers.reasoning]
-    Wizard-->>User: "Tiers configured: ..."
+    User->>Wizard: Review and Finish setup
+    Wizard->>Config: commit [tiers] + [tiers.reasoning] once
+    Wizard-->>User: setup saved
 ```
 
 **Steps:**
-1. The wizard opens on the Small Model page with five tabs, a border, filter
-   paragraph, aligned model table, visible selected-row cursor, green border on
-   the focused table, and scrollbar when needed.
+1. The wizard opens on the Model roles topic with all three role rows, a border,
+   visible role cursor, and persistent contextual help.
 2. Keystrokes update the visible filter; results match per-word,
    order-independent and are debounced with a stale-result guard.
 3. Arrow/page keys move selection; Enter and Tab accept/advance; Shift-Tab
@@ -354,12 +420,12 @@ sequenceDiagram
 4. Ctrl-R focuses the closed reasoning set (off/low/minimal/medium/high) on a
    model page, moves the green border to the reasoning block, and leaves the
    model table in its inactive style; mandatory models exclude off.
-5. Escape opens a save/discard prompt; saving persists the provider and all
-   completed model choices.
+5. Escape opens a discard prompt; Finish persists the provider and all reviewed
+   model choices once.
 
 ## Scenario: Model exploration
 
-**Trigger:** User runs `watn models`.
+**Trigger:** User enters the Model roles topic from `watn setup`.
 
 ```mermaid
 sequenceDiagram
@@ -368,7 +434,7 @@ sequenceDiagram
     participant Config as Config
     participant LLM as LiteLLM
 
-    User->>CLI: watn models
+    User->>CLI: watn setup -> Model roles
     CLI->>Config: read litellm config
     alt endpoint configured
         CLI->>LLM: GET /models
@@ -379,8 +445,9 @@ sequenceDiagram
         User->>CLI: "gpt-4o", reasoning low
         CLI->>User: SetupWizard: model + reasoning for thinking tier
         User->>CLI: "o3-mini", reasoning high
-        CLI->>Config: write [tiers] and [tiers.reasoning] to config file
-        CLI-->>User: "Configuration updated"
+        User->>CLI: Review and Finish setup
+        CLI->>Config: write [tiers] and [tiers.reasoning] once
+        CLI-->>User: "Setup complete"
     else no endpoint
         CLI-->>User: "Configure providers manually at ~/.config/watn/config.toml"
     end
@@ -388,7 +455,7 @@ sequenceDiagram
 
 ## Scenario: Model-picker search in the SetupWizard
 
-**Trigger:** User runs `watn models`, types a search query on a SetupWizard model page.
+**Trigger:** User enters Model roles and types a search query.
 
 ```mermaid
 sequenceDiagram
@@ -459,10 +526,10 @@ sequenceDiagram
 
 **Notes:** Missing files are silently skipped. Malformed TOML produces exit code 1 with a parse-error diagnostic on stderr.
 
-## Scenario: First normal use with no recognized provider
+## Scenario: First normal use with no config
 
-**Trigger:** User runs `watn "hello"` without a configured provider or supported
-provider credential environment variable and provider selection is implicit.
+**Trigger:** User runs `watn "hello"` with no physical config file. A detected
+credential does not bypass the reviewed setup flow.
 
 ```mermaid
 sequenceDiagram
@@ -473,65 +540,61 @@ sequenceDiagram
     participant Twin as OpenAI-compatible endpoint
 
     User->>CLI: watn "hello"
-    CLI->>Config: load config and inspect provider readiness
-    Config-->>CLI: Missing
+    CLI->>Config: inspect path and read without initialization
+    Config-->>CLI: exists=false
     alt stdin is not a TTY
-        CLI-->>User: actionable `watn provider` and config-path guidance
+        CLI-->>User: actionable `watn setup` and config-path guidance
         CLI-->>User: exit 1; no ratatui and no network request
     else stdin is a TTY
-        CLI->>Setup: open five-page setup wizard
-        User->>Setup: enter endpoint and choose credential storage
-        User->>Setup: explicitly confirm the credential
-        Setup->>Config: persist the confirmed provider draft
+        CLI->>Setup: open four-topic setup wizard
+        User->>Setup: review Provider, Model roles, Shell integration, and Review
         Setup->>Twin: GET /models
         Twin-->>Setup: model catalog or catalog failure
-        User->>Setup: select small, middle, and large models
-        Setup->>Config: save completed tier assignments only after selection
-        CLI-->>User: setup complete; exit 0
+        User->>Setup: Finish setup after reviewing all roles
+        Setup->>Config: atomically commit the complete draft once
+        CLI-->>User: "Setup complete. Retry your command." on stderr
         Note over CLI: original question is not sent; user reruns it
     end
 ```
 
 **Steps:**
-1. Load the config and check actual provider data plus recognized environment
-   variables; do not use a network probe for readiness.
+1. Check the physical config path before parsing or readiness; do not create a
+   template during the read.
 2. If stdin is not a TTY, print actionable setup guidance and exit 1 without
    initializing ratatui.
-3. If stdin is a TTY, open the shared setup wizard when no implicit provider is
-   ready.
-4. Save the endpoint and either the literal credential or the `${VARIABLE}`
-   reference without printing the resolved secret.
-5. Discover models and walk the three model pages in the same process and
-   terminal.
-6. Save all three model tiers and exit successfully. Do not send or resume the
-   original question.
+3. If stdin is a TTY, open the four-topic setup wizard even when a recognized
+   credential is present.
+4. Keep endpoint and credential provenance in the draft without printing the
+   resolved secret.
+5. Discover models, permit manual roles after failure, and review shell intent.
+6. Commit the complete draft only at Finish, then exit without sending or
+   resuming the original question.
 
-## Scenario: Explicit provider setup
+## Scenario: Explicit unified setup
 
-**Trigger:** User runs `watn provider`.
+**Trigger:** User runs `watn setup`.
 
 ```mermaid
 sequenceDiagram
     participant User as User
     participant CLI as watn CLI
-    participant Setup as Provider Setup
+    participant Setup as Setup Wizard
     participant Config as Config
 
-    User->>CLI: watn provider
-    CLI->>Setup: open ratatui provider flow
-    Setup-->>User: URL tab, compatibility explanation, visible cursor, and green URL border
-    User->>Setup: accept or edit endpoint; choose literal or environment source
-    Setup-->>User: API key source/value widgets with the green border on the focused location
-    Setup->>Config: save default provider and credential representation
+    User->>CLI: watn setup
+    CLI->>Setup: open four-topic ratatui flow
+    Setup-->>User: Provider topic, compatibility explanation, and contextual help
+    User->>Setup: review endpoint and literal or environment source
+    Setup-->>User: Model roles, Shell integration, and Review
+    Setup->>Config: commit the complete reviewed draft at Finish
     Config-->>Setup: save result
     Setup-->>CLI: configured
     CLI-->>User: completion status
 ```
 
-The explicit command ends after provider configuration. It does not invoke
-model setup; only the automatic first-use TTY path performs that chain. An
-explicit `--provider` or `WATN_PROVIDER` selection never enters automatic
-onboarding and retains normal unknown-provider and missing-key errors.
+The unified command owns the complete review. The removed `watn provider`,
+`watn models`, `--provider`, `--model`, and `WATN_PROVIDER`/`WATN_MODEL` paths do
+not enter setup or overlay persisted request configuration.
 
 ## Scenario: Unified setup wizard
 
@@ -545,40 +608,39 @@ sequenceDiagram
     participant Config as Config
 
     User->>Wizard: watn setup
-    Wizard-->>User: URL tab, compatibility explanation, cursor, and green URL border
-    User->>Wizard: Enter endpoint
-    Wizard-->>User: API key tab and storage choice
-    User->>Wizard: choose configuration or environment reference
+    Wizard-->>User: Provider topic, compatibility explanation, cursor, and contextual help
+    User->>Wizard: review endpoint and credential source
+    Wizard-->>User: Model roles, Shell integration, and Review topics
     Wizard->>Catalog: GET /models after valid provider credentials
     Catalog-->>Wizard: model rows
-    loop Small, Middle, Large Model pages
-        Wizard-->>User: active tab, table, selected row, cursor/page position, and green border on the focused input
+    loop Small / fast, Balanced / normal, Thinking roles
+        Wizard-->>User: active role, suggestion/manual state, reasoning, and contextual help
         User->>Wizard: Enter or Tab
     end
-    User->>Wizard: save confirmation
-    Wizard->>Config: persist provider and completed tiers
+    User->>Wizard: Finish setup from Review
+    Wizard->>Config: atomically persist the complete draft once
     Wizard-->>User: saved setup result
 ```
 
-## Scenario: Catalog discovery with independent LiteLLM source
+## Scenario: Setup catalog discovery with independent LiteLLM source
 
-**Trigger:** User runs `watn models` with a `[litellm]` section.
+**Trigger:** User runs `watn setup` with a `[litellm]` section.
 
 ```mermaid
 sequenceDiagram
     participant User as User
-    participant CLI as watn models
+    participant CLI as watn setup
     participant Config as Config
     participant Catalog as LiteLLM catalog
     participant Provider as Active provider
 
-    User->>CLI: watn models
+    User->>CLI: watn setup
     CLI->>Config: load active provider and optional LiteLLM source
     Config-->>CLI: catalog endpoint + raw optional credential; active provider unchanged
     CLI->>Catalog: GET /models or paginated /models with optional Bearer key
     Catalog-->>CLI: model metadata
-    User->>CLI: assign small, normal, and thinking tiers
-    CLI->>Config: save tier assignments only
+    User->>CLI: review small, normal, and thinking roles
+    CLI->>Config: commit all reviewed setup fields at Finish
     Note over CLI,Provider: Later chat requests still use Provider, never Catalog
 ```
 
@@ -587,9 +649,9 @@ is expanded at request time; no key means no Authorization header. Search and
 pagination reuse the same endpoint and credential policy. Without LiteLLM, the
 selected provider receives the catalog requests.
 
-## Scenario: Provider confirmation before catalog failure
+## Scenario: Draft remains in memory before catalog failure
 
-**Trigger:** User confirms a provider credential in `watn setup`, then catalog
+**Trigger:** User edits the Provider topic in `watn setup`, then catalog
 discovery fails.
 
 ```mermaid
@@ -600,17 +662,17 @@ sequenceDiagram
     participant Catalog as Catalog source
 
     User->>Wizard: confirm endpoint and credential source
-    Wizard->>Wizard: validate and resolve credential
-    Wizard->>Config: save provider draft and raw credential source
+    Wizard->>Wizard: validate and retain credential source in draft
     Wizard->>Catalog: request model catalog
     Catalog-->>Wizard: error
-    Wizard-->>User: catalog failure; return to credential/setup state
-    Config-->>User: confirmed provider remains saved; tiers unchanged
+    Wizard-->>User: catalog failure; allow manual roles and show warning
+    User->>Wizard: discard or Finish after reviewing the warning
+    Wizard->>Config: write once only on Finish
 ```
 
-Cancellation before credential confirmation performs no write. Cancellation
-after confirmation preserves the provider. Neither path sends the original chat
-question.
+Cancellation at any point before Finish performs no write. Existing bytes remain
+unchanged and a first-run path remains absent. Neither path sends the original
+chat question.
 
 ## Scenario: Reasoning policy and stale search generation
 

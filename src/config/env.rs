@@ -1,43 +1,52 @@
-use std::collections::HashMap;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CredentialCandidate {
+    pub name: String,
+    pub detected: bool,
+}
 
-pub fn read_env_overrides() -> HashMap<String, String> {
-    let mut overrides = HashMap::new();
+const OPENROUTER_CREDENTIALS: [&str; 2] = ["OPENROUTER_API_KEY", "WATN_API_KEY"];
+const OPENAI_CREDENTIALS: [&str; 3] = ["WATN_OPENAI_API_KEY", "OPENAI_API_KEY", "WATN_API_KEY"];
+const CUSTOM_CREDENTIALS: [&str; 1] = ["WATN_API_KEY"];
 
-    for (key, value) in std::env::vars() {
-        if let Some(rest) = key.strip_prefix("WATN_") {
-            let lower = rest.to_lowercase();
-            match lower.as_str() {
-                "provider" => {
-                    overrides.insert("provider".to_string(), value);
-                }
-                "model" => {
-                    overrides.insert("model".to_string(), value);
-                }
-                _ => {
-                    if let Some(provider) = lower.strip_suffix("_api_key") {
-                        overrides.insert(format!("api_key_{}", provider), value);
-                    }
-                }
-            }
-        }
-    }
+/// Discover only allowlisted variable names and whether they contain a
+/// non-empty value. Resolved credential values never leave this function.
+pub fn discover_credentials(provider_name: &str) -> Vec<CredentialCandidate> {
+    let names: &[&str] = match provider_name {
+        "openrouter" => &OPENROUTER_CREDENTIALS,
+        "openai" => &OPENAI_CREDENTIALS,
+        _ => &CUSTOM_CREDENTIALS,
+    };
+    names
+        .iter()
+        .map(|name| CredentialCandidate {
+            name: (*name).to_string(),
+            detected: env_present(name),
+        })
+        .collect()
+}
 
-    overrides
+pub fn env_present(name: &str) -> bool {
+    std::env::var(name)
+        .ok()
+        .is_some_and(|value| !value.is_empty())
 }
 
 pub fn provider_api_key(provider_name: &str) -> Option<String> {
-    let provider_specific = if provider_name == "openrouter" {
-        "OPENROUTER_API_KEY".to_string()
-    } else {
-        format!("WATN_{}_API_KEY", provider_name.to_uppercase())
+    if !matches!(provider_name, "openrouter" | "openai" | "custom") {
+        let provider_specific = format!("WATN_{}_API_KEY", provider_name.to_uppercase());
+        if let Some(value) = std::env::var(&provider_specific)
+            .ok()
+            .filter(|value| !value.is_empty())
+        {
+            return Some(value);
+        }
+    }
+    let names: &[&str] = match provider_name {
+        "openrouter" => &OPENROUTER_CREDENTIALS,
+        "openai" => &OPENAI_CREDENTIALS,
+        _ => &CUSTOM_CREDENTIALS,
     };
-
-    std::env::var(&provider_specific)
-        .ok()
-        .filter(|value| !value.is_empty())
-        .or_else(|| {
-            std::env::var("WATN_API_KEY")
-                .ok()
-                .filter(|value| !value.is_empty())
-        })
+    names
+        .iter()
+        .find_map(|name| std::env::var(name).ok().filter(|value| !value.is_empty()))
 }

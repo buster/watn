@@ -898,6 +898,17 @@ fn config_file_exists_at_xdg(w: &mut WatnWorld) {
     );
 }
 
+#[then("no config file exists at the standard XDG path")]
+fn config_file_absent_at_xdg(w: &mut WatnWorld) {
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    assert!(
+        !config_path.exists(),
+        "config unexpectedly exists at {:?}",
+        config_path
+    );
+}
+
 #[then(regex = r#"^the config file contains a commented-out "([^"]+)" section$"#)]
 fn config_file_contains_commented_section(w: &mut WatnWorld, section: String) {
     let dir = w.temp_dir.as_ref().expect("no temp dir");

@@ -9,7 +9,7 @@ graph TB
     Provider["Provider<br/>(trait + adapters)"]
     Transport["Transport boundary<br/>(configured endpoint / debug test override)"]
     Setup["Provider Setup<br/>(ratatui onboarding)"]
-    Wizard["Setup Wizard<br/>(five pages)"]
+    Wizard["Setup Wizard<br/>(four topics)"]
     Output["Output<br/>(metadata + command)"]
     Models["Models<br/>(catalog and model-picker)"]
     Exec["Exec<br/>(command execution)"]
@@ -42,14 +42,14 @@ graph TB
 
 | Building block | Responsibility |
 |---|---|
-| CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes |
-| Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources and resolve the catalog source |
+| CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, retained subcommands), route errors to exit codes, and dispatch first-run setup before readiness |
+| Config | Read an existence-aware persisted config without writes, preserve authoritative credential sources, and atomically commit a reviewed draft |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, and require `[DONE]` |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
-| Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
-| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, green border around the focused input region, visible model filter query, current page, model selection, save/discard prompt, and optional post-confirmation shortcut selection; save a confirmed provider draft before catalog access and return optional provider, completed model drafts, and shortcut choices |
+| Provider discovery | Guide explicit provider identity and credential-source selection in a TTY, perform allowlisted presence-only discovery, validate input, and restore the terminal on every exit |
+| Setup Wizard | Own the Provider, Model roles, Shell integration, and Review topics; show provenance, contextual help, responsive layout, role review state, save/discard prompt, and shell intents; commit the complete draft only at Finish |
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
-| Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; choose local filtering for complete catalogs and provider search for incomplete catalogs; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
+| Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; choose local filtering for complete catalogs and provider search for incomplete catalogs; apply validated reasoning defaults; provide labeled suggestions and manual fallback to the draft |
 | Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
 | Completion | Parse the closed `CompletionShell` selector, derive scripts from the authoritative Clap command definition, render Bash/Elvish/Fish/PowerShell/Zsh, and write only successful script bytes to stdout |
 | Shell parser boundary | Consume an installed completion script; parser acceptance is verified separately for Bash, Elvish, Fish, PowerShell, and Zsh when the executable is available and is not a provider or configuration dependency |
@@ -57,6 +57,17 @@ graph TB
 | Line editor boundary | Bind Ctrl-W, read the complete current buffer, call `command watn -- "$question"`, replace the buffer with a request comment above the generated command using a real Fish line break, and never evaluate the captured text |
 
 ## Level 2 — Key building blocks
+
+### Current setup decomposition
+
+The active setup implementation uses a `SetupDraft` session aggregate rather
+than independent page-owned saves. Its runtime-only state includes field
+origins (`Loaded from config`, `Detected from environment`, `Recommended
+default`, and `Entered by you`), credential source kind, catalog status, model
+role review state, and shell intent. The four rendered topics are Provider,
+Model roles, Shell integration, and Review. Finish validates and commits the
+supported configuration once; shell marker reconciliation follows the commit
+and can return a saved-with-shell-failures outcome.
 
 ### Provider
 
@@ -81,15 +92,15 @@ resolver used by chat is separate and is never replaced by the catalog source.
 
 ### Setup persistence
 
-The wizard's provider-confirmation transition is the first durable boundary. It
-validates and saves the provider source before catalog loading, while model-tier
-updates remain a later, independent write. This permits catalog failure or
-post-confirmation cancellation to preserve the provider without manufacturing
-empty or partial tier values.
+The four-topic wizard has no durable transition before Review's Finish. Provider,
+model roles, reasoning, and shell intents remain in memory; Finish validates and
+commits supported config once, then reconciles shell files independently. This
+keeps first-run cancellation file-free and existing-config cancellation
+byte-for-byte unchanged while still exposing saved partial shell failures.
 
 ### Config
 
-**Responsibility:** Load, merge, expose configuration values, and bootstrap the config file on first run.
+**Responsibility:** Read persisted configuration without side effects, expose existence and authoritative values, and commit a reviewed draft at Finish.
 
 | Element | Responsibility |
 |---|---|
@@ -98,7 +109,7 @@ empty or partial tier values.
 | `ProviderReadiness` | Decide locally whether a configured provider and credential can be resolved without probing the network or consulting the E2E transport override |
 | `CredentialResolver` | Apply saved-literal/reference precedence, expand a complete `${VARIABLE}` reference at request or model-discovery time, and fall back only when `api_key` is absent |
 | `Config` struct | Serde-deserializable root config with `providers`, `tiers`, `pricing`, `litellm` |
-| `AutoInit` | On first run (no config file exists), writes a commented-out template to the standard XDG path before proceeding |
+| `ConfigRead` | Checks physical path existence before parsing and returns default state plus `exists = false` without creating a directory, template, or file |
 
 ### Models
 
@@ -107,9 +118,9 @@ empty or partial tier values.
 | Element | Responsibility |
 |---|---|
 | `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response, and expose catalog completeness |
-| `SetupWizard` model pages | Own the shared Small, Middle, and Large Model pages, page event loop, visible query, reasoning focus, focused-widget border styling, search-worker lifecycle, and persistence boundary |
+| `Model roles topic` | Shows Small / fast, Balanced / normal, and Thinking together, accepts catalog suggestions or manual IDs, tracks explicit review after provider changes, and derives metadata-aware reasoning |
 | `model-picker` | Provides model-search and local-filter logic; the wizard selects the complete-catalog local path or incomplete-catalog remote path, and remote results use a stale-generation guard |
-| `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths through the existing direct writer, enforcing Unix mode `0600` after every save |
+| `ConfigWriter` | Commits provider, all role assignments, reasoning, and preserved supported settings once at Finish with secure replacement |
 
 ### Exec
 

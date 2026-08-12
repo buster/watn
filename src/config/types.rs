@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 
 fn comment_toml(input: &str) -> String {
     input
@@ -15,7 +16,7 @@ fn comment_toml(input: &str) -> String {
         .join("\n")
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct Config {
     #[serde(default)]
     pub defaults: ProviderDefaults,
@@ -27,6 +28,31 @@ pub struct Config {
     pub pricing: HashMap<String, ModelPricing>,
     #[serde(default)]
     pub litellm: Option<LiteLLMConfig>,
+}
+
+impl fmt::Debug for Config {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let providers = self
+            .providers
+            .iter()
+            .map(|(name, provider)| {
+                (
+                    name,
+                    provider.endpoint.as_str(),
+                    provider.api_key.is_some(),
+                    provider.default_model.as_deref(),
+                )
+            })
+            .collect::<Vec<_>>();
+        formatter
+            .debug_struct("Config")
+            .field("defaults", &self.defaults)
+            .field("providers", &providers)
+            .field("tiers", &self.tiers)
+            .field("pricing", &self.pricing)
+            .field("litellm_configured", &self.litellm.is_some())
+            .finish()
+    }
 }
 
 impl Config {
@@ -107,11 +133,22 @@ impl Default for ProviderDefaults {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ProviderConfig {
     pub endpoint: String,
     pub api_key: Option<String>,
     pub default_model: Option<String>,
+}
+
+impl fmt::Debug for ProviderConfig {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ProviderConfig")
+            .field("endpoint", &self.endpoint)
+            .field("api_key", &self.api_key.as_ref().map(|_| "[REDACTED]"))
+            .field("default_model", &self.default_model)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -162,10 +199,20 @@ pub struct ModelPricing {
     pub output: f64,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct LiteLLMConfig {
     pub endpoint: String,
     pub api_key: Option<String>,
+}
+
+impl fmt::Debug for LiteLLMConfig {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("LiteLLMConfig")
+            .field("endpoint", &self.endpoint)
+            .field("api_key", &self.api_key.as_ref().map(|_| "[REDACTED]"))
+            .finish()
+    }
 }
 
 #[cfg(test)]
@@ -175,5 +222,21 @@ mod tests {
     #[test]
     fn template_does_not_include_schema_version() {
         assert!(!Config::template_content().contains("schema_version"));
+    }
+
+    #[test]
+    fn config_debug_redacts_credentials() {
+        let mut config = Config::default();
+        config.providers.insert(
+            "custom".to_string(),
+            super::ProviderConfig {
+                endpoint: "https://example.test/v1".to_string(),
+                api_key: Some("sk-secret".to_string()),
+                default_model: None,
+            },
+        );
+        let debug = format!("{config:?}");
+        assert!(!debug.contains("sk-secret"));
+        assert!(debug.contains("true"));
     }
 }

@@ -1,4 +1,5 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::fmt;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -6,28 +7,27 @@ use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
-    layout::{Constraint, Layout, Margin},
+    layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{
-        Block, Cell, List, ListItem, ListState, Paragraph, Row, Scrollbar, ScrollbarOrientation,
-        ScrollbarState, Table, TableState, Tabs, Wrap,
-    },
+    text::{Line, Span, Text},
+    widgets::{Block, Borders, Paragraph, Tabs, Wrap},
     DefaultTerminal, Frame,
 };
 
+use crate::config::env::{discover_credentials, env_present, CredentialCandidate};
 use crate::config::types::Config;
-use crate::config::{self, resolve_provider};
+use crate::config::{self, PersistedConfig};
 use crate::error::Error;
 use crate::models::dialog::{LevelChoice, ReasoningStrength};
-use crate::models::list::{fetch_models, fetch_models_page_info, word_matches, ModelEntry};
-use crate::models::picker::execute_search;
+use crate::models::list::{fetch_models, ModelEntry};
 use crate::provider::setup::{
-    build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation,
-    OPENROUTER_ENDPOINT,
+    build_provider_draft_for_identity, normalize_endpoint, ProviderDraft, ProviderIdentity,
+    SetupCancellation, OPENROUTER_ENDPOINT,
 };
 use crate::shell_completion;
-use crate::shell_shortcut::{self, Shell};
+use crate::shell_shortcut::{self, BlockIntent, BlockState, Shell, ShellEnvironment};
+
+const WIDE_LAYOUT_COLUMNS: u16 = 100;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SetupEntryPoint {
@@ -36,12 +36,46 @@ pub enum SetupEntryPoint {
     Models,
 }
 
-#[derive(Debug)]
 pub struct SetupWizardResult {
+    pub config: Config,
     pub provider: ProviderDraft,
     pub choices: [Option<LevelChoice>; 3],
     pub completion_shells: Vec<Shell>,
     pub shortcut_shells: Vec<Shell>,
+    pub completion_remove_shells: Vec<Shell>,
+    pub shortcut_remove_shells: Vec<Shell>,
+    pub completion_attention_shells: Vec<Shell>,
+    pub shortcut_attention_shells: Vec<Shell>,
+    pub first_run: bool,
+    pub catalog_warning: Option<String>,
+}
+
+impl fmt::Debug for SetupWizardResult {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("SetupWizardResult")
+            .field("provider", &self.provider)
+            .field(
+                "choices",
+                &self
+                    .choices
+                    .iter()
+                    .map(|choice| choice.as_ref().map(|value| value.model.id.as_str()))
+                    .collect::<Vec<_>>(),
+            )
+            .field("completion_shells", &self.completion_shells)
+            .field("shortcut_shells", &self.shortcut_shells)
+            .field("completion_remove_shells", &self.completion_remove_shells)
+            .field("shortcut_remove_shells", &self.shortcut_remove_shells)
+            .field(
+                "completion_attention_shells",
+                &self.completion_attention_shells,
+            )
+            .field("shortcut_attention_shells", &self.shortcut_attention_shells)
+            .field("first_run", &self.first_run)
+            .field("catalog_warning", &self.catalog_warning)
+            .finish()
+    }
 }
 
 #[derive(Debug)]
@@ -65,72 +99,40 @@ pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell
     selected_shells(enabled, selected)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SetupPage {
-    Url,
-    ApiKey,
-    SmallModel,
-    MiddleModel,
-    LargeModel,
-    ShellCompletion,
-    ShellShortcut,
+    Provider,
+    ModelRoles,
+    ShellIntegration,
+    Review,
 }
 
 impl SetupPage {
-    fn title(self) -> &'static str {
-        match self {
-            Self::Url => "URL",
-            Self::ApiKey => "API key",
-            Self::SmallModel => "Small Model",
-            Self::MiddleModel => "Middle Model",
-            Self::LargeModel => "Large Model",
-            Self::ShellCompletion => "Shell Completion",
-            Self::ShellShortcut => "Shell Shortcut",
-        }
-    }
-
     fn index(self) -> usize {
         match self {
-            Self::Url => 0,
-            Self::ApiKey => 1,
-            Self::SmallModel => 2,
-            Self::MiddleModel => 3,
-            Self::LargeModel => 4,
-            Self::ShellCompletion => 5,
-            Self::ShellShortcut => 6,
+            Self::Provider => 0,
+            Self::ModelRoles => 1,
+            Self::ShellIntegration => 2,
+            Self::Review => 3,
         }
     }
+}
 
-    fn model_slot(self) -> Option<usize> {
-        match self {
-            Self::SmallModel => Some(0),
-            Self::MiddleModel => Some(1),
-            Self::LargeModel => Some(2),
-            _ => None,
-        }
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FieldOrigin {
+    Loaded,
+    Detected,
+    Recommended,
+    User,
+}
 
-    fn next(self) -> Option<Self> {
+impl FieldOrigin {
+    fn label(self) -> &'static str {
         match self {
-            Self::Url => Some(Self::ApiKey),
-            Self::ApiKey => Some(Self::SmallModel),
-            Self::SmallModel => Some(Self::MiddleModel),
-            Self::MiddleModel => Some(Self::LargeModel),
-            Self::LargeModel => Some(Self::ShellCompletion),
-            Self::ShellCompletion => Some(Self::ShellShortcut),
-            Self::ShellShortcut => None,
-        }
-    }
-
-    fn previous(self) -> Option<Self> {
-        match self {
-            Self::Url => None,
-            Self::ApiKey => Some(Self::Url),
-            Self::SmallModel => Some(Self::ApiKey),
-            Self::MiddleModel => Some(Self::SmallModel),
-            Self::LargeModel => Some(Self::MiddleModel),
-            Self::ShellCompletion => Some(Self::LargeModel),
-            Self::ShellShortcut => Some(Self::ShellCompletion),
+            Self::Loaded => "Loaded from config",
+            Self::Detected => "Detected from environment",
+            Self::Recommended => "Recommended default",
+            Self::User => "Entered by you",
         }
     }
 }
@@ -142,49 +144,73 @@ enum CredentialStorage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CredentialFocus {
-    Storage,
-    Value,
+enum ProviderFocus {
+    Identity,
+    Endpoint,
+    CredentialChoice,
+    CredentialInput,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ModelFocus {
-    Table,
-    Reasoning,
+enum RoleReview {
+    Loaded,
+    Suggested,
+    Manual,
+    NeedsReview,
+    Confirmed,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ShellInstallFocus {
-    Question,
-    Shells,
+#[derive(Debug, Clone)]
+struct RoleDraft {
+    model: Option<String>,
+    origin: FieldOrigin,
+    review: RoleReview,
+    reasoning: ReasoningStrength,
+    metadata: Option<crate::models::list::ModelReasoning>,
+    query: String,
 }
 
-type SearchMessage = (
-    usize,
-    u64,
-    Result<(Vec<ModelEntry>, Option<String>, bool), Error>,
-);
-
-const CATALOG_PAGE_LIMIT: u32 = 50;
-
-fn setup_block<'a>(title: impl Into<Line<'a>>, focused: bool) -> Block<'a> {
-    let block = Block::bordered().title(title);
-    if focused {
-        block.border_style(Style::default().fg(Color::Green))
-    } else {
-        block
+impl Default for RoleDraft {
+    fn default() -> Self {
+        Self {
+            model: None,
+            origin: FieldOrigin::Recommended,
+            review: RoleReview::Suggested,
+            reasoning: ReasoningStrength::Off,
+            metadata: None,
+            query: String::new(),
+        }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CatalogStatus {
+    NotStarted,
+    Loading,
+    Available,
+    Unavailable,
+}
+
+type CatalogMessage = Result<Vec<ModelEntry>, String>;
 
 pub fn run_with_config(
     config: &Config,
     entry: SetupEntryPoint,
 ) -> Result<SetupWizardOutcome, Error> {
-    let mut wizard = SetupWizard::from_config(config, entry)?;
-    if entry == SetupEntryPoint::Models {
-        wizard.load_catalog()?;
-    }
+    run_with_persisted_config(
+        &PersistedConfig {
+            config: config.clone(),
+            exists: true,
+        },
+        entry,
+    )
+}
 
+pub fn run_with_persisted_config(
+    persisted: &PersistedConfig,
+    entry: SetupEntryPoint,
+) -> Result<SetupWizardOutcome, Error> {
+    let mut wizard = SetupWizard::from_persisted(persisted, entry)?;
     let mut terminal = ratatui::init();
     let result = wizard.run_inner(&mut terminal);
     ratatui::restore();
@@ -192,234 +218,215 @@ pub fn run_with_config(
 }
 
 pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
-    config::save_provider_draft(config, &result.provider)?;
+    config::save_config(&result.config)?;
+    *config = result.config.clone();
 
-    let mut updated = config.clone();
-    let mut changed_tiers = false;
-    for (index, choice) in result.choices.iter().enumerate() {
-        let Some(choice) = choice else {
-            continue;
-        };
-        changed_tiers = true;
-        match index {
-            0 => {
-                updated.tiers.small = Some(choice.model.id.clone());
-                updated.tiers.reasoning.small = Some(choice.reasoning.as_str().to_string());
-            }
-            1 => {
-                updated.tiers.normal = Some(choice.model.id.clone());
-                updated.tiers.reasoning.normal = Some(choice.reasoning.as_str().to_string());
-            }
-            2 => {
-                updated.tiers.thinking = Some(choice.model.id.clone());
-                updated.tiers.reasoning.thinking = Some(choice.reasoning.as_str().to_string());
-            }
-            _ => unreachable!(),
+    let environment = ShellEnvironment::from_process();
+    let mut failures = Vec::new();
+    let completion_intents = build_intents(
+        &result.completion_shells,
+        &result.completion_remove_shells,
+        &result.completion_attention_shells,
+    );
+    if !completion_intents.is_empty() {
+        let report =
+            shell_completion::reconcile_with_environment(&completion_intents, &environment);
+        report_messages(&report);
+        if let Some(message) = report.failure_message() {
+            failures.push(message);
         }
-    }
-    if changed_tiers {
-        config::save_config(&updated)?;
-        *config = updated;
     }
 
-    let environment = shell_shortcut::ShellEnvironment::from_process();
-    let mut installation_failures = Vec::new();
-    if !result.completion_shells.is_empty() {
-        let report =
-            shell_completion::install_with_environment(&result.completion_shells, &environment);
-        for target in &report.results {
-            if target.success {
-                eprintln!("{}", target.message);
-                if let Some(reload) = &target.reload {
-                    eprintln!("{}", reload);
-                }
-            } else {
-                eprintln!("{}", target.message);
+    let shortcut_intents = build_intents(
+        &result.shortcut_shells,
+        &result.shortcut_remove_shells,
+        &result.shortcut_attention_shells,
+    );
+    if !shortcut_intents.is_empty() {
+        let report = shell_shortcut::reconcile_with_environment(&shortcut_intents, &environment);
+        report_messages(&report);
+        if let Some(message) = report.failure_message() {
+            failures.push(message);
+        }
+    }
+
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::ConfigError(format!(
+            "configuration saved, but shell integration failed; retry setup: {}",
+            failures.join("; ")
+        )))
+    }
+}
+
+fn build_intents(
+    present: &[Shell],
+    absent: &[Shell],
+    attention: &[Shell],
+) -> Vec<(Shell, BlockIntent)> {
+    let mut intents = present
+        .iter()
+        .copied()
+        .map(|shell| (shell, BlockIntent::EnsurePresent))
+        .collect::<Vec<_>>();
+    intents.extend(
+        absent
+            .iter()
+            .copied()
+            .map(|shell| (shell, BlockIntent::EnsureAbsent)),
+    );
+    intents.extend(
+        attention
+            .iter()
+            .copied()
+            .map(|shell| (shell, BlockIntent::NeedsAttention)),
+    );
+    intents
+}
+
+fn report_messages(report: &shell_shortcut::InstallReport) {
+    for target in &report.results {
+        eprintln!("{}", target.message);
+        if target.success {
+            if let Some(reload) = &target.reload {
+                eprintln!("{}", reload);
             }
         }
-        if let Some(error) = report.failure_message() {
-            installation_failures.push(error);
-        }
     }
-    if !result.shortcut_shells.is_empty() {
-        let report =
-            shell_shortcut::install_with_environment(&result.shortcut_shells, &environment);
-        for target in &report.results {
-            if target.success {
-                eprintln!("{}", target.message);
-                if let Some(reload) = &target.reload {
-                    eprintln!("{}", reload);
-                }
-            } else {
-                eprintln!("{}", target.message);
-            }
-        }
-        if let Some(error) = report.failure_message() {
-            installation_failures.push(error);
-        }
-    }
-    if !installation_failures.is_empty() {
-        return Err(Error::ConfigError(installation_failures.join("; ")));
-    }
-    Ok(())
 }
 
 struct SetupWizard {
-    config: Config,
+    persisted: Config,
+    first_run: bool,
     page: SetupPage,
-    first_page: SetupPage,
-    last_page: SetupPage,
+    provider_identity: ProviderIdentity,
     endpoint: String,
+    endpoint_origin: FieldOrigin,
+    initial_endpoint: String,
     storage: CredentialStorage,
     credential_input: String,
-    credential_focus: CredentialFocus,
-    models: [Vec<ModelEntry>; 3],
-    queries: [String; 3],
-    suggestions: [Vec<ModelEntry>; 3],
-    selection: [usize; 3],
-    completed: [Option<LevelChoice>; 3],
-    reasoning: [ReasoningStrength; 3],
-    reasoning_explicit: [bool; 3],
-    model_focus: ModelFocus,
-    search_status: [Option<String>; 3],
-    search_pending: [bool; 3],
-    catalog_complete: bool,
-    generation: Arc<AtomicU64>,
-    search_tx: Sender<SearchMessage>,
-    search_rx: Receiver<SearchMessage>,
-    search_workers: Vec<JoinHandle<()>>,
-    validation: String,
-    save_prompt: bool,
-    initial_models: [Option<String>; 3],
-    completion_focus: ShellInstallFocus,
-    completion_enabled: bool,
-    completion_cursor: usize,
+    credential_origin: FieldOrigin,
+    credential_candidates: Vec<CredentialCandidate>,
+    credential_choice: Option<usize>,
+    provider_focus: ProviderFocus,
+    roles: [RoleDraft; 3],
+    catalog: Vec<ModelEntry>,
+    catalog_status: CatalogStatus,
+    catalog_warning: Option<String>,
+    catalog_tx: Sender<CatalogMessage>,
+    catalog_rx: Receiver<CatalogMessage>,
+    catalog_worker: Option<JoinHandle<()>>,
+    catalog_cancel: Arc<AtomicBool>,
     completion_selected: [bool; 3],
-    shortcut_focus: ShellInstallFocus,
-    shortcut_enabled: bool,
-    shortcut_cursor: usize,
+    completion_initial: [Option<bool>; 3],
+    completion_attention: [bool; 3],
     shortcut_selected: [bool; 3],
+    shortcut_initial: [Option<bool>; 3],
+    shortcut_attention: [bool; 3],
+    shell_cursor: usize,
+    active_role: usize,
+    validation: String,
+    discard_prompt: bool,
 }
 
 impl Drop for SetupWizard {
     fn drop(&mut self) {
-        self.generation.fetch_add(1, Ordering::SeqCst);
-        for worker in self.search_workers.drain(..) {
-            let _ = worker.join();
+        self.catalog_cancel.store(true, Ordering::SeqCst);
+        if let Some(worker) = self.catalog_worker.take() {
+            if worker.is_finished() {
+                let _ = worker.join();
+            }
         }
     }
 }
 
 impl SetupWizard {
-    fn from_config(config: &Config, entry: SetupEntryPoint) -> Result<Self, Error> {
+    fn from_persisted(persisted: &PersistedConfig, entry: SetupEntryPoint) -> Result<Self, Error> {
+        let config = persisted.config.clone();
         let provider_name = config.defaults.provider.as_deref().unwrap_or("openrouter");
-        let provider = match resolve_provider(config, provider_name) {
-            Ok(provider) => provider,
-            Err(_error) if entry != SetupEntryPoint::Models => {
-                crate::config::types::ProviderConfig {
-                    endpoint: OPENROUTER_ENDPOINT.to_string(),
-                    api_key: None,
-                    default_model: None,
-                }
+        let provider = config::resolve_provider(&config, provider_name).unwrap_or_else(|_| {
+            crate::config::types::ProviderConfig {
+                endpoint: OPENROUTER_ENDPOINT.to_string(),
+                api_key: None,
+                default_model: None,
             }
-            Err(error) => return Err(error),
+        });
+        let endpoint = if provider.endpoint.is_empty() {
+            OPENROUTER_ENDPOINT.to_string()
+        } else {
+            provider.endpoint.clone()
         };
-        let (storage, credential_input) = match provider.api_key.as_deref() {
-            Some(value) if value.starts_with("${") && value.ends_with('}') => (
-                CredentialStorage::Environment,
-                value[2..value.len() - 1].to_string(),
-            ),
-            Some(value) => (CredentialStorage::Configuration, value.to_string()),
-            None if entry == SetupEntryPoint::Models
-                && provider.endpoint == OPENROUTER_ENDPOINT =>
-            {
-                (
-                    CredentialStorage::Environment,
-                    suggested_api_key_env(&provider.endpoint).to_string(),
-                )
-            }
-            None => (CredentialStorage::Configuration, String::new()),
+        let identity = ProviderIdentity::from_config(provider_name, &endpoint);
+        let first_run = !persisted.exists;
+        let (storage, credential_input, credential_origin, credential_choice) =
+            initial_credential(&provider.api_key, identity, first_run);
+        let candidates = discover_credentials(identity.name());
+        let roles = initial_roles(&config, first_run);
+        let shell_environment = ShellEnvironment::from_process();
+        let (completion_initial, completion_attention) =
+            inspect_shell_integration(&shell_environment, false);
+        let (shortcut_initial, shortcut_attention) =
+            inspect_shell_integration(&shell_environment, true);
+        let completion_selected = completion_initial.map(|value| value.unwrap_or(false));
+        let shortcut_selected = shortcut_initial.map(|value| value.unwrap_or(false));
+        let (catalog_tx, catalog_rx) = mpsc::channel();
+        let provider_focus = if first_run {
+            ProviderFocus::Identity
+        } else if provider.api_key.is_some() {
+            ProviderFocus::Endpoint
+        } else {
+            ProviderFocus::CredentialChoice
         };
-        let first_page = match entry {
-            SetupEntryPoint::Models => SetupPage::SmallModel,
-            SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Url,
-        };
-        let last_page = match entry {
-            SetupEntryPoint::Provider => SetupPage::ApiKey,
-            SetupEntryPoint::Setup => SetupPage::ShellShortcut,
-            SetupEntryPoint::Models => SetupPage::LargeModel,
-        };
-        let initial_models = [
-            config.tiers.small.clone(),
-            config.tiers.normal.clone(),
-            config.tiers.thinking.clone(),
-        ];
-        let reasoning = [
-            parse_reasoning(config.tiers.reasoning.small.as_deref()),
-            parse_reasoning(config.tiers.reasoning.normal.as_deref()),
-            parse_reasoning(config.tiers.reasoning.thinking.as_deref()),
-        ];
-        let reasoning_explicit = [
-            config.tiers.reasoning.small.is_some(),
-            config.tiers.reasoning.normal.is_some(),
-            config.tiers.reasoning.thinking.is_some(),
-        ];
-        let detected_shells = shell_shortcut::ShellEnvironment::from_process().detected_shells();
-        let generation = Arc::new(AtomicU64::new(0));
-        let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
-            config: config.clone(),
-            page: first_page,
-            first_page,
-            last_page,
-            endpoint: (if provider.endpoint.is_empty() {
-                OPENROUTER_ENDPOINT.to_string()
+            persisted: config,
+            first_run,
+            page: match entry {
+                SetupEntryPoint::Models => SetupPage::ModelRoles,
+                SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Provider,
+            },
+            provider_identity: identity,
+            endpoint: endpoint.clone(),
+            endpoint_origin: if first_run {
+                FieldOrigin::Recommended
             } else {
-                provider.endpoint
-            }),
+                FieldOrigin::Loaded
+            },
+            initial_endpoint: endpoint,
             storage,
             credential_input,
-            credential_focus: if first_page >= SetupPage::SmallModel {
-                CredentialFocus::Value
-            } else {
-                CredentialFocus::Storage
-            },
-            models: [Vec::new(), Vec::new(), Vec::new()],
-            queries: Default::default(),
-            suggestions: [Vec::new(), Vec::new(), Vec::new()],
-            selection: [0, 0, 0],
-            completed: [None, None, None],
-            reasoning,
-            reasoning_explicit,
-            model_focus: ModelFocus::Table,
-            search_status: [None, None, None],
-            search_pending: [false, false, false],
-            catalog_complete: false,
-            generation,
-            search_tx,
-            search_rx,
-            search_workers: Vec::new(),
+            credential_origin,
+            credential_candidates: candidates,
+            credential_choice,
+            provider_focus,
+            roles,
+            catalog: Vec::new(),
+            catalog_status: CatalogStatus::NotStarted,
+            catalog_warning: None,
+            catalog_tx,
+            catalog_rx,
+            catalog_worker: None,
+            catalog_cancel: Arc::new(AtomicBool::new(false)),
+            completion_selected,
+            completion_initial,
+            completion_attention,
+            shortcut_selected,
+            shortcut_initial,
+            shortcut_attention,
+            shell_cursor: 0,
+            active_role: 0,
             validation: String::new(),
-            save_prompt: false,
-            initial_models,
-            completion_focus: ShellInstallFocus::Question,
-            completion_enabled: false,
-            completion_cursor: 0,
-            completion_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
-            shortcut_focus: ShellInstallFocus::Question,
-            shortcut_enabled: false,
-            shortcut_cursor: 0,
-            shortcut_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
+            discard_prompt: false,
         };
-        if wizard.storage == CredentialStorage::Environment && wizard.credential_input.is_empty() {
-            wizard.credential_input = suggested_api_key_env(&wizard.endpoint).to_string();
+        if wizard.page == SetupPage::ModelRoles {
+            wizard.start_catalog();
         }
         Ok(wizard)
     }
 
     fn run_inner(&mut self, terminal: &mut DefaultTerminal) -> Result<SetupWizardOutcome, Error> {
         loop {
-            self.apply_search_results();
+            self.apply_catalog_result();
             terminal.draw(|frame| self.draw(frame))?;
             if !event::poll(Duration::from_millis(50))
                 .map_err(|error| Error::IoError(std::io::Error::other(error)))?
@@ -435,648 +442,784 @@ impl SetupWizard {
                 continue;
             }
             if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
-                self.generation.fetch_add(1, Ordering::SeqCst);
+                self.catalog_cancel.store(true, Ordering::SeqCst);
                 return Ok(SetupWizardOutcome::Cancelled(SetupCancellation::CtrlC));
             }
-            if key.code == KeyCode::Char('u') && key.modifiers.contains(KeyModifiers::CONTROL) {
-                match self.page {
-                    SetupPage::Url => self.endpoint.clear(),
-                    SetupPage::ApiKey if self.credential_focus == CredentialFocus::Value => {
-                        self.credential_input.clear()
-                    }
-                    _ => {}
-                }
-                continue;
-            }
-            if self.save_prompt {
-                if let Some(result) = self.handle_save_prompt(key)? {
-                    return Ok(result);
-                }
-                continue;
-            }
-            if self.shell_install_page_active() {
-                if let Some(result) = self.handle_shell_install_key(key)? {
-                    return Ok(result);
+            if self.discard_prompt {
+                if let Some(outcome) = self.handle_discard_prompt(key)? {
+                    return Ok(outcome);
                 }
                 continue;
             }
             if key.code == KeyCode::Esc {
-                self.save_prompt = true;
+                self.discard_prompt = true;
                 continue;
             }
-            if let Some(result) = self.handle_key(key)? {
-                return Ok(result);
+            if key.code == KeyCode::Char('u') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                self.clear_active_input();
+                continue;
+            }
+            if let Some(outcome) = self.handle_key(key)? {
+                return Ok(outcome);
             }
         }
     }
 
-    fn handle_save_prompt(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
+    fn handle_discard_prompt(
+        &mut self,
+        key: KeyEvent,
+    ) -> Result<Option<SetupWizardOutcome>, Error> {
         match key.code {
-            KeyCode::Char('n') | KeyCode::Char('N') => {
-                // Invalidate catalog work before abandoning the draft state.
-                self.generation.fetch_add(1, Ordering::SeqCst);
+            KeyCode::Char('d') | KeyCode::Char('n') => {
+                self.catalog_cancel.store(true, Ordering::SeqCst);
                 Ok(Some(SetupWizardOutcome::Cancelled(
                     SetupCancellation::Escape,
                 )))
             }
-            KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => match self.result() {
-                Ok(result) => Ok(Some(SetupWizardOutcome::Saved(Box::new(result)))),
-                Err(error) => {
-                    self.save_prompt = false;
-                    self.validation = error.to_string();
-                    Ok(None)
+            KeyCode::Char('y') | KeyCode::Enter => {
+                self.discard_prompt = false;
+                match self.result() {
+                    Ok(result) => Ok(Some(SetupWizardOutcome::Saved(Box::new(result)))),
+                    Err(error) => {
+                        self.validation = error.to_string();
+                        self.discard_prompt = false;
+                        Ok(None)
+                    }
                 }
-            },
+            }
             KeyCode::Esc => {
-                self.save_prompt = false;
+                self.discard_prompt = false;
                 Ok(None)
             }
             _ => Ok(None),
-        }
-    }
-
-    fn shell_install_page_active(&self) -> bool {
-        matches!(
-            self.page,
-            SetupPage::ShellCompletion | SetupPage::ShellShortcut
-        )
-    }
-
-    fn handle_shell_install_key(
-        &mut self,
-        key: KeyEvent,
-    ) -> Result<Option<SetupWizardOutcome>, Error> {
-        if key.code == KeyCode::Tab && key.modifiers.contains(KeyModifiers::SHIFT)
-            || key.code == KeyCode::BackTab
-        {
-            return self.move_previous();
-        }
-        if key.code == KeyCode::Esc {
-            self.save_prompt = true;
-            return Ok(None);
-        }
-
-        let shortcut = self.page == SetupPage::ShellShortcut;
-        let advance = if shortcut {
-            Self::handle_shell_install_key_inner(
-                key,
-                &mut self.shortcut_focus,
-                &mut self.shortcut_enabled,
-                &mut self.shortcut_cursor,
-                &mut self.shortcut_selected,
-            )
-        } else {
-            Self::handle_shell_install_key_inner(
-                key,
-                &mut self.completion_focus,
-                &mut self.completion_enabled,
-                &mut self.completion_cursor,
-                &mut self.completion_selected,
-            )
-        };
-        if advance {
-            self.advance_shell_install_page()
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn handle_shell_install_key_inner(
-        key: KeyEvent,
-        focus: &mut ShellInstallFocus,
-        enabled: &mut bool,
-        cursor: &mut usize,
-        selected: &mut [bool; 3],
-    ) -> bool {
-        match focus {
-            ShellInstallFocus::Question => match key.code {
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    *enabled = true;
-                    *focus = ShellInstallFocus::Shells;
-                    *cursor = 0;
-                    false
-                }
-                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter | KeyCode::Tab => {
-                    *enabled = false;
-                    true
-                }
-                _ => false,
-            },
-            ShellInstallFocus::Shells => match key.code {
-                KeyCode::Up => {
-                    *cursor = cursor.saturating_sub(1);
-                    false
-                }
-                KeyCode::Down => {
-                    *cursor = (*cursor + 1).min(Shell::ALL.len() - 1);
-                    false
-                }
-                KeyCode::Char(' ') => {
-                    selected[*cursor] = !selected[*cursor];
-                    false
-                }
-                KeyCode::Enter | KeyCode::Tab => true,
-                _ => false,
-            },
-        }
-    }
-
-    fn advance_shell_install_page(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
-        match self.page {
-            SetupPage::ShellCompletion => {
-                self.page = SetupPage::ShellShortcut;
-                self.validation.clear();
-                Ok(None)
-            }
-            SetupPage::ShellShortcut => {
-                Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
-            }
-            _ => unreachable!("shell installation page handler used on another page"),
         }
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
-        if key.code == KeyCode::Tab && key.modifiers.contains(KeyModifiers::SHIFT) {
-            return self.move_previous();
+        if key.code == KeyCode::BackTab
+            || (key.code == KeyCode::Tab && key.modifiers.contains(KeyModifiers::SHIFT))
+        {
+            return self.previous_focus_or_page();
         }
-        if key.code == KeyCode::BackTab {
-            return self.move_previous();
-        }
-        match key.code {
-            KeyCode::Tab | KeyCode::Enter => self.move_next(),
-            KeyCode::Up => {
-                self.move_up();
-                Ok(None)
-            }
-            KeyCode::Down => {
-                self.move_down();
-                Ok(None)
-            }
-            KeyCode::PageUp => {
-                self.move_page(-1);
-                Ok(None)
-            }
-            KeyCode::PageDown => {
-                self.move_page(1);
-                Ok(None)
-            }
-            KeyCode::Backspace => {
-                self.edit_input(None);
-                Ok(None)
-            }
-            KeyCode::Char(character) => {
-                if character == 'r'
-                    && key.modifiers.contains(KeyModifiers::CONTROL)
-                    && self.page.model_slot().is_some()
-                {
-                    self.model_focus = match self.model_focus {
-                        ModelFocus::Table => ModelFocus::Reasoning,
-                        ModelFocus::Reasoning => ModelFocus::Table,
-                    };
-                } else if self.page == SetupPage::ApiKey
-                    && self.credential_focus == CredentialFocus::Storage
-                    && matches!(character, 'p' | 'P' | 'e' | 'E')
-                {
-                    self.choose_storage(character);
-                } else {
-                    self.edit_input(Some(character));
-                }
-                Ok(None)
-            }
-            _ => Ok(None),
-        }
-    }
-
-    fn move_next(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
-        if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
-            self.credential_focus = CredentialFocus::Value;
-            self.validation.clear();
-            return Ok(None);
-        }
-        if self.validate_current_page().is_err() {
-            return Ok(None);
-        }
-        if let Some(slot) = self.page.model_slot() {
-            if let Err(error) = self.confirm_model(slot) {
-                self.validation = error.to_string();
-                return Ok(None);
-            }
-        }
-        if self.page == self.last_page {
-            return Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))));
-        }
-        if let Some(next) = self.page.next() {
-            if next >= self.first_page && next <= self.last_page {
-                self.page = next;
-                self.validation.clear();
-                self.model_focus = ModelFocus::Table;
-                if next.model_slot().is_some() {
-                    if self.first_page == SetupPage::Url {
-                        let draft = self.current_provider()?;
-                        config::save_provider_draft(&mut self.config, &draft)?;
-                    }
-                    if let Err(error) = self.ensure_catalog() {
-                        self.page = SetupPage::ApiKey;
-                        self.credential_focus = CredentialFocus::Value;
-                        self.validation = error.to_string();
-                        return Ok(None);
-                    }
-                }
-            }
-        }
-        Ok(None)
-    }
-
-    fn move_previous(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
-        if let Some(previous) = self.page.previous() {
-            if previous >= self.first_page {
-                self.page = previous;
-                self.validation.clear();
-                if self.page == SetupPage::ApiKey {
-                    self.credential_focus = CredentialFocus::Value;
-                }
-                if let Some(slot) = self.page.model_slot() {
-                    self.generation.fetch_add(1, Ordering::SeqCst);
-                    self.queries[slot].clear();
-                    self.suggestions[slot] = self.models[slot].clone();
-                    self.selection[slot] = 0;
-                    self.search_pending[slot] = false;
-                    self.search_status[slot] = None;
-                    self.sync_reasoning(slot);
-                }
-            }
-        }
-        Ok(None)
-    }
-
-    fn validate_current_page(&mut self) -> Result<(), Error> {
         match self.page {
-            SetupPage::Url => {
-                self.endpoint = crate::provider::setup::normalize_endpoint(&self.endpoint)
-                    .inspect_err(|error| {
-                        self.validation = error.to_string();
-                    })?;
-                if self.storage == CredentialStorage::Environment
-                    && self.credential_input.is_empty()
+            SetupPage::Provider => self.handle_provider_key(key),
+            SetupPage::ModelRoles => self.handle_model_key(key),
+            SetupPage::ShellIntegration => self.handle_shell_key(key),
+            SetupPage::Review => self.handle_review_key(key),
+        }
+    }
+
+    fn handle_provider_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
+        match key.code {
+            KeyCode::Up => self.provider_up(),
+            KeyCode::Down => self.provider_down(),
+            KeyCode::Backspace => self.edit_provider(None),
+            KeyCode::Char(character) => {
+                if self.provider_focus == ProviderFocus::CredentialChoice
+                    && matches!(character, 'p' | 'P')
                 {
-                    self.credential_input = suggested_api_key_env(&self.endpoint).to_string();
+                    self.storage = CredentialStorage::Configuration;
+                    self.credential_input.clear();
+                    self.credential_origin = FieldOrigin::User;
+                    self.provider_focus = ProviderFocus::CredentialInput;
+                } else if self.provider_focus == ProviderFocus::CredentialChoice
+                    && matches!(character, 'e' | 'E')
+                {
+                    self.storage = CredentialStorage::Environment;
+                    if self.credential_origin != FieldOrigin::Detected {
+                        self.credential_input.clear();
+                    }
+                    self.credential_origin = FieldOrigin::User;
+                    self.provider_focus = ProviderFocus::CredentialInput;
+                } else {
+                    self.edit_provider(Some(character));
                 }
             }
-            SetupPage::ApiKey => {
-                if self.credential_input.trim().is_empty() {
-                    self.validation = "credential cannot be empty".to_string();
-                    return Err(Error::ConfigError(self.validation.clone()));
+            KeyCode::Tab | KeyCode::Enter if self.advance_provider()? => {
+                self.page = SetupPage::ModelRoles;
+                self.start_catalog();
+            }
+            KeyCode::Tab | KeyCode::Enter => {}
+            _ => {}
+        }
+        Ok(None)
+    }
+
+    fn advance_provider(&mut self) -> Result<bool, Error> {
+        match self.provider_focus {
+            ProviderFocus::Identity => {
+                self.provider_focus = ProviderFocus::Endpoint;
+                if let Some(default) = self.provider_identity.endpoint() {
+                    self.endpoint = default.to_string();
+                    self.endpoint_origin = if self.first_run {
+                        FieldOrigin::Recommended
+                    } else {
+                        FieldOrigin::User
+                    };
                 }
-                if self.storage == CredentialStorage::Environment
-                    && !valid_environment_name(&self.credential_input)
+                Ok(false)
+            }
+            ProviderFocus::Endpoint => {
+                self.normalize_endpoint_in_place()?;
+                self.provider_focus = if !self.first_run
+                    && self
+                        .persisted
+                        .providers
+                        .get(
+                            self.persisted
+                                .defaults
+                                .provider
+                                .as_deref()
+                                .unwrap_or("openrouter"),
+                        )
+                        .and_then(|provider| provider.api_key.as_ref())
+                        .is_some()
                 {
-                    self.validation = "environment variable name is invalid".to_string();
-                    return Err(Error::ConfigError(self.validation.clone()));
+                    ProviderFocus::CredentialInput
+                } else {
+                    ProviderFocus::CredentialChoice
+                };
+                Ok(false)
+            }
+            ProviderFocus::CredentialChoice => {
+                if self.credential_choice.is_none() && self.credential_candidates.len() == 1 {
+                    self.credential_choice = Some(0);
                 }
-                self.validation.clear();
+                if let Some(choice) = self.credential_choice {
+                    if let Some(candidate) = self.credential_candidates.get(choice) {
+                        self.storage = CredentialStorage::Environment;
+                        self.credential_input = candidate.name.clone();
+                        self.credential_origin = if candidate.detected {
+                            FieldOrigin::Detected
+                        } else {
+                            FieldOrigin::Recommended
+                        };
+                    }
+                }
+                self.provider_focus = ProviderFocus::CredentialInput;
+                Ok(false)
+            }
+            ProviderFocus::CredentialInput => {
+                self.validate_provider()?;
+                Ok(true)
+            }
+        }
+    }
+
+    fn provider_up(&mut self) {
+        match self.provider_focus {
+            ProviderFocus::Identity => {
+                self.provider_identity = match self.provider_identity {
+                    ProviderIdentity::OpenRouter => ProviderIdentity::Custom,
+                    ProviderIdentity::OpenAi => ProviderIdentity::OpenRouter,
+                    ProviderIdentity::Custom => ProviderIdentity::OpenAi,
+                };
+                self.apply_identity_defaults();
+            }
+            ProviderFocus::CredentialChoice => {
+                let count = self.credential_candidates.len();
+                if count > 0 {
+                    self.credential_choice =
+                        Some(self.credential_choice.unwrap_or(0).saturating_sub(1));
+                }
             }
             _ => {}
         }
-        Ok(())
     }
 
-    fn current_provider(&self) -> Result<ProviderDraft, Error> {
-        let api_key = match self.storage {
-            CredentialStorage::Configuration => self.credential_input.clone(),
-            CredentialStorage::Environment => format!("${{{}}}", self.credential_input),
-        };
-        build_provider_draft(&self.endpoint, &api_key)
-    }
-
-    fn request_credential(&self) -> Result<String, Error> {
-        let draft = self.current_provider()?;
-        config::expand_api_key(&draft.api_key)
-    }
-
-    fn result(&self) -> Result<SetupWizardResult, Error> {
-        Ok(SetupWizardResult {
-            provider: self.current_provider()?,
-            choices: self.completed.clone(),
-            completion_shells: selected_shells(self.completion_enabled, self.completion_selected),
-            shortcut_shells: selected_shells(self.shortcut_enabled, self.shortcut_selected),
-        })
-    }
-
-    fn choose_storage(&mut self, character: char) {
-        self.storage = if matches!(character, 'e' | 'E') {
-            CredentialStorage::Environment
-        } else {
-            CredentialStorage::Configuration
-        };
-        if self.storage == CredentialStorage::Environment && self.credential_input.is_empty() {
-            self.credential_input = suggested_api_key_env(&self.endpoint).to_string();
+    fn provider_down(&mut self) {
+        match self.provider_focus {
+            ProviderFocus::Identity => {
+                self.provider_identity = match self.provider_identity {
+                    ProviderIdentity::OpenRouter => ProviderIdentity::OpenAi,
+                    ProviderIdentity::OpenAi => ProviderIdentity::Custom,
+                    ProviderIdentity::Custom => ProviderIdentity::OpenRouter,
+                };
+                self.apply_identity_defaults();
+            }
+            ProviderFocus::CredentialChoice => {
+                let count = self.credential_candidates.len();
+                if count > 0 {
+                    self.credential_choice = Some(
+                        self.credential_choice
+                            .unwrap_or(0)
+                            .saturating_add(1)
+                            .min(count.saturating_sub(1)),
+                    );
+                }
+            }
+            _ => {}
         }
-        self.credential_focus = CredentialFocus::Value;
     }
 
-    fn edit_input(&mut self, character: Option<char>) {
-        match self.page {
-            SetupPage::Url => {
+    fn apply_identity_defaults(&mut self) {
+        if let Some(endpoint) = self.provider_identity.endpoint() {
+            self.endpoint = endpoint.to_string();
+            self.endpoint_origin = FieldOrigin::Recommended;
+        } else if self.endpoint_origin != FieldOrigin::User {
+            self.endpoint.clear();
+            self.endpoint_origin = FieldOrigin::User;
+        }
+        self.credential_candidates = discover_credentials(self.provider_identity.name());
+        self.credential_choice = None;
+        self.credential_input.clear();
+        self.credential_origin = FieldOrigin::Recommended;
+        self.storage = CredentialStorage::Environment;
+        self.select_single_detected_credential();
+        self.invalidate_roles();
+    }
+
+    fn select_single_detected_credential(&mut self) {
+        let detected = self
+            .credential_candidates
+            .iter()
+            .enumerate()
+            .filter(|(_, candidate)| candidate.detected)
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        if detected.len() == 1 {
+            let index = detected[0];
+            self.credential_choice = Some(index);
+            self.credential_input = self.credential_candidates[index].name.clone();
+            self.credential_origin = FieldOrigin::Detected;
+        }
+    }
+
+    fn edit_provider(&mut self, character: Option<char>) {
+        match self.provider_focus {
+            ProviderFocus::Endpoint => {
                 if let Some(character) = character {
                     self.endpoint.push(character);
                 } else {
                     self.endpoint.pop();
                 }
+                self.endpoint_origin = FieldOrigin::User;
+                self.provider_identity = ProviderIdentity::Custom;
+                self.credential_candidates = discover_credentials("custom");
+                self.credential_choice = None;
+                if self.credential_origin != FieldOrigin::User {
+                    self.credential_input.clear();
+                    self.credential_origin = FieldOrigin::Recommended;
+                    self.storage = CredentialStorage::Environment;
+                    self.select_single_detected_credential();
+                }
+                self.invalidate_roles();
             }
-            SetupPage::ApiKey if self.credential_focus == CredentialFocus::Value => {
+            ProviderFocus::CredentialInput => {
                 if let Some(character) = character {
                     self.credential_input.push(character);
                 } else {
                     self.credential_input.pop();
                 }
+                self.credential_origin = FieldOrigin::User;
             }
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel
-                if self.model_focus == ModelFocus::Table =>
+            ProviderFocus::Identity | ProviderFocus::CredentialChoice => {}
+        }
+    }
+
+    fn normalize_endpoint_in_place(&mut self) -> Result<(), Error> {
+        self.endpoint = normalize_endpoint(&self.endpoint)?;
+        if self.endpoint != self.initial_endpoint {
+            self.invalidate_roles();
+        }
+        self.provider_identity =
+            ProviderIdentity::from_config(self.provider_identity.name(), &self.endpoint);
+        Ok(())
+    }
+
+    fn validate_provider(&mut self) -> Result<(), Error> {
+        self.normalize_endpoint_in_place()?;
+        if self.credential_input.trim().is_empty() {
+            return Err(self.set_validation("credential source is required"));
+        }
+        if self.storage == CredentialStorage::Environment {
+            let detected_count = self
+                .credential_candidates
+                .iter()
+                .filter(|candidate| candidate.detected)
+                .count();
+            if detected_count > 1
+                && self.credential_choice.is_none()
+                && self.credential_origin != FieldOrigin::User
             {
-                let Some(slot) = self.page.model_slot() else {
-                    return;
-                };
-                if let Some(character) = character {
-                    self.queries[slot].push(character);
-                } else {
-                    self.queries[slot].pop();
-                }
-                self.search(slot);
+                return Err(self.set_validation("select one detected credential source"));
             }
+            if !valid_environment_name(&self.credential_input) {
+                return Err(self.set_validation("environment variable name is invalid"));
+            }
+            if !env_present(&self.credential_input) {
+                return Err(self.set_validation(format!(
+                    "environment variable '{}' is not set",
+                    self.credential_input
+                )));
+            }
+        }
+        self.validation.clear();
+        Ok(())
+    }
+
+    fn handle_model_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
+        if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
+            self.cycle_reasoning(1);
+            return Ok(None);
+        }
+        match key.code {
+            KeyCode::Up => {
+                self.active_role = self.active_role.saturating_sub(1);
+                self.sync_role_metadata();
+            }
+            KeyCode::Down => {
+                self.active_role = (self.active_role + 1).min(2);
+                self.sync_role_metadata();
+            }
+            KeyCode::Backspace => self.edit_role(None),
+            KeyCode::Char(character) => self.edit_role(Some(character)),
+            KeyCode::Tab | KeyCode::Enter if self.confirm_role()? => {
+                if self.active_role < 2 {
+                    self.active_role += 1;
+                } else {
+                    self.page = SetupPage::ShellIntegration;
+                }
+            }
+            KeyCode::Tab | KeyCode::Enter => {}
             _ => {}
         }
+        Ok(None)
     }
 
-    fn move_up(&mut self) {
-        if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
-            self.storage = CredentialStorage::Configuration;
-            return;
-        }
-        let Some(slot) = self.page.model_slot() else {
-            return;
-        };
-        if self.model_focus == ModelFocus::Reasoning {
-            self.cycle_reasoning(slot, -1);
+    fn edit_role(&mut self, character: Option<char>) {
+        let role = &mut self.roles[self.active_role];
+        if let Some(character) = character {
+            role.query.push(character);
+            role.model = Some(role.query.clone());
+            role.origin = FieldOrigin::User;
+            role.review = RoleReview::Manual;
+            role.reasoning = ReasoningStrength::Off;
+            role.metadata = None;
         } else {
-            self.selection[slot] = self.selection[slot].saturating_sub(1);
-            self.sync_reasoning(slot);
+            role.query.pop();
+            role.model = (!role.query.is_empty()).then(|| role.query.clone());
         }
     }
 
-    fn move_down(&mut self) {
-        if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
-            self.storage = CredentialStorage::Environment;
-            if self.credential_input.is_empty() {
-                self.credential_input = suggested_api_key_env(&self.endpoint).to_string();
-            }
-            return;
-        }
-        let Some(slot) = self.page.model_slot() else {
-            return;
+    fn confirm_role(&mut self) -> Result<bool, Error> {
+        let role = &mut self.roles[self.active_role];
+        let Some(model) = role
+            .model
+            .as_deref()
+            .filter(|model| !model.trim().is_empty())
+        else {
+            self.validation = format!("{} model needs selection", role_label(self.active_role));
+            return Ok(false);
         };
-        if self.model_focus == ModelFocus::Reasoning {
-            self.cycle_reasoning(slot, 1);
-        } else if !self.suggestions[slot].is_empty() {
-            self.selection[slot] = (self.selection[slot] + 1).min(self.suggestions[slot].len() - 1);
-            self.sync_reasoning(slot);
+        if let Some(entry) = self.catalog.iter().find(|entry| entry.id == model) {
+            role.metadata = entry.reasoning.clone();
+            role.review = RoleReview::Confirmed;
+            role.reasoning = role
+                .reasoning
+                .min_supported_by(role.metadata.as_ref())
+                .unwrap_or(ReasoningStrength::Off);
+        } else {
+            role.review = RoleReview::Manual;
+            role.metadata = None;
+            role.reasoning = ReasoningStrength::Off;
         }
-    }
-
-    fn move_page(&mut self, direction: i32) {
-        let Some(slot) = self.page.model_slot() else {
-            return;
+        role.origin = if matches!(role.review, RoleReview::Manual) {
+            FieldOrigin::User
+        } else {
+            role.origin
         };
-        if self.model_focus == ModelFocus::Reasoning {
-            return;
-        }
-        if self.suggestions[slot].is_empty() {
-            return;
-        }
-        let current = self.selection[slot] as i32;
-        let last = self.suggestions[slot].len().saturating_sub(1) as i32;
-        self.selection[slot] = (current + direction * 10).clamp(0, last) as usize;
-        self.sync_reasoning(slot);
+        self.validation.clear();
+        Ok(true)
     }
 
-    fn confirm_model(&mut self, slot: usize) -> Result<(), Error> {
-        if self.search_pending[slot] || self.suggestions[slot].is_empty() {
-            self.validation = "wait for a model result before continuing".to_string();
-            return Err(Error::ConfigError(self.validation.clone()));
-        }
-        self.completed[slot] = Some(LevelChoice {
-            model: self.suggestions[slot][self.selection[slot]].clone(),
-            reasoning: self.reasoning[slot],
-        });
-        Ok(())
-    }
-
-    fn ensure_catalog(&mut self) -> Result<(), Error> {
-        if !self.models[0].is_empty() {
-            return Ok(());
-        }
-        self.load_catalog()
-    }
-
-    fn load_catalog(&mut self) -> Result<(), Error> {
-        let key = self.request_credential().inspect_err(|error| {
-            self.validation = error.to_string();
-        })?;
-        let (models, catalog_complete) =
-            match fetch_models_page_info(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
-                Ok(page) if !page.models.is_empty() => (page.models, page.complete),
-                _ => (fetch_models(&self.endpoint, Some(&key))?, true),
-            };
-        if models.is_empty() {
-            self.validation = "no models returned from endpoint".to_string();
-            return Err(Error::ConfigError(self.validation.clone()));
-        }
-        self.catalog_complete = catalog_complete;
-        for slot in 0..3 {
-            self.models[slot] = models.clone();
-            self.suggestions[slot] = models.clone();
-            if let Some(initial) = &self.initial_models[slot] {
-                if let Some(index) = models.iter().position(|model| &model.id == initial) {
-                    self.selection[slot] = index;
+    fn sync_role_metadata(&mut self) {
+        let role = &mut self.roles[self.active_role];
+        if let Some(model) = role.model.as_deref() {
+            if let Some(entry) = self.catalog.iter().find(|entry| entry.id == model) {
+                role.metadata = entry.reasoning.clone();
+                if role.review != RoleReview::Manual {
+                    role.reasoning = role
+                        .reasoning
+                        .min_supported_by(role.metadata.as_ref())
+                        .unwrap_or(ReasoningStrength::Off);
                 }
             }
-            self.sync_reasoning(slot);
         }
-        Ok(())
     }
 
-    fn search(&mut self, slot: usize) {
-        let query = self.queries[slot].clone();
-        let generation = self.generation.fetch_add(1, Ordering::SeqCst) + 1;
-        if query.is_empty() {
-            self.suggestions[slot] = self.models[slot].clone();
-            self.selection[slot] = 0;
-            self.search_pending[slot] = false;
-            self.search_status[slot] = None;
-            self.sync_reasoning(slot);
+    fn cycle_reasoning(&mut self, direction: i32) {
+        let role = &mut self.roles[self.active_role];
+        let Some(metadata) = role.metadata.as_ref() else {
+            role.reasoning = ReasoningStrength::Off;
             return;
-        }
-        if self.catalog_complete {
-            self.suggestions[slot] = self.models[slot]
-                .iter()
-                .filter(|model| word_matches(&model.id, &query))
-                .cloned()
-                .collect();
-            self.selection[slot] = 0;
-            self.search_pending[slot] = false;
-            self.search_status[slot] = None;
-            self.sync_reasoning(slot);
-            return;
-        }
-        self.suggestions[slot].clear();
-        self.selection[slot] = 0;
-        self.search_pending[slot] = true;
-        self.search_status[slot] = Some("Searching...".to_string());
-        let endpoint = self.endpoint.clone();
-        let key = self.request_credential().ok();
-        let models = self.models[slot].clone();
-        let generation_ref = Arc::clone(&self.generation);
-        let sender = self.search_tx.clone();
-        self.reap_search_workers();
-        let worker = std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(200));
-            if generation_ref.load(Ordering::SeqCst) != generation {
-                return;
-            }
-            let result = execute_search(
-                &endpoint,
-                key.as_deref(),
-                &query,
-                &models,
-                &generation_ref,
-                generation,
-            );
-            if generation_ref.load(Ordering::SeqCst) == generation {
-                let _ = sender.send((slot, generation, result));
-            }
-        });
-        self.search_workers.push(worker);
-    }
-
-    fn reap_search_workers(&mut self) {
-        let mut active = Vec::new();
-        for worker in self.search_workers.drain(..) {
-            if worker.is_finished() {
-                let _ = worker.join();
-            } else {
-                active.push(worker);
-            }
-        }
-        self.search_workers = active;
-    }
-
-    fn apply_search_results(&mut self) {
-        while let Ok((slot, generation, result)) = self.search_rx.try_recv() {
-            if self.generation.load(Ordering::SeqCst) != generation {
-                continue;
-            }
-            self.search_pending[slot] = false;
-            match result {
-                Ok((models, error, no_results)) => {
-                    self.suggestions[slot] = models;
-                    self.selection[slot] = 0;
-                    self.search_status[slot] =
-                        error.or_else(|| no_results.then(|| "(no models found)".to_string()));
-                }
-                Err(error) => {
-                    let filtered = self.models[slot]
-                        .iter()
-                        .filter(|model| word_matches(&model.id, &self.queries[slot]))
-                        .cloned()
-                        .collect::<Vec<_>>();
-                    self.suggestions[slot] = if filtered.is_empty() {
-                        self.models[slot].clone()
-                    } else {
-                        filtered
-                    };
-                    self.selection[slot] = 0;
-                    self.search_status[slot] = Some(error.to_string());
-                }
-            }
-            self.sync_reasoning(slot);
-        }
-    }
-
-    fn reasoning_options(&self, slot: usize) -> Vec<ReasoningStrength> {
-        let Some(model) = self.suggestions[slot].get(self.selection[slot]) else {
-            return vec![ReasoningStrength::Off];
         };
-        let Some(metadata) = &model.reasoning else {
-            return vec![
-                ReasoningStrength::Off,
-                ReasoningStrength::Low,
-                ReasoningStrength::Medium,
-                ReasoningStrength::High,
-            ];
-        };
-        let mut options = Vec::new();
-        if !metadata.mandatory {
-            options.push(ReasoningStrength::Off);
+        let mut options = vec![ReasoningStrength::Off];
+        if metadata.mandatory {
+            options.clear();
         }
         for effort in &metadata.supported_efforts {
-            if let Some(value) = ReasoningStrength::parse(effort) {
-                if !options.contains(&value) {
-                    options.push(value);
+            if let Some(strength) = ReasoningStrength::parse(effort) {
+                if !options.contains(&strength) {
+                    options.push(strength);
                 }
             }
         }
         if options.is_empty() {
-            options.push(ReasoningStrength::Off);
+            role.reasoning = ReasoningStrength::Off;
+            return;
         }
-        options
-    }
-
-    fn sync_reasoning(&mut self, slot: usize) {
-        let options = self.reasoning_options(slot);
-        if !self.reasoning_explicit[slot] || !options.contains(&self.reasoning[slot]) {
-            self.reasoning[slot] = self.suggestions[slot]
-                .get(self.selection[slot])
-                .and_then(|model| model.reasoning.as_ref())
-                .and_then(|metadata| metadata.default_effort.as_deref())
-                .and_then(ReasoningStrength::parse)
-                .filter(|value| options.contains(value))
-                .unwrap_or(options[0]);
-        }
-    }
-
-    fn cycle_reasoning(&mut self, slot: usize, direction: i32) {
-        let options = self.reasoning_options(slot);
-        let current = options
+        let index = options
             .iter()
-            .position(|value| *value == self.reasoning[slot])
+            .position(|value| *value == role.reasoning)
             .unwrap_or(0) as i32;
-        let next = (current + direction).rem_euclid(options.len() as i32) as usize;
-        self.reasoning[slot] = options[next];
-        self.reasoning_explicit[slot] = true;
+        role.reasoning = options[(index + direction).rem_euclid(options.len() as i32) as usize];
+        role.review = RoleReview::Confirmed;
+    }
+
+    fn handle_shell_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
+        match key.code {
+            KeyCode::Up => self.shell_cursor = self.shell_cursor.saturating_sub(1),
+            KeyCode::Down => self.shell_cursor = (self.shell_cursor + 1).min(5),
+            KeyCode::Char(' ') => self.toggle_shell(),
+            KeyCode::Tab | KeyCode::Enter => {
+                if self.shell_cursor < 5 && key.code == KeyCode::Tab {
+                    self.shell_cursor += 1;
+                } else {
+                    self.page = SetupPage::Review;
+                }
+            }
+            _ => {}
+        }
+        Ok(None)
+    }
+
+    fn toggle_shell(&mut self) {
+        if self.shell_cursor < 3 {
+            self.completion_selected[self.shell_cursor] =
+                !self.completion_selected[self.shell_cursor];
+        } else {
+            let index = self.shell_cursor - 3;
+            self.shortcut_selected[index] = !self.shortcut_selected[index];
+        }
+    }
+
+    fn handle_review_key(&mut self, key: KeyEvent) -> Result<Option<SetupWizardOutcome>, Error> {
+        if matches!(
+            key.code,
+            KeyCode::Enter | KeyCode::Char('f') | KeyCode::Char('F')
+        ) {
+            match self.result() {
+                Ok(result) => return Ok(Some(SetupWizardOutcome::Saved(Box::new(result)))),
+                Err(error) => self.validation = error.to_string(),
+            }
+        }
+        Ok(None)
+    }
+
+    fn previous_focus_or_page(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
+        match self.page {
+            SetupPage::Provider => {
+                self.provider_focus = match self.provider_focus {
+                    ProviderFocus::Identity => ProviderFocus::Identity,
+                    ProviderFocus::Endpoint => ProviderFocus::Identity,
+                    ProviderFocus::CredentialChoice => ProviderFocus::Endpoint,
+                    ProviderFocus::CredentialInput => ProviderFocus::CredentialChoice,
+                };
+            }
+            SetupPage::ModelRoles => {
+                if self.active_role > 0 {
+                    self.active_role -= 1;
+                } else {
+                    self.page = SetupPage::Provider;
+                }
+            }
+            SetupPage::ShellIntegration => {
+                if self.shell_cursor > 0 {
+                    self.shell_cursor -= 1;
+                } else {
+                    self.page = SetupPage::ModelRoles;
+                    self.active_role = 2;
+                }
+            }
+            SetupPage::Review => self.page = SetupPage::ShellIntegration,
+        }
+        Ok(None)
+    }
+
+    fn clear_active_input(&mut self) {
+        match self.page {
+            SetupPage::Provider => match self.provider_focus {
+                ProviderFocus::Endpoint => self.endpoint.clear(),
+                ProviderFocus::CredentialInput => self.credential_input.clear(),
+                ProviderFocus::Identity | ProviderFocus::CredentialChoice => {}
+            },
+            SetupPage::ModelRoles => {
+                self.roles[self.active_role].query.clear();
+                self.roles[self.active_role].model = None;
+                self.roles[self.active_role].review = RoleReview::Manual;
+            }
+            SetupPage::ShellIntegration | SetupPage::Review => {}
+        }
+    }
+
+    fn start_catalog(&mut self) {
+        if self.catalog_status == CatalogStatus::Loading
+            || self.catalog_status == CatalogStatus::Available
+        {
+            return;
+        }
+        self.catalog_status = CatalogStatus::Loading;
+        self.catalog_warning = None;
+        let source = self.catalog_source();
+        let tx = self.catalog_tx.clone();
+        let cancel = Arc::clone(&self.catalog_cancel);
+        self.catalog_worker = Some(std::thread::spawn(move || {
+            let result = source.and_then(|(endpoint, key)| {
+                if cancel.load(Ordering::SeqCst) {
+                    return Err("catalog request cancelled".to_string());
+                }
+                match fetch_models(&endpoint, key.as_deref()) {
+                    Ok(models) if !models.is_empty() => Ok(models),
+                    Ok(_) => Err("model catalog returned no usable models".to_string()),
+                    Err(_) => Err("model catalog request failed; enter roles manually".to_string()),
+                }
+            });
+            if !cancel.load(Ordering::SeqCst) {
+                let _ = tx.send(result);
+            }
+        }));
+    }
+
+    fn catalog_source(&self) -> Result<(String, Option<String>), String> {
+        let (endpoint, source) = if let Some(litellm) = &self.persisted.litellm {
+            (litellm.endpoint.clone(), litellm.api_key.clone())
+        } else {
+            let source = match self.storage {
+                CredentialStorage::Configuration => Some(self.credential_input.clone()),
+                CredentialStorage::Environment => Some(format!("${{{}}}", self.credential_input)),
+            };
+            (self.endpoint.clone(), source)
+        };
+        let key = match source {
+            Some(source) => config::expand_api_key(&source).map(Some).map_err(|_| {
+                "credential is unavailable; enter a valid source or manual model roles".to_string()
+            })?,
+            None => None,
+        };
+        Ok((endpoint, key))
+    }
+
+    fn apply_catalog_result(&mut self) {
+        let Ok(result) = self.catalog_rx.try_recv() else {
+            return;
+        };
+        self.catalog_status = match result {
+            Ok(models) if !models.is_empty() => {
+                self.catalog = models;
+                self.seed_role_suggestions();
+                CatalogStatus::Available
+            }
+            Ok(_) => {
+                self.catalog_warning = Some(
+                    "Catalog is unverified. Enter all model roles manually; reasoning will be off."
+                        .to_string(),
+                );
+                CatalogStatus::Unavailable
+            }
+            Err(message) => {
+                self.catalog_warning = Some(format!(
+                    "Unverified catalog: {}. Manual model roles are allowed with reasoning off.",
+                    message
+                ));
+                CatalogStatus::Unavailable
+            }
+        };
+        self.catalog_worker = None;
+    }
+
+    fn seed_role_suggestions(&mut self) {
+        for index in 0..3 {
+            let role = &mut self.roles[index];
+            if role.model.is_none() {
+                if let Some(entry) = self.catalog.get(index) {
+                    role.model = Some(entry.id.clone());
+                    role.origin = FieldOrigin::Recommended;
+                    role.review = RoleReview::Suggested;
+                    role.metadata = entry.reasoning.clone();
+                    role.reasoning = default_reasoning(entry);
+                }
+            } else {
+                role.metadata = role
+                    .model
+                    .as_deref()
+                    .and_then(|id| self.catalog.iter().find(|entry| entry.id == id))
+                    .and_then(|entry| entry.reasoning.clone());
+            }
+        }
+    }
+
+    fn invalidate_roles(&mut self) {
+        for role in &mut self.roles {
+            if role.model.is_some() {
+                role.review = RoleReview::NeedsReview;
+            }
+        }
+        self.catalog.clear();
+        self.catalog_status = CatalogStatus::NotStarted;
+        self.catalog_warning = None;
+        self.catalog_cancel.store(true, Ordering::SeqCst);
+        self.catalog_cancel = Arc::new(AtomicBool::new(false));
+    }
+
+    fn result(&mut self) -> Result<SetupWizardResult, Error> {
+        self.validate_provider()?;
+        for index in 0..3 {
+            if self.roles[index].origin == FieldOrigin::User {
+                self.roles[index].review = RoleReview::Manual;
+                self.roles[index].reasoning = ReasoningStrength::Off;
+            }
+            if self.roles[index].model.is_none()
+                || matches!(
+                    self.roles[index].review,
+                    RoleReview::NeedsReview | RoleReview::Suggested
+                )
+            {
+                return Err(self
+                    .set_validation(format!("{} model needs explicit review", role_label(index))));
+            }
+        }
+        let api_key = match self.storage {
+            CredentialStorage::Configuration => self.credential_input.clone(),
+            CredentialStorage::Environment => format!("${{{}}}", self.credential_input),
+        };
+        let provider =
+            build_provider_draft_for_identity(self.provider_identity, &self.endpoint, &api_key)?;
+        let mut updated = self.persisted.clone();
+        updated.defaults.provider = Some(provider.name.clone());
+        let default_model = updated
+            .providers
+            .get(&provider.name)
+            .and_then(|value| value.default_model.clone());
+        updated.providers.insert(
+            provider.name.clone(),
+            crate::config::types::ProviderConfig {
+                endpoint: provider.endpoint.clone(),
+                api_key: Some(provider.api_key.clone()),
+                default_model,
+            },
+        );
+        updated.tiers.small = self.roles[0].model.clone();
+        updated.tiers.normal = self.roles[1].model.clone();
+        updated.tiers.thinking = self.roles[2].model.clone();
+        updated.tiers.reasoning.small = Some(self.roles[0].reasoning.as_str().to_string());
+        updated.tiers.reasoning.normal = Some(self.roles[1].reasoning.as_str().to_string());
+        updated.tiers.reasoning.thinking = Some(self.roles[2].reasoning.as_str().to_string());
+
+        Ok(SetupWizardResult {
+            config: updated,
+            provider,
+            choices: std::array::from_fn(|index| Some(self.level_choice(index))),
+            completion_shells: changed_shells(
+                &self.completion_initial,
+                &self.completion_selected,
+                &self.completion_attention,
+                true,
+            ),
+            shortcut_shells: changed_shells(
+                &self.shortcut_initial,
+                &self.shortcut_selected,
+                &self.shortcut_attention,
+                true,
+            ),
+            completion_remove_shells: changed_shells(
+                &self.completion_initial,
+                &self.completion_selected,
+                &self.completion_attention,
+                false,
+            ),
+            shortcut_remove_shells: changed_shells(
+                &self.shortcut_initial,
+                &self.shortcut_selected,
+                &self.shortcut_attention,
+                false,
+            ),
+            completion_attention_shells: attention_shells(
+                &self.completion_attention,
+                &self.completion_selected,
+            ),
+            shortcut_attention_shells: attention_shells(
+                &self.shortcut_attention,
+                &self.shortcut_selected,
+            ),
+            first_run: self.first_run,
+            catalog_warning: self.catalog_warning.clone(),
+        })
+    }
+
+    fn level_choice(&self, index: usize) -> LevelChoice {
+        let role = &self.roles[index];
+        let id = role.model.clone().unwrap_or_default();
+        let metadata = self.catalog.iter().find(|entry| entry.id == id);
+        LevelChoice {
+            model: metadata.cloned().unwrap_or_else(|| ModelEntry {
+                id,
+                name: None,
+                context_length: None,
+                pricing: None,
+                supported_features: Vec::new(),
+                reasoning: None,
+            }),
+            reasoning: role.reasoning,
+        }
+    }
+
+    fn can_finish(&self) -> bool {
+        if self.endpoint.trim().is_empty()
+            || normalize_endpoint(&self.endpoint).is_err()
+            || self.credential_input.trim().is_empty()
+        {
+            return false;
+        }
+        if self.storage == CredentialStorage::Environment
+            && (!valid_environment_name(&self.credential_input)
+                || !env_present(&self.credential_input))
+        {
+            return false;
+        }
+        self.roles.iter().all(|role| {
+            role.model.is_some()
+                && !matches!(role.review, RoleReview::NeedsReview | RoleReview::Suggested)
+        })
+    }
+
+    fn set_validation(&mut self, message: impl Into<String>) -> Error {
+        let message = message.into();
+        self.validation = message.clone();
+        Error::ConfigError(message)
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let panel = Block::bordered().title("Setup");
+        let outer = Block::default()
+            .borders(Borders::ALL)
+            .title("watn setup")
+            .border_style(Style::default().fg(Color::DarkGray));
+        let inner = outer.inner(frame.area());
+        frame.render_widget(outer, frame.area());
         let areas = Layout::vertical([
             Constraint::Length(3),
-            Constraint::Length(2),
             Constraint::Min(8),
             Constraint::Length(3),
         ])
-        .split(panel.inner(frame.area()));
-        frame.render_widget(panel, frame.area());
-
-        let mut tab_titles = vec![
-            Line::from("URL"),
-            Line::from("API key"),
-            Line::from("Small Model"),
-            Line::from("Middle Model"),
-            Line::from("Large Model"),
-            Line::from("Shell Completion"),
-            Line::from("Shell Shortcut"),
+        .split(inner);
+        let titles = [
+            Line::from("Provider"),
+            Line::from("Model roles"),
+            Line::from("Shell integration"),
+            Line::from("Review"),
         ];
-        tab_titles.truncate(self.last_page.index() + 1);
-        let tabs = Tabs::new(tab_titles)
-            .block(Block::bordered().title("Setup pages"))
+        let tabs = Tabs::new(titles)
+            .block(Block::default().borders(Borders::ALL).title("Setup topics"))
             .select(self.page.index())
             .highlight_style(
                 Style::default()
@@ -1085,327 +1228,488 @@ impl SetupWizard {
             )
             .divider(Span::raw(" | "));
         frame.render_widget(tabs, areas[0]);
-
-        let focus = match self.page {
-            SetupPage::ShellCompletion => match self.completion_focus {
-                ShellInstallFocus::Question => "completion confirmation",
-                ShellInstallFocus::Shells => "completion shells",
-            },
-            SetupPage::ShellShortcut => match self.shortcut_focus {
-                ShellInstallFocus::Question => "shortcut confirmation",
-                ShellInstallFocus::Shells => "shortcut shells",
-            },
-            _ => match self.page.model_slot() {
-                Some(_) => match self.model_focus {
-                    ModelFocus::Table => "model table",
-                    ModelFocus::Reasoning => "reasoning",
-                },
-                None => match self.credential_focus {
-                    CredentialFocus::Storage => "storage choice",
-                    CredentialFocus::Value => "input",
-                },
-            },
-        };
-        let header = Paragraph::new(format!(
-            "Page {} of {}  |  {}  |  Focus: {}",
-            self.page.index() + 1,
-            self.last_page.index() + 1,
-            self.page.title(),
-            focus
-        ));
-        frame.render_widget(header, areas[1]);
-
         match self.page {
-            SetupPage::Url => self.draw_url(frame, areas[2]),
-            SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel => {
-                self.draw_model(frame, areas[2]);
-            }
-            SetupPage::ShellCompletion => self.draw_shell_install(frame, areas[2], false),
-            SetupPage::ShellShortcut => self.draw_shell_install(frame, areas[2], true),
+            SetupPage::Provider => self.draw_provider(frame, areas[1]),
+            SetupPage::ModelRoles => self.draw_model_roles(frame, areas[1]),
+            SetupPage::ShellIntegration => self.draw_shell_integration(frame, areas[1]),
+            SetupPage::Review => self.draw_review(frame, areas[1]),
         }
-
-        let footer = if self.save_prompt {
-            "Save current settings? [y] Save [n] Discard  [Esc] Return"
+        let footer = if self.discard_prompt {
+            "Finish this draft? [Enter/y] Finish  [d/n] Discard  [Esc] Return"
+        } else if !self.validation.is_empty() {
+            &self.validation
         } else {
-            match self.page {
-                SetupPage::ShellCompletion => match self.completion_focus {
-                    ShellInstallFocus::Question => {
-                        "[y] Install completion  [Enter] Skip  [Esc] save/discard"
-                    }
-                    ShellInstallFocus::Shells => {
-                        "Up/Down move  Space toggle  Enter continue  Esc save/discard"
-                    }
-                },
-                SetupPage::ShellShortcut => match self.shortcut_focus {
-                    ShellInstallFocus::Question => {
-                        "[y] Install shortcut  [Enter] Skip  [Esc] save/discard"
-                    }
-                    ShellInstallFocus::Shells => {
-                        "Up/Down move  Space toggle  Enter finish  Esc save/discard"
-                    }
-                },
-                _ => "Enter/Tab next  Shift-Tab back  Ctrl-R reasoning  Esc save/discard  Ctrl-C quit",
-            }
+            "Tab/Enter next  Shift-Tab back  Ctrl-U clear  Esc discard  Ctrl-C quit"
         };
-        let footer = Paragraph::new(footer)
-            .block(Block::bordered().title("Controls"))
-            .wrap(Wrap { trim: true });
-        frame.render_widget(footer, areas[3]);
+        frame.render_widget(
+            Paragraph::new(footer)
+                .block(Block::default().borders(Borders::ALL).title("Controls"))
+                .wrap(Wrap { trim: true }),
+            areas[2],
+        );
     }
 
-    fn draw_url(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let chunks = Layout::vertical([
-            Constraint::Min(3),
-            Constraint::Length(3),
-            Constraint::Length(3),
-        ])
-        .split(area);
-        let explanation = Paragraph::new(
-            "Enter an OpenAI/LiteLLM compatible endpoint. The service must expose the standard chat and model APIs.",
-        )
-        .block(Block::bordered().title("Endpoint explanation"))
-        .wrap(Wrap { trim: true });
-        frame.render_widget(explanation, chunks[0]);
-        let input = Paragraph::new(format!("> {}█", self.endpoint))
-            .block(setup_block("URL (editing)", true));
-        frame.render_widget(input, chunks[1]);
-        self.draw_validation(frame, chunks[2]);
-    }
-
-    fn draw_api_key(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let chunks = Layout::vertical([
-            Constraint::Length(5),
-            Constraint::Length(3),
-            Constraint::Min(3),
-        ])
-        .split(area);
-        let items = vec![
-            ListItem::new(Line::from("Configuration (Paste credential)")),
-            ListItem::new(Line::from("Environment variable (store name)")),
-        ];
-        let mut state = ListState::default();
-        state.select(Some(match self.storage {
-            CredentialStorage::Configuration => 0,
-            CredentialStorage::Environment => 1,
-        }));
-        let list = List::new(items)
-            .block(setup_block(
-                "Where should the API key be stored?",
-                self.credential_focus == CredentialFocus::Storage,
-            ))
-            .highlight_style(
+    fn draw_provider(&self, frame: &mut Frame, area: Rect) {
+        let (settings, help) = split_settings_help(area);
+        let mut lines = Vec::new();
+        if self.first_run {
+            lines.push(Line::from(Span::styled(
+                "No watn configuration found.",
                 Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
+                    .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
-        frame.render_stateful_widget(list, chunks[0], &mut state);
-        let value = if self.storage == CredentialStorage::Configuration {
-            "*".repeat(self.credential_input.chars().count())
-        } else {
-            self.credential_input.clone()
-        };
-        let input = Paragraph::new(format!("> {}█", value)).block(setup_block(
-            "API key / environment name (editing)",
-            self.credential_focus == CredentialFocus::Value,
-        ));
-        frame.render_widget(input, chunks[1]);
-        self.draw_validation(frame, chunks[2]);
-    }
-
-    fn draw_model(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let Some(slot) = self.page.model_slot() else {
-            return;
-        };
-        let chunks = Layout::vertical([Constraint::Min(7), Constraint::Length(3)]).split(area);
-        let rows = self.suggestions[slot]
-            .iter()
-            .enumerate()
-            .map(|(index, model)| {
-                let label = if index == self.selection[slot] {
-                    format!("> {}", model.id)
-                } else {
-                    model.id.clone()
-                };
-                Row::new([
-                    Cell::from(label),
-                    Cell::from(
-                        model
-                            .context_length
-                            .map(|value| format!("{}K", value / 1000))
-                            .unwrap_or_else(|| "-".to_string()),
-                    ),
-                    Cell::from(
-                        model
-                            .pricing
-                            .as_ref()
-                            .map(|value| format!("${:.2}/${:.2}", value.input, value.output))
-                            .unwrap_or_else(|| "-".to_string()),
-                    ),
-                    Cell::from(model.supported_features.join(", ")),
-                ])
-            });
-        let mut table_state = TableState::default();
-        if !self.suggestions[slot].is_empty() {
-            table_state.select(Some(
-                self.selection[slot].min(self.suggestions[slot].len() - 1),
+            )));
+            lines.push(Line::from(
+                "Suggested values are ready for review. Nothing is saved until Finish setup.",
             ));
         }
-        let title = if self.queries[slot].is_empty() {
-            format!("{} (editing)", self.page.title())
-        } else {
-            format!(
-                "{} (editing) | Filter: {}",
-                self.page.title(),
-                self.queries[slot]
-            )
-        };
-        let table = Table::new(
-            rows,
-            [
-                Constraint::Percentage(52),
-                Constraint::Percentage(15),
-                Constraint::Percentage(18),
-                Constraint::Min(0),
-            ],
-        )
-        .header(
-            Row::new(["Model", "Context", "Pricing", "Features"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(setup_block(title, self.model_focus == ModelFocus::Table))
-        .row_highlight_style(
-            Style::default()
-                .bg(Color::Cyan)
-                .fg(Color::Black)
-                .add_modifier(Modifier::BOLD),
-        )
-        .highlight_symbol("");
-        frame.render_stateful_widget(table, chunks[0], &mut table_state);
-        let visible_rows = chunks[0].height.saturating_sub(4) as usize;
-        if self.suggestions[slot].len() > visible_rows.max(1) {
-            let mut scrollbar_state =
-                ScrollbarState::new(self.suggestions[slot].len()).position(self.selection[slot]);
-            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .thumb_symbol("#")
-                .track_symbol(Some("."));
-            frame.render_stateful_widget(
-                scrollbar,
-                chunks[0].inner(Margin {
-                    horizontal: 1,
-                    vertical: 1,
-                }),
-                &mut scrollbar_state,
-            );
-        }
-        let options = self.reasoning_options(slot);
-        let options = options
-            .iter()
-            .map(ReasoningStrength::as_str)
-            .collect::<Vec<_>>()
-            .join(", ");
-        let reasoning = Paragraph::new(format!(
-            "Reasoning {}: {}  |  Supported: {}{}",
-            if self.model_focus == ModelFocus::Reasoning {
-                "(focused)"
-            } else {
-                ""
-            },
-            self.reasoning[slot].as_str(),
-            options,
-            if self.suggestions[slot]
-                .get(self.selection[slot])
-                .and_then(|model| model.reasoning.as_ref())
-                .map(|reasoning| reasoning.mandatory)
-                .unwrap_or(false)
-            {
-                "  | mandatory"
+        lines.push(Line::from(format!(
+            "{} Provider: {}",
+            focus_marker(self.provider_focus == ProviderFocus::Identity),
+            self.provider_identity.name()
+        )));
+        lines.push(Line::from(format!(
+            "  1 OpenRouter  2 OpenAI  3 Custom{}",
+            if self.provider_focus == ProviderFocus::Identity {
+                "  (choose with Up/Down)"
             } else {
                 ""
             }
-        ))
-        .block(setup_block(
-            "Model reasoning",
-            self.model_focus == ModelFocus::Reasoning,
-        ))
-        .wrap(Wrap { trim: true });
-        frame.render_widget(reasoning, chunks[1]);
-    }
-
-    fn draw_shell_install(&self, frame: &mut Frame, area: ratatui::layout::Rect, shortcut: bool) {
-        let (focus, enabled, cursor, selected) = if shortcut {
-            (
-                self.shortcut_focus,
-                self.shortcut_enabled,
-                self.shortcut_cursor,
-                &self.shortcut_selected,
-            )
-        } else {
-            (
-                self.completion_focus,
-                self.completion_enabled,
-                self.completion_cursor,
-                &self.completion_selected,
-            )
-        };
-        let (title, description, question) = if shortcut {
-            (
-                "Shell shortcut",
-                "Install a Ctrl-W widget in each selected shell startup file. Type a natural-language request, press Ctrl-W, review or edit the generated command, then press Enter. The command is never executed automatically.",
-                if enabled {
-                    "Select the shells where the Ctrl-W widget should be installed."
+        )));
+        lines.push(Line::from(format!(
+            "{} Endpoint: {} [{}]",
+            focus_marker(self.provider_focus == ProviderFocus::Endpoint),
+            cursor_value(&self.endpoint),
+            self.endpoint_origin.label()
+        )));
+        lines.push(Line::from(format!(
+            "{} Credential source: {}",
+            focus_marker(self.provider_focus == ProviderFocus::CredentialChoice),
+            match self.storage {
+                CredentialStorage::Configuration => "configuration value",
+                CredentialStorage::Environment => "environment variable",
+            }
+        )));
+        for (index, candidate) in self.credential_candidates.iter().enumerate() {
+            let selected = self.credential_choice == Some(index);
+            lines.push(Line::from(format!(
+                "  {} {} [{}] {}",
+                if selected { ">" } else { " " },
+                candidate.name,
+                if candidate.detected {
+                    "detected"
                 } else {
-                    "Install the Ctrl-W shell shortcut for watn?"
+                    "not found"
                 },
-            )
-        } else {
-            (
-                "Shell completion",
-                "Install watn's generated Tab completion in each selected shell startup file. After reloading the file, type watn and press Tab to complete options and subcommands.",
-                if enabled {
-                    "Select the shells where watn completion should be installed."
+                if selected {
+                    self.credential_origin.label()
+                } else if self.credential_origin == FieldOrigin::Recommended
+                    && self.credential_input == candidate.name
+                {
+                    FieldOrigin::Recommended.label()
                 } else {
-                    "Install shell completion for watn?"
+                    ""
+                }
+            )));
+        }
+        lines.push(Line::from(format!(
+            "{} Credential / variable: {} [{}]",
+            focus_marker(self.provider_focus == ProviderFocus::CredentialInput),
+            if self.storage == CredentialStorage::Configuration {
+                "*".repeat(self.credential_input.chars().count())
+            } else {
+                cursor_value(&self.credential_input)
+            },
+            self.credential_origin.label()
+        )));
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title("Provider settings");
+        frame.render_widget(
+            Paragraph::new(Text::from(lines))
+                .block(block)
+                .wrap(Wrap { trim: true }),
+            settings,
+        );
+        self.draw_help(frame, help, "endpoint");
+    }
+
+    fn draw_model_roles(&self, frame: &mut Frame, area: Rect) {
+        let (settings, help) = split_settings_help(area);
+        let mut lines = vec![Line::from(format!(
+            "Catalog: {}",
+            match self.catalog_status {
+                CatalogStatus::NotStarted => "not started",
+                CatalogStatus::Loading => "loading...",
+                CatalogStatus::Available => "available",
+                CatalogStatus::Unavailable => "unavailable; manual entry enabled",
+            }
+        ))];
+        for index in 0..3 {
+            let role = &self.roles[index];
+            let active = self.active_role == index;
+            lines.push(Line::from(format!(
+                "{} {}  {}  Reasoning: {}  [{}]",
+                focus_marker(active),
+                role_label(index),
+                role.model.as_deref().unwrap_or("Needs selection"),
+                role.reasoning.as_str(),
+                match role.review {
+                    RoleReview::Loaded => "Loaded from config",
+                    RoleReview::Suggested => "Suggested",
+                    RoleReview::Manual => "Entered by you",
+                    RoleReview::NeedsReview => "Needs attention",
+                    RoleReview::Confirmed => "Reviewed",
+                }
+            )));
+        }
+        lines.push(Line::from(
+            "Type a model ID to enter manually; Ctrl-R changes reasoning when metadata exists.",
+        ));
+        if let Some(warning) = &self.catalog_warning {
+            lines.push(Line::from(Span::styled(
+                warning.as_str(),
+                Style::default().fg(Color::Yellow),
+            )));
+        }
+        lines.push(Line::from(format!(
+            "Finish setup: {}",
+            if self.can_finish() {
+                "available"
+            } else {
+                "unavailable until required settings are reviewed"
+            }
+        )));
+        frame.render_widget(
+            Paragraph::new(Text::from(lines))
+                .block(Block::default().borders(Borders::ALL).title("Model roles"))
+                .wrap(Wrap { trim: true }),
+            settings,
+        );
+        self.draw_help(frame, help, "model role");
+    }
+
+    fn draw_shell_integration(&self, frame: &mut Frame, area: Rect) {
+        let (settings, help) = split_settings_help(area);
+        let mut lines = vec![Line::from(
+            "Optional. Existing marker blocks determine the initial selections.",
+        )];
+        for index in 0..3 {
+            lines.push(Line::from(format!(
+                "{} Completion in {} [{}]{}",
+                focus_marker(self.shell_cursor == index),
+                Shell::ALL[index].name(),
+                if self.completion_selected[index] {
+                    "x"
+                } else {
+                    " "
                 },
-            )
-        };
-        let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(5)]).split(area);
-        let explanation = Paragraph::new(format!("{}\n\n{}", description, question))
-            .block(setup_block(title, focus == ShellInstallFocus::Question))
-            .wrap(Wrap { trim: true });
-        frame.render_widget(explanation, chunks[0]);
-
-        let items = Shell::ALL.iter().enumerate().map(|(index, shell)| {
-            let marker = if selected[index] { "[x]" } else { "[ ]" };
-            ListItem::new(format!("{} {}", marker, shell.name()))
-        });
-        let mut state = ListState::default();
-        state.select(Some(cursor));
-        let list = List::new(items)
-            .block(setup_block(
-                "Select shells",
-                focus == ShellInstallFocus::Shells,
-            ))
-            .highlight_style(
-                Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
-        frame.render_stateful_widget(list, chunks[1], &mut state);
+                if self.completion_attention[index] {
+                    " Needs attention"
+                } else {
+                    ""
+                }
+            )));
+        }
+        for index in 0..3 {
+            lines.push(Line::from(format!(
+                "{} Ctrl-W shortcut in {} [{}]{}",
+                focus_marker(self.shell_cursor == index + 3),
+                Shell::ALL[index].name(),
+                if self.shortcut_selected[index] {
+                    "x"
+                } else {
+                    " "
+                },
+                if self.shortcut_attention[index] {
+                    " Needs attention"
+                } else {
+                    ""
+                }
+            )));
+        }
+        lines.push(Line::from("Space toggles the selected integration. It never executes generated commands automatically."));
+        frame.render_widget(
+            Paragraph::new(Text::from(lines))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Shell integration"),
+                )
+                .wrap(Wrap { trim: true }),
+            settings,
+        );
+        self.draw_help(frame, help, "shell integration");
     }
 
-    fn draw_validation(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let text = if self.validation.is_empty() {
-            "The active line is marked with █. Enter or Tab advances the wizard.".to_string()
+    fn draw_review(&self, frame: &mut Frame, area: Rect) {
+        let (settings, help) = split_settings_help(area);
+        let mut lines = vec![Line::from(Span::styled(
+            "Review draft before Finish setup",
+            Style::default().add_modifier(Modifier::BOLD),
+        ))];
+        lines.push(Line::from(format!(
+            "Provider: {}  Endpoint: {}",
+            self.provider_identity.name(),
+            self.endpoint
+        )));
+        lines.push(Line::from(format!(
+            "Credential: {} ({})",
+            match self.storage {
+                CredentialStorage::Configuration => "configuration value",
+                CredentialStorage::Environment => self.credential_input.as_str(),
+            },
+            self.credential_origin.label()
+        )));
+        for index in 0..3 {
+            lines.push(Line::from(format!(
+                "{}: {}  Reasoning: {}",
+                role_label(index),
+                self.roles[index]
+                    .model
+                    .as_deref()
+                    .unwrap_or("Needs selection"),
+                self.roles[index].reasoning.as_str()
+            )));
+        }
+        lines.push(Line::from(format!(
+            "Shell changes: completion {}, shortcut {}",
+            changed_count(&self.completion_initial, &self.completion_selected),
+            changed_count(&self.shortcut_initial, &self.shortcut_selected)
+        )));
+        lines.push(Line::from(format!(
+            "Catalog source: {}",
+            self.persisted
+                .litellm
+                .as_ref()
+                .map(|catalog| catalog.endpoint.as_str())
+                .unwrap_or("selected provider endpoint")
+        )));
+        if let Some(warning) = &self.catalog_warning {
+            lines.push(Line::from(Span::styled(
+                format!("Warning: {}", warning),
+                Style::default().fg(Color::Yellow),
+            )));
+        }
+        lines.push(Line::from("Press Enter to Finish setup. Finish is blocked while required settings need attention."));
+        frame.render_widget(
+            Paragraph::new(Text::from(lines))
+                .block(Block::default().borders(Borders::ALL).title("Review"))
+                .wrap(Wrap { trim: true }),
+            settings,
+        );
+        self.draw_help(frame, help, "review");
+    }
+
+    fn draw_help(&self, frame: &mut Frame, area: Rect, active: &str) {
+        let text = format!(
+            "About this setting: {active}\n\nWhat it is\nThe {active} value used by watn.\n\nWhat it enables\nProvider requests, model discovery, or safe shell integration.\n\nRecommendation\nReview detected values and prefer environment-backed credentials.\n\nRequirement / tradeoff\nThe endpoint must be HTTP(S); catalog and shell failures remain visible and may require attention."
+        );
+        frame.render_widget(
+            Paragraph::new(text)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("About this setting"),
+                )
+                .wrap(Wrap { trim: true }),
+            area,
+        );
+    }
+}
+
+fn initial_credential(
+    saved: &Option<String>,
+    identity: ProviderIdentity,
+    first_run: bool,
+) -> (CredentialStorage, String, FieldOrigin, Option<usize>) {
+    if let Some(value) = saved {
+        if let Some(name) = value
+            .strip_prefix("${")
+            .and_then(|value| value.strip_suffix('}'))
+        {
+            return (
+                CredentialStorage::Environment,
+                name.to_string(),
+                FieldOrigin::Loaded,
+                None,
+            );
+        }
+        return (
+            CredentialStorage::Configuration,
+            value.clone(),
+            FieldOrigin::Loaded,
+            None,
+        );
+    }
+    if first_run {
+        let candidates = discover_credentials(identity.name());
+        let detected = candidates
+            .iter()
+            .enumerate()
+            .filter(|(_, candidate)| candidate.detected)
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        if detected.len() == 1 {
+            let index = detected[0];
+            return (
+                CredentialStorage::Environment,
+                candidates[index].name.clone(),
+                FieldOrigin::Detected,
+                Some(index),
+            );
+        }
+        if detected.len() > 1 {
+            return (
+                CredentialStorage::Environment,
+                String::new(),
+                FieldOrigin::Recommended,
+                None,
+            );
+        }
+        let suggested = match identity {
+            ProviderIdentity::OpenAi => "OPENAI_API_KEY",
+            ProviderIdentity::OpenRouter => "OPENROUTER_API_KEY",
+            ProviderIdentity::Custom => "WATN_API_KEY",
+        };
+        return (
+            CredentialStorage::Environment,
+            suggested.to_string(),
+            FieldOrigin::Recommended,
+            None,
+        );
+    }
+    (
+        CredentialStorage::Configuration,
+        String::new(),
+        FieldOrigin::Loaded,
+        None,
+    )
+}
+
+fn initial_roles(config: &Config, first_run: bool) -> [RoleDraft; 3] {
+    let values = [
+        config.tiers.small.clone(),
+        config.tiers.normal.clone(),
+        config.tiers.thinking.clone(),
+    ];
+    let reasoning = [
+        parse_reasoning(config.tiers.reasoning.small.as_deref()),
+        parse_reasoning(config.tiers.reasoning.normal.as_deref()),
+        parse_reasoning(config.tiers.reasoning.thinking.as_deref()),
+    ];
+    std::array::from_fn(|index| RoleDraft {
+        model: values[index].clone(),
+        origin: if first_run {
+            FieldOrigin::Recommended
         } else {
-            format!("Validation: {}", self.validation)
+            FieldOrigin::Loaded
+        },
+        review: if first_run {
+            RoleReview::Suggested
+        } else {
+            RoleReview::Loaded
+        },
+        reasoning: reasoning[index],
+        ..RoleDraft::default()
+    })
+}
+
+fn inspect_shell_integration(
+    environment: &ShellEnvironment,
+    shortcut: bool,
+) -> ([Option<bool>; 3], [bool; 3]) {
+    let mut initial = [None; 3];
+    let mut attention = [false; 3];
+    for index in 0..3 {
+        let state = if shortcut {
+            shell_shortcut::marker_state(Shell::ALL[index], environment)
+        } else {
+            shell_completion::marker_state(Shell::ALL[index], environment)
         };
-        frame.render_widget(Paragraph::new(text).wrap(Wrap { trim: true }), area);
+        (initial[index], attention[index]) = match state {
+            Ok(BlockState::Present) => (Some(true), false),
+            Ok(BlockState::Absent) => (Some(false), false),
+            Ok(BlockState::Malformed) | Ok(BlockState::Unreadable) | Err(_) => (Some(false), true),
+        };
     }
+    (initial, attention)
+}
+
+fn changed_shells(
+    initial: &[Option<bool>; 3],
+    selected: &[bool; 3],
+    attention: &[bool; 3],
+    present: bool,
+) -> Vec<Shell> {
+    Shell::ALL
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, shell)| {
+            if attention[index] {
+                return None;
+            }
+            let changed = initial[index].is_some_and(|value| value != selected[index]);
+            (changed && selected[index] == present).then_some(shell)
+        })
+        .collect()
+}
+
+fn changed_count(initial: &[Option<bool>; 3], selected: &[bool; 3]) -> usize {
+    initial
+        .iter()
+        .zip(selected)
+        .filter(|(initial, selected)| initial.is_some_and(|value| value != **selected))
+        .count()
+}
+
+fn attention_shells(attention: &[bool; 3], selected: &[bool; 3]) -> Vec<Shell> {
+    Shell::ALL
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, shell)| (attention[index] && selected[index]).then_some(shell))
+        .collect()
+}
+
+fn split_settings_help(area: Rect) -> (Rect, Rect) {
+    if area.width >= WIDE_LAYOUT_COLUMNS {
+        let chunks = Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)])
+            .split(area);
+        (chunks[0], chunks[1])
+    } else {
+        let chunks =
+            Layout::vertical([Constraint::Percentage(56), Constraint::Percentage(44)]).split(area);
+        (chunks[0], chunks[1])
+    }
+}
+
+fn focus_marker(focused: bool) -> &'static str {
+    if focused {
+        ">"
+    } else {
+        " "
+    }
+}
+
+fn cursor_value(value: &str) -> String {
+    format!("{}█", value)
+}
+
+fn role_label(index: usize) -> &'static str {
+    match index {
+        0 => "Small / fast",
+        1 => "Balanced / normal",
+        _ => "Thinking",
+    }
+}
+
+fn default_reasoning(model: &ModelEntry) -> ReasoningStrength {
+    model
+        .reasoning
+        .as_ref()
+        .and_then(|metadata| metadata.default_effort.as_deref())
+        .and_then(ReasoningStrength::parse)
+        .unwrap_or(ReasoningStrength::Off)
 }
 
 fn parse_reasoning(value: Option<&str>) -> ReasoningStrength {
@@ -1423,4 +1727,47 @@ fn valid_environment_name(name: &str) -> bool {
                         || character.is_ascii_uppercase()
                         || character.is_ascii_digit()))
         })
+}
+
+trait ReasoningSelection {
+    fn min_supported_by(
+        self,
+        metadata: Option<&crate::models::list::ModelReasoning>,
+    ) -> Option<Self>
+    where
+        Self: Sized;
+}
+
+impl ReasoningSelection for ReasoningStrength {
+    fn min_supported_by(
+        self,
+        metadata: Option<&crate::models::list::ModelReasoning>,
+    ) -> Option<Self> {
+        let Some(metadata) = metadata else {
+            return Some(ReasoningStrength::Off);
+        };
+        if metadata.mandatory && self == ReasoningStrength::Off {
+            return metadata
+                .supported_efforts
+                .iter()
+                .find_map(|value| ReasoningStrength::parse(value));
+        }
+        if self == ReasoningStrength::Off
+            || metadata
+                .supported_efforts
+                .iter()
+                .any(|value| ReasoningStrength::parse(value) == Some(self))
+        {
+            Some(self)
+        } else {
+            Some(default_reasoning(&ModelEntry {
+                id: String::new(),
+                name: None,
+                context_length: None,
+                pricing: None,
+                supported_features: Vec::new(),
+                reasoning: Some(metadata.clone()),
+            }))
+        }
+    }
 }

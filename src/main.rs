@@ -5,13 +5,13 @@ use clap_complete::shells::{Bash, Elvish, Fish, PowerShell, Zsh};
 use std::io::{self, IsTerminal};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use watn::config::{self, load_config, resolve_model, resolve_provider};
+use watn::config::{self, read_config, resolve_model, resolve_provider};
 use watn::error::exit_code;
 use watn::output::render;
 use watn::provider::openai_compat::OpenAICompatibleProvider;
 use watn::provider::registry::ProviderRegistry;
 use watn::provider::{Message, RequestOptions, StreamEvent};
-use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
+use watn::setup::SetupWizardOutcome;
 
 #[derive(clap::Parser)]
 #[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
@@ -29,26 +29,11 @@ struct Cli {
     #[arg(short = '3', long = "thinking")]
     tier_thinking: bool,
 
-    #[arg(long = "model", conflicts_with_all = ["tier_small", "tier_normal", "tier_thinking"])]
-    model: Option<String>,
-
     #[arg(short = 'x', long = "execute")]
     execute: bool,
 
     #[arg(short = 'v', long = "verbose")]
     verbose: bool,
-
-    #[arg(long = "provider")]
-    provider: Option<String>,
-
-    #[arg(long = "set-small")]
-    set_small: Option<String>,
-
-    #[arg(long = "set-normal")]
-    set_normal: Option<String>,
-
-    #[arg(long = "set-thinking")]
-    set_thinking: Option<String>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -57,8 +42,6 @@ struct Cli {
 #[derive(clap::Subcommand)]
 enum Commands {
     Setup,
-    Models,
-    Provider,
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"
     )]
@@ -115,13 +98,21 @@ impl Cli {
 fn main() {
     let cli = Cli::parse();
 
+    if cli.command.is_none()
+        && cli
+            .question
+            .first()
+            .is_some_and(|value| matches!(value.as_str(), "provider" | "models"))
+    {
+        eprintln!(
+            "error: removed setup command; use `watn setup` for provider and model configuration"
+        );
+        std::process::exit(2);
+    }
+
     if let Some(command) = &cli.command {
         match command {
             Commands::Setup => run_setup_command(),
-            Commands::Models => {
-                run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
-            }
-            Commands::Provider => run_provider_setup_command(),
             Commands::Completions { shell } => run_completions(shell),
         }
         return;
@@ -147,7 +138,7 @@ fn main() {
         }
     };
 
-    let mut config = match load_config() {
+    let persisted = match read_config() {
         Ok(c) => c,
         Err(e) => {
             let code = exit_code(&e);
@@ -156,18 +147,44 @@ fn main() {
         }
     };
 
-    let provider_name = cli
-        .provider
-        .as_deref()
-        .unwrap_or(config.defaults.provider.as_deref().unwrap_or("openrouter"));
-
-    let explicit_provider = cli.provider.is_some() || std::env::var("WATN_PROVIDER").is_ok();
-    if !explicit_provider && !config::provider_ready(&config, provider_name) {
+    if !persisted.exists {
         if !std::io::stdin().is_terminal() {
             watn::provider::setup::print_setup_guidance();
             std::process::exit(1);
         }
-        match watn::setup::run_with_config(&config, SetupEntryPoint::Setup) {
+        match watn::setup::run_with_persisted_config(
+            &persisted,
+            watn::setup::SetupEntryPoint::Setup,
+        ) {
+            Ok(SetupWizardOutcome::Saved(result)) => {
+                let mut config = persisted.config.clone();
+                if let Err(error) = watn::setup::apply_result(&mut config, &result) {
+                    eprintln!("{}", error);
+                    std::process::exit(exit_code(&error));
+                }
+                eprintln!("Setup complete. Retry your command.");
+                return;
+            }
+            Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
+                exit_setup_cancellation(cancellation);
+            }
+            Err(error) => {
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
+            }
+        }
+    }
+
+    let mut config = persisted.config;
+
+    let provider_name = config.defaults.provider.as_deref().unwrap_or("openrouter");
+
+    if !config::provider_ready(&config, provider_name) {
+        if !std::io::stdin().is_terminal() {
+            watn::provider::setup::print_setup_guidance();
+            std::process::exit(1);
+        }
+        match watn::setup::run_with_config(&config, watn::setup::SetupEntryPoint::Setup) {
             Ok(SetupWizardOutcome::Saved(result)) => {
                 if let Err(error) = watn::setup::apply_result(&mut config, &result) {
                     eprintln!("{}", error);
@@ -187,7 +204,7 @@ fn main() {
     }
 
     let tier = cli.tier();
-    let model = match resolve_model(&config, tier, cli.model.as_deref()) {
+    let model = match resolve_model(&config, tier, None) {
         Ok(m) => m,
         Err(e) => {
             let code = exit_code(&e);
@@ -412,80 +429,32 @@ fn build_registry(
     );
 }
 
-fn run_provider_setup_command() {
-    if !std::io::stdin().is_terminal() {
-        watn::provider::setup::print_setup_guidance();
-        std::process::exit(1);
-    }
-
-    let mut config = match load_config() {
-        Ok(config) => config,
-        Err(error) => {
-            eprintln!("{}", error);
-            std::process::exit(exit_code(&error));
-        }
-    };
-    match watn::setup::run_with_config(&config, SetupEntryPoint::Provider) {
-        Ok(SetupWizardOutcome::Saved(result)) => {
-            if let Err(error) = watn::setup::apply_result(&mut config, &result) {
-                eprintln!("{}", error);
-                std::process::exit(exit_code(&error));
-            }
-            println!("Provider configured: {}", result.provider.name);
-        }
-        Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
-            exit_setup_cancellation(cancellation);
-        }
-        Err(e) => {
-            let code = exit_code(&e);
-            eprintln!("{}", e);
-            std::process::exit(code);
-        }
-    }
-}
-
 fn run_setup_command() {
     if !std::io::stdin().is_terminal() {
         watn::provider::setup::print_setup_guidance();
         std::process::exit(1);
     }
-    let mut config = match load_config() {
+    let persisted = match read_config() {
         Ok(config) => config,
         Err(error) => {
             eprintln!("{}", error);
             std::process::exit(exit_code(&error));
         }
     };
-    match watn::setup::run_with_config(&config, SetupEntryPoint::Setup) {
+    let mut config = persisted.config.clone();
+    match watn::setup::run_with_persisted_config(&persisted, watn::setup::SetupEntryPoint::Setup) {
         Ok(SetupWizardOutcome::Saved(result)) => {
             if let Err(error) = watn::setup::apply_result(&mut config, &result) {
                 eprintln!("{}", error);
                 std::process::exit(exit_code(&error));
             }
-            println!("Setup complete");
+            eprintln!("Setup complete.");
         }
         Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
             exit_setup_cancellation(cancellation);
         }
         Err(error) => {
             eprintln!("{}", error);
-            std::process::exit(exit_code(&error));
-        }
-    }
-}
-
-fn run_models_command(
-    set_small: Option<String>,
-    set_normal: Option<String>,
-    set_thinking: Option<String>,
-) {
-    match watn::models::run_models_result(set_small, set_normal, set_thinking) {
-        watn::provider::setup::ModelSetupResult::Saved => {}
-        watn::provider::setup::ModelSetupResult::Cancelled(cancellation) => {
-            exit_setup_cancellation(cancellation);
-        }
-        watn::provider::setup::ModelSetupResult::Failed(error) => {
-            eprintln!("error: failed to configure models: {}", error);
             std::process::exit(exit_code(&error));
         }
     }

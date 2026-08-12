@@ -7,16 +7,19 @@
   - QS-002: `-x` prompts and executes on Enter
 - **Onboarding** — A first-time TTY user can reach model setup without learning TOML, while non-TTY use remains actionable and script-safe
   - QS-011: Provider setup offers a usable OpenRouter default
-  - QS-012: Missing provider automatically chains into model setup
+   - QS-012: Missing provider automatically opens reviewed first-run setup
   - QS-019: Setup information is separated into scannable terminal regions
     - QS-020: Background model search keeps the newest query authoritative
     - QS-054: Complete catalogs filter locally and delayed searches keep the query visible and responsive
    - QS-021: The setup wizard makes the active page and cursor explicit
-   - QS-022: Provider and model setup share one page sequence
+   - QS-022: Provider, model roles, shell integration, and review share one topic sequence
    - QS-053: The setup wizard marks the focused input region with a green border
    - QS-023: Test transport cannot redirect release-profile binaries by source guard
    - QS-024: Test transport assertions identify the exact endpoint and credential
    - QS-027: Normal debug transport ignores a non-empty test override
+   - QS-057: Existing configuration is unchanged by cancellation
+   - QS-058: Missing config detection creates no file before Finish
+   - QS-059: Credential discovery never exposes resolved secret values
 - **Flexibility** — Provider-agnostic, config-driven, model tiering
   - QS-003: Custom OpenAI-compatible provider
   - QS-004: Model tier assignment via config
@@ -62,31 +65,31 @@
 | QS-002 | Usability | User runs `watn -x "echo ok"` and presses Enter | Command executes; "ok" appears on stdout |
 | QS-003 | Flexibility | User configures custom provider in config | Request is sent to the configured endpoint |
 | QS-004 | Flexibility | User assigns models to tiers in config | `-1` uses small model, `-3` uses thinking model |
-| QS-005 | Flexibility | User runs `watn models` with LiteLLM endpoint | Interactive selection works; tier config is persisted |
+| QS-005 | Flexibility | User runs `watn setup` with a LiteLLM endpoint | Model-role discovery uses the configured catalog source and persists reviewed roles at Finish |
 | QS-006 | Portability | User deploys a release artifact on its verified target | `file` identifies the artifact as dynamically linked and `ldd` (Linux) or `otool -L` (macOS) identifies successful target-library requirements; no static portability claim is made |
 | QS-007 | Observability | Response completes | Output contains "tokens/s" with a numeric value |
 | QS-008 | Observability | Pricing configured in config | Output contains "cost:" with a monetary value |
 | QS-009 | Observability | User runs `watn -3 -v "..."` and API returns reasoning | Reasoning content printed to stderr on its own line |
 | QS-010 | Observability | API returns HTTP 429 | Exit code 2; stderr contains "rate limit" |
-| QS-011 | Onboarding | User runs `watn provider` and accepts the default | The setup displays `https://openrouter.ai/api/v1` and persists it as the provider endpoint |
-| QS-012 | Onboarding | User runs a normal command with no recognized provider from a TTY | Provider setup starts automatically, model setup follows without a second command, setup exits after tier selection, and no original chat request is sent |
+| QS-011 | Onboarding | User runs `watn setup` and reviews the default | The Provider topic displays `https://openrouter.ai/api/v1` as a recommended default and Finish persists it only after review |
+| QS-012 | Onboarding | User runs a normal command with no config from a TTY, with or without a detected credential | Four-topic setup starts before readiness, the credential is reviewed, setup exits after Finish, and no original chat request is sent |
 | QS-013 | Security | User chooses `OPENROUTER_API_KEY` as the credential source | Config contains `${OPENROUTER_API_KEY}`, not its resolved value; a later request uses the environment value |
 | QS-014 | Security | User pastes a credential into provider setup | Terminal output masks the input and the resolved secret is absent from setup status output |
 | QS-015 | Security | A provider or model save updates an existing config file | Unix mode is exactly `0600` after the direct write |
-| QS-016 | Onboarding | User runs first use without a TTY and without a ready implicit provider | Exit 1; stderr names `watn provider` and the config path; no ratatui, `/models`, or chat request starts |
-| QS-017 | Onboarding | Provider setup succeeds but model setup is cancelled or fails | Provider remains saved, onboarding stops, and the original chat request is not sent; Escape is 1 and Ctrl-C is 130 |
+| QS-016 | Onboarding | User runs first use without a TTY and with or without a detected credential | Exit 1; stderr names `watn setup` and the config path; no ratatui, `/models`, config file, or chat request starts |
+| QS-017 | Onboarding | Setup is cancelled before Finish or catalog discovery fails | Existing bytes remain unchanged, a first-run path remains absent, and the original chat request is not sent; Escape is 1 and Ctrl-C is 130 |
 | QS-018 | Flexibility | A saved `[providers.openrouter]` entry exists | Its endpoint and credential representation take precedence over the built-in OpenRouter fallback |
 | QS-019 | Onboarding / Usability | User opens provider or model setup in a terminal | Provider setup exposes a titled border, selectable credential list, aligned detail rows, and guidance paragraph; model setup exposes a titled border, three tier tabs, aligned model columns, and a scrollbar for an overflowing catalog |
 | QS-020 | Usability / Responsiveness | User changes the model filter while a provider search is delayed | The UI remains able to redraw and accept input; after the debounce only the newest query's results are applied, and an older result cannot replace them |
 | QS-021 | Onboarding / Usability | User opens setup and edits a page | The active tab, page number, prompt, and visible cursor identify exactly what is being edited |
-| QS-022 | Onboarding / Usability | User advances through setup | URL, API key, Small Model, Middle Model, and Large Model appear as one ordered wizard; Enter/Tab advances, Shift-Tab returns, and Escape presents save/discard |
+| QS-022 | Onboarding / Usability | User advances through setup | Provider, Model roles, Shell integration, and Review appear as one ordered wizard; help remains visible, completed topics are revisitable, and Escape presents discard |
 | QS-023 | Security / Portability | The transport resolver is compiled for a release profile with `test-support` enabled | The negated `cfg(all(feature = "test-support", debug_assertions))` branch is selected and the release binary has no active override lookup; the release artifact and target runtime libraries are inspected by release verification |
 | QS-024 | Security / Testability | A debug test-support request uses a local twin | The expected full URL and method/path are exact, request count is exactly 1, Authorization is exactly `Bearer sk-configured`, and the persisted configured endpoint is unchanged |
 | QS-025 | Security / Testability | The override is absent or whitespace | The configured endpoint receives exactly 1 request with the exact Authorization header; the competing endpoint receives exactly 0; persisted TOML is unchanged |
 | QS-026 | Correctness | Readiness is evaluated while a competing override is present | Readiness is true from configuration alone; both local twins receive exactly 0 requests |
 | QS-027 | Security / Testability | One default-feature debug request runs with a non-empty override pointing at a competing local twin | The configured twin receives exactly 1 request with the exact method/path and `Authorization: Bearer sk-configured`; the competing twin receives exactly 0 requests; output comes from the configured twin and persisted TOML is unchanged |
-| QS-028 | Correctness / Security | User runs `watn models` with `[litellm]` configured | List, pagination, and search requests use the exact LiteLLM endpoint; optional Authorization is present only when configured; chat remains on the active provider |
-| QS-029 | Correctness / Recovery | User confirms a provider and catalog discovery fails or setup is cancelled | Provider source is persisted before catalog access; tiers remain unchanged; pre-confirmation cancellation writes nothing; no original chat request is sent |
+| QS-028 | Correctness / Security | User runs `watn setup` with `[litellm]` configured | List, pagination, and search requests use the exact LiteLLM endpoint; optional Authorization is present only when configured; chat remains on the active provider |
+| QS-029 | Correctness / Recovery | User reviews a provider and catalog discovery fails or setup is cancelled | The draft remains in memory until Finish; cancellation leaves the config unchanged; manual roles may finish with an unverified warning; no original chat request is sent |
 | QS-030 | Correctness | Model metadata or persisted config contains disabled, mandatory, minimal, empty, or unknown reasoning values | Shared policy selects a valid strength, persists/sends `minimal` when selected, excludes `off` for mandatory models, and emits no reasoning field for empty/unknown values |
 | QS-031 | Responsiveness / Correctness | Slow and fast model searches overlap | Fast/newest IDs remain visible after the slow result completes; stale IDs are absent and all workers are cleaned up before scenario exit |
 | QS-032 | Responsiveness / Usability | A provider flushes a first command event and delays a later event | The first content is observable before release; the spinner was visible beforehand and a clear-line cleanup is observable after first content; the complete generated command appears exactly once after success |
@@ -114,3 +117,6 @@
 | QS-054 | Onboarding / Responsiveness | User types a model filter against a complete or delayed catalog | The query remains visible; complete catalogs update locally without a search request; delayed searches do not block another query; only the newest result is applied and workers are joined on exit |
 | QS-055 | Shell integration / Correctness and safety | User presses Ctrl-W and `watn` returns a successful, empty, or failed result | On success the buffer shows `# flattened request` above the generated command, only the generated command runs on Enter, and the text is never evaluated; on failure or empty output the original buffer remains unchanged |
 | QS-056 | Shell integration / Fish compatibility | User presses Ctrl-W in Fish and `watn` returns `df -h` | The editable buffer is exactly `# show available diskspace`, one actual line break, and `df -h`; the generated command is not part of the comment |
+| QS-057 | Correctness / Recovery | User edits an existing setup draft and cancels | The config file bytes are identical before and after cancellation |
+| QS-058 | Correctness / Recovery | User starts setup with no config | The config path and parent directory remain absent until Finish |
+| QS-059 | Security | A recognized environment credential is present during discovery | Only the variable name and detected/missing label appear in the draft/UI; the resolved secret appears in neither output nor TOML |

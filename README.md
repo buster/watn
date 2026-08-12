@@ -55,7 +55,7 @@ find . -type f -name "*.rs"
 ```text
 $ watn -2 "list pods with the most memory usage"
 $ watn -3 "debug this strace"
-$ watn --model anthropic/claude-sonnet-7 "convert flac to mp3 recursively"
+$ watn -2 "convert flac to mp3 recursively"
 ```
 
 ### Execute mode
@@ -73,25 +73,23 @@ $ watn -x "remove all .bak files"
 | `-1` | Small/fast model tier (default) |
 | `-2` | Balanced model tier |
 | `-3` | Thinking/reasoning model tier |
-| `--model <NAME>` | Explicit model override |
 | `-x` | Prompt for confirmation before executing the command |
 | `--version` | Print version and exit |
 
 ## Configuration
 
-Layered config stack: built-in defaults → XDG config file → environment
-variables → CLI flags. Config is TOML at `$XDG_CONFIG_HOME/watn/config.toml`
-(normally `~/.config/watn/config.toml`); watn does not use an XDG data
-directory.
+Configuration is TOML at `$XDG_CONFIG_HOME/watn/config.toml` (normally
+`~/.config/watn/config.toml`); watn does not use an XDG data directory. A
+missing config path starts first-run setup only in a terminal and does not
+create a template as a read side effect. Non-interactive first use prints
+actionable `watn setup` guidance and exits 1.
 
-Run `watn provider` in a terminal to configure an OpenAI-compatible endpoint.
-OpenRouter is the default endpoint. Use `OPENROUTER_API_KEY` or choose another
-environment variable to keep the credential out of the config file; the saved
-config stores a reference such as `${OPENROUTER_API_KEY}`.
-
-The interactive `watn setup`, `watn provider`, and `watn models` commands share
-the five-page SetupWizard. On model pages, `Ctrl-R` toggles focus between the
-model table and reasoning strength.
+Run `watn setup` in a terminal to review the four topics Provider, Model roles,
+Shell integration, and Review. OpenRouter, OpenAI, and Custom are explicit
+provider choices. Detected credential variables are shown by name only, and an
+environment-backed credential is persisted as a reference such as
+`${OPENROUTER_API_KEY}`. Finish setup is the only configuration write boundary;
+after automatic onboarding the original request is not replayed.
 
 ## Release artifacts
 

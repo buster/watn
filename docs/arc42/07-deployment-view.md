@@ -4,11 +4,13 @@ Deployment via `cargo install` or copying the release executable to PATH. The
 artifact is one binary for the selected target, but its runtime library
 requirements are target-dependent; no server infrastructure is required.
 
-The optional shell shortcut is a per-user deployment integration, not a second
-binary or service. The installed `watn` executable must be resolvable through the
-user's `PATH`; setup writes only the selected marked block to the user's Bash,
-Zsh, or Fish startup target. The user reloads the reported file or starts a new
-shell. Completion installation and shortcut installation remain separate paths.
+The optional shell completion and Ctrl-W integrations are per-user deployment
+artifacts, not second binaries or services. The installed `watn` executable must
+be resolvable through the user's `PATH`; setup inspects marker blocks in the
+user's Bash, Zsh, or Fish startup targets, then installs or removes only the
+selected owned blocks after the config Finish commit. The user reloads the
+reported file or starts a new shell. Completion and shortcut intents remain
+independent, and unrelated startup-file bytes remain user-owned.
 
 The binary is built with `cargo build --release`. On the verified Linux host,
 `file target/release/watn` identifies a dynamically linked executable and

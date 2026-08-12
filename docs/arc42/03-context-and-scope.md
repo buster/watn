@@ -16,7 +16,7 @@ graph TB
 
     User -->|"question via args/stdin"| CLI
     User -->|"watn completions <SHELL>"| CLI
-    User -->|"endpoint and credential input in provider setup"| CLI
+    User -->|"review setup draft in four topics"| CLI
     User -->|"rerun the original request after successful automatic setup"| CLI
     CLI -->|"POST /v1/chat/completions"| API
     CLI -->|"GET /models, pages, search"| LiteLLM
@@ -24,9 +24,9 @@ graph TB
     CLI -->|"sh -c (when -x flag)"| Shell
     CLI -->|"completion script on stdout"| CompletionCaller
     CompletionCaller -->|"install or source"| ShellParser
-    User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab / Ctrl-R) in SetupWizard pages"| CLI
-    User -->|"optional shortcut selection after final setup confirmation"| CLI
-    CLI -->|"write provider endpoint and credential representation"| Config
+    User -->|"keyboard input in Provider, Model roles, Shell integration, and Review"| CLI
+    User -->|"optional shell integration selection"| CLI
+    CLI -->|"write the complete reviewed draft at Finish"| Config
     CLI -->|"marked shortcut block and reload report"| ShellStartup
     LineEditor -->|"Ctrl-W current buffer"| CLI
     CLI -->|"replacement buffer text"| LineEditor
@@ -62,7 +62,7 @@ graph TB
 |---|---|---|
 | LLM provider | HTTPS + SSE (OpenAI chat-completions, complete with `[DONE]`) | Outbound |
 | LiteLLM | HTTPS + JSON | Outbound (optional) |
-| Config file | TOML | Read (user path), direct write (provider endpoint, credential representation, tier + reasoning assignment) with Unix mode `0600` after every save |
+| Config file | TOML | Read-only existence-aware load; one secure Finish commit of provider endpoint, credential representation, tier and reasoning assignment with Unix mode `0600` |
 | Environment | `WATN_*` variables | Read |
 | Stdin | TTY or pipe | TTY detection and question/input read |
 | Stdout | Raw text or ANSI-rendered | Write |
@@ -70,3 +70,12 @@ graph TB
 | Completion selector | Lowercase shell value on the CLI; closed parser contract | Read; invalid values produce a non-zero argument error containing `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` |
 | Completion output | Generated Bash, Elvish, Fish, PowerShell, or Zsh script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |
 | Shell widget boundary | Native line-editor buffer plus `watn` on `PATH` | Reads one quoted question, captures stdout, keeps stderr visible, and replaces/repaints only after zero status and non-empty output |
+
+## Current setup boundary
+
+The supported configuration surface is entered through `watn setup`. Its
+visible topics are Provider, Model roles, Shell integration, and Review. The
+focused `watn provider` and `watn models` commands and provider/model selection
+overrides are not part of the current CLI boundary. Setup writes supported TOML
+only after Finish; shell marker state remains in startup files rather than in
+the configuration file.

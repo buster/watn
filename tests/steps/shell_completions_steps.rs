@@ -176,6 +176,16 @@ fn root_options(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
     let output = world.output.as_deref().expect("completion stdout");
     for row in &step.table().expect("root option table").rows {
         let option = &row[0];
+        if matches!(
+            option.as_str(),
+            "--model" | "--provider" | "--set-small" | "--set-normal" | "--set-thinking"
+        ) {
+            assert!(
+                !output.contains(option),
+                "removed root option was advertised: {option}"
+            );
+            continue;
+        }
         let present = output.contains(option)
             || option
                 .strip_prefix("--")
@@ -208,6 +218,14 @@ fn root_positionals(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
 fn root_subcommands(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
     let output = world.output.as_deref().expect("completion stdout");
     for row in &step.table().expect("root subcommand table").rows {
+        if matches!(row[0].as_str(), "models" | "provider") {
+            assert!(
+                !output.contains(&row[0]),
+                "removed subcommand was advertised: {}",
+                row[0]
+            );
+            continue;
+        }
         assert!(
             output.contains(&row[0]),
             "missing root subcommand {}",

@@ -20,9 +20,9 @@
 | Buffered reasoning | Provider-collected reasoning that is deliberately not emitted during the content stream and is discarded from user-visible output when the stream fails |
 | Partial output | Command content already flushed before a provider or output failure; it remains visible but is never treated as a successful executable result |
 | Model picker | The SetupWizard model-page search flow that updates suggestions as the user types and applies a stale-generation guard to remote results |
-| SetupWizard | The ratatui keyboard-driven five-page flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
+| SetupWizard | The ratatui keyboard-driven four-topic flow for Provider, Model roles, Shell integration, and Review |
 | Reasoning strength | Graduated per-level setting (`off`, `low`, `minimal`, `medium`, `high`) controlling the `reasoning_effort` sent on that tier's requests; `off` sends no field |
-| Guided sequence | The fixed Small Model → Middle Model → Large Model walk performed by the SetupWizard, with the ability to return to a previous page before confirming |
+| Guided sequence | The fixed Provider → Model roles → Shell integration → Review walk performed by the SetupWizard, with completed topics revisitable before Finish |
 | Page navigation | Moving the selection through the model list by a full page at a time with PageUp/PageDown keys |
 | Per-word filter | Order-independent matching where every whitespace-separated word of the query must appear somewhere in the model id |
 | Search query | Free-text filter sent to the provider as `GET /models?search=<query>` to narrow a large model catalog |
@@ -30,9 +30,15 @@
 | PTY | Pseudo-terminal — a virtual terminal device used in E2E tests to drive the ratatui/crossterm terminal interface as a real user would |
 | Provider readiness | Local determination that a provider endpoint and usable literal or environment-backed credential are available without contacting the provider |
 | Environment-backed credential | A credential stored in config as a reference such as `${OPENROUTER_API_KEY}` and resolved from the process environment only when used |
-| Provider setup | The interactive ratatui flow started by `watn provider` to collect an endpoint and credential source |
-| First-run onboarding | The TTY-only automatic provider setup followed by model setup when an implicitly selected provider is not ready; successful setup ends before the original request |
-| Fixed provider name | The stable onboarding name `openrouter` for the normalized OpenRouter endpoint or `custom` for every other endpoint; reruns replace only that entry |
+| Provider setup | The Provider topic of `watn setup`, including explicit provider identity, endpoint, credential source, discovery status, and connection/catalog validation |
+| First-run onboarding | TTY-only automatic setup selected by physical config-path absence; a detected credential still requires review and successful setup ends before the original request |
+| Setup draft | The complete in-memory provider, model-role, reasoning, catalog, shell-intent, provenance, and validation state for one wizard session |
+| Field origin | Runtime label identifying a value as Loaded from config, Detected from environment, Recommended default, or Entered by you |
+| Credential discovery | Presence-only inspection of a finite allowlist of environment variable names; resolved secret values never enter renderer state |
+| Catalog status | Runtime state describing whether model discovery is available, incomplete, unavailable, or stale after a provider change |
+| Shell intent | Desired installed state for completion and Ctrl-W marker blocks, derived from startup files and applied after Finish |
+| Finish | The Review action that validates and atomically persists the complete supported setup draft exactly once |
+| Fixed provider name | The stable persisted identity chosen by setup: `openrouter`, `openai`, or `custom` |
 | Setup result | A typed provider/model outcome: configured or saved, cancelled by Escape/Ctrl-C, or failed without lower-level process exit |
 | Ephemeral transport override | A non-empty endpoint selected at outbound HTTP construction only by a debug binary compiled with `test-support`; it is not persisted and is not used for readiness |
 | Test-support binary | A binary compiled with the opt-in `test-support` feature; only its debug profile may use the ephemeral transport override |
@@ -49,7 +55,7 @@
 | Catalog completeness | Whether the loaded model response contains the complete catalog needed for local filtering or only a page requiring provider-backed search |
 | Local model filter | Per-word filtering over the complete cached catalog without a provider search request |
 | Search worker | The background operation that waits for the debounce interval, performs an incomplete-catalog search, and is joined before setup exits |
-| Setup wizard | The shared five-page terminal flow for URL, API key, Small Model, Middle Model, and Large Model configuration |
+| Setup wizard | The shared four-topic terminal flow for Provider, Model roles, Shell integration, and Review |
 | Setup page | One tab-selected step in the setup wizard; only the active page accepts editing input |
 | Visible cursor | The highlighted block marker showing where the next character or current selection is being edited |
 | Active input | The setup widget that currently receives keyboard input; its border is rendered green while inactive widget borders retain their normal style |

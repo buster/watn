@@ -116,6 +116,24 @@ DraftValue<T> {
 }
 ```
 
+Each role is represented explicitly so catalog and manual paths share the same
+validation boundary:
+
+```text
+RoleDraft {
+    model: Option<DraftValue<String>>,
+    reasoning: ReasoningDraft,
+    review: Loaded | Suggested | Manual | NeedsReview | Confirmed,
+    metadata: Option<ModelReasoning>,
+}
+```
+
+`NeedsReview` is set for every retained role after an endpoint or provider
+identity change. Selecting the same ID again is an explicit confirmation and
+clears the state. A manual or metadata-unknown role is always persisted with
+`off`; a catalog-selected role may use only the strengths supported by its
+metadata.
+
 `CredentialDraft` distinguishes a masked literal, an environment-variable
 name, and a recommended but absent variable. Environment discovery returns
 names and presence only. Environment references are validated as variable
@@ -143,6 +161,15 @@ The Provider topic offers these identities:
 | OpenAI | Built-in OpenAI endpoint | `WATN_OPENAI_API_KEY` and `OPENAI_API_KEY` when OpenAI is selected. |
 | Custom | User-entered HTTP(S) endpoint | `WATN_API_KEY`; provider-specific names only after identity and endpoint are known. |
 
+The built-in identity mapping is deterministic: OpenRouter persists provider
+`openrouter` and endpoint `https://openrouter.ai/api/v1`; OpenAI persists
+provider `openai` and endpoint `https://api.openai.com/v1`; Custom persists
+provider `custom` and the user-normalized endpoint. Selecting a built-in
+identity and then editing its endpoint changes the identity to Custom. The
+allowlist for OpenAI includes `WATN_OPENAI_API_KEY` and `OPENAI_API_KEY`; the
+generic `WATN_API_KEY` is offered only with an explicit warning that endpoint
+confirmation is still required.
+
 Multiple detected variables are displayed as explicit choices in deterministic
 allowlist order. A detected provider-specific credential is never carried to a
 different endpoint without explicit confirmation. Changing the endpoint may
@@ -154,6 +181,12 @@ including an authentication, transport, timeout, or malformed-catalog failure,
 does not by itself block Finish when all model roles are entered manually. The
 Review page must identify that state as unverified rather than marking the
 provider complete.
+
+Catalog source resolution is centralized: when `[litellm]` exists, its endpoint
+and credential source are used for all setup `/models` requests, pagination, and
+search; otherwise the draft provider endpoint and credential source are used.
+The selected provider remains the chat destination. A provider edit invalidates
+roles even when the catalog source is independent.
 
 ### Four-topic wizard
 
@@ -209,6 +242,11 @@ warning. Finish is disabled for invalid provider input, missing credential
 source, missing required model roles, or roles still requiring review. Catalog
 warnings do not disable Finish once manual required roles are present.
 
+The wide layout is used when the terminal is at least 100 columns wide and the
+settings/help minimums fit; narrower terminals stack help below the settings.
+The PTY seam asserts both layouts at 120x40 and 80x40, and buffer-level tests
+assert that all four help sections remain present in either layout.
+
 ### Shell integration and partial outcomes
 
 `src/shell_completion.rs` and `src/shell_shortcut.rs` keep their marker-block
@@ -222,6 +260,13 @@ At Finish, after the config commit:
 2. Remove an unchecked existing marker block.
 3. Preserve every non-watn byte and the other integration's block.
 4. Collect per-shell results without rolling back successfully changed files.
+
+Shell intent has one state per integration and supported shell: `EnsurePresent`,
+`EnsureAbsent`, `Unchanged`, or `NeedsAttention`. Existing marker blocks are the
+source of truth. A missing marker is initially unchecked; `$SHELL` may only be
+used as a display hint and never overrides a readable marker state. Malformed,
+unreadable, or unsafe targets become `NeedsAttention` and cannot be silently
+treated as unchecked.
 
 The wizard returns either a complete success or a `SavedWithShellFailures`
 outcome. The latter prints which config was saved, reports each failed shell
@@ -244,9 +289,10 @@ saved explicit reasoning continues to be loaded and displayed until a
 provider/model edit makes it require review.
 
 The existing catalog-source precedence remains in effect for configured
-LiteLLM. Catalog requests using the selected provider use the in-memory draft
-endpoint and credential source; a provider change still invalidates model-role
-review even if the catalog source is independent.
+LiteLLM. Catalog requests use the configured LiteLLM endpoint and credential
+source whenever `[litellm]` exists; otherwise they use the in-memory draft
+provider endpoint and credential source. A provider change still invalidates
+model-role review even when the catalog source is independent.
 
 ## Test Seams and Specification Migration
 

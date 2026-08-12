@@ -3,18 +3,19 @@
 This directory contains the project's arc42 architecture documentation.
 Maintained by the `arc42-docs` givn artifact — updated with each change via `givn`.
 
-The current architecture includes TTY-gated provider onboarding through
-`watn provider`, environment-backed credentials, and automatic first-use
-provider/model setup that stops before the original request. The setup flows use
-structured Ratatui widgets so choices, metadata, status, tier tabs, and long
-catalog position remain visible in the terminal.
-Provider and model onboarding now share a five-page setup wizard with explicit
-page, cursor, save/discard state, and a green border around the currently
-focused input region.
+The current architecture includes a TTY-gated four-topic setup wizard. Provider,
+model roles, shell integration, and review are edited as one in-memory draft;
+configuration is written only by Review's Finish action. First-run detection is
+based on physical config-path absence, while existing files, including a
+comment-only template, remain existing configuration.
+Environment-backed credentials are discovered from an explicit allowlist and
+persisted as `${VARIABLE}` references. The setup UI labels loaded, detected,
+recommended, and user-entered values and keeps contextual help visible beside
+or below the active settings.
 Model discovery resolves a dedicated catalog source: configured LiteLLM is used
 for model listing, pagination, and search, while chat remains on the selected
 provider. Credential sources remain literal values or exact environment
-references through discovery and partial setup saves; model reasoning defaults
+references through discovery and one Finish commit; model reasoning defaults
 are validated centrally and stale search generations cannot overwrite results
 from a newer user-entered search.
 The outbound transport boundary keeps configured endpoints authoritative for

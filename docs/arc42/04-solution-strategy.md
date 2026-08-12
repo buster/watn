@@ -9,13 +9,13 @@
 - Reasoning is buffered in the provider aggregate and printed only after successful completion when `-v` is active; it is never streamed to stderr
 - Layered XDG configuration with clear precedence (CLI > env > user config > defaults)
 - Optionally query LiteLLM endpoint for model discovery and interactive tier selection
-- TTY-gated provider onboarding in a ratatui terminal flow, with OpenRouter as the default endpoint and `custom` as the fixed non-OpenRouter name
+- TTY-gated setup in a ratatui terminal flow with four topics: Provider, Model roles, Shell integration, and Review; OpenRouter, OpenAI, and Custom are explicit identities
 - Environment-backed API-key references persisted as `${VARIABLE}` and expanded only at request time
-- Implicit first-use onboarding uses the shared five-page setup wizard in-process, then stops before the original question
-- Explicit provider selections retain existing unknown-provider and missing-key errors; non-TTY implicit first use prints guidance and exits 1
-- Direct config writes enforce Unix mode `0600`; no atomic temp-file/rename guarantee is made
+- Implicit first-use onboarding is selected by config-path absence, even when a recognized credential variable is present; it stops before the original question
+- Non-TTY first use prints `watn setup` guidance and exits 1; removed focused setup commands and provider/model overlays are rejected
+- Setup reads are side-effect free and Finish uses one secure atomic config commit with restrictive temporary permissions and Unix mode `0600`
 - Interactive setup uses native Ratatui widget composition rather than paragraph-flattened or hand-positioned terminal output
-- Provider and model onboarding share one page-based Ratatui wizard; commands select its initial and final page rather than owning separate event loops
+- The wizard owns one typed draft and a fixed Provider -> Model roles -> Shell integration -> Review rail; focused entry points are not separate persistence paths
 - Test transport is a compile-time debug capability: only `test-support` plus `debug_assertions` can read the endpoint override; release-profile builds use configured endpoints even when the feature is enabled
 - Debug verification builds the default-feature and `test-support` binaries sequentially through Cargo's shared default target cache, copies them to unique temporary paths, and passes those absolute paths to the subprocess harness; release verification inspects the exact target artifact and its runtime libraries
 - Catalog source resolution is explicit: `[litellm]` owns model listing, pagination, and search when present; otherwise the selected provider is used, while chat construction remains provider-only
@@ -24,7 +24,7 @@
 - Model filtering uses the complete cached catalog locally when available and provider-backed search for incomplete catalogs; both paths keep the query visible, debounce remote work by 200 ms, guard results with generations, and join search workers before exit
 - Generate shell completions from `Cli::command()` through a local closed `CompletionShell` selector; render only `bash`, `elvish`, `fish`, `powershell`, or `zsh` to stdout before configuration or provider setup
 - Keep the completion parser contract literal: unsupported values return `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh`; the `completions` token is intentionally reserved as a subcommand
-- Offer shortcut configuration as an optional post-Large-Model interaction in both explicit and implicit first-use setup; the default Enter path declines without adding a sixth tab
+- Offer shell completion and Ctrl-W as independent optional intents on one Shell integration topic; Finish reconciles marker blocks after the config commit
 - Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, a preserved request comment above the generated command, and no evaluation
 - Own startup-file edits through exact marker pairs, atomic same-directory replacement, and independent per-shell result aggregation rather than a multi-file transaction
 - Use the existing SetupWizard focus state to color only the active widget border green, preserving the existing layout, selection styles, and cursor contract

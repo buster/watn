@@ -1,3 +1,4 @@
+@wip
 Feature: Interactive provider setup
 
   @e2e

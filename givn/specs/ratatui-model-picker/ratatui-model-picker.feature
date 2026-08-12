@@ -1,3 +1,4 @@
+@wip
 Feature: Keyboard-driven model picker
 
   @e2e

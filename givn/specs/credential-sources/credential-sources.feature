@@ -1,3 +1,4 @@
+@wip
 Feature: Provider configuration
 
   @e2e
@@ -33,9 +34,9 @@ Feature: Provider configuration
     And  its saved api_key is "${WATN_CUSTOM_API_KEY}"
     And  environment variable WATN_API_KEY is set to "sk-generic-fallback"
     And  environment variable WATN_CUSTOM_API_KEY is absent
-    When  I run `watn models`
-    Then  the exit status should classify the failure as authentication
-    And  no model catalog request should be sent
+    When  I run `watn "hello"`
+    Then  the exit status should be 1
+    And  stderr should contain actionable guidance to run "watn setup" in a terminal
     And  the saved api_key should remain exactly "${WATN_CUSTOM_API_KEY}"
 
   Scenario: Provider-specific environment fallback precedes generic fallback

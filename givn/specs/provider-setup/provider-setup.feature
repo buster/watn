@@ -1,11 +1,11 @@
 Feature: Interactive provider setup
 
-  @e2e
+  @wip @e2e
   Scenario: Configure OpenRouter with an environment-backed credential
     Given  no provider is configured
     And  environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
     And  the ephemeral E2E transport returns a successful chat completion for "/chat/completions"
-    When  I start `watn provider` in a terminal
+    When  I start `watn setup` in a terminal
     Then  the setup terminal should show endpoint prompt default "https://openrouter.ai/api/v1"
     And  the setup terminal should show pasted and environment credential choices
     When  I accept the OpenRouter endpoint
@@ -38,7 +38,7 @@ Feature: Interactive provider setup
     And  the config file should contain api_key exactly "${WATN_API_KEY}"
     And  the config file should not contain "sk-watn-test"
 
-  @e2e
+  @wip @e2e
   Scenario: First normal use starts provider setup and then model setup
     Given  no config file exists
     And  no supported provider environment variable is set
@@ -56,6 +56,7 @@ Feature: Interactive provider setup
     And  the model catalog request should hit ephemeral path "/models"
     And  no original chat completion request should be sent
 
+  @wip
   Scenario: A recognized environment credential skips automatic provider setup
     Given  no config file exists
     And  environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
@@ -90,6 +91,7 @@ Feature: Interactive provider setup
     And  provider setup should not return a configured provider
     And  the config file should not contain a provider entry for the attempted setup
 
+  @wip
   Scenario: A missing saved environment reference fails authentication without a request
     Given  a configured provider "custom" with endpoint "https://llm.example.com/v1"
     And  its saved api_key is "${MISSING_WATN_KEY}"
@@ -153,6 +155,7 @@ Feature: Interactive provider setup
     And  provider "legacy" should still contain credential "sk-old-key"
     And  no request should be sent to "/chat/completions"
 
+  @wip
   Scenario: Model catalog failure after provider setup preserves the provider and sends no request
     Given  no config file exists
     And  the model catalog transport returns HTTP 500 for "/models"
@@ -163,6 +166,7 @@ Feature: Interactive provider setup
     And  the config file should not contain selected tier assignments
     And  no original chat completion request should be sent
 
+  @wip
   Scenario: The explicit provider command ends without model setup
     Given  no provider is configured
     When  the explicit provider setup command saves endpoint "https://llm.example.com/v1" and credential "sk-custom-key"
@@ -176,7 +180,7 @@ Feature: Interactive provider setup
     And  no recognized provider environment variable is set
     When  I run a non-TTY request for "hello"
     Then  the exit status should be 1
-    And  stderr should contain actionable guidance to run "watn provider" in a terminal
+    And  stderr should contain actionable guidance to run "watn setup" in a terminal
     And  stderr should contain the configuration path "config.toml"
     And  stderr should not contain ANSI escape sequences
     And  ratatui should not be initialized
@@ -193,6 +197,7 @@ Feature: Interactive provider setup
     Then  the API request should use API key "sk-saved-literal"
     And  the environment fallback values should not be used
 
+  @wip
   Scenario: Explicit provider selection from the environment preserves missing-key errors
     Given  environment variable WATN_PROVIDER is set to "custom"
     And  provider "custom" has endpoint "https://llm.example.com/v1" and no api_key

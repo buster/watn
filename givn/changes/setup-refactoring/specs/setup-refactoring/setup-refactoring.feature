@@ -65,7 +65,7 @@ Feature: Reviewed first-run setup
     Then first-run setup should not start solely because the existing file has no active settings
     And the original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-interactive first use requires explicit setup even with a detected credential
     Given no config file exists
     And environment variable OPENROUTER_API_KEY is set to "sk-detected-secret"
@@ -78,7 +78,7 @@ Feature: Reviewed first-run setup
     And no model catalog request should be sent to "/models"
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: The unified setup command replaces focused commands and selection overrides
     Given a complete configuration exists
     When I run `watn provider`
@@ -94,7 +94,7 @@ Feature: Reviewed first-run setup
     And generated shell completions should not advertise removed setup commands or options
     And `watn -1`, `watn -2`, and `watn -3` should remain valid request tier selectors
 
-  @givn.added @wip
+  @givn.added
   Scenario: Removed environment selection variables do not override persisted configuration
     Given a complete persisted configuration exists
     And environment variable WATN_PROVIDER is set to "custom"
@@ -184,3 +184,39 @@ Feature: Reviewed first-run setup
     And successful shell changes should remain applied
     And stderr should identify the failed shell integration and retry guidance
     And the exit status should be non-zero
+
+  @givn.added @wip
+  Scenario: OpenAI setup uses the explicit identity and credential mapping
+    Given no config file exists
+    And environment variable OPENAI_API_KEY is set to "sk-openai-secret"
+    When I choose the OpenAI provider in `watn setup`
+    Then the Provider topic should show endpoint "https://api.openai.com/v1"
+    And the Provider topic should identify "OPENAI_API_KEY" as "Detected from environment"
+    And the config should persist provider "openai" and api_key exactly "${OPENAI_API_KEY}"
+    And the config should not contain "sk-openai-secret"
+
+  @givn.added @wip
+  Scenario: Finish preserves supported configuration outside the setup draft
+    Given an existing config contains provider "custom" with credential "sk-old-key"
+    And the config contains known tiers, reasoning, pricing, and LiteLLM settings
+    When I finish an otherwise unchanged setup draft
+    Then the existing default model, provider default model, pricing, and LiteLLM settings should remain unchanged
+    And the config should contain no origin or shell integration fields
+
+  @givn.added @wip @e2e
+  Scenario: Setup catalog discovery honors the configured LiteLLM source
+    Given an existing config has a custom chat provider and a configured LiteLLM catalog source
+    And the LiteLLM catalog returns models ["catalog-small", "catalog-normal", "catalog-thinking"]
+    When I start `watn setup` in a terminal
+    Then model discovery should request the configured LiteLLM endpoint
+    And the custom chat provider should receive no model catalog request
+    And Review should identify the catalog source separately from the chat provider
+
+  @givn.added @wip @e2e
+  Scenario: Ctrl-C during catalog discovery discards the setup draft
+    Given no config file exists
+    And the model catalog response is delayed
+    When I start `watn setup` in a terminal and press Ctrl-C during discovery
+    Then the exit status should be 130
+    And no config file should exist
+    And no shell startup file should be changed

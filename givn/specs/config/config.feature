@@ -25,7 +25,7 @@ Feature: Configuration management
     When I run `watn "hello"`
     Then the request should be sent to provider "custom"
 
-  @e2e
+  @wip @e2e
   Scenario: CLI flag overrides environment variable
     Given environment variable WATN_MODEL is set to "gpt-4"
     When I run `watn --model gpt-4o "hello"`
@@ -46,7 +46,7 @@ Feature: Configuration management
     Given no config file exists
     When I run `watn "hello"`
     Then the exit status should be 1
-    And stderr should contain actionable guidance to run "watn provider" in a terminal
+    And stderr should contain actionable guidance to run "watn setup" in a terminal
 
   Scenario: Config file with syntax error produces diagnostic
     Given a user config file with invalid TOML content

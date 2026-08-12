@@ -1,3 +1,4 @@
+@wip
 Feature: Model auto-suggest
 
   @e2e

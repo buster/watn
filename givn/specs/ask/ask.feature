@@ -86,12 +86,9 @@ Feature: Asking questions
     Then  the exit status should be 2
     And  stderr should contain "authentication"
 
-  Scenario: Explicit model flag overrides tier dispatch
-    Given  a configured default provider "openai"
-    And  a model "gpt-4o" assigned to the normal tier
+  Scenario: Removed model override is rejected
     When  I run `watn --model "gpt-4o-mini" "list go files"`
-    Then  the exit status should be 0
-    And  the output should match regex "gpt-4o-mini"
+    Then  the command should reject the removed model option
 
   Scenario: Version flag prints logo and version
     When  I run `watn --version`

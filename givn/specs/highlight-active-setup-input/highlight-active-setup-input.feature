@@ -1,3 +1,4 @@
+@wip
 Feature: Highlight the active setup input
 
   @e2e

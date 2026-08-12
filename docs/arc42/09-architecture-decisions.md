@@ -24,6 +24,26 @@ options, the decision outcome, and consequences.
 | ADR-0016 | Release truth and target-dependent runtime requirements | [docs/adr/0016-release-truth-and-target-dependent-runtime-requirements.md](../adr/0016-release-truth-and-target-dependent-runtime-requirements.md) |
 | ADR-0017 | Completion generation from authoritative command definition | [docs/adr/0017-completion-generation-from-authoritative-command-definition.md](../adr/0017-completion-generation-from-authoritative-command-definition.md) |
 | ADR-0018 | Safe shell shortcut installation and native widgets | [docs/adr/0018-safe-shell-shortcut-installation-and-native-widgets.md](../adr/0018-safe-shell-shortcut-installation-and-native-widgets.md) |
+| ADR-0019 | Reviewed four-topic setup draft and Finish-only persistence | [docs/adr/0019-reviewed-four-topic-setup-draft.md](../adr/0019-reviewed-four-topic-setup-draft.md) |
+
+## ADR-0019 summary
+
+ADR-0019 replaces field-oriented setup with a four-topic Provider, Model roles,
+Shell integration, and Review flow. A typed in-memory draft carries field
+origins, presence-only credential discovery, catalog status, role review state,
+and shell intent. Physical config-path absence drives first-run onboarding, and
+Finish is the only configuration commit boundary. The secure writer preserves
+the supported TOML schema while cancellation preserves existing bytes and
+first-run cancellation leaves no file. Shell marker reconciliation happens only
+after the config commit and reports partial failures explicitly.
+
+The tradeoff is more state and a larger terminal renderer than the previous
+linear pages, but it makes provenance, validation, and side effects visible and
+testable.
+
+ADR-0013's five-page sequence and ADR-0014's provider-confirmation checkpoint
+remain as historical records only. ADR-0019 supersedes their current setup
+boundary: no provider or tier state is durable before Review's Finish.
 
 ## ADR-0011 summary
 

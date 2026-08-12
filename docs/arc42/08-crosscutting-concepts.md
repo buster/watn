@@ -8,7 +8,7 @@ each variant to an exit code and prints a diagnostic to stderr:
 | Error variant | Exit code | Example |
 |---|---|---|
 | `ConfigError` | 1 | Malformed TOML, missing required field |
-| `ProviderNotFound` | 1 | `--provider nonexistent` |
+| `ProviderNotFound` | 1 | Invalid persisted provider identity |
 | `AuthError` | 2 | Invalid API key, HTTP 401 |
 | `ApiError` | 2 | Rate limit (429), server error (5xx) |
 | `NetworkError` | 3 | DNS failure, connection refused, timeout |
@@ -24,14 +24,14 @@ success metadata, buffered verbose reasoning, and execution confirmation are
 omitted. A stdout/stderr write or flush failure is `IoError` (exit 1), with the
 same prefix-preservation and cleanup guarantees.
 
-Provider setup and model setup return typed results rather than exiting inside
-their lower-level functions. Escape cancellation maps to status 1; Ctrl-C maps
-to status 130. Provider setup does not save partial input. If provider setup
-succeeds and model setup is cancelled or fails, the provider remains saved, the
-automatic flow stops, and the original request is not sent. Invalid endpoints
-and empty credentials remain in the setup flow with an inline validation
-message. A missing saved environment reference is an authentication error and
-does not fall through to another environment variable.
+Setup returns typed outcomes rather than exiting inside lower-level functions.
+Escape cancellation maps to status 1; Ctrl-C maps to status 130. The entire
+draft remains in memory until Review's Finish action, so invalid endpoints,
+missing sources, catalog failures, and incomplete roles cannot create a partial
+config. A missing saved environment reference is an authentication error and
+does not fall through to another environment variable. After a successful config
+commit, shell reconciliation reports per-target failures as a saved-partial
+outcome rather than claiming complete setup.
 
 ## Shell shortcut safety and file ownership
 
@@ -39,7 +39,8 @@ The optional shortcut is part of explicit setup and implicit first-use setup,
 but Enter accepts the default decline. Selection is runtime-only; no provider
 configuration field records the chosen shells. The installer resolves Bash and
 Zsh from `HOME`, Fish from `XDG_CONFIG_HOME` or the HOME-based XDG fallback, and
-uses only the basename of `SHELL` for preselection.
+uses marker blocks in startup files for initial selections; `SHELL` is only a
+fallback hint when no marker state exists.
 
 Each target is treated as user-owned bytes. A target with no shortcut markers
 gets one generated block appended. An existing target must contain exactly one
@@ -103,19 +104,22 @@ Question text beginning with the token must be quoted or passed after `--`.
 
 ## Configuration layering
 
-Config is merged in order (later overrides earlier):
+Persisted configuration is authoritative for existing setup sessions. First-run
+discovery is a separate, finite suggestion process and does not overlay loaded
+values. The effective request configuration is resolved in order (later
+overrides earlier where a request-time option remains supported):
 
 1. **Built-in defaults** — hardcoded in the binary
 2. **User config** — `$XDG_CONFIG_HOME/watn/config.toml`
-3. **Environment variables** — `WATN_*` (e.g. `WATN_PROVIDER`, `WATN_MODEL`)
-4. **CLI flags** — `-1`/`-2`/`-3`, `--model`, `--provider` (highest priority)
+3. **Credential environment variables** — only the selected saved reference or
+   the normal provider credential resolver at the outbound boundary
+4. **CLI flags** — `-1`/`-2`/`-3` (highest priority for retained request behavior)
 
-Provider readiness is a separate local check. A commented auto-init template is
-not ready; a provider is ready only when its endpoint and literal or resolved
-credential are available. OpenRouter has a built-in endpoint fallback only when
-no `[providers.openrouter]` entry exists. A saved literal or exact environment
-reference is authoritative. Only an absent `api_key` permits provider-specific
-fallback followed by generic `WATN_API_KEY`. Readiness never consults the
+Provider readiness is a separate local check after first-run path detection. A
+comment-only existing file is not a first-run signal. A saved literal or exact
+environment reference is authoritative. First-run discovery checks a deliberate
+allowlist and returns only variable names and non-empty presence flags; when
+multiple candidates exist, the user must choose. Readiness never consults the
 ephemeral E2E transport override.
 
 ## Transport isolation
@@ -167,31 +171,31 @@ considered evidence of correct routing.
   name rather than the secret value.
 - Every direct config save is followed by Unix mode `0600`; a pre-existing
   world-readable file may warn on load and is repaired on its next save.
-- The fixed onboarding names are `openrouter` and `custom`; rerunning setup
-  replaces only the selected fixed entry and preserves unrelated providers and
+- The setup identities are `openrouter`, `openai`, and `custom`; rerunning setup
+  replaces only the selected entry and preserves unrelated providers and
   configuration.
 
-## Auto-init (first-run template)
+## First-run discovery and persistence
 
-On the first invocation, when no config file exists at the standard XDG path
-(`$XDG_CONFIG_HOME/watn/config.toml`), the binary writes a template file with
-all options commented out. The template is generated from code
-(`Config::template_content()`) rather than a hardcoded string, ensuring that
-adding a new config field automatically includes it in the template.
+On first use, the binary checks whether the standard XDG path exists before
+loading any configuration. A missing path opens interactive setup when stdin is
+a TTY, or prints actionable `watn setup` guidance and exits 1 otherwise. No
+template, directory, or config file is created by the read. A comment-only file
+counts as existing configuration.
 
-The template includes commented-out sections for defaults, tiers, custom
-providers, and pricing. The file write is silent and does not interrupt the
-command the user issued. If a config file already exists, nothing is written.
+The Provider topic discovers only an explicit allowlist of credential variable
+names. It records a detected name and presence, never the resolved value.
 
-All subsequent provider and model saves use the same direct-write mechanism and
-apply mode `0600` after the write on Unix. Atomic temp-file/rename behavior is
-not promised. An interrupted direct write remains a known risk.
+A Finish action serializes the reviewed supported configuration once through a
+restrictive temporary file, flush/sync, atomic rename, and Unix mode `0600`.
+Cancellation leaves an existing file byte-for-byte unchanged and leaves a
+first-run path absent.
 
 ## Model tier resolution
 
 The selected tier (default `-1`) is resolved to a model name via:
 
-1. CLI `--model <NAME>`: explicit override, bypasses tiers
+1. Retained request tier selector `-1`, `-2`, or `-3`
 2. Config `[tiers]` section: `small`, `normal`, `thinking` fields
 3. Fallback to provider's `default_model` or a hardcoded default
 
@@ -253,11 +257,10 @@ The verbose flag is independent of the thinking tier. Any tier with `-v` will pr
 
 The binary detects whether **stdin** is a TTY using
 `std::io::stdin().is_terminal()`. When stdin is not a TTY, the question is read
-from the pipe. Automatic provider onboarding is allowed only for implicit
-provider selection with TTY stdin. An implicit non-TTY first-use request emits
-actionable `watn provider` and config-path guidance, exits 1, and does not
-initialize ratatui. Explicit `--provider` and `WATN_PROVIDER` selections retain
-their existing resolution errors regardless of TTY state. Command content goes
+from the pipe. Automatic first-run onboarding is allowed only with TTY stdin.
+An implicit non-TTY first-use request emits actionable `watn setup` and
+config-path guidance, exits 1, and does not initialize ratatui. Removed
+provider/model overrides do not alter persisted selection. Command content goes
 to stdout incrementally; final metadata, buffered verbose reasoning, errors, and
 setup guidance go to stderr as plain text (suitable for scripting).
 
@@ -286,34 +289,33 @@ matching while incomplete catalogs use debounced remote search. The wizard
 retains search worker handles, invalidates generations on exit, and joins every
 worker before returning; there is no separate legacy model prompt path.
 
-## Keyboard-driven SetupWizard model pages
+## Four-topic SetupWizard
 
-The interactive `watn setup`, `watn provider`, and `watn models` flows (TTY
-stdin) share a ratatui-based setup wizard. It renders one bordered page at a
-time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
+The interactive `watn setup` flow (TTY stdin) renders one bordered topic rail:
+Provider, Model roles, Shell integration, and Review. The draft keeps field
+origins, credential presence labels, catalog status, role review state, and
+shell intent separate from the persisted TOML:
 
-- The active page and `Page n of 5` position.
+- The active topic and current setting are always visible.
 - A visible block cursor on the active editable line.
 - A green border around the input block currently receiving keyboard input; the
   border moves between credential storage/value and model/reasoning regions.
-- A filter paragraph and aligned model table on each model page.
+- Model roles appear together with catalog suggestions or manual fallback.
 - The current filter query remains visible while suggestions are pending.
 - Model-specific reasoning options derived from the catalog's supported efforts,
   default effort, enabled flag, and mandatory flag.
-- A scrollbar showing position when the catalog exceeds the available rows.
-- A reasoning-strength selector (off, low, minimal, medium, high) for the current level.
-- A status line for the empty state or the unsupported-search notice.
+- A Review topic summarizes all supported values and warnings.
+- Finish is the only configuration write; Escape/Ctrl-C discard the draft.
 
 Key bindings:
-- Up/Down arrows: move selection through the list.
-- PageUp/PageDown: move selection a page at a time.
-- Printable characters / Backspace: update the filter.
-- Tab: advance to the next wizard page.
-- Shift-Tab: return to the previous wizard page.
-- Enter: accept the current input/model and advance.
-- Ctrl-R: toggle focus between the model table and model-specific reasoning;
-  Up/Down changes the selected supported effort while reasoning is focused.
-- Escape: open the save/discard prompt.
+- Up/Down arrows: move identity, role, shell, or credential choices.
+- Printable characters / Backspace: edit the active endpoint, credential source,
+  or manual role.
+- Tab: advance through settings and topics.
+- Shift-Tab: return to the previous setting or topic.
+- Enter: accept the current input/model or Finish the reviewed draft.
+- Ctrl-R: cycle supported reasoning strengths for the active catalog role.
+- Escape: open the leave/discard prompt.
 - Ctrl-C: return an interrupted typed result (terminal restored before status
   130 is applied by the caller).
 
@@ -327,19 +329,15 @@ and supported efforts are limited to the catalog response. A model change
 resets the tier's reasoning choice to that model's default or first valid
 effort.
 
-## Keyboard-driven provider setup
+## Setup topic interaction
 
-The shared setup wizard uses URL, API key, Small Model, Middle Model, and Large
-Model pages. URL input explains OpenAI/LiteLLM compatibility. API key input
-first selects configuration storage or an environment reference, then asks for
-the corresponding value. Model pages use the same searchable table and visible
-cursor. The currently focused block is marked with a green border while
-inactive blocks retain their normal border styling. `watn provider` starts at
-URL and ends after API key; `watn models` starts at Small Model; `watn setup`
-and automatic first use traverse all pages.
-Escape asks whether to save current valid settings or discard them. The
-terminal is restored on success, validation failure, save/discard, and
-cancellation.
+The Provider topic explains OpenAI-compatible endpoint requirements and masks
+literal credentials. The Model roles topic shows Small / fast, Balanced / normal,
+and Thinking together. Shell integration derives completion and Ctrl-W choices
+from marker blocks. Review shows endpoint, provider identity, credential source
+name without a resolved secret, role IDs, reasoning, catalog status, shell
+changes, and warnings. The terminal is restored on success, validation failure,
+discard, and cancellation.
 
 The stale-result guard uses `Arc<AtomicU64>` as a generation counter. Each
 filter change increments the counter before dispatching a search; the worker
