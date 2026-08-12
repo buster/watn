@@ -96,7 +96,12 @@ impl Provider for OpenAICompatibleProvider {
             };
         }
 
-        parse_sse_stream(BufReader::new(response), &options.model, sink, &self.interrupt)
+        parse_sse_stream(
+            BufReader::new(response),
+            &options.model,
+            sink,
+            &self.interrupt,
+        )
     }
 }
 
@@ -214,17 +219,17 @@ mod tests {
 data: [DONE]"#;
         let mut content = String::new();
         let response = parse_sse_stream(
-        Cursor::new(body),
-        "requested-model",
-        &mut |event| {
-            match event {
-                StreamEvent::Content(value) => content.push_str(&value),
-            }
-            Ok(())
-        },
-        &AtomicBool::new(false),
-    )
-    .expect("valid stream should parse");
+            Cursor::new(body),
+            "requested-model",
+            &mut |event| {
+                match event {
+                    StreamEvent::Content(value) => content.push_str(&value),
+                }
+                Ok(())
+            },
+            &AtomicBool::new(false),
+        )
+        .expect("valid stream should parse");
 
         assert_eq!(content, "printf test");
         assert_eq!(response.full_content, "printf test");
@@ -238,13 +243,18 @@ data: [DONE]"#;
 
 data: [DONE]
 "#;
-        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()), &AtomicBool::new(false))
-            .expect("valid reasoning stream should parse");
+        let response = parse_sse_stream(
+            Cursor::new(body),
+            "requested-model",
+            &mut |_| Ok(()),
+            &AtomicBool::new(false),
+        )
+        .expect("valid reasoning stream should parse");
 
         assert_eq!(response.reasoning_content.as_deref(), Some("inspect"));
     }
 
-#[test]
+    #[test]
     fn final_usage_event_replaces_earlier_usage() {
         let body = br#"data: {"model":"requested-model","choices":[{"delta":{"content":"printf"}}],"usage":{"prompt_tokens":1,"completion_tokens":1}}
 
@@ -252,8 +262,13 @@ data: {"model":"response-model","choices":[],"usage":{"prompt_tokens":10,"comple
 
 data: [DONE]
 "#;
-        let response = parse_sse_stream(Cursor::new(body), "requested-model", &mut |_| Ok(()), &AtomicBool::new(false))
-            .expect("valid usage stream should parse");
+        let response = parse_sse_stream(
+            Cursor::new(body),
+            "requested-model",
+            &mut |_| Ok(()),
+            &AtomicBool::new(false),
+        )
+        .expect("valid usage stream should parse");
         let usage = response.final_usage.expect("usage should be present");
 
         assert_eq!(usage.prompt_tokens, 10);
@@ -263,8 +278,7 @@ data: [DONE]
 
     #[test]
     fn aborts_when_interrupt_flag_is_set() {
-        let body =
-            br#"data: {"model":"model","choices":[{"delta":{"content":"printf"}}]}
+        let body = br#"data: {"model":"model","choices":[{"delta":{"content":"printf"}}]}
 
 data: [DONE]
 "#;

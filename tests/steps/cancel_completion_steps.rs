@@ -7,9 +7,7 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use super::{
-    finish_pty_session, pty_snapshot, pty_write, start_pty_session,
-};
+use super::{finish_pty_session, pty_snapshot, pty_write, start_pty_session};
 use crate::WatnWorld;
 
 use super::incremental_sse_rendering_steps::read_request_headers;
@@ -43,8 +41,7 @@ impl Drop for HangServer {
 
 impl HangServer {
     fn start() -> Self {
-        let listener =
-            TcpListener::bind("127.0.0.1:0").expect("bind black-hole provider twin");
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind black-hole provider twin");
         listener
             .set_nonblocking(true)
             .expect("set black-hole listener mode");
