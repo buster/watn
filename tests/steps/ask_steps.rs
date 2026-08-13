@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use super::{
-    build_config, find_binary, finish_pty_session, pty_write, run_binary_with_state,
+    build_config, find_binary, finish_pty_session, pty_snapshot, pty_write, run_binary_with_state,
     start_pty_session,
 };
 use crate::{MockServerWrap, WatnWorld};
@@ -561,6 +561,33 @@ fn output_contains_model(w: &mut WatnWorld) {
     );
 }
 
+#[then("the help output should document every command and option")]
+fn help_output_documents_every_command_and_option(w: &mut WatnWorld) {
+    let output = w.output.as_ref().expect("no output captured");
+    for description in [
+        "Configure provider, models, reasoning, and shell integrations interactively",
+        "Configure model tiers and reasoning settings interactively",
+        "Configure a provider endpoint and credential",
+        "Configure shell completion and Ctrl-W integrations",
+        "Natural-language question to turn into a command",
+        "Use the small/fast model tier",
+        "Use the balanced model tier",
+        "Use the thinking/reasoning model tier",
+        "Use an explicit model instead of a tier",
+        "Prompt before executing the generated command",
+        "Print provider reasoning to stderr when available",
+        "Select a configured provider",
+        "Set the small-tier model non-interactively",
+        "Set the normal-tier model non-interactively",
+        "Set the thinking-tier model non-interactively",
+    ] {
+        assert!(
+            output.contains(description),
+            "help output missing {description:?}: {output:?}"
+        );
+    }
+}
+
 #[then("the output should contain a tokens/second value")]
 fn output_contains_tok_s(w: &mut WatnWorld) {
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
@@ -873,7 +900,12 @@ fn output_contains_instructions(w: &mut WatnWorld) {
     let out = w.output.as_ref().expect("no output captured");
     let stderr = w.stderr_output.as_ref().expect("no stderr captured");
     assert!(
-        out.contains("No provider endpoint") || stderr.contains("No provider endpoint"),
+        out.contains("No provider endpoint")
+            || stderr.contains("No provider endpoint")
+            || out.contains("No provider is configured")
+            || stderr.contains("No provider is configured")
+            || out.contains("watn provider")
+            || stderr.contains("watn provider"),
         "expected output to mention provider configuration, got stdout: '{}' stderr: '{}'",
         out,
         stderr
@@ -1488,6 +1520,9 @@ fn run_models_small_choose(w: &mut WatnWorld, query: String, selected: String) {
     pty_write(&mut session, &query);
     std::thread::sleep(std::time::Duration::from_millis(400));
     pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Small Reasoning");
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Normal Model");
     w.pty_session = Some(session);
     let _ = selected;
 }
@@ -1500,6 +1535,9 @@ fn choose_normal_tier(w: &mut WatnWorld, selected: String) {
     pty_write(&mut session, &selected);
     std::thread::sleep(std::time::Duration::from_millis(400));
     pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Normal Reasoning");
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Model");
     w.pty_session = Some(session);
 }
 
@@ -1509,6 +1547,8 @@ fn choose_thinking_tier(w: &mut WatnWorld, selected: String) {
     std::thread::sleep(std::time::Duration::from_millis(300));
     pty_write(&mut session, &selected);
     std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Reasoning");
     pty_write(&mut session, "\r");
     finish_pty_session(w, session);
 }
@@ -1557,23 +1597,49 @@ fn completed_setup_reports(w: &mut WatnWorld, small: String, normal: String, thi
 
 // ===== ratatui-model-picker steps =====
 
+fn picker_visible_output(output: &str) -> String {
+    Regex::new(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+        .expect("ANSI pattern")
+        .replace_all(output, "")
+        .to_string()
+}
+
+fn wait_for_picker_page(session: &super::PtySession, title: &str) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = picker_visible_output(&pty_snapshot(session));
+        if output.rfind("Page").is_some_and(|index| {
+            let current = &output[index..];
+            title.split_whitespace().all(|word| current.contains(word))
+        }) {
+            return;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("model picker page {title:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
 fn tier_reasoning_tab_count(strength: &str) -> usize {
     match strength.trim_matches('"') {
         "off" => 0,
         "low" => 1,
-        "medium" => 2,
-        "high" => 3,
+        "medium" => 3,
+        "high" => 4,
         other => panic!("unknown reasoning strength '{}'", other),
     }
 }
 
 fn set_reasoning_in_wizard(session: &mut super::PtySession, steps: usize) {
-    if steps > 0 {
-        pty_write(session, "\x12");
-        for _ in 0..steps {
-            pty_write(session, "\x1b[B");
-        }
+    for _ in 0..steps {
+        pty_write(session, "\x1b[B");
     }
+}
+
+fn clear_model_filter(session: &mut super::PtySession) {
+    pty_write(session, &"\x7f".repeat(128));
+    std::thread::sleep(std::time::Duration::from_millis(100));
 }
 
 #[when(
@@ -1591,27 +1657,30 @@ fn run_models_configure_all(
     let mut session = start_pty_session(w, &["models"]);
     std::thread::sleep(std::time::Duration::from_millis(400));
 
-    // small level: type filter, confirm (reasoning tabbed before Enter).
+    // Each model selection is followed by a separate reasoning page.
     pty_write(&mut session, &f1);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs1 = tier_reasoning_tab_count(&r1);
-    set_reasoning_in_wizard(&mut session, tabs1);
     pty_write(&mut session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    wait_for_picker_page(&session, "Small Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&r1));
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Normal Model");
 
     // normal level
     pty_write(&mut session, &f2);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs2 = tier_reasoning_tab_count(&r2);
-    set_reasoning_in_wizard(&mut session, tabs2);
     pty_write(&mut session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    wait_for_picker_page(&session, "Normal Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&r2));
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Model");
 
     // thinking level
     pty_write(&mut session, &f3);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs3 = tier_reasoning_tab_count(&r3);
-    set_reasoning_in_wizard(&mut session, tabs3);
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&r3));
     pty_write(&mut session, "\r");
 
     finish_pty_session(w, session);
@@ -1625,9 +1694,11 @@ fn run_models_configure_small(w: &mut WatnWorld, filter: String, reasoning: Stri
     std::thread::sleep(std::time::Duration::from_millis(400));
     pty_write(&mut session, &filter);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs = tier_reasoning_tab_count(&reasoning);
-    set_reasoning_in_wizard(&mut session, tabs);
     pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Small Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&reasoning));
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Normal Model");
     // Session kept alive: the process is now at the normal level.
     w.pty_session = Some(session);
 }
@@ -1635,10 +1706,12 @@ fn run_models_configure_small(w: &mut WatnWorld, filter: String, reasoning: Stri
 #[when("advance to the normal tier and back to the small tier")]
 fn advance_normal_then_back(w: &mut WatnWorld) {
     let mut session = w.pty_session.take().expect("pty session must be active");
-    // We already advanced to normal when confirming the small tier; Esc returns.
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    // We already advanced to normal when confirming the small tier. Two
+    // reverse steps cross the small reasoning page and return to the model.
     pty_write(&mut session, "\x1b[Z");
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    wait_for_picker_page(&session, "Small Reasoning");
+    pty_write(&mut session, "\x1b[Z");
+    wait_for_picker_page(&session, "Small Model");
     w.pty_session = Some(session);
 }
 
@@ -1646,11 +1719,14 @@ fn advance_normal_then_back(w: &mut WatnWorld) {
 fn change_small_tier_model(w: &mut WatnWorld, filter: String, reasoning: String) {
     let mut session = w.pty_session.take().expect("pty session must be active");
     std::thread::sleep(std::time::Duration::from_millis(300));
+    clear_model_filter(&mut session);
     pty_write(&mut session, &filter);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs = tier_reasoning_tab_count(&reasoning);
-    set_reasoning_in_wizard(&mut session, tabs);
     pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Small Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&reasoning));
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Normal Model");
     w.pty_session = Some(session);
 }
 
@@ -1662,15 +1738,17 @@ fn configure_remaining_tiers(w: &mut WatnWorld, f2: String, r2: String, f3: Stri
 
     pty_write(&mut session, &f2);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs2 = tier_reasoning_tab_count(&r2);
-    set_reasoning_in_wizard(&mut session, tabs2);
     pty_write(&mut session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    wait_for_picker_page(&session, "Normal Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&r2));
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Model");
 
     pty_write(&mut session, &f3);
     std::thread::sleep(std::time::Duration::from_millis(400));
-    let tabs3 = tier_reasoning_tab_count(&r3);
-    set_reasoning_in_wizard(&mut session, tabs3);
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Reasoning");
+    set_reasoning_in_wizard(&mut session, tier_reasoning_tab_count(&r3));
     pty_write(&mut session, "\r");
 
     finish_pty_session(w, session);
@@ -1811,12 +1889,17 @@ fn use_page_down(w: &mut WatnWorld) {
     let mut session = w.pty_session.take().expect("pty session must be active");
     pty_write(&mut session, "\x1b[6~");
     std::thread::sleep(std::time::Duration::from_millis(300));
-    // Confirm all three levels: small (=navigated), normal and thinking
-    // accept the top suggestion model-01.
+    // Confirm all three levels, including their separate reasoning pages.
     pty_write(&mut session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    wait_for_picker_page(&session, "Small Reasoning");
     pty_write(&mut session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(300));
+    wait_for_picker_page(&session, "Normal Model");
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Normal Reasoning");
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Model");
+    pty_write(&mut session, "\r");
+    wait_for_picker_page(&session, "Thinking Reasoning");
     pty_write(&mut session, "\r");
     finish_pty_session(w, session);
 }

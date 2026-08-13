@@ -1,7 +1,7 @@
 Feature: Interactive provider setup
 
   @e2e
-  Scenario: Interactive model catalog failure after provider setup preserves the provider and sends no request
+  Scenario: Interactive model catalog failure before final confirmation persists nothing and sends no request
     Given  no config file exists
     And  the model catalog transport returns HTTP 500 for "/models"
     When  I start `watn setup` in a terminal
@@ -9,7 +9,7 @@ Feature: Interactive provider setup
     And  paste credential "sk-first-run"
     And  confirm the credential before loading models
     Then  the setup wizard should report the catalog failure
-    And  the config file should contain provider "openrouter" with endpoint "https://openrouter.ai/api/v1"
+    And  the config file should not contain a provider entry for the attempted setup
     And  the config file should not contain selected tier assignments
     And  no original chat completion request should be sent
 

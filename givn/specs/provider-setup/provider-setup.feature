@@ -6,6 +6,7 @@ Feature: Interactive provider setup
     And  environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
     And  the ephemeral E2E transport returns a successful chat completion for "/chat/completions"
     When  I start `watn provider` in a terminal
+    And  I choose provider "OpenRouter"
     Then  the setup terminal should show endpoint prompt default "https://openrouter.ai/api/v1"
     And  the setup terminal should show pasted and environment credential choices
     When  I accept the OpenRouter endpoint
