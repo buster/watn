@@ -82,9 +82,9 @@
 ### Catalog metadata selects supported reasoning efforts for the chosen model
 
 - [x] RED: target `Catalog metadata selects supported reasoning efforts for the chosen model`; evidence: non-zero; the catalog metadata Given step was undefined.
-- [x] GREEN: implement metadata-supported effort filtering and default selection, and drive the provider catalog twin. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
-- [x] COMMIT: commit title references `Catalog metadata selects supported reasoning efforts for the chosen model`. Hash: `533ac96`
+- [x] GREEN: implement metadata-supported effort filtering, default selection, and non-mandatory `off` availability, and drive the provider catalog twin. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)` and `Choices: off` visible for non-mandatory `low/medium/high` metadata.
+- [x] COMMIT: commit title references `Catalog metadata selects supported reasoning efforts for the chosen model`. Hashes: `533ac96`, `08c4c22`
 
 ### Missing reasoning metadata provides generic efforts and free-form input
 
