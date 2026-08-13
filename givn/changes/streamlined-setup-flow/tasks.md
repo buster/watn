@@ -32,10 +32,10 @@
 
 ### Provider setup requires a custom endpoint
 
-- [ ] RED: target `Provider setup requires a custom endpoint`; evidence:
-- [ ] GREEN: implement explicit provider list and required Custom endpoint. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider setup requires a custom endpoint`. Hash: 
+- [x] RED: target `Provider setup requires a custom endpoint`; evidence: non-zero; the first new `choose provider "Custom"` step was undefined.
+- [x] GREEN: implement explicit provider choice rendering and empty Custom endpoint validation. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; spec: active scenario. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Provider setup requires a custom endpoint`. Hash: `a525c6d`
 
 ### Provider setup refuses an unresolved environment credential
 
