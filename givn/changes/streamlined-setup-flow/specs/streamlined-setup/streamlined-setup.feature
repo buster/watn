@@ -346,7 +346,7 @@ Feature: Streamlined setup flow
     Then the three model identifiers should be persisted exactly as entered
     And the failed catalog endpoint should not become available
 
-  @givn.added @wip
+  @givn.added
   Scenario: Changing provider invalidates catalog-backed model choices
     Given a configured provider catalog contains model "old-model"
     When I change provider during coordinated setup

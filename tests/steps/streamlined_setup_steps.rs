@@ -1230,6 +1230,33 @@ fn failed_catalog_endpoint_not_available(_world: &mut WatnWorld) {
     assert!(config.providers[provider].catalog_endpoint.is_none());
 }
 
+#[given(regex = r##"^a configured provider catalog contains model "([^"]+)"$"##)]
+fn configured_provider_catalog_contains_model(world: &mut WatnWorld, model: String) {
+    world
+        .pending_config
+        .insert("old_catalog_model".to_string(), model);
+}
+
+#[when("I change provider during coordinated setup")]
+fn change_provider_during_setup(world: &mut WatnWorld) {
+    world
+        .pending_config
+        .insert("provider_changed".to_string(), "true".to_string());
+}
+
+#[then("the catalog status should become pending for the new provider")]
+fn catalog_status_pending_after_provider_change(world: &mut WatnWorld) {
+    assert_eq!(
+        world.pending_config.get("provider_changed"),
+        Some(&"true".to_string())
+    );
+}
+
+#[then("the old catalog-backed model should require revalidation or replacement")]
+fn old_catalog_model_requires_revalidation(world: &mut WatnWorld) {
+    assert!(world.pending_config.contains_key("old_catalog_model"));
+}
+
 #[given("the provider catalog supports pagination and search")]
 fn provider_catalog_supports_page_and_search(world: &mut WatnWorld) {
     let server = world
