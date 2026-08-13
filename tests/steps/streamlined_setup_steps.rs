@@ -1856,6 +1856,41 @@ fn configure_free_form_reasoning(world: &mut WatnWorld, reasoning: String) {
         Some(format!("\"reasoning_effort\":\"{reasoning}\""));
 }
 
+#[when(regex = r##"^I enter custom reasoning "([^"]+)"$"##)]
+fn enter_invalid_custom_reasoning(world: &mut WatnWorld, reasoning: String) {
+    if world.raw_config.is_none() {
+        world.raw_config = Some(
+            "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"plain-model\"\n"
+                .to_string(),
+        );
+        super::ensure_test_env(world);
+        let path = world
+            .temp_dir
+            .as_ref()
+            .expect("config directory")
+            .path()
+            .join("watn/config.toml");
+        let before = std::fs::read_to_string(path).expect("baseline config");
+        world
+            .pending_config
+            .insert("config_before".to_string(), before);
+    }
+    let result = watn::setup::validate_reasoning_value(&reasoning);
+    world
+        .pending_config
+        .insert("custom_reasoning_value".to_string(), reasoning);
+    match result {
+        Ok(()) => {
+            world.pending_config.remove("reasoning_error");
+        }
+        Err(error) => {
+            world
+                .pending_config
+                .insert("reasoning_error".to_string(), error.to_string());
+        }
+    }
+}
+
 #[when("confirm the setup")]
 fn confirm_free_form_setup(world: &mut WatnWorld) {
     if world.pending_config.contains_key("rerun_unknown_reasoning") {
@@ -1914,6 +1949,19 @@ fn request_contains_reasoning_effort_exact(world: &mut WatnWorld, expected: Stri
     let mock_id = world.mock_server.1.expect("request mock");
     let server = world.mock_server.0.as_ref().expect("request mock server");
     assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
+}
+
+#[then(regex = r##"^setup should report that the reasoning value is invalid$"##)]
+fn setup_reports_invalid_reasoning(world: &mut WatnWorld) {
+    assert!(world
+        .pending_config
+        .get("reasoning_error")
+        .is_some_and(|message| message.contains("reasoning effort cannot be empty")));
+}
+
+#[then("final confirmation should be blocked")]
+fn final_confirmation_is_blocked_for_invalid_reasoning(world: &mut WatnWorld) {
+    assert!(world.pending_config.contains_key("reasoning_error"));
 }
 
 #[when("I rerun setup without changing the small reasoning value")]
