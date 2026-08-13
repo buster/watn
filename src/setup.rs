@@ -67,6 +67,15 @@ pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell
     selected_shells(enabled, selected)
 }
 
+pub fn validate_reasoning_value(value: &str) -> Result<(), Error> {
+    if value.trim().is_empty() {
+        return Err(Error::ConfigError(
+            "reasoning effort cannot be empty".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum SetupPage {
     Provider,
@@ -815,8 +824,8 @@ impl SetupWizard {
         }
         if let Some(slot) = self.page.reasoning_slot() {
             if let Some(custom) = &self.custom_reasoning[slot] {
-                if custom.trim().is_empty() {
-                    self.validation = "reasoning effort cannot be empty".to_string();
+                if let Err(error) = validate_reasoning_value(custom) {
+                    self.validation = error.to_string();
                     return Ok(None);
                 }
             }

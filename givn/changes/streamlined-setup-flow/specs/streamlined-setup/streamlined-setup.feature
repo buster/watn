@@ -424,7 +424,7 @@ Feature: Streamlined setup flow
     Then the saved small reasoning should remain exactly "unknown-provider-mode"
     And a small-role request should contain reasoning_effort exactly "unknown-provider-mode"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Whitespace-only custom reasoning is rejected
     Given an existing config is recorded byte-for-byte
     When I enter custom reasoning "   "
