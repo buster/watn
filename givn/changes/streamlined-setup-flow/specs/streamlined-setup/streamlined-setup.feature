@@ -399,7 +399,7 @@ Feature: Streamlined setup flow
     And provider "custom" should contain endpoint "https://new.example/v1"
     And provider "custom" should contain default model "destination-model"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider migration is idempotent after the first conversion
     Given the selected provider is already "custom"
     When I rerun provider setup without changing its values

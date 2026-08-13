@@ -285,6 +285,14 @@ fn selected_provider_key(world: &mut WatnWorld, provider: String) {
         .insert("selected_provider_key".to_string(), provider);
 }
 
+#[given(regex = r#"^the selected provider is already \"custom\"$"#)]
+fn selected_provider_is_already_custom(world: &mut WatnWorld) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"https://legacy.example/v1\"\napi_key = \"sk-custom-key\"\ndefault_model = \"custom-model\"\n"
+            .to_string(),
+    );
+}
+
 #[given(
     regex = r#"^provider \"([^\"]+)\" has endpoint \"([^\"]+)\" and default model \"([^\"]+)\"$"#
 )]
@@ -352,6 +360,25 @@ fn confirm_provider_setup_with_endpoint(world: &mut WatnWorld, endpoint: String)
     save_provider_draft(&mut config, &draft).expect("save migrated provider draft");
 }
 
+#[when("I rerun provider setup without changing its values")]
+fn rerun_provider_setup_without_changes(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    assert_eq!(config.defaults.provider.as_deref(), Some("custom"));
+}
+
+#[when("confirm provider setup")]
+fn confirm_provider_setup(world: &mut WatnWorld) {
+    let mut config = load_world_config(world);
+    let provider = config
+        .providers
+        .get("custom")
+        .cloned()
+        .expect("custom provider config");
+    let credential = provider.api_key.expect("saved provider credential");
+    let draft = build_provider_draft(&provider.endpoint, &credential).expect("provider draft");
+    save_provider_draft(&mut config, &draft).expect("save canonical provider draft");
+}
+
 #[then(
     regex = r#"^provider \"([^\"]+)\" should contain endpoint \"([^\"]+)\" and default model \"([^\"]+)\"$"#
 )]
@@ -401,6 +428,28 @@ fn provider_contains_default_model(world: &mut WatnWorld, provider: String, defa
 fn provider_should_not_exist(world: &mut WatnWorld, provider: String) {
     let config = load_world_config(world);
     assert!(!config.providers.contains_key(&provider));
+}
+
+#[then(regex = r#"^there should be exactly one \"custom\" provider entry$"#)]
+fn exactly_one_custom_provider_entry(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    assert_eq!(
+        config
+            .providers
+            .keys()
+            .filter(|key| *key == "custom")
+            .count(),
+        1
+    );
+}
+
+#[then("no arbitrary provider key should be created")]
+fn no_arbitrary_provider_key_created(world: &mut WatnWorld) {
+    let config = load_world_config(world);
+    assert!(config
+        .providers
+        .keys()
+        .all(|key| { matches!(key.as_str(), "custom" | "openrouter" | "openai") }));
 }
 
 #[then(regex = r#"^provider \"([^\"]+)\" should remain unchanged$"#)]
