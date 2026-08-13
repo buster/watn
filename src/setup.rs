@@ -455,6 +455,11 @@ impl SetupWizard {
             config.tiers.reasoning.normal.is_some(),
             config.tiers.reasoning.thinking.is_some(),
         ];
+        let custom_reasoning = [
+            parse_custom_reasoning(config.tiers.reasoning.small.as_deref()),
+            parse_custom_reasoning(config.tiers.reasoning.normal.as_deref()),
+            parse_custom_reasoning(config.tiers.reasoning.thinking.as_deref()),
+        ];
         let shell_environment = shell_shortcut::ShellEnvironment::from_process();
         let detected_shells = shell_environment.detected_shells();
         let completion_selected = if entry == SetupEntryPoint::Shell {
@@ -503,7 +508,7 @@ impl SetupWizard {
             manual_models: Default::default(),
             completed: [None, None, None],
             reasoning,
-            custom_reasoning: [None, None, None],
+            custom_reasoning,
             reasoning_explicit,
             model_focus: ModelFocus::Table,
             search_status: [None, None, None],
@@ -1284,6 +1289,9 @@ impl SetupWizard {
     }
 
     fn sync_reasoning(&mut self, slot: usize) {
+        if self.custom_reasoning[slot].is_some() {
+            return;
+        }
         let options = self.reasoning_options(slot);
         if !self.reasoning_explicit[slot] || !options.contains(&self.reasoning[slot]) {
             self.reasoning[slot] = self.suggestions[slot]
@@ -1829,6 +1837,12 @@ fn parse_reasoning(value: Option<&str>) -> ReasoningStrength {
     value
         .and_then(ReasoningStrength::parse)
         .unwrap_or(ReasoningStrength::Off)
+}
+
+fn parse_custom_reasoning(value: Option<&str>) -> Option<String> {
+    value
+        .filter(|value| ReasoningStrength::parse(value).is_none())
+        .map(str::to_string)
 }
 
 fn provider_choices() -> [&'static str; 3] {

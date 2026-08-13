@@ -416,7 +416,7 @@ Feature: Streamlined setup flow
     Then the saved reasoning should be exactly "  provider-specific-mode  "
     And the request should contain reasoning_effort exactly "  provider-specific-mode  "
 
-  @givn.added @wip
+  @givn.added
   Scenario: Existing unknown reasoning remains active after rerunning setup
     Given a configured provider has small reasoning "unknown-provider-mode"
     When I rerun setup without changing the small reasoning value
