@@ -172,10 +172,10 @@
 
 ### A failed new catalog endpoint remains unset
 
-- [ ] RED: target `A failed new catalog endpoint remains unset`; evidence:
-- [ ] GREEN: leave new failed catalog state unset and enable manual mode. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `A failed new catalog endpoint remains unset`. Hash: 
+- [x] RED: target `A failed new catalog endpoint remains unset`; evidence: non-zero; no-saved-catalog fixture steps were undefined.
+- [x] GREEN: assert a provider without saved catalog state keeps the field unset after an unreachable derived endpoint and remains eligible for manual entry. Production files: persisted catalog model reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `A failed new catalog endpoint remains unset`. Hash: `3a500ca`
 
 ### Invalid catalog data switches to manual model selection
 
