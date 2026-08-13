@@ -123,10 +123,10 @@
 
 ### Non-interactive incomplete request prints setup guidance without probing
 
-- [ ] RED: target `Non-interactive incomplete request prints setup guidance without probing`; evidence:
-- [ ] GREEN: implement non-TTY guidance and zero-network readiness path. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Non-interactive incomplete request prints setup guidance without probing`. Hash: 
+- [x] RED: target `Non-interactive incomplete request prints setup guidance without probing`; evidence: non-zero; the nonzero-status step was undefined.
+- [x] GREEN: drive the real non-TTY request, add a zero-hit catalog sentinel, and assert actionable setup guidance with no catalog/chat requests. Production files: existing readiness/guidance path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Non-interactive incomplete request prints setup guidance without probing`. Hash: `424a1c6`
 
 ### Malformed configuration is reported without modification
 
