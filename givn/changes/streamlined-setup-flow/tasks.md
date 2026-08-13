@@ -88,10 +88,10 @@
 
 ### Missing reasoning metadata provides generic efforts and free-form input
 
-- [ ] RED: target `Missing reasoning metadata provides generic efforts and free-form input`; evidence:
-- [ ] GREEN: implement generic efforts, custom entry, and non-empty validation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Missing reasoning metadata provides generic efforts and free-form input`. Hash: 
+- [x] RED: target `Missing reasoning metadata provides generic efforts and free-form input`; evidence: non-zero; the no-metadata catalog Given step was undefined.
+- [x] GREEN: implement generic reasoning choices including `minimal`, metadata warning, custom input, and string-valued level choices. Production files: `src/models/dialog.rs`, `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `8 steps (8 passed)`.
+- [x] COMMIT: commit title references `Missing reasoning metadata provides generic efforts and free-form input`. Hash: `37d93dc`
 
 ### Off reasoning omits the reasoning setting from a request
 
