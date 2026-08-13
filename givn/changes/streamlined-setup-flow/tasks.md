@@ -18,10 +18,10 @@
 
 ### Rerunning coordinated setup prefills current values and preserves a masked literal credential
 
-- [ ] RED: target `Rerunning coordinated setup prefills current values and preserves a masked literal credential`; remove only its `@wip`; evidence:
-- [ ] GREEN: implement prefilled draft values and masked credential preservation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario after cleanup. Evidence:
-- [ ] COMMIT: commit title references `Rerunning coordinated setup prefills current values and preserves a masked literal credential`. Hash: 
+- [x] RED: target `Rerunning coordinated setup prefills current values and preserves a masked literal credential`; remove only its `@wip`; evidence: non-zero; the first unimplemented `provider credential` step reported `Step doesn't match any function`.
+- [x] GREEN: implement prefilled draft values and masked credential preservation. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`, `tests/steps/mod.rs`; spec: active scenario. Evidence: targeted run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR: rerun the named scenario after cleanup. Evidence: post-format targeted run passed with `10 steps (10 passed)`; first separate-reasoning scenario also remained green after the provider page addition.
+- [x] COMMIT: commit title references `Rerunning coordinated setup prefills current values and preserves a masked literal credential`. Hash: `0bfc8a9`
 
 ### Cancelling coordinated setup leaves an existing configuration unchanged
 
