@@ -235,10 +235,10 @@
 
 ### Back navigation preserves draft values across model and reasoning questions
 
-- [ ] RED: target `Back navigation preserves draft values across model and reasoning questions`; evidence:
-- [ ] GREEN: preserve draft state across backward/forward navigation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Back navigation preserves draft values across model and reasoning questions`. Hash: 
+- [x] RED: target `Back navigation preserves draft values across model and reasoning questions`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` with the draft-navigation PTY step failing before implementation.
+- [x] GREEN: preserve draft state across backward/forward navigation. Production files: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all` and PTY synchronization cleanup. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Back navigation preserves draft values across model and reasoning questions`. Hash: `c34562e`
 
 ### Selected provider migration moves an arbitrary provider to custom
 
