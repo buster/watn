@@ -28,16 +28,21 @@ impl fmt::Debug for ReleaseTruthState {
     }
 }
 
-#[given(regex = r##"^the package version is "([^"]+)"$"##)]
-fn package_version(world: &mut crate::WatnWorld, version: String) {
-    world.release_truth.package_version = Some(version);
+#[given("the package version is current")]
+fn package_version(world: &mut crate::WatnWorld) {
+    world.release_truth.package_version = Some(env!("CARGO_PKG_VERSION").to_string());
 }
 
-#[then(expr = "the output should contain exactly the package version {string}")]
-fn output_contains_package_version(world: &mut crate::WatnWorld, version: String) {
+#[then("the output should contain exactly the package version")]
+fn output_contains_package_version(world: &mut crate::WatnWorld) {
     let output = world.output.as_deref().expect("version output");
+    let version = world
+        .release_truth
+        .package_version
+        .as_deref()
+        .expect("package version");
     assert!(
-        output.contains(&version),
+        output.contains(version),
         "expected package version {version:?}: {output:?}"
     );
 }

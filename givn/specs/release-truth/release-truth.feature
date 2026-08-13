@@ -2,11 +2,11 @@ Feature: Release truth and repository cleanup
 
   @e2e
   Scenario: Version flag reports the package version
-    Given  the package version is "0.1.4"
+    Given  the package version is current
     When  I run the release binary with `--version`
     Then  the exit status should be 0
     And  the output should contain "watn"
-    And  the output should contain exactly the package version "0.1.4"
+    And  the output should contain exactly the package version
 
   Scenario: Release artifact reports target-dependent runtime libraries
     Given  a release binary has been built for the current host
