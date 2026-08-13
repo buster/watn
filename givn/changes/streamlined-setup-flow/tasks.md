@@ -46,10 +46,10 @@
 
 ### Provider setup preserves unrelated settings
 
-- [ ] RED: target `Provider setup preserves unrelated settings`; evidence:
-- [ ] GREEN: persist provider-owned fields while preserving unrelated providers, pricing, and legacy data. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider setup preserves unrelated settings`. Hash: 
+- [x] RED: target `Provider setup preserves unrelated settings`; evidence: non-zero; the new combined provider-save step was undefined.
+- [x] GREEN: exercise the existing provider persistence seam with concrete preservation assertions for unrelated provider, pricing, and LiteLLM data. Production files: existing config writer reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Provider setup preserves unrelated settings`. Hash: `22097ad`
 
 ### Provider setup does not probe the catalog
 
