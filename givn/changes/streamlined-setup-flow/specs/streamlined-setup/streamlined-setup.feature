@@ -237,13 +237,13 @@ Feature: Streamlined setup flow
     And no model catalog request should be sent
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Malformed configuration is reported without modification
     Given the config file contains malformed TOML
     And the malformed config content is recorded
     When I run `watn setup`
     Then setup should exit with a configuration error
-    And the config file should be byte-for-byte unchanged
+    And the malformed config file should be byte-for-byte unchanged
 
   @givn.added @wip
   Scenario: Cancelling after provider and credential validation does not create a config file

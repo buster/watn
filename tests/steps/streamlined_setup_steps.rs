@@ -682,6 +682,41 @@ fn install_catalog_request_sentinel(world: &mut WatnWorld) {
     );
 }
 
+#[given("the config file contains malformed TOML")]
+fn malformed_config_file(world: &mut WatnWorld) {
+    world.raw_config = Some("[defaults\nprovider = \"broken\"".to_string());
+}
+
+#[given("the malformed config content is recorded")]
+fn record_malformed_config(world: &mut WatnWorld) {
+    world
+        .pending_config
+        .insert("malformed_recorded".to_string(), "true".to_string());
+}
+
+#[when("I run `watn setup`")]
+fn run_setup_without_terminal(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["setup"], None);
+}
+
+#[then("setup should exit with a configuration error")]
+fn setup_exits_configuration_error(world: &mut WatnWorld) {
+    assert_ne!(world.exit_status, Some(0));
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(
+        stderr.contains("parse error"),
+        "config error missing: {stderr:?}"
+    );
+}
+
+#[then("the malformed config file should be byte-for-byte unchanged")]
+fn malformed_config_is_unchanged(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("config temp dir");
+    let path = dir.path().join("watn").join("config.toml");
+    let actual = std::fs::read_to_string(path).expect("malformed config");
+    assert_eq!(actual, "[defaults\nprovider = \"broken\"");
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir
