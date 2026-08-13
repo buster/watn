@@ -116,10 +116,10 @@
 
 ### Shell failure does not discard successful shell changes or configuration
 
-- [ ] RED: target `Shell failure does not discard successful shell changes or configuration`; evidence:
-- [ ] GREEN: retain successful independent shell results and config after later failure. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Shell failure does not discard successful shell changes or configuration`. Hash: 
+- [x] RED: target `Shell failure does not discard successful shell changes or configuration`; evidence: non-zero; coordinated shell failure fixture steps were undefined.
+- [x] GREEN: exercise independent shell application with a writable Bash target and directory Zsh target, asserting retained Bash/config and nonzero aggregate result. Production files: existing independent shell result path reused; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)` and no unused-variable warning.
+- [x] COMMIT: commit title references `Shell failure does not discard successful shell changes or configuration`. Hash: `b618dc4`
 
 ### Non-interactive incomplete request prints setup guidance without probing
 
