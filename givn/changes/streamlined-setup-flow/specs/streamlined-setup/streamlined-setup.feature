@@ -100,7 +100,7 @@ Feature: Streamlined setup flow
     Then provider setup should show that "MISSING_API_KEY" must contain a non-empty value
     And the config file should not contain a provider entry for the attempted setup
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider setup preserves unrelated settings
     Given a config file contains provider "legacy" with endpoint "https://legacy.example/v1"
     And the config file contains pricing and LiteLLM settings
