@@ -67,6 +67,7 @@ pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum SetupPage {
+    Provider,
     Url,
     ApiKey,
     SmallModel,
@@ -82,6 +83,7 @@ enum SetupPage {
 impl SetupPage {
     fn title(self) -> &'static str {
         match self {
+            Self::Provider => "Provider",
             Self::Url => "URL",
             Self::ApiKey => "API key",
             Self::SmallModel => "Small Model",
@@ -97,21 +99,23 @@ impl SetupPage {
 
     fn index(self) -> usize {
         match self {
-            Self::Url => 0,
-            Self::ApiKey => 1,
-            Self::SmallModel => 2,
-            Self::SmallReasoning => 3,
-            Self::NormalModel => 4,
-            Self::NormalReasoning => 5,
-            Self::ThinkingModel => 6,
-            Self::ThinkingReasoning => 7,
-            Self::ShellCompletion => 8,
-            Self::ShellShortcut => 9,
+            Self::Provider => 0,
+            Self::Url => 1,
+            Self::ApiKey => 2,
+            Self::SmallModel => 3,
+            Self::SmallReasoning => 4,
+            Self::NormalModel => 5,
+            Self::NormalReasoning => 6,
+            Self::ThinkingModel => 7,
+            Self::ThinkingReasoning => 8,
+            Self::ShellCompletion => 9,
+            Self::ShellShortcut => 10,
         }
     }
 
     fn model_slot(self) -> Option<usize> {
         match self {
+            Self::Provider => None,
             Self::SmallModel => Some(0),
             Self::NormalModel => Some(1),
             Self::ThinkingModel => Some(2),
@@ -121,6 +125,7 @@ impl SetupPage {
 
     fn reasoning_slot(self) -> Option<usize> {
         match self {
+            Self::Provider => None,
             Self::SmallReasoning => Some(0),
             Self::NormalReasoning => Some(1),
             Self::ThinkingReasoning => Some(2),
@@ -130,6 +135,7 @@ impl SetupPage {
 
     fn next(self) -> Option<Self> {
         match self {
+            Self::Provider => Some(Self::Url),
             Self::Url => Some(Self::ApiKey),
             Self::ApiKey => Some(Self::SmallModel),
             Self::SmallModel => Some(Self::SmallReasoning),
@@ -145,6 +151,7 @@ impl SetupPage {
 
     fn previous(self) -> Option<Self> {
         match self {
+            Self::Provider => None,
             Self::Url => None,
             Self::ApiKey => Some(Self::Url),
             Self::SmallModel => Some(Self::ApiKey),
@@ -290,6 +297,8 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
 
 struct SetupWizard {
     config: Config,
+    provider_name: String,
+    provider_cursor: usize,
     page: SetupPage,
     first_page: SetupPage,
     last_page: SetupPage,
@@ -366,7 +375,7 @@ impl SetupWizard {
         };
         let first_page = match entry {
             SetupEntryPoint::Models => SetupPage::SmallModel,
-            SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Url,
+            SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Provider,
         };
         let last_page = match entry {
             SetupEntryPoint::Provider => SetupPage::ApiKey,
@@ -393,6 +402,12 @@ impl SetupWizard {
         let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
             config: config.clone(),
+            provider_name: provider_name.to_string(),
+            provider_cursor: match provider_name {
+                "openrouter" => 0,
+                "openai" => 1,
+                _ => 2,
+            },
             page: first_page,
             first_page,
             last_page,
@@ -672,6 +687,9 @@ impl SetupWizard {
     }
 
     fn move_next(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
+        if self.page == SetupPage::Provider {
+            self.provider_name = provider_choices()[self.provider_cursor].to_string();
+        }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.credential_focus = CredentialFocus::Value;
             self.validation.clear();
@@ -701,7 +719,7 @@ impl SetupWizard {
                 self.validation.clear();
                 self.model_focus = ModelFocus::Table;
                 if next.model_slot().is_some() {
-                    if self.first_page == SetupPage::Url {
+                    if self.first_page == SetupPage::Provider {
                         let draft = self.current_provider()?;
                         config::save_provider_draft(&mut self.config, &draft)?;
                     }
@@ -838,6 +856,10 @@ impl SetupWizard {
     }
 
     fn move_up(&mut self) {
+        if self.page == SetupPage::Provider {
+            self.provider_cursor = self.provider_cursor.saturating_sub(1);
+            return;
+        }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.storage = CredentialStorage::Configuration;
             return;
@@ -858,6 +880,10 @@ impl SetupWizard {
     }
 
     fn move_down(&mut self) {
+        if self.page == SetupPage::Provider {
+            self.provider_cursor = (self.provider_cursor + 1).min(provider_choices().len() - 1);
+            return;
+        }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.storage = CredentialStorage::Environment;
             if self.credential_input.is_empty() {
@@ -1107,6 +1133,7 @@ impl SetupWizard {
         frame.render_widget(panel, frame.area());
 
         let mut tab_titles = vec![
+            Line::from("Provider"),
             Line::from("URL"),
             Line::from("API key"),
             Line::from("Small Model"),
@@ -1131,6 +1158,7 @@ impl SetupWizard {
         frame.render_widget(tabs, areas[0]);
 
         let focus = match self.page {
+            SetupPage::Provider => "provider choice",
             SetupPage::ShellCompletion => match self.completion_focus {
                 ShellInstallFocus::Question => "completion confirmation",
                 ShellInstallFocus::Shells => "completion shells",
@@ -1166,6 +1194,7 @@ impl SetupWizard {
         frame.render_widget(header, areas[1]);
 
         match self.page {
+            SetupPage::Provider => self.draw_provider(frame, areas[2]),
             SetupPage::Url => self.draw_url(frame, areas[2]),
             SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
             SetupPage::SmallModel | SetupPage::NormalModel | SetupPage::ThinkingModel => {
@@ -1229,6 +1258,29 @@ impl SetupWizard {
             .block(setup_block("URL (editing)", true));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
+    }
+
+    fn draw_provider(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let choices = provider_choices();
+        let items = choices.iter().map(|provider| {
+            ListItem::new(match *provider {
+                "openrouter" => "OpenRouter",
+                "openai" => "OpenAI",
+                _ => "Custom",
+            })
+        });
+        let mut state = ListState::default();
+        state.select(Some(self.provider_cursor));
+        let list = List::new(items)
+            .block(setup_block("Provider (editing)", true))
+            .highlight_style(
+                Style::default()
+                    .bg(Color::Cyan)
+                    .fg(Color::Black)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .highlight_symbol("> ");
+        frame.render_stateful_widget(list, area, &mut state);
     }
 
     fn draw_api_key(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
@@ -1473,6 +1525,10 @@ fn parse_reasoning(value: Option<&str>) -> ReasoningStrength {
     value
         .and_then(ReasoningStrength::parse)
         .unwrap_or(ReasoningStrength::Off)
+}
+
+fn provider_choices() -> [&'static str; 3] {
+    ["openrouter", "openai", "custom"]
 }
 
 fn valid_environment_name(name: &str) -> bool {
