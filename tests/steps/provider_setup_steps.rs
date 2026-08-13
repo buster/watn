@@ -143,11 +143,18 @@ fn provider_setup_accepts_pasted_credential(world: &mut WatnWorld, credential: S
 }
 
 fn save_environment_draft(world: &mut WatnWorld, name: String) {
+    if !world.env_vars.contains_key(&name) && std::env::var(&name).is_err() {
+        world.pending_config.insert(
+            "setup_error".to_string(),
+            format!("{name} must contain a non-empty value"),
+        );
+        return;
+    }
     let endpoint = world
         .pending_config
         .get("provider_endpoint")
         .cloned()
-        .expect("provider endpoint must be accepted first");
+        .unwrap_or_else(|| watn::provider::setup::OPENROUTER_ENDPOINT.to_string());
     let reference = format!("${{{name}}}");
     let draft = build_provider_draft(&endpoint, &reference).expect("build environment draft");
     let mut config = load_world_config(world);
