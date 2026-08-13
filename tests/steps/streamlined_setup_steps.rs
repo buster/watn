@@ -578,6 +578,43 @@ fn small_role_uses_reasoning(world: &mut WatnWorld, effort: String) {
     }
 }
 
+#[given(regex = r##"^a configured provider with model "([^"]+)" for the small role$"##)]
+fn configured_provider_with_small_model(world: &mut WatnWorld, model: String) {
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"{model}\"\n"
+    ));
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+    world.pending_mock_no_reasoning_assert = true;
+}
+
+#[given("the small role reasoning is \"off\"")]
+fn small_role_reasoning_off(world: &mut WatnWorld) {
+    let mut raw = world.raw_config.take().expect("provider config fixture");
+    raw.push_str("\n[tiers.reasoning]\nsmall = \"off\"\n");
+    world.raw_config = Some(raw);
+}
+
+#[when("I send a small-role request through the configured provider")]
+fn send_small_request(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["-1", "hello"], None);
+}
+
+#[then("the API request should omit the reasoning effort")]
+fn api_request_omits_reasoning(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "reasoning request was rejected: {:?}",
+        world.stderr_output
+    );
+    let id = world
+        .blocking_mock_id
+        .expect("reasoning assertion mock was not installed");
+    let server = world.mock_server.0.as_ref().expect("request mock server");
+    assert_eq!(httpmock::Mock::new(id, server).hits(), 0);
+}
+
 #[then("model setup should warn that catalog discovery is unavailable")]
 fn model_setup_warns_catalog_unavailable(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");
