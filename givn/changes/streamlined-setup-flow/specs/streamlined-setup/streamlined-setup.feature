@@ -457,7 +457,7 @@ Feature: Streamlined setup flow
     Then only the Watn completion block should be removed
     And all user-owned bytes should remain in their original order
 
-  @givn.added @wip
+  @givn.added
   Scenario: Missing model roles trigger implicit setup even with a usable provider
     Given a usable provider credential is configured
     And one required model role is missing

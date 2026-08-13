@@ -108,6 +108,10 @@ pub fn provider_ready(config: &Config, provider_name: &str) -> bool {
         .is_ok()
 }
 
+pub fn model_roles_ready(config: &Config) -> bool {
+    config.tiers.small.is_some() && config.tiers.normal.is_some() && config.tiers.thinking.is_some()
+}
+
 pub fn resolve_model(
     config: &Config,
     tier: Option<&str>,
