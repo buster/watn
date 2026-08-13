@@ -465,7 +465,7 @@ Feature: Streamlined setup flow
     Then the setup coordinator should open
     And the original request should not be sent before setup completes
 
-  @givn.added @wip
+  @givn.added
   Scenario: Focused model setup preserves provider-owned and unrelated fields
     Given a configured provider has endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and an unrelated provider
     When I confirm new model roles and reasoning through `watn models`

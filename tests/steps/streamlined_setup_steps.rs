@@ -326,6 +326,142 @@ fn usable_provider_credential_configured(world: &mut WatnWorld) {
     world.pending_mock_output = Some("output".to_string());
 }
 
+#[given("a configured provider has endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and an unrelated provider")]
+fn configured_provider_with_owned_and_unrelated_fields(world: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let models = serde_json::json!({
+        "data": [{"id": "new-small"}, {"id": "new-normal"}, {"id": "new-thinking"}]
+    });
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(models.to_string());
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\nmodel = \"default-model\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"saved-key\"\ncatalog_endpoint = \"https://catalog.example/v1\"\ndefault_model = \"provider-default\"\n\n[providers.unrelated]\nendpoint = \"https://unrelated.example/v1\"\napi_key = \"unrelated-key\"\ndefault_model = \"unrelated-model\"\n\n[tiers]\nsmall = \"old-small\"\nnormal = \"old-normal\"\nthinking = \"old-thinking\"\n\n[pricing]\n\"old-small\" = { input = 1.0, output = 2.0 }\n\n[litellm]\nendpoint = \"https://litellm.example\"\napi_key = \"litellm-key\"\n"
+            .to_string(),
+    );
+    world.pending_mock_returned_models = vec![
+        "new-small".to_string(),
+        "new-normal".to_string(),
+        "new-thinking".to_string(),
+    ];
+}
+
+#[when("I confirm new model roles and reasoning through `watn models`")]
+fn confirm_new_model_roles_through_models(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["models"]);
+    world.pty_session = Some(session);
+    let config_path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    world.pending_config.insert(
+        "focused_before".to_string(),
+        std::fs::read_to_string(config_path).expect("focused baseline config"),
+    );
+    let session = world.pty_session.as_mut().expect("models PTY session");
+    wait_for_active_page(session, "Small Model");
+    for (index, next_model_page) in ["Normal Model", "Thinking Model", "done"]
+        .into_iter()
+        .enumerate()
+    {
+        for _ in 0..index {
+            pty_write(session, "\x1b[B");
+        }
+        pty_write(session, "\r");
+        wait_for_active_page(session, "Reasoning");
+        pty_write(session, "\r");
+        if next_model_page != "done" {
+            wait_for_active_page(session, next_model_page);
+        }
+    }
+    let session = world.pty_session.take().expect("models PTY session");
+    super::finish_pty_session(world, session);
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "models output: {:?}",
+        world.output
+    );
+}
+
+#[then("provider identity, endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and the unrelated provider should remain unchanged")]
+fn focused_provider_owned_fields_unchanged(world: &mut WatnWorld) {
+    let before: watn::config::types::Config = toml::from_str(
+        world
+            .pending_config
+            .get("focused_before")
+            .expect("focused baseline"),
+    )
+    .expect("parse focused baseline");
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let after: watn::config::types::Config =
+        toml::from_str(&std::fs::read_to_string(path).expect("focused config"))
+            .expect("parse focused config");
+    assert_eq!(after.defaults.provider, before.defaults.provider);
+    assert_eq!(after.defaults.model, before.defaults.model);
+    assert_eq!(
+        after.providers["custom"].api_key,
+        before.providers["custom"].api_key
+    );
+    assert_eq!(
+        after.providers["custom"].catalog_endpoint,
+        before.providers["custom"].catalog_endpoint
+    );
+    assert_eq!(
+        after.providers["custom"].default_model,
+        before.providers["custom"].default_model
+    );
+    assert_eq!(
+        after.providers["custom"].endpoint,
+        before.providers["custom"].endpoint
+    );
+    assert_eq!(
+        toml::to_string(&after.pricing).unwrap(),
+        toml::to_string(&before.pricing).unwrap()
+    );
+    assert_eq!(
+        toml::to_string(&after.litellm).unwrap(),
+        toml::to_string(&before.litellm).unwrap()
+    );
+    assert_eq!(
+        toml::to_string(&after.providers["unrelated"]).unwrap(),
+        toml::to_string(&before.providers["unrelated"]).unwrap()
+    );
+}
+
+#[then("only model roles and reasoning should change")]
+fn only_focused_model_roles_change(world: &mut WatnWorld) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let config: watn::config::types::Config =
+        toml::from_str(&std::fs::read_to_string(path).expect("focused config"))
+            .expect("parse focused config");
+    assert_eq!(config.tiers.small.as_deref(), Some("new-small"));
+    assert_eq!(config.tiers.normal.as_deref(), Some("new-normal"));
+    assert_eq!(config.tiers.thinking.as_deref(), Some("new-thinking"));
+    assert_eq!(config.tiers.reasoning.small.as_deref(), Some("off"));
+    assert_eq!(config.tiers.reasoning.normal.as_deref(), Some("off"));
+    assert_eq!(config.tiers.reasoning.thinking.as_deref(), Some("off"));
+}
+
 #[given("one required model role is missing")]
 fn one_required_model_role_missing(world: &mut WatnWorld) {
     let raw = world.raw_config.take().expect("provider config fixture");
