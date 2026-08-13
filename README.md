@@ -5,7 +5,7 @@
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
-![Crates.io Version](https://img.shields.io/crates/v/watn)
+[![Crates.io Version](https://img.shields.io/crates/v/watn)](https://crates.io/crates/watn)
 
 You know what you want. watn knows how to type it.
 Ask in plain language. Get a command for command requests, or an answer for
