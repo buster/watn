@@ -980,6 +980,59 @@ fn setup_allows_manual_entry_for_unset(_world: &mut WatnWorld) {
     // proves no catalog endpoint was promoted.
 }
 
+#[given("the provider catalog returns an empty model list")]
+fn provider_catalog_returns_empty_models(world: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}/v1", server.port());
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(r#"{"data":[]}"#);
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"{endpoint}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[then("setup should report that catalog discovery is unusable")]
+fn setup_reports_unusable_catalog(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    for word in ["Catalog", "discovery", "unavailable"] {
+        assert!(output.contains(word), "catalog warning missing: {output:?}");
+    }
+}
+
+#[then("setup should not invent model identifiers")]
+fn setup_does_not_invent_models(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    assert!(!output.contains("invented-model"));
+}
+
+#[then("setup should allow a manually entered model identifier")]
+fn setup_allows_manual_model_identifier(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    assert!(
+        output.contains("Manual"),
+        "manual entry missing: {output:?}"
+    );
+}
+
+#[when("I run `watn models` in a terminal")]
+fn run_models_in_terminal(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["models"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    wait_for_active_page(session, "Small Model");
+}
+
 #[given(regex = r##"^the edited catalog endpoint "([^"]+)" returns valid models$"##)]
 fn edited_catalog_returns_models(world: &mut WatnWorld, endpoint: String) {
     world
