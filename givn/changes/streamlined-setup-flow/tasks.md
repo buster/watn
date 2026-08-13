@@ -319,10 +319,10 @@
 
 ### A failed final config write prevents shell operations
 
-- [ ] RED: target `A failed final config write prevents shell operations`; evidence:
-- [ ] GREEN: implement atomic config failure boundary before shell application. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `A failed final config write prevents shell operations`. Hash: 
+- [x] RED: target `A failed final config write prevents shell operations`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the coordinated-draft fixture step was undefined.
+- [x] GREEN: implement atomic config failure boundary before shell application. Production files: `src/config/mod.rs`, `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)` with injected config-write failure, no shell targets, and unchanged bytes.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `A failed final config write prevents shell operations`. Hash: `9e7996c`
 
 ## E2E Setup
 
