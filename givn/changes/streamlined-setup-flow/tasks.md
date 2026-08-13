@@ -53,10 +53,10 @@
 
 ### Provider setup does not probe the catalog
 
-- [ ] RED: target `Provider setup does not probe the catalog`; evidence:
-- [ ] GREEN: keep provider command free of catalog requests. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider setup does not probe the catalog`. Hash: 
+- [x] RED: target `Provider setup does not probe the catalog`; evidence: non-zero; the existing no-catalog assertion found no catalog mock because the new save step was not implemented.
+- [x] GREEN: add an exact zero-hit catalog twin around the provider save seam; provider save performs no discovery request. Production files: existing provider path reused; test/spec files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `3 steps (3 passed)`.
+- [x] COMMIT: commit title references `Provider setup does not probe the catalog`. Hash: `28039cd`
 
 ### Models setup gives guidance when no provider is configured
 
