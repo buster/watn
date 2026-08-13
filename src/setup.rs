@@ -1850,12 +1850,15 @@ impl SetupWizard {
             .map(ReasoningStrength::as_str)
             .collect::<Vec<_>>()
             .join(", ");
-        let metadata_notice = self.suggestions[slot]
+        let metadata_notice = if self.suggestions[slot]
             .get(self.selection[slot])
             .and_then(|model| model.reasoning.as_ref())
             .is_none()
-            .then_some("Notice: reasoning metadata unavailable")
-            .unwrap_or("");
+        {
+            "Notice: reasoning metadata unavailable"
+        } else {
+            ""
+        };
         let text = format!(
             "Model: {}\n{}\nChoose reasoning effort with Up/Down, then press Enter.\nSelected: {}\nChoices: {}\nCustom: {}",
             model,

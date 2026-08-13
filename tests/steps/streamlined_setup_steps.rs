@@ -1417,7 +1417,7 @@ fn configured_provider_has_catalog_endpoint(world: &mut WatnWorld, catalog: Stri
     std::fs::write(path, raw).expect("catalog config");
     world
         .pending_config
-        .insert("catalog_before".to_string(), format!("{catalog}"));
+        .insert("catalog_before".to_string(), catalog.to_string());
 }
 
 #[given(regex = r##"^a configured provider has reachable catalog endpoint "([^"]+)"$"##)]
@@ -2389,8 +2389,7 @@ fn configure_free_form_reasoning(world: &mut WatnWorld, reasoning: String) {
 
 #[when(regex = r##"^I enter custom reasoning "([^"]+)"$"##)]
 fn enter_invalid_custom_reasoning(world: &mut WatnWorld, reasoning: String) {
-    if world.pty_session.is_some() {
-        let session = world.pty_session.as_mut().expect("models PTY session");
+    if let Some(session) = world.pty_session.as_mut() {
         pty_write(session, "c");
         pty_write(session, &reasoning);
         std::thread::sleep(std::time::Duration::from_millis(150));
