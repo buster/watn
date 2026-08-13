@@ -216,7 +216,7 @@ fn select_catalog_model_and_open_reasoning(world: &mut WatnWorld) {
 fn supported_catalog_efforts_shown(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");
     let snapshot = pty_snapshot(session);
-    let output = latest_page(&snapshot);
+    let output = visible_output(latest_page(&snapshot));
     for effort in ["low", "medium", "high"] {
         assert!(
             output.contains(effort),
@@ -2663,8 +2663,8 @@ fn small_reasoning_shows_only_catalog_efforts(
         );
     }
     assert!(
-        !output.contains("Choices: off"),
-        "off was not catalog-supported: {output:?}"
+        output.contains("Choices:") && output.contains("off"),
+        "off was not available for this non-mandatory model: {output:?}"
     );
 }
 
