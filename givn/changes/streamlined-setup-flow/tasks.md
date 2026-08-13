@@ -312,10 +312,10 @@
 
 ### Focused model setup preserves provider-owned and unrelated fields
 
-- [ ] RED: target `Focused model setup preserves provider-owned and unrelated fields`; evidence:
-- [ ] GREEN: restrict model command persistence to roles/reasoning and successful catalog state. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Focused model setup preserves provider-owned and unrelated fields`. Hash: 
+- [x] RED: target `Focused model setup preserves provider-owned and unrelated fields`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the provider-preservation fixture step was undefined.
+- [x] GREEN: restrict model command persistence to roles/reasoning and successful catalog state. Production files: `src/models/mod.rs`, `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)` through the focused `watn models` PTY flow.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Focused model setup preserves provider-owned and unrelated fields`. Hash: `c9f6223`
 
 ### A failed final config write prevents shell operations
 
