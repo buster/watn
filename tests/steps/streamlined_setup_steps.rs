@@ -318,12 +318,21 @@ fn no_configuration_field_should_change(world: &mut WatnWorld) {
 
 #[given("a usable provider credential is configured")]
 fn usable_provider_credential_configured(world: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::POST)
+                .path("/chat/completions");
+            then.status(200)
+                .header("Content-Type", "text/event-stream")
+                .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), Some(mock_id));
     world.raw_config = Some(
         "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n"
             .to_string(),
     );
-    world.pending_mock_model = Some("test-model".to_string());
-    world.pending_mock_output = Some("output".to_string());
 }
 
 #[given("a configured provider has endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and an unrelated provider")]
@@ -2311,7 +2320,7 @@ fn bash_file_remains_unchanged(world: &mut WatnWorld) {
 #[given(regex = r##"^a configured provider with model "([^"]+)" for the small role$"##)]
 fn configured_provider_with_small_model(world: &mut WatnWorld, model: String) {
     world.raw_config = Some(format!(
-        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"{model}\"\n"
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"{model}\"\nnormal = \"{model}\"\nthinking = \"{model}\"\n"
     ));
     world.pending_mock_model = Some("test-model".to_string());
     world.pending_mock_output = Some("output".to_string());
@@ -2321,7 +2330,7 @@ fn configured_provider_with_small_model(world: &mut WatnWorld, model: String) {
 #[given(regex = r##"^a configured provider has small reasoning "([^"]+)"$"##)]
 fn configured_provider_with_small_reasoning(world: &mut WatnWorld, reasoning: String) {
     world.raw_config = Some(format!(
-        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"plain-model\"\n\n[tiers.reasoning]\nsmall = \"{reasoning}\"\n"
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"plain-model\"\nnormal = \"plain-model\"\nthinking = \"plain-model\"\n\n[tiers.reasoning]\nsmall = \"{reasoning}\"\n"
     ));
     world
         .pending_config

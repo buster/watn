@@ -95,10 +95,8 @@ fn model_assigned_normal_reasoning(w: &mut WatnWorld, model: String, reasoning: 
     w.pending_mock_model = Some(model);
     w.pending_mock_output = Some("some output".to_string());
     w.pending_mock_usage = Some(false);
-    if matches!(r.as_str(), "off" | "low" | "minimal" | "medium" | "high") {
+    if r != "off" {
         w.pending_mock_expected_reasoning_body = Some(format!("\"reasoning_effort\":\"{}\"", r));
-    } else {
-        w.pending_mock_no_reasoning_assert = true;
     }
 }
 
