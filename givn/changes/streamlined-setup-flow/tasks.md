@@ -130,10 +130,10 @@
 
 ### Malformed configuration is reported without modification
 
-- [ ] RED: target `Malformed configuration is reported without modification`; evidence:
-- [ ] GREEN: distinguish malformed/unreadable config and refuse writes. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Malformed configuration is reported without modification`. Hash: 
+- [x] RED: target `Malformed configuration is reported without modification`; evidence: non-zero; malformed-config fixture and unique unchanged-file assertion were undefined.
+- [x] GREEN: load config before non-TTY setup guidance, report parse error, and assert malformed bytes remain unchanged. Production files: `src/main.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Malformed configuration is reported without modification`. Hash: `a179247`
 
 ### Cancelling after provider and credential validation does not create a config file
 
