@@ -1158,6 +1158,43 @@ fn review_hides_resolved_credential(world: &mut WatnWorld) {
     assert!(!output.contains("sk-review"));
 }
 
+#[given("a coordinated setup draft has a missing model role")]
+fn coordinated_draft_missing_model_role(world: &mut WatnWorld) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"small-model\"\nnormal = \"normal-model\"\n"
+            .to_string(),
+    );
+    world
+        .env_vars
+        .insert("WATN_SETUP_START_REVIEW".to_string(), "1".to_string());
+}
+
+#[then("confirmation should be blocked")]
+fn review_confirmation_is_blocked(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("review PTY");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    assert!(visible_output(&pty_snapshot(session)).contains("incomplete"));
+}
+
+#[then("the review should identify the missing model role")]
+fn review_identifies_missing_role(world: &mut WatnWorld) {
+    let output = visible_output(&pty_snapshot(
+        world.pty_session.as_ref().expect("review PTY"),
+    ));
+    assert!(output.contains("small:") || output.contains("thinking:"));
+    assert!(output.contains("incomplete"));
+}
+
+#[then("no configuration or shell target should be changed")]
+fn no_config_or_shell_target_changed(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("config temp dir");
+    let path = dir.path().join("watn/config.toml");
+    let content = std::fs::read_to_string(path).expect("config file");
+    assert!(content.contains("small = \"small-model\""));
+    assert!(!dir.path().join("home/.bashrc").exists());
+}
+
 #[given(regex = r##"^a configured provider endpoint "([^"]+)" with credential "([^"]+)"$"##)]
 fn configured_provider_endpoint_with_credential(
     world: &mut WatnWorld,
