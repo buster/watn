@@ -999,6 +999,41 @@ fn provider_catalog_returns_empty_models(world: &mut WatnWorld) {
     ));
 }
 
+#[given("the provider catalog contains an empty model identifier and a duplicate model identifier")]
+fn provider_catalog_contains_invalid_identifiers(world: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}/v1", server.port());
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(r#"{"data":[{"id":""},{"id":"duplicate"},{"id":"duplicate"}]}"#);
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"{endpoint}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[then("setup should not deduplicate or select those entries")]
+fn setup_does_not_select_invalid_entries(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    assert!(
+        !output.contains("duplicate"),
+        "invalid catalog entry was selected: {output:?}"
+    );
+}
+
+#[then("setup should allow manual model selection")]
+fn setup_allows_manual_model_selection(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    assert!(pty_snapshot(session).contains("Manual"));
+}
+
 #[then("setup should report that catalog discovery is unusable")]
 fn setup_reports_unusable_catalog(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");

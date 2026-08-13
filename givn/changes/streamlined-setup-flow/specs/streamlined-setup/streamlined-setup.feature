@@ -309,7 +309,7 @@ Feature: Streamlined setup flow
     And setup should not invent model identifiers
     And setup should allow a manually entered model identifier
 
-  @givn.added @wip
+  @givn.added
   Scenario: Catalog entries without unique non-empty identifiers are rejected
     Given the provider catalog contains an empty model identifier and a duplicate model identifier
     When I run `watn models` in a terminal
