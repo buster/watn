@@ -249,10 +249,10 @@
 
 ### Provider migration preserves the destination default model on collision
 
-- [ ] RED: target `Provider migration preserves the destination default model on collision`; evidence:
-- [ ] GREEN: implement deterministic custom collision/default-model precedence. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider migration preserves the destination default model on collision`. Hash: 
+- [x] RED: target `Provider migration preserves the destination default model on collision`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the source default-model fixture step was undefined.
+- [x] GREEN: verify deterministic custom collision/default-model precedence through the migration persistence path from `src/config/mod.rs`. Production reuse: `src/config/mod.rs`; test file: `tests/steps/provider_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Provider migration preserves the destination default model on collision`. Hash: `dc46166`
 
 ### Provider migration is idempotent after the first conversion
 
