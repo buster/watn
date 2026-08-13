@@ -18,28 +18,11 @@ pub fn xdg_config_path() -> PathBuf {
     base.join("watn").join("config.toml")
 }
 
-fn write_template_config() -> Result<(), Error> {
-    let config_path = xdg_config_path();
-    if let Some(parent) = config_path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
-    }
-    std::fs::write(&config_path, Config::template_content())
-        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
-    }
-    Ok(())
-}
-
 pub fn load_config() -> Result<Config, Error> {
     let config_path = xdg_config_path();
 
     if !config_path.exists() {
-        write_template_config()?;
+        return Ok(Config::default());
     }
 
     let content = std::fs::read_to_string(&config_path)

@@ -248,10 +248,12 @@ Feature: Streamlined setup flow
   @givn.added @wip
   Scenario: Cancelling after provider and credential validation does not create a config file
     Given no config file exists
+    And a catalog request sentinel is installed
     When I accept a valid provider endpoint and credential in coordinated setup
     And cancel before the catalog question
     Then no config file should exist
     And no provider entry should be persisted
+    And no model catalog request should be sent
 
   @givn.added @wip
   Scenario: Cancelling after a successful catalog probe leaves the baseline unchanged
