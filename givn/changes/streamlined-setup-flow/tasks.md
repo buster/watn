@@ -228,10 +228,10 @@
 
 ### Final confirmation is blocked while a required draft value is invalid
 
-- [ ] RED: target `Final confirmation is blocked while a required draft value is invalid`; evidence:
-- [ ] GREEN: block review confirmation and identify invalid/missing value. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Final confirmation is blocked while a required draft value is invalid`. Hash: 
+- [x] RED: target `Final confirmation is blocked while a required draft value is invalid`; evidence: non-zero; missing-role review fixture and assertions were undefined.
+- [x] GREEN: start the real review state with an incomplete baseline, press confirmation, and assert the review remains active with the missing role and unchanged files. Production files: review state from prior scenario; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Final confirmation is blocked while a required draft value is invalid`. Hash: `27a3a9d`
 
 ### Back navigation preserves draft values across model and reasoning questions
 
