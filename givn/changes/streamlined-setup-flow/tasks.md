@@ -193,10 +193,10 @@
 
 ### Provider catalog takes precedence over a conflicting legacy LiteLLM source
 
-- [ ] RED: target `Provider catalog takes precedence over a conflicting legacy LiteLLM source`; evidence:
-- [ ] GREEN: route all discovery through provider-local source and preserve legacy config. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider catalog takes precedence over a conflicting legacy LiteLLM source`. Hash: 
+- [x] RED: target `Provider catalog takes precedence over a conflicting legacy LiteLLM source`; evidence: non-zero; provider-local source fixtures and exact competing-source assertions were undefined.
+- [x] GREEN: route non-TTY model discovery through the provider endpoint/credential and assert one provider hit, selected provider models, zero legacy hits, and preserved legacy config. Production files: `src/models/mod.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `8 steps (8 passed)` and no warnings.
+- [x] COMMIT: commit title references `Provider catalog takes precedence over a conflicting legacy LiteLLM source`. Hash: `363b28a`
 
 ### Provider catalog pagination and search use the provider source
 
