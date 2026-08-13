@@ -432,7 +432,7 @@ Feature: Streamlined setup flow
     And final confirmation should be blocked
     And the config file should be byte-for-byte unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Catalog reasoning choices still permit a custom non-empty value
     Given a catalog model supports efforts "low", "medium", and "high"
     When I select that model and open its reasoning question
