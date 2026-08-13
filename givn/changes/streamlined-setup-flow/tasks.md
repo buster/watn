@@ -207,10 +207,10 @@
 
 ### Manual model identifiers are persisted exactly after catalog failure
 
-- [ ] RED: target `Manual model identifiers are persisted exactly after catalog failure`; evidence:
-- [ ] GREEN: persist manual identifiers verbatim after focused model confirmation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Manual model identifiers are persisted exactly after catalog failure`. Hash: 
+- [x] RED: target `Manual model identifiers are persisted exactly after catalog failure`; evidence: non-zero; manual-model entry/confirmation steps were undefined.
+- [x] GREEN: drive all three manual model and reasoning questions through the real PTY after catalog failure and assert exact persisted identifiers plus unset catalog state. Production files: existing manual draft/result path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Manual model identifiers are persisted exactly after catalog failure`. Hash: `078d40d`
 
 ### Changing provider invalidates catalog-backed model choices
 
