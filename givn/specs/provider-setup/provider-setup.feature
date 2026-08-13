@@ -133,9 +133,9 @@ Feature: Interactive provider setup
     When  provider setup accepts endpoint "https://new.example/v1"
     And  provider setup accepts pasted credential "sk-new-key"
     Then  the default provider should be "custom"
-    And  provider "legacy" should remain unchanged
+     And  provider "custom" should contain endpoint "https://new.example/v1"
     And  the existing tiers, pricing, and LiteLLM settings should remain unchanged
-    And  only the fixed provider entry "custom" should be replaced or created
+     And  provider "legacy" should not exist
 
   Scenario: Escape cancellation preserves the existing provider configuration
     Given  an existing config contains provider "legacy" with credential "sk-old-key"

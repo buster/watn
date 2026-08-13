@@ -109,7 +109,24 @@ pub fn provider_ready(config: &Config, provider_name: &str) -> bool {
 }
 
 pub fn model_roles_ready(config: &Config) -> bool {
-    config.tiers.small.is_some() && config.tiers.normal.is_some() && config.tiers.thinking.is_some()
+    if config.tiers.small.is_some()
+        && config.tiers.normal.is_some()
+        && config.tiers.thinking.is_some()
+    {
+        return true;
+    }
+    if config.defaults.model.is_some() {
+        return true;
+    }
+    let provider_name = config.defaults.provider.as_deref().unwrap_or("openrouter");
+    if matches!(provider_name, "openai" | "openrouter") {
+        return true;
+    }
+    config
+        .providers
+        .get(provider_name)
+        .and_then(|provider| provider.default_model.as_ref())
+        .is_some()
 }
 
 pub fn resolve_model(

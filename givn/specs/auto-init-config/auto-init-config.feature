@@ -1,10 +1,9 @@
 Feature: Auto-init config
 
-  Scenario: First run writes a template config file
+  Scenario: First non-TTY run does not create a config file
     Given  no config file exists
     When  I run `watn "hello"`
-    Then  a config file exists at the standard XDG path
-    And  the config file contains a commented-out "defaults" section
+     Then  no config file should exist
     And  the exit status should be 1
     And  stderr should contain actionable guidance to run "watn provider" in a terminal
 

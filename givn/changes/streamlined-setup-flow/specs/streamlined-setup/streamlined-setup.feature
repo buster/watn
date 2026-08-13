@@ -105,8 +105,9 @@ Feature: Streamlined setup flow
     Given a config file contains provider "legacy" with endpoint "https://legacy.example/v1"
     And the config file contains pricing and LiteLLM settings
     When provider setup saves provider "custom" with endpoint "https://new.example/v1" and credential "sk-new-key"
-    Then provider "legacy" should remain unchanged
+    Then provider "custom" should contain endpoint "https://new.example/v1"
     And the pricing and LiteLLM settings should remain unchanged
+    And provider "legacy" should not exist
 
   @givn.added
   Scenario: Provider setup does not probe the catalog

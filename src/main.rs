@@ -170,7 +170,9 @@ fn main() {
         .unwrap_or(config.defaults.provider.as_deref().unwrap_or("openrouter"));
 
     let explicit_provider = cli.provider.is_some() || std::env::var("WATN_PROVIDER").is_ok();
+    let explicit_model = cli.model.is_some();
     if !explicit_provider
+        && !explicit_model
         && (!config::provider_ready(&config, provider_name) || !config::model_roles_ready(&config))
     {
         if !std::io::stdin().is_terminal() {
