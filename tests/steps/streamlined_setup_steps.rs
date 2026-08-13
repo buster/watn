@@ -462,6 +462,104 @@ fn only_focused_model_roles_change(world: &mut WatnWorld) {
     assert_eq!(config.tiers.reasoning.thinking.as_deref(), Some("off"));
 }
 
+#[given("a coordinated setup draft is complete")]
+fn coordinated_setup_draft_is_complete_for_write_failure(world: &mut WatnWorld) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"saved-key\"\n\n[tiers]\nsmall = \"old-small\"\nnormal = \"old-normal\"\nthinking = \"old-thinking\"\n"
+            .to_string(),
+    );
+    super::ensure_test_env(world);
+    shell_fixture_path(world);
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    world.pending_config.insert(
+        "config_before".to_string(),
+        std::fs::read_to_string(path).expect("baseline config"),
+    );
+}
+
+#[given("the final configuration write cannot complete")]
+fn final_configuration_write_cannot_complete(world: &mut WatnWorld) {
+    std::env::set_var("WATN_TEST_FAIL_CONFIG_WRITE", "1");
+    std::env::set_var(
+        "XDG_CONFIG_HOME",
+        world.temp_dir.as_ref().expect("config directory").path(),
+    );
+}
+
+#[when("I confirm the setup review with shell integrations selected")]
+fn confirm_setup_review_with_shell_integrations_selected(world: &mut WatnWorld) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let mut config: watn::config::types::Config =
+        toml::from_str(&std::fs::read_to_string(path).expect("baseline config"))
+            .expect("parse baseline config");
+    let result = watn::setup::SetupWizardResult {
+        provider: watn::provider::setup::ProviderDraft {
+            name: "custom".to_string(),
+            endpoint: "http://new-endpoint".to_string(),
+            api_key: "new-key".to_string(),
+        },
+        choices: [None, None, None],
+        completion_shells: vec![watn::shell_shortcut::Shell::Bash],
+        shortcut_shells: vec![watn::shell_shortcut::Shell::Zsh],
+        completion_enabled: true,
+        shortcut_enabled: true,
+    };
+    match watn::setup::apply_result(&mut config, &result) {
+        Ok(()) => {
+            std::env::remove_var("WATN_TEST_FAIL_CONFIG_WRITE");
+            panic!("final configuration write unexpectedly succeeded");
+        }
+        Err(error) => {
+            std::env::remove_var("WATN_TEST_FAIL_CONFIG_WRITE");
+            world
+                .pending_config
+                .insert("setup_error".to_string(), error.to_string());
+        }
+    }
+}
+
+#[then("setup should report a configuration error")]
+fn setup_reports_configuration_error(world: &mut WatnWorld) {
+    assert!(world
+        .pending_config
+        .get("setup_error")
+        .is_some_and(|error| error.contains("config")));
+}
+
+#[then("no shell operation should begin")]
+fn no_shell_operation_should_begin(world: &mut WatnWorld) {
+    let bash = shell_fixture_path(world);
+    let home = bash.parent().expect("shell home");
+    assert!(!bash.exists());
+    assert!(!home.join(".zshrc").exists());
+}
+
+#[then("the previous configuration should remain unchanged")]
+fn previous_configuration_should_remain_unchanged(world: &mut WatnWorld) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let before = world
+        .pending_config
+        .get("config_before")
+        .expect("baseline config");
+    let after = std::fs::read_to_string(path).expect("config after failed write");
+    assert_eq!(before, &after);
+}
+
 #[given("one required model role is missing")]
 fn one_required_model_role_missing(world: &mut WatnWorld) {
     let raw = world.raw_config.take().expect("provider config fixture");

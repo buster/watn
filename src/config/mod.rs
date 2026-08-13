@@ -171,6 +171,13 @@ fn resolve_default_model(config: &Config) -> Result<String, Error> {
 }
 
 pub fn save_config(config: &Config) -> Result<(), Error> {
+    #[cfg(all(feature = "test-support", debug_assertions))]
+    if std::env::var("WATN_TEST_FAIL_CONFIG_WRITE").as_deref() == Ok("1") {
+        return Err(Error::ConfigError(
+            "cannot write config: test failure injection".to_string(),
+        ));
+    }
+
     let config_path = xdg_config_path();
     let content = toml::to_string_pretty(config)
         .map_err(|e| Error::ConfigError(format!("serialize error: {}", e)))?;
@@ -178,20 +185,55 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
         std::fs::create_dir_all(parent)
             .map_err(|e| Error::ConfigError(format!("cannot create config dir: {}", e)))?;
     }
-    std::fs::write(&config_path, content)
-        .map_err(|e| Error::ConfigError(format!("cannot write config: {}", e)))?;
+    let file_name = config_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("config.toml");
+    let suffix = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+    let temporary_path = config_path.with_file_name(format!(
+        ".{file_name}.watn-{}-{suffix}.tmp",
+        std::process::id()
+    ));
+    let write_result = (|| {
+        use std::io::Write;
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&config_path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| Error::ConfigError(format!("cannot set config permissions: {}", e)))?;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary_path)
+            .map_err(|error| Error::ConfigError(format!("cannot write config: {}", error)))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&temporary_path, std::fs::Permissions::from_mode(0o600))
+                .map_err(|error| {
+                    Error::ConfigError(format!("cannot set config permissions: {}", error))
+                })?;
+        }
+        file.write_all(content.as_bytes())
+            .map_err(|error| Error::ConfigError(format!("cannot write config: {}", error)))?;
+        file.sync_all()
+            .map_err(|error| Error::ConfigError(format!("cannot sync config: {}", error)))?;
+        std::fs::rename(&temporary_path, &config_path)
+            .map_err(|error| Error::ConfigError(format!("cannot replace config: {}", error)))
+    })();
+    if write_result.is_err() {
+        let _ = std::fs::remove_file(&temporary_path);
     }
+    write_result?;
 
     Ok(())
 }
 
 pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result<(), Error> {
+    update_provider_draft(config, draft);
+    save_config(config)
+}
+
+pub fn update_provider_draft(config: &mut Config, draft: &ProviderDraft) {
     let previous_provider_name = config.defaults.provider.clone();
     let previous_provider = previous_provider_name
         .as_ref()
@@ -241,7 +283,6 @@ pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result
                 }),
         },
     );
-    save_config(config)
 }
 
 fn environment_reference(value: &str) -> Option<&str> {

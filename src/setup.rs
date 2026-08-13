@@ -241,15 +241,12 @@ pub fn run_with_config(
 }
 
 pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
-    config::save_provider_draft(config, &result.provider)?;
-
     let mut updated = config.clone();
-    let mut changed_tiers = false;
+    config::update_provider_draft(&mut updated, &result.provider);
     for (index, choice) in result.choices.iter().enumerate() {
         let Some(choice) = choice else {
             continue;
         };
-        changed_tiers = true;
         match index {
             0 => {
                 updated.tiers.small = Some(choice.model.id.clone());
@@ -266,10 +263,8 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
             _ => unreachable!(),
         }
     }
-    if changed_tiers {
-        config::save_config(&updated)?;
-        *config = updated;
-    }
+    config::save_config(&updated)?;
+    *config = updated;
 
     let environment = shell_shortcut::ShellEnvironment::from_process();
     let mut installation_failures = Vec::new();

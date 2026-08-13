@@ -472,7 +472,7 @@ Feature: Streamlined setup flow
     Then provider identity, endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and the unrelated provider should remain unchanged
     And only model roles and reasoning should change
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed final config write prevents shell operations
     Given a coordinated setup draft is complete
     And the final configuration write cannot complete
