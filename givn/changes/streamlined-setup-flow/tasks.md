@@ -270,10 +270,10 @@
 
 ### Existing unknown reasoning remains active after rerunning setup
 
-- [ ] RED: target `Existing unknown reasoning remains active after rerunning setup`; evidence:
-- [ ] GREEN: preserve unknown persisted reasoning values through reload and request construction. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Existing unknown reasoning remains active after rerunning setup`. Hash: 
+- [x] RED: target `Existing unknown reasoning remains active after rerunning setup`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the persisted-unknown-reasoning fixture step was undefined.
+- [x] GREEN: preserve unknown persisted reasoning values through reload and request construction. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`; PTY review reload and isolated request mock both passed.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Existing unknown reasoning remains active after rerunning setup`. Hash: `50e3598`
 
 ### Whitespace-only custom reasoning is rejected
 
