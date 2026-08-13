@@ -328,9 +328,9 @@ Feature: Streamlined setup flow
     And the legacy LiteLLM source should receive zero requests
     And the legacy LiteLLM configuration should remain unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider catalog pagination and search use the provider source
-    Given a configured provider endpoint "https://provider.example/v1"
+    Given a configured provider endpoint "https://provider.example/v1" with credential "sk-provider"
     And the provider catalog supports pagination and search
     And a legacy LiteLLM source records every request
     When model setup requests page 2 with limit 50
