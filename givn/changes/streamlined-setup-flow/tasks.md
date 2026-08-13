@@ -215,9 +215,9 @@
 ### Changing provider invalidates catalog-backed model choices
 
 - [x] RED: target `Changing provider invalidates catalog-backed model choices`; evidence: non-zero; provider-change invalidation steps were undefined.
-- [x] GREEN: establish the provider-change revalidation contract with concrete pending/stale assertions. Production files: state contract pending broader coordinator implementation; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] GREEN: establish the provider-change revalidation contract and clear catalog/model state when the provider changes. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
-- [x] COMMIT: commit title references `Changing provider invalidates catalog-backed model choices`. Hash: `dc6b529`
+- [x] COMMIT: commit title references `Changing provider invalidates catalog-backed model choices`. Hashes: `dc6b529`, `17324f3`
 
 ### The final review shows all draft domains without exposing a secret
 
