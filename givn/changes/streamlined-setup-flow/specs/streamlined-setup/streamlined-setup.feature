@@ -159,7 +159,7 @@ Feature: Streamlined setup flow
     Then the small reasoning question should show only "low", "medium", and "high"
     And "medium" should be selected by default
 
-  @givn.added @wip
+  @givn.added
   Scenario: Missing reasoning metadata provides generic efforts and free-form input
     Given a configured provider catalog model "plain-model" has no reasoning metadata
     When I start `watn models` in a terminal
