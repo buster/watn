@@ -333,10 +333,10 @@
 
 ### Coordinated setup completes provider models reasoning and shell choices
 
-- [ ] RED: remove only this scenario's `@wip`, add E2E stubs, and run `./run-tests.sh --e2e` targeting `Coordinated setup completes provider models reasoning and shell choices`. Evidence:
-- [ ] GREEN: drive the real `watn setup` PTY flow and assert visible questions/review/result, with config/mock checks secondary. Production files: . Evidence:
-- [ ] REFACTOR: rerun the E2E scenario. Evidence:
-- [ ] COMMIT: commit title references `Coordinated setup completes provider models reasoning and shell choices`. Hash: 
+- [x] RED: remove only this scenario's `@wip`, add E2E stubs, and run `./run-tests.sh --e2e` targeting `Coordinated setup completes provider models reasoning and shell choices`. Evidence: non-zero; `1 scenario (1 failed)`, `5 steps (4 passed, 1 failed)` on the existing unimplemented provider-question step.
+- [x] GREEN: drive the real `watn setup` PTY flow and assert visible questions/review/result, with config/mock checks secondary. Production file: `src/setup.rs`; E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`; shared PTY file: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `24 steps (24 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `24 steps (24 passed)`.
+- [x] COMMIT: commit title references `Coordinated setup completes provider models reasoning and shell choices`. Hash: `80a1488`
 
 ### Provider setup configures an OpenAI provider with an environment credential
 
