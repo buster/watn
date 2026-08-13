@@ -200,10 +200,10 @@
 
 ### Provider catalog pagination and search use the provider source
 
-- [ ] RED: target `Provider catalog pagination and search use the provider source`; evidence:
-- [ ] GREEN: route page/search requests and authorization through the provider source. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider catalog pagination and search use the provider source`. Hash: 
+- [x] RED: target `Provider catalog pagination and search use the provider source`; evidence: non-zero; provider page/search and legacy-source fixtures were undefined.
+- [x] GREEN: route provider page/search requests through exact provider-local paths and credential, with a zero-hit legacy twin. Production files: provider-local model path from previous scenario; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`; blocking requests run outside the async Cucumber context. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Provider catalog pagination and search use the provider source`. Hash: `e4c36de`
 
 ### Manual model identifiers are persisted exactly after catalog failure
 
