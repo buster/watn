@@ -12,16 +12,16 @@ Top requirements:
 3. The thinking tier sends a reasoning-effort signal to the API
 4. A `-v`/`--verbose` flag prints the model's buffered reasoning content to stderr after successful completion
 5. Optional execution with user confirmation (`-x` prompts "Execute now? [Y/n]")
-6. Model discovery via optional LiteLLM endpoint (`watn models` interactive)
+6. Provider-derived model discovery through the selected provider's catalog endpoint
 7. Layered configuration: CLI flags > env vars > user config > built-in defaults
-8. Auto-init template: first run writes a commented-out config file to the standard XDG path
-9. TTY-gated provider onboarding with OpenRouter defaults, environment-backed credentials, and automatic first-use model setup that stops before the original request
-10. Structured terminal setup views make credential-source choices, provider details, model tiers, and long model catalogs scannable
-11. One setup wizard makes the current page, editable line, cursor, and save/discard state explicit
+8. No implicit config-file creation: first-run setup creates configuration only after final confirmation
+9. Four focused TTY setup commands with OpenRouter, OpenAI, and Custom provider choices, environment-backed credentials, and automatic first-use setup that stops before the original request
+10. Structured terminal setup views make credential-source choices, provider details, model tiers, reasoning values, catalog status, and long model catalogs scannable
+11. Coordinated setup uses separate model and reasoning questions, back-navigation, a compact review, and a final-confirmation write boundary
 12. Test routing must be isolated from normal and release-profile binaries; configured endpoints, readiness, and persisted configuration remain authoritative
-13. Model discovery must preserve credential sources, select LiteLLM independently from chat, and use exact endpoint and Authorization behavior
-14. Provider confirmation must survive catalog failure without changing unconfirmed model tiers or sending the original question
-15. Reasoning defaults and persisted values must resolve consistently across interactive and non-interactive model selection
+13. Provider-derived model discovery must preserve credential sources and use exact endpoint and Authorization behavior
+14. Coordinated confirmation must persist one complete snapshot or preserve the baseline on cancellation/failure without sending the original question
+15. Arbitrary non-empty reasoning values must round-trip consistently across interactive setup and requests, while `off` is omitted
 16. Model filtering must keep the typed query visible and responsive, filter complete catalogs locally, use provider search only when the catalog is incomplete, leave the newest result visible, and clean up older search work
 17. Generated command content must become visible and flushed before a delayed provider stream completes
 18. Only an SSE stream terminated by `[DONE]` succeeds; truncated or failed streams preserve visible output and never execute it

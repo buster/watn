@@ -243,3 +243,237 @@ Feature: Streamlined setup flow
     When I run `watn setup`
     Then setup should exit with a configuration error
     And the config file should be byte-for-byte unchanged
+
+  @givn.added @wip
+  Scenario: Cancelling after provider and credential validation does not create a config file
+    Given no config file exists
+    When I accept a valid provider endpoint and credential in coordinated setup
+    And cancel before the catalog question
+    Then no config file should exist
+    And no provider entry should be persisted
+
+  @givn.added @wip
+  Scenario: Cancelling after a successful catalog probe leaves the baseline unchanged
+    Given an existing config is recorded byte-for-byte
+    And the provider catalog returns valid models
+    When I accept the provider, credential, and catalog probe in coordinated setup
+    And cancel before final confirmation
+    Then the config file should be byte-for-byte unchanged
+    And no selected shell target should change
+
+  @givn.added @wip
+  Scenario: Catalog failure does not persist an unconfirmed provider
+    Given no config file exists
+    And the provider-derived catalog request fails
+    When I enter a valid provider and credential in coordinated setup
+    And the catalog probe fails
+    And cancel before final confirmation
+    Then no config file should exist
+    And no catalog endpoint should be persisted
+
+  @givn.added @wip
+  Scenario: A successful edited catalog endpoint is promoted only at final confirmation
+    Given a configured provider has catalog endpoint "https://old.example/v1"
+    And the edited catalog endpoint "https://new.example/v1" returns valid models
+    When I enter the edited catalog endpoint and probe it successfully
+    Then the config file should still contain catalog endpoint "https://old.example/v1"
+    When I confirm the final setup review
+    Then the config file should contain catalog endpoint "https://new.example/v1"
+
+  @givn.added @wip
+  Scenario: A failed edited catalog endpoint preserves the previous endpoint
+    Given a configured provider has reachable catalog endpoint "https://old.example/v1"
+    And the edited catalog endpoint "https://new.example/v1" is unreachable
+    When I probe the edited catalog endpoint
+    Then setup should keep catalog endpoint "https://old.example/v1"
+    And setup should allow manual model entry
+    And the config file should remain unchanged before confirmation
+
+  @givn.added @wip
+  Scenario: A failed new catalog endpoint remains unset
+    Given a configured provider has no saved catalog endpoint
+    And the derived catalog endpoint is unreachable
+    When I probe the derived catalog endpoint
+    Then setup should show catalog status "Unset"
+    And no catalog endpoint should be persisted before confirmation
+    And setup should allow manual model entry
+
+  @givn.added @wip
+  Scenario: Invalid catalog data switches to manual model selection
+    Given the provider catalog returns an empty model list
+    When I run `watn models` in a terminal
+    Then setup should report that catalog discovery is unusable
+    And setup should not invent model identifiers
+    And setup should allow a manually entered model identifier
+
+  @givn.added @wip
+  Scenario: Catalog entries without unique non-empty identifiers are rejected
+    Given the provider catalog contains an empty model identifier and a duplicate model identifier
+    When I run `watn models` in a terminal
+    Then setup should report that catalog discovery is unusable
+    And setup should not deduplicate or select those entries
+    And setup should allow manual model selection
+
+  @givn.added @wip
+  Scenario: Provider catalog takes precedence over a conflicting legacy LiteLLM source
+    Given a configured provider endpoint "https://provider.example/v1" with credential "sk-provider"
+    And a legacy LiteLLM source points to "https://litellm.example/v1"
+    And the provider catalog returns models ["provider-small", "provider-normal", "provider-thinking"]
+    When I run `watn models` and select the provider models
+    Then every catalog request should use "https://provider.example/v1/models"
+    And every catalog request should use Authorization exactly "Bearer sk-provider"
+    And the legacy LiteLLM source should receive zero requests
+    And the legacy LiteLLM configuration should remain unchanged
+
+  @givn.added @wip
+  Scenario: Provider catalog pagination and search use the provider source
+    Given a configured provider endpoint "https://provider.example/v1"
+    And the provider catalog supports pagination and search
+    And a legacy LiteLLM source records every request
+    When model setup requests page 2 with limit 50
+    And model setup searches the catalog for "o3"
+    Then the requests should use "https://provider.example/v1/models?page=2&limit=50" and "https://provider.example/v1/models?search=o3"
+    And the legacy LiteLLM source should receive zero requests
+
+  @givn.added @wip
+  Scenario: Manual model identifiers are persisted exactly after catalog failure
+    Given a configured provider-derived catalog endpoint is unreachable
+    When I enter manual models "small/manual", "normal/manual", and "thinking/manual"
+    And confirm the models setup
+    Then the three model identifiers should be persisted exactly as entered
+    And the failed catalog endpoint should not become available
+
+  @givn.added @wip
+  Scenario: Changing provider invalidates catalog-backed model choices
+    Given a configured provider catalog contains model "old-model"
+    When I change provider during coordinated setup
+    Then the catalog status should become pending for the new provider
+    And the old catalog-backed model should require revalidation or replacement
+
+  @givn.added @wip
+  Scenario: The final review shows all draft domains without exposing a secret
+    Given a complete coordinated setup draft with provider, catalog, models, reasoning, and shell choices
+    When I open the final setup review
+    Then the review should show the provider and completion endpoint
+    And the review should show catalog endpoint status
+    And the review should show all three model and reasoning pairs
+    And the review should show completion and Ctrl-W shell choices
+    And the review should show credential source and masked status
+    And the review should not show the resolved credential
+
+  @givn.added @wip
+  Scenario: Final confirmation is blocked while a required draft value is invalid
+    Given a coordinated setup draft has a missing model role
+    When I open the final setup review
+    Then confirmation should be blocked
+    And the review should identify the missing model role
+    And no configuration or shell target should be changed
+
+  @givn.added @wip
+  Scenario: Back navigation preserves draft values across model and reasoning questions
+    Given coordinated setup has selected model "alpha" and reasoning "low" for the small role
+    When I navigate back from the normal model question to the small reasoning question
+    Then model "alpha" and reasoning "low" should remain selected
+    When I navigate forward again
+    Then the normal model question should be active
+
+  @givn.added @wip
+  Scenario: Selected provider migration moves an arbitrary provider to custom
+    Given the selected provider key is "legacy"
+    And provider "legacy" has endpoint "https://legacy.example/v1" and default model "legacy-model"
+    When I confirm provider setup without replacing its credential
+    Then the default provider should be "custom"
+    And provider "custom" should contain the legacy endpoint and default model "legacy-model"
+    And provider "legacy" should not exist
+
+  @givn.added @wip
+  Scenario: Provider migration preserves the destination default model on collision
+    Given the selected provider key is "legacy"
+    And provider "legacy" has default model "source-model"
+    And provider "custom" has default model "destination-model"
+    When I confirm provider setup with endpoint "https://new.example/v1"
+    Then provider "legacy" should not exist
+    And provider "custom" should contain endpoint "https://new.example/v1"
+    And provider "custom" should contain default model "destination-model"
+
+  @givn.added @wip
+  Scenario: Provider migration is idempotent after the first conversion
+    Given the selected provider is already "custom"
+    When I rerun provider setup without changing its values
+    And confirm provider setup
+    Then there should be exactly one "custom" provider entry
+    And no arbitrary provider key should be created
+
+  @givn.added @wip
+  Scenario: Free-form reasoning survives persistence and request construction
+    Given a configured provider with model "plain-model" for the small role
+    When I configure reasoning as "  provider-specific-mode  "
+    And confirm the setup
+    And send a request through the small role
+    Then the saved reasoning should be exactly "  provider-specific-mode  "
+    And the request should contain reasoning_effort exactly "  provider-specific-mode  "
+
+  @givn.added @wip
+  Scenario: Existing unknown reasoning remains active after rerunning setup
+    Given a configured provider has small reasoning "unknown-provider-mode"
+    When I rerun setup without changing the small reasoning value
+    And confirm the setup
+    Then the saved small reasoning should remain exactly "unknown-provider-mode"
+    And a small-role request should contain reasoning_effort exactly "unknown-provider-mode"
+
+  @givn.added @wip
+  Scenario: Whitespace-only custom reasoning is rejected
+    Given an existing config is recorded byte-for-byte
+    When I enter custom reasoning "   "
+    Then setup should report that the reasoning value is invalid
+    And final confirmation should be blocked
+    And the config file should be byte-for-byte unchanged
+
+  @givn.added @wip
+  Scenario: Catalog reasoning choices still permit a custom non-empty value
+    Given a catalog model supports efforts "low", "medium", and "high"
+    When I select that model and open its reasoning question
+    Then the supported efforts should be shown
+    And a custom reasoning entry should be available
+    When I enter custom reasoning "x-high"
+    Then the selected reasoning should be exactly "x-high"
+
+  @givn.added @wip
+  Scenario: Declining shell setup performs no target inspection or write
+    Given no shell integration choice has been accepted
+    And shell target files do not exist
+    When I decline both shell integration questions
+    Then no shell target file should be inspected or created
+    And no configuration field should change
+
+  @givn.added @wip
+  Scenario: Shell removal preserves bytes outside the managed block
+    Given Bash contains a valid Watn completion block surrounded by user content
+    And the original Bash bytes are recorded
+    When I deselect Bash completion
+    Then only the Watn completion block should be removed
+    And all user-owned bytes should remain in their original order
+
+  @givn.added @wip
+  Scenario: Missing model roles trigger implicit setup even with a usable provider
+    Given a usable provider credential is configured
+    And one required model role is missing
+    When I start an interactive request
+    Then the setup coordinator should open
+    And the original request should not be sent before setup completes
+
+  @givn.added @wip
+  Scenario: Focused model setup preserves provider-owned and unrelated fields
+    Given a configured provider has endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and an unrelated provider
+    When I confirm new model roles and reasoning through `watn models`
+    Then provider identity, endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and the unrelated provider should remain unchanged
+    And only model roles and reasoning should change
+
+  @givn.added @wip
+  Scenario: A failed final config write prevents shell operations
+    Given a coordinated setup draft is complete
+    And the final configuration write cannot complete
+    When I confirm the setup review with shell integrations selected
+    Then setup should report a configuration error
+    And no shell operation should begin
+    And the previous configuration should remain unchanged

@@ -1,6 +1,6 @@
 # ADR-0011: Interactive provider onboarding with environment-backed credentials
 
-- **Status:** proposed
+- **Status:** superseded by ADR-0020, ADR-0023, and ADR-0024
 - **Date:** 2026-08-09
 - **Decision-makers:** architect
 

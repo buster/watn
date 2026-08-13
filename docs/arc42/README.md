@@ -3,20 +3,21 @@
 This directory contains the project's arc42 architecture documentation.
 Maintained by the `arc42-docs` givn artifact — updated with each change via `givn`.
 
-The current architecture includes TTY-gated provider onboarding through
-`watn provider`, environment-backed credentials, and automatic first-use
-provider/model setup that stops before the original request. The setup flows use
-structured Ratatui widgets so choices, metadata, status, tier tabs, and long
-catalog position remain visible in the terminal.
-Provider and model onboarding now share a five-page setup wizard with explicit
-page, cursor, save/discard state, and a green border around the currently
-focused input region.
-Model discovery resolves a dedicated catalog source: configured LiteLLM is used
-for model listing, pagination, and search, while chat remains on the selected
-provider. Credential sources remain literal values or exact environment
-references through discovery and partial setup saves; model reasoning defaults
-are validated centrally and stale search generations cannot overwrite results
-from a newer user-entered search.
+The current architecture includes four TTY-gated setup entry points:
+`watn setup`, `watn provider`, `watn models`, and `watn shell`. They use a
+shared in-memory draft and structured Ratatui questions. Coordinated setup
+shows provider, completion endpoint, credential, provider-local catalog,
+separate model/reasoning questions, shell desired states, and a final review.
+It writes configuration only after final confirmation; focused provider and
+model flows save only their owned domain, while shell setup changes only target
+files.
+Model discovery is provider-derived. A saved or edited provider-local catalog
+endpoint is probed with the provider credential; the legacy `[litellm]` section
+is retained as unrelated configuration but is not contacted by setup or model
+discovery. Credential sources remain literal values or exact environment
+references. Reasoning accepts any non-empty value verbatim, with `off` as the
+only omission sentinel, and stale search generations cannot overwrite results
+from newer user-entered searches.
 The outbound transport boundary keeps configured endpoints authoritative for
 normal and release-profile binaries; only a debug `test-support` binary may
 route requests to a loopback test twin, and that route is never persisted or

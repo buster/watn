@@ -17,7 +17,7 @@
 | Provider model endpoint with optional `?search=` query support | Server-side model filtering for catalogs larger than one page; providers that do not support search report a clear error rather than silently filtering only the local page |
 | Ratatui/crossterm terminal interaction | Provider onboarding and model selection must work as keyboard-driven terminal flows in the existing single binary; automatic onboarding is TTY-only |
 | Credential references must remain environment-resolved | A configured `${VARIABLE}` reference may be persisted, but its resolved value must not be emitted in status output or replace the reference in config |
-| Direct config writes enforce Unix mode `0600` | Every template, provider, and model save uses the existing direct-write mechanism and repairs file permissions after writing; atomic rename is not promised |
+| Config snapshots use atomic replacement and Unix mode `0600` | A confirmed provider/model snapshot is serialized to a same-directory temporary file, flushed, permissioned, and renamed; a failed write leaves the previous file in place |
 | Test transport is debug-only | The endpoint override branch is compiled only under `cfg(all(feature = "test-support", debug_assertions))`; every release-profile build, including one with `test-support`, uses the configured endpoint branch |
 | Release evidence is target-specific | The release artifact is inspected with `file` and `ldd` on Linux or `otool -L` on macOS; a static artifact and universal shared-library set are not assumed |
 | Completion selector is closed | `watn completions <SHELL>` accepts only the lowercase values `bash`, `elvish`, `fish`, `powershell`, and `zsh`; the CLI does not expose the broader `clap_complete::Shell` value type |
@@ -43,7 +43,7 @@
 | Provider readiness is local | First-run detection checks config and environment state without probing a live provider or consulting the E2E transport override |
 | Explicit provider selection preserves errors | `--provider` and `WATN_PROVIDER` never trigger onboarding; unknown-provider and missing-key errors remain observable |
 | Test binaries use explicit paths | The debug verification bootstrap builds the two required feature variants sequentially through Cargo's shared default target cache, copies each executable to a unique temporary path, and passes only those absolute paths to the harness; stale `target/debug/watn` discovery is not permitted |
-| Catalog and chat endpoints are separate concerns | A configured LiteLLM endpoint may serve model discovery only; chat completion requests remain on the selected provider endpoint |
+| Catalog and chat endpoints are provider-local concerns | Model discovery uses the selected provider's saved or derived catalog endpoint and its credential; legacy `[litellm]` data is retained but is not contacted by setup or model discovery |
 | Credential source is authoritative | A literal saved key or complete saved `${VARIABLE}` reference cannot be replaced by environment fallback; only an absent source may use fallback discovery |
-| Reasoning strengths are closed-set values | Persisted and outbound reasoning values are limited to `off`, `low`, `minimal`, `medium`, and `high`; empty or unknown values do not produce a reasoning request |
+| Reasoning values are open non-empty strings | `off` is the only omission sentinel; every other non-empty value is persisted and sent verbatim, while whitespace-only custom values are rejected |
 | Reserved completion token is explicit | The unquoted first token `completions` dispatches to the completion subcommand; question text beginning with that token must be quoted or passed after `--` |

@@ -1,5 +1,50 @@
 # 6. Runtime View
 
+## Current streamlined setup flows
+
+The setup runtime is a draft state machine with four command entry points. The
+coordinator sequence is provider, completion endpoint, credential, provider-
+local catalog status, small model, small reasoning, normal model, normal
+reasoning, thinking model, thinking reasoning, completion shell desired state,
+Ctrl-W desired state, and final review. The provider and models flows use only
+their owned ranges; the shell flow has no configuration write.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant Draft
+    participant Catalog as Provider catalog
+    participant Config
+    participant Files as Shell targets
+
+    User->>CLI: watn setup / provider / models / shell
+    CLI->>Draft: read baseline without auto-init
+    Draft-->>User: one focused question at a time
+    Draft->>Catalog: GET provider-local /models when model choices need discovery
+    Catalog-->>Draft: valid catalog or visible failure/manual fallback
+    User->>Draft: review and confirm or cancel
+    alt confirm
+        Draft->>Config: write one confirmed snapshot atomically
+        Config-->>CLI: success or unchanged baseline on write failure
+        opt shell desired-state changes
+            CLI->>Files: install, replace, or remove one valid marked block per target
+        end
+    else cancel or validation failure
+        Draft-->>CLI: no config or shell target writes
+    end
+    CLI-->>User: result and any independent target failures
+```
+
+Provider catalog requests use the selected provider's saved or derived catalog
+base and the provider credential. A legacy `[litellm]` section is carried as
+unrelated configuration but is never contacted by setup or model discovery.
+The final review is the only coordinated configuration write boundary. An
+interactive request with a missing provider, credential, or required model role
+enters the same coordinator; a non-TTY request prints guidance and makes no
+catalog or chat request. Successful implicit setup exits without replaying the
+original question.
+
 ## Scenario: Ask a question with default tier
 
 **Trigger:** User runs `watn "find files modified today"`.
@@ -71,7 +116,7 @@ sequenceDiagram
 
 **Steps:**
 1. Parse the subcommand and the closed selector before normal command dispatch.
-2. Return before configuration loading, config auto-init, provider resolution,
+2. Return before configuration loading, config creation, provider resolution,
    model discovery, network access, or spinner setup.
 3. Render from the same command definition used by Clap parsing and help.
 4. Write only the selected script to stdout; successful stderr is empty.
@@ -103,8 +148,9 @@ text beginning with that token must be quoted as one argument or passed after
 
 ## Scenario: Optional shell shortcut during setup
 
-**Trigger:** A user completes the final model selection during explicit setup or
-implicit first-use onboarding and chooses `y` for the optional shortcut.
+**Trigger:** A user reaches the shell desired-state questions in explicit,
+coordinated, or focused shell setup and confirms the desired completion and
+shortcut selections.
 
 ```mermaid
 sequenceDiagram
@@ -114,14 +160,12 @@ sequenceDiagram
     participant Installer as Shell Shortcut Installer
     participant Files as Selected startup files
 
-    User->>Wizard: Confirm Large Model with y
-    Wizard-->>User: Show shortcut question with green focused border
-    User->>Wizard: y
-    Wizard-->>User: Show Bash/Zsh/Fish multi-select with green focused border
-    User->>Wizard: Select zero or more shells and confirm
-    Wizard->>Config: Persist provider and completed model choices
-    loop Each selected shell
-        Wizard->>Installer: Resolve target and generate marked block
+    User->>Wizard: Confirm shell desired states
+    Wizard-->>User: Show completion and Ctrl-W selections separately
+    User->>Wizard: Select or deselect Bash/Zsh/Fish and confirm
+    Wizard->>Config: Persist confirmed config snapshot first
+    loop Each changed shell target
+        Wizard->>Installer: Resolve target and install, replace, or remove marked block
         Installer->>Installer: Validate marker count and build replacement
         Installer->>Files: Atomic temporary-file write and rename
         Installer-->>Wizard: Per-target success or failure
@@ -129,11 +173,12 @@ sequenceDiagram
     Wizard-->>User: Report every target and reload instruction
 ```
 
-Enter on the optional question accepts the default decline and performs no
-shell-file I/O. A selected shell with no target file creates only its own
-parent directories. Every selected target is attempted independently; a later
-failure does not roll back earlier successful renames, and the aggregate setup
-result is non-zero when any target failed.
+Declining either shell question performs no target inspection or shell-file I/O.
+A selected shell with no target file creates only its own parent directories; a
+deselected shell with one valid block removes only that block. Duplicate,
+unmatched, or reversed markers fail before writing. Every changed target is
+attempted independently; a later failure does not roll back earlier successful
+renames, and the aggregate setup result is non-zero when any target failed.
 
 ## Scenario: Ctrl-W generates a command without evaluation
 
@@ -479,14 +524,12 @@ sequenceDiagram
         CLI-->>User: actionable `watn provider` and config-path guidance
         CLI-->>User: exit 1; no ratatui and no network request
     else stdin is a TTY
-        CLI->>Setup: open five-page setup wizard
-        User->>Setup: enter endpoint and choose credential storage
-        User->>Setup: explicitly confirm the credential
-        Setup->>Config: persist the confirmed provider draft
-        Setup->>Twin: GET /models
+        CLI->>Setup: open coordinated setup draft
+        User->>Setup: enter provider, endpoint, and credential
+        Setup->>Twin: GET provider-local /models
         Twin-->>Setup: model catalog or catalog failure
-        User->>Setup: select small, middle, and large models
-        Setup->>Config: save completed tier assignments only after selection
+        User->>Setup: select models, reasoning, shell desired states, and review
+        Setup->>Config: write one complete snapshot only after final confirmation
         CLI-->>User: setup complete; exit 0
         Note over CLI: original question is not sent; user reruns it
     end
@@ -499,11 +542,11 @@ sequenceDiagram
    initializing ratatui.
 3. If stdin is a TTY, open the shared setup wizard when no implicit provider is
    ready.
-4. Save the endpoint and either the literal credential or the `${VARIABLE}`
-   reference without printing the resolved secret.
-5. Discover models and walk the three model pages in the same process and
-   terminal.
-6. Save all three model tiers and exit successfully. Do not send or resume the
+4. Keep the endpoint and either the literal credential or the `${VARIABLE}`
+   reference in the draft without printing the resolved secret.
+5. Probe the provider-local catalog and walk separate model and reasoning
+   questions in the same process and terminal.
+6. Save one complete snapshot only after review confirmation. Do not send or resume the
    original question.
 
 ## Scenario: Explicit provider setup
@@ -519,10 +562,10 @@ sequenceDiagram
 
     User->>CLI: watn provider
     CLI->>Setup: open ratatui provider flow
-    Setup-->>User: URL tab, compatibility explanation, visible cursor, and green URL border
-    User->>Setup: accept or edit endpoint; choose literal or environment source
-    Setup-->>User: API key source/value widgets with the green border on the focused location
-    Setup->>Config: save default provider and credential representation
+    Setup-->>User: provider choices, endpoint, credential source, and visible focus
+    User->>Setup: choose provider, edit endpoint, and choose literal or environment source
+    Setup-->>User: credential source/value widgets with the green border on the focused location
+    Setup->>Config: atomically save provider-owned values after confirmation
     Config-->>Setup: save result
     Setup-->>CLI: configured
     CLI-->>User: completion status
@@ -533,7 +576,7 @@ model setup; only the automatic first-use TTY path performs that chain. An
 explicit `--provider` or `WATN_PROVIDER` selection never enters automatic
 onboarding and retains normal unknown-provider and missing-key errors.
 
-## Scenario: Unified setup wizard
+## Scenario: Coordinated setup flow
 
 **Trigger:** User runs `watn setup` from a terminal.
 
@@ -545,52 +588,54 @@ sequenceDiagram
     participant Config as Config
 
     User->>Wizard: watn setup
-    Wizard-->>User: URL tab, compatibility explanation, cursor, and green URL border
-    User->>Wizard: Enter endpoint
-    Wizard-->>User: API key tab and storage choice
+    Wizard-->>User: provider choices, endpoint, credential, and green focused input
+    User->>Wizard: choose provider and enter endpoint
+    Wizard-->>User: credential source and masked value
     User->>Wizard: choose configuration or environment reference
     Wizard->>Catalog: GET /models after valid provider credentials
     Catalog-->>Wizard: model rows
-    loop Small, Middle, Large Model pages
-        Wizard-->>User: active tab, table, selected row, cursor/page position, and green border on the focused input
+    loop Small/normal/thinking model and separate reasoning questions
+        Wizard-->>User: active question, table or reasoning choices, cursor, and green border on the focused input
         User->>Wizard: Enter or Tab
     end
-    User->>Wizard: save confirmation
-    Wizard->>Config: persist provider and completed tiers
+    User->>Wizard: review and final confirmation
+    Wizard->>Config: atomically persist provider, catalog, tiers, and reasoning
     Wizard-->>User: saved setup result
 ```
 
-## Scenario: Catalog discovery with independent LiteLLM source
+## Scenario: Catalog discovery from the selected provider
 
-**Trigger:** User runs `watn models` with a `[litellm]` section.
+**Trigger:** User runs `watn models` with a provider-local catalog and an
+unrelated legacy `[litellm]` section.
 
 ```mermaid
 sequenceDiagram
     participant User as User
     participant CLI as watn models
     participant Config as Config
-    participant Catalog as LiteLLM catalog
-    participant Provider as Active provider
+    participant Catalog as Provider-local catalog
+    participant Legacy as Legacy LiteLLM source
 
     User->>CLI: watn models
-    CLI->>Config: load active provider and optional LiteLLM source
-    Config-->>CLI: catalog endpoint + raw optional credential; active provider unchanged
-    CLI->>Catalog: GET /models or paginated /models with optional Bearer key
+    CLI->>Config: load active provider and provider-local catalog state
+    Config-->>CLI: catalog endpoint + raw provider credential; legacy section unchanged
+    CLI->>Catalog: GET /models or paginated /models with provider Bearer key
     Catalog-->>CLI: model metadata
+    CLI-->>Legacy: no discovery request
     User->>CLI: assign small, normal, and thinking tiers
     CLI->>Config: save tier assignments only
     Note over CLI,Provider: Later chat requests still use Provider, never Catalog
 ```
 
-The source is resolved once per discovery operation. A configured LiteLLM key
-is expanded at request time; no key means no Authorization header. Search and
-pagination reuse the same endpoint and credential policy. Without LiteLLM, the
-selected provider receives the catalog requests.
+The source is resolved once per discovery operation. The selected provider's
+credential is expanded at request time. Search and pagination reuse the same
+provider-local endpoint and credential policy. The legacy LiteLLM section is
+preserved as unrelated configuration and receives zero requests.
 
-## Scenario: Provider confirmation before catalog failure
+## Scenario: Catalog failure before coordinated confirmation
 
-**Trigger:** User confirms a provider credential in `watn setup`, then catalog
-discovery fails.
+**Trigger:** User enters a provider credential in `watn setup`, then catalog
+discovery fails before final review confirmation.
 
 ```mermaid
 sequenceDiagram
@@ -601,25 +646,27 @@ sequenceDiagram
 
     User->>Wizard: confirm endpoint and credential source
     Wizard->>Wizard: validate and resolve credential
-    Wizard->>Config: save provider draft and raw credential source
     Wizard->>Catalog: request model catalog
     Catalog-->>Wizard: error
-    Wizard-->>User: catalog failure; return to credential/setup state
-    Config-->>User: confirmed provider remains saved; tiers unchanged
+    Wizard-->>User: catalog failure; switch to manual model entry or correction
+    User->>Wizard: cancel before final review confirmation
+    Config-->>User: baseline remains unchanged
 ```
 
-Cancellation before credential confirmation performs no write. Cancellation
-after confirmation preserves the provider. Neither path sends the original chat
-question.
+Cancellation before final review performs no write, including after credential
+validation or a successful catalog probe. Neither path sends the original chat
+question. A focused provider command has its own confirmation boundary and does
+not probe the catalog.
 
 ## Scenario: Reasoning policy and stale search generation
 
-The shared reasoning resolver filters invalid strengths, honors disabled and
+The shared reasoning resolver rejects only blank values, honors disabled and
 mandatory metadata, and is used before both tier persistence and chat request
-construction. Search workers receive monotonically increasing generations; a
-late worker may finish its HTTP request but cannot apply its result after a
-newer generation has been applied. The wizard joins or discards workers before
-returning to the caller.
+construction. Non-empty custom values remain exact strings; `off` is omitted.
+Search workers receive monotonically increasing generations; a late worker may
+finish its HTTP request but cannot apply its result after a newer generation has
+been applied. The wizard joins or discards workers before returning to the
+caller.
 
 ## Scenario: Completion marker and first-event timing
 
