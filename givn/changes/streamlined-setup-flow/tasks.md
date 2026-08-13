@@ -158,10 +158,10 @@
 
 ### A successful edited catalog endpoint is promoted only at final confirmation
 
-- [ ] RED: target `A successful edited catalog endpoint is promoted only at final confirmation`; evidence:
-- [ ] GREEN: promote catalog endpoint only in the confirmed candidate. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `A successful edited catalog endpoint is promoted only at final confirmation`. Hash: 
+- [x] RED: target `A successful edited catalog endpoint is promoted only at final confirmation`; evidence: non-zero; provider-local catalog endpoint fixture was undefined.
+- [x] GREEN: add backward-compatible persisted `catalog_endpoint` state and assert edited endpoint remains draft-only until confirmation. Production files: `src/config/types.rs`, `src/config/mod.rs`, `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`, `tests/steps/transport_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)` and no step warnings.
+- [x] COMMIT: commit title references `A successful edited catalog endpoint is promoted only at final confirmation`. Hash: `a8596e9`
 
 ### A failed edited catalog endpoint preserves the previous endpoint
 
