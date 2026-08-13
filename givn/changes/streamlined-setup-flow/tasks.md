@@ -25,10 +25,10 @@
 
 ### Cancelling coordinated setup leaves an existing configuration unchanged
 
-- [ ] RED: target `Cancelling coordinated setup leaves an existing configuration unchanged`; evidence:
-- [ ] GREEN: implement baseline snapshot cancellation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Cancelling coordinated setup leaves an existing configuration unchanged`. Hash: 
+- [x] RED: target `Cancelling coordinated setup leaves an existing configuration unchanged`; evidence: non-zero; the first new `existing config content is recorded` step was undefined.
+- [x] GREEN: implement baseline recording and real PTY Escape/discard cancellation assertion. Production files: none beyond existing cancellation path; test/spec files: `tests/steps/streamlined_setup_steps.rs`, active feature. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Cancelling coordinated setup leaves an existing configuration unchanged`. Hash: `c19ba7b`
 
 ### Provider setup requires a custom endpoint
 
