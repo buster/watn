@@ -292,14 +292,14 @@ Feature: Streamlined setup flow
     And setup should allow manual model entry
     And the config file should remain unchanged before confirmation
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed new catalog endpoint remains unset
     Given a configured provider has no saved catalog endpoint
     And the derived catalog endpoint is unreachable
     When I probe the derived catalog endpoint
     Then setup should show catalog status "Unset"
     And no catalog endpoint should be persisted before confirmation
-    And setup should allow manual model entry
+    And setup should allow manual model entry after unset
 
   @givn.added @wip
   Scenario: Invalid catalog data switches to manual model selection

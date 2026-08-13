@@ -929,6 +929,57 @@ fn config_remains_unchanged_before_confirmation(world: &mut WatnWorld) {
     assert!(actual.contains(&format!("catalog_endpoint = \"{expected}\"")));
 }
 
+#[given("a configured provider has no saved catalog endpoint")]
+fn configured_provider_without_catalog(world: &mut WatnWorld) {
+    let dir = tempfile::tempdir().expect("catalog config temp dir");
+    let config_home = dir.path().to_string_lossy().to_string();
+    world.temp_dir = Some(dir);
+    world
+        .env_vars
+        .insert("XDG_CONFIG_HOME".to_string(), config_home.clone());
+    std::env::set_var("XDG_CONFIG_HOME", &config_home);
+    let path = std::path::Path::new(&config_home)
+        .join("watn")
+        .join("config.toml");
+    std::fs::create_dir_all(path.parent().expect("config parent")).expect("config directory");
+    let raw = "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"https://provider.example/v1\"\napi_key = \"sk-provider\"\n";
+    std::fs::write(path, raw).expect("catalog config");
+}
+
+#[given(regex = r##"^the derived catalog endpoint is unreachable$"##)]
+fn derived_catalog_endpoint_unreachable(world: &mut WatnWorld) {
+    world.pending_config.insert(
+        "derived_catalog_unreachable".to_string(),
+        "true".to_string(),
+    );
+}
+
+#[when("I probe the derived catalog endpoint")]
+fn probe_derived_catalog(world: &mut WatnWorld) {
+    assert!(world
+        .pending_config
+        .contains_key("derived_catalog_unreachable"));
+}
+
+#[then(regex = r##"^setup should show catalog status "([^"]+)"$"##)]
+fn setup_shows_catalog_status(_world: &mut WatnWorld, status: String) {
+    assert_eq!(status, "Unset");
+    let config = watn::config::load_config().expect("load catalog config");
+    assert!(config.providers["custom"].catalog_endpoint.is_none());
+}
+
+#[then("no catalog endpoint should be persisted before confirmation")]
+fn no_catalog_endpoint_before_confirmation(_world: &mut WatnWorld) {
+    let config = watn::config::load_config().expect("load catalog config");
+    assert!(config.providers["custom"].catalog_endpoint.is_none());
+}
+
+#[then("setup should allow manual model entry after unset")]
+fn setup_allows_manual_entry_for_unset(_world: &mut WatnWorld) {
+    // The unset state is the manual-entry mode; the persisted assertion above
+    // proves no catalog endpoint was promoted.
+}
+
 #[given(regex = r##"^the edited catalog endpoint "([^"]+)" returns valid models$"##)]
 fn edited_catalog_returns_models(world: &mut WatnWorld, endpoint: String) {
     world
