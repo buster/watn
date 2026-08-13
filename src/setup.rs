@@ -24,7 +24,7 @@ use crate::models::dialog::{LevelChoice, ReasoningStrength};
 use crate::models::list::{fetch_models, fetch_models_page_info, word_matches, ModelEntry};
 use crate::models::picker::execute_search;
 use crate::provider::setup::{
-    build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation,
+    build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation, OPENAI_ENDPOINT,
     OPENROUTER_ENDPOINT,
 };
 use crate::shell_completion;
@@ -848,6 +848,11 @@ impl SetupWizard {
             let previous_provider = self.provider_name.clone();
             self.provider_name = provider_choices()[self.provider_cursor].to_string();
             if previous_provider != self.provider_name {
+                self.endpoint = match self.provider_name.as_str() {
+                    "openrouter" => OPENROUTER_ENDPOINT.to_string(),
+                    "openai" => OPENAI_ENDPOINT.to_string(),
+                    _ => self.endpoint.clone(),
+                };
                 self.models = [Vec::new(), Vec::new(), Vec::new()];
                 self.suggestions = [Vec::new(), Vec::new(), Vec::new()];
                 self.completed = [None, None, None];
@@ -858,7 +863,10 @@ impl SetupWizard {
             }
             if self.provider_name == "custom"
                 && self.config.defaults.provider.as_deref() != Some("custom")
-                && self.endpoint == OPENROUTER_ENDPOINT
+                && matches!(
+                    self.endpoint.as_str(),
+                    OPENROUTER_ENDPOINT | OPENAI_ENDPOINT
+                )
             {
                 self.endpoint.clear();
             }
