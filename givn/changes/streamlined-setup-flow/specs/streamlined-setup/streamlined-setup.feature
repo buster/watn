@@ -92,7 +92,7 @@ Feature: Streamlined setup flow
     When I enter endpoint "https://llm.example/v1"
     Then provider setup should allow the credential question
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider setup refuses an unresolved environment credential
     Given no provider is configured
     And environment variable MISSING_API_KEY is not set

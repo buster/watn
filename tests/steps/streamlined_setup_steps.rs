@@ -273,6 +273,14 @@ fn provider_setup_allows_credential_question(world: &mut WatnWorld) {
     assert!(output.contains("Where should the API key be stored?"));
 }
 
+#[then(regex = r##"^provider setup should show that "([^"]+)" must contain a non-empty value$"##)]
+fn provider_setup_shows_unresolved_environment(world: &mut WatnWorld, variable: String) {
+    assert_eq!(
+        world.pending_config.get("setup_error"),
+        Some(&format!("{variable} must contain a non-empty value"))
+    );
+}
+
 #[given("the existing config content is recorded")]
 fn record_existing_config_content(world: &mut WatnWorld) {
     world.pending_config.insert(
