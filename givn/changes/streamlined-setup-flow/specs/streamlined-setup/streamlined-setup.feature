@@ -441,7 +441,7 @@ Feature: Streamlined setup flow
     When I enter custom reasoning "x-high"
     Then the selected reasoning should be exactly "x-high"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Declining shell setup performs no target inspection or write
     Given no shell integration choice has been accepted
     And shell target files do not exist

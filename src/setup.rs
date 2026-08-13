@@ -312,6 +312,10 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
 }
 
 pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
+    if result.completion_shells.is_empty() && result.shortcut_shells.is_empty() {
+        return Ok(());
+    }
+
     let environment = shell_shortcut::ShellEnvironment::from_process();
     let selected_completion = &result.completion_shells;
     let selected_shortcut = &result.shortcut_shells;

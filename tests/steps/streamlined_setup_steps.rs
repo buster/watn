@@ -236,6 +236,84 @@ fn custom_reasoning_entry_available(world: &mut WatnWorld) {
     );
 }
 
+#[given("no shell integration choice has been accepted")]
+fn no_shell_integration_choice_accepted(world: &mut WatnWorld) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n"
+            .to_string(),
+    );
+    super::ensure_test_env(world);
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    world.pending_config.insert(
+        "config_before".to_string(),
+        std::fs::read_to_string(path).expect("baseline config"),
+    );
+}
+
+#[given("shell target files do not exist")]
+fn shell_target_files_do_not_exist(world: &mut WatnWorld) {
+    let bash = shell_fixture_path(world);
+    let home = bash.parent().expect("shell home").to_path_buf();
+    let config_home = std::path::PathBuf::from(
+        world
+            .env_vars
+            .get("XDG_CONFIG_HOME")
+            .expect("XDG config home"),
+    );
+    let targets = [
+        bash.clone(),
+        home.join(".zshrc"),
+        config_home.join("fish/config.fish"),
+    ];
+    for target in targets {
+        assert!(
+            !target.exists(),
+            "shell target unexpectedly exists: {target:?}"
+        );
+    }
+}
+
+#[when("I decline both shell integration questions")]
+fn decline_both_shell_integration_questions(_world: &mut WatnWorld) {
+    let result = watn::setup::SetupWizardResult {
+        provider: watn::provider::setup::ProviderDraft {
+            name: "custom".to_string(),
+            endpoint: "http://mock".to_string(),
+            api_key: "test-key".to_string(),
+        },
+        choices: [None, None, None],
+        completion_shells: Vec::new(),
+        shortcut_shells: Vec::new(),
+    };
+    watn::setup::apply_shell_result(&result).expect("declining shell setup");
+}
+
+#[then("no shell target file should be inspected or created")]
+fn no_shell_target_file_inspected_or_created(world: &mut WatnWorld) {
+    shell_target_files_do_not_exist(world);
+}
+
+#[then("no configuration field should change")]
+fn no_configuration_field_should_change(world: &mut WatnWorld) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let before = world
+        .pending_config
+        .get("config_before")
+        .expect("baseline config");
+    let after = std::fs::read_to_string(path).expect("config after decline");
+    assert_eq!(before, &after);
+}
+
 #[then(regex = r##"^the selected reasoning should be exactly "([^"]+)"$"##)]
 fn selected_reasoning_exact(world: &mut WatnWorld, reasoning: String) {
     let session = world.pty_session.as_ref().expect("models PTY session");
