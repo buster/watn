@@ -1211,16 +1211,19 @@ fn navigate_back_to_small_reasoning(world: &mut WatnWorld) {
     let session = super::start_pty_session(world, &["setup"]);
     world.pty_session = Some(session);
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for _ in 0..4 {
-        pty_write(session, "\r");
-        std::thread::sleep(std::time::Duration::from_millis(150));
-    }
-    pty_write(session, "alpha");
-    std::thread::sleep(std::time::Duration::from_millis(400));
+    wait_for_active_page(session, "Provider");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "URL");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "API key");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(250));
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Small Model");
     pty_write(session, "\r");
     wait_for_visible_text(session, "Model: alpha");
     pty_write(session, "\x1b[B\r");
-    wait_for_page_marker(session, "┌Normal Model");
+    wait_for_active_page(session, "Normal Model");
     pty_write(session, "\x1b[Z");
     wait_for_visible_text(session, "Model: alpha");
 }
@@ -1238,7 +1241,7 @@ fn selected_model_reasoning_remain(world: &mut WatnWorld, model: String, effort:
 fn navigate_forward_again(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY");
     pty_write(session, "\r");
-    wait_for_page_marker(session, "┌Normal Model");
+    wait_for_active_page(session, "Normal Model");
 }
 
 #[then("no configuration or shell target should be changed")]

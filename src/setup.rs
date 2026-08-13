@@ -851,13 +851,8 @@ impl SetupWizard {
                     self.credential_focus = CredentialFocus::Value;
                 }
                 if let Some(slot) = self.page.model_slot() {
-                    self.generation.fetch_add(1, Ordering::SeqCst);
-                    self.queries[slot].clear();
-                    self.suggestions[slot] = self.models[slot].clone();
-                    self.selection[slot] = 0;
-                    self.search_pending[slot] = false;
-                    self.search_status[slot] = None;
-                    self.sync_reasoning(slot);
+                    self.selection[slot] =
+                        self.selection[slot].min(self.suggestions[slot].len().saturating_sub(1));
                 }
             }
         }
