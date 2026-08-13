@@ -126,6 +126,15 @@ fn choose_e2e_model(world: &mut WatnWorld, model: String, role: String) {
     wait_for_page(session, next);
 }
 
+#[when(regex = r##"^I choose "([^\"]+)" for the small role$"##)]
+fn choose_e2e_small_model(world: &mut WatnWorld, model: String) {
+    let session = world.pty_session.as_mut().expect("models PTY session");
+    pty_write(session, &model);
+    std::thread::sleep(std::time::Duration::from_millis(350));
+    pty_write(session, "\r");
+    wait_for_page(session, "Small Reasoning");
+}
+
 #[when(regex = r##"^choose reasoning "([^\"]+)" for the (small|normal|thinking) role$"##)]
 fn choose_e2e_reasoning(world: &mut WatnWorld, effort: String, role: String) {
     let steps = match effort.as_str() {
@@ -147,6 +156,11 @@ fn choose_e2e_reasoning(world: &mut WatnWorld, effort: String, role: String) {
         pty_write(session, "\x1b[B");
     }
     pty_write(session, "\r");
+    if next == "Shell Completion" && world.pending_config.contains_key("e2e_models_flow") {
+        let session = world.pty_session.take().expect("models PTY session");
+        finish_pty_session(world, session);
+        return;
+    }
     if next == "Shell Completion" {
         std::thread::sleep(std::time::Duration::from_millis(250));
         let output = visible_output(&pty_snapshot(session));
@@ -156,6 +170,46 @@ fn choose_e2e_reasoning(world: &mut WatnWorld, effort: String, role: String) {
         );
     } else {
         wait_for_page(session, next);
+    }
+}
+
+#[then("the model setup should begin with the small role")]
+fn model_setup_begins_with_small_role(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = visible_output(&pty_snapshot(session));
+    assert!(
+        output.contains("Small Model"),
+        "small role was not active: {output:?}"
+    );
+    world
+        .pending_config
+        .insert("e2e_models_flow".to_string(), "true".to_string());
+}
+
+#[then("models setup should exit successfully")]
+fn models_setup_exits_successfully(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "models output: {:?}",
+        world.output
+    );
+}
+
+#[then("the config file should contain the three selected model roles")]
+fn config_contains_three_selected_model_roles(world: &mut WatnWorld) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let content = std::fs::read_to_string(path).expect("models config");
+    for model in ["small-model", "normal-model", "thinking-model"] {
+        assert!(
+            content.contains(model),
+            "selected model missing: {content:?}"
+        );
     }
 }
 
