@@ -83,7 +83,7 @@ Feature: Streamlined setup flow
     And the config file should contain credential reference "${OPENAI_API_KEY}"
     And the config file should not contain "sk-openai-test"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider setup requires a custom endpoint
     Given no provider is configured
     When I start `watn provider` in a terminal

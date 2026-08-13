@@ -689,6 +689,12 @@ impl SetupWizard {
     fn move_next(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
         if self.page == SetupPage::Provider {
             self.provider_name = provider_choices()[self.provider_cursor].to_string();
+            if self.provider_name == "custom"
+                && self.config.defaults.provider.as_deref() != Some("custom")
+                && self.endpoint == OPENROUTER_ENDPOINT
+            {
+                self.endpoint.clear();
+            }
         }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.credential_focus = CredentialFocus::Value;
