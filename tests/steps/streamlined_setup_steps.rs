@@ -157,6 +157,42 @@ fn configured_provider_catalog_model_with_reasoning(
     ));
 }
 
+#[given(regex = r##"^a catalog model supports efforts "([^"]+)", "([^"]+)", and "([^"]+)"$"##)]
+fn catalog_model_supports_efforts(
+    world: &mut WatnWorld,
+    first: String,
+    second: String,
+    third: String,
+) {
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}/v1", server.port());
+    let body = serde_json::json!({
+        "data": [{
+            "id": "reasoning-model",
+            "reasoning": {
+                "supported_efforts": [first, second, third],
+                "default_effort": "medium",
+                "default_enabled": true,
+                "mandatory": false
+            }
+        }]
+    });
+    let mock_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(body.to_string());
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world.pending_mock_returned_models = vec!["reasoning-model".to_string()];
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"{endpoint}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
 #[given(regex = r##"^the catalog default effort for "([^"]+)" is "([^"]+)"$"##)]
 fn catalog_default_effort(world: &mut WatnWorld, model: String, effort: String) {
     assert_eq!(model, "reasoning-model");
@@ -164,6 +200,57 @@ fn catalog_default_effort(world: &mut WatnWorld, model: String, effort: String) 
     world
         .pending_config
         .insert("catalog_default_effort".to_string(), effort);
+}
+
+#[when("I select that model and open its reasoning question")]
+fn select_catalog_model_and_open_reasoning(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["models"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("models PTY session");
+    wait_for_active_page(session, "Small Model");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Small Reasoning");
+}
+
+#[then("the supported efforts should be shown")]
+fn supported_catalog_efforts_shown(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let snapshot = pty_snapshot(session);
+    let output = latest_page(&snapshot);
+    for effort in ["low", "medium", "high"] {
+        assert!(
+            output.contains(effort),
+            "catalog effort missing: {output:?}"
+        );
+    }
+}
+
+#[then("a custom reasoning entry should be available")]
+fn custom_reasoning_entry_available(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let snapshot = pty_snapshot(session);
+    let output = latest_page(&snapshot);
+    assert!(
+        output.contains("Custom"),
+        "custom reasoning entry missing: {output:?}"
+    );
+}
+
+#[then(regex = r##"^the selected reasoning should be exactly "([^"]+)"$"##)]
+fn selected_reasoning_exact(world: &mut WatnWorld, reasoning: String) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let snapshot = pty_snapshot(session);
+    let output = visible_output(latest_page(&snapshot));
+    assert!(
+        output.contains("Reasoning"),
+        "reasoning page was not active: {output:?}"
+    );
+    for character in reasoning.chars() {
+        assert!(
+            output.contains(character),
+            "custom reasoning character {character:?} was not rendered: {output:?}"
+        );
+    }
 }
 
 #[when("advance to the small model question")]
@@ -1858,6 +1945,13 @@ fn configure_free_form_reasoning(world: &mut WatnWorld, reasoning: String) {
 
 #[when(regex = r##"^I enter custom reasoning "([^"]+)"$"##)]
 fn enter_invalid_custom_reasoning(world: &mut WatnWorld, reasoning: String) {
+    if world.pty_session.is_some() {
+        let session = world.pty_session.as_mut().expect("models PTY session");
+        pty_write(session, "c");
+        pty_write(session, &reasoning);
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        return;
+    }
     if world.raw_config.is_none() {
         world.raw_config = Some(
             "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"plain-model\"\n"
