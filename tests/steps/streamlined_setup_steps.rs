@@ -78,6 +78,11 @@ fn configured_provider_with_unreachable_catalog(world: &mut WatnWorld) {
     ));
 }
 
+#[given("a configured provider-derived catalog endpoint is unreachable")]
+fn configured_provider_derived_catalog_unreachable(world: &mut WatnWorld) {
+    configured_provider_with_unreachable_catalog(world);
+}
+
 #[given(
     regex = r##"^a configured provider catalog model "([^"]+)" supports efforts "([^"]+)", "([^"]+)", and "([^"]+)"$"##
 )]
@@ -1170,6 +1175,59 @@ fn legacy_litellm_config_unchanged(_world: &mut WatnWorld) {
             .map(|catalog| catalog.api_key.as_deref()),
         Some(Some("sk-legacy"))
     );
+}
+
+#[when(regex = r##"^I enter manual models "([^"]+)", "([^"]+)", and "([^"]+)"$"##)]
+fn enter_manual_models(world: &mut WatnWorld, small: String, normal: String, thinking: String) {
+    let session = super::start_pty_session(world, &["models"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("models PTY session");
+    wait_for_active_page(session, "Small Model");
+    for (model, next_page) in [
+        (small, "Small Reasoning"),
+        (normal, "Normal Reasoning"),
+        (thinking, "Thinking Reasoning"),
+    ] {
+        pty_write(session, &model);
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        pty_write(session, "\r");
+        wait_for_active_page(session, next_page);
+        pty_write(session, "\r");
+        if next_page != "Thinking Reasoning" {
+            let following = if next_page == "Small Reasoning" {
+                "Normal Model"
+            } else {
+                "Thinking Model"
+            };
+            wait_for_active_page(session, following);
+        }
+    }
+}
+
+#[when("confirm the models setup")]
+fn confirm_models_setup(world: &mut WatnWorld) {
+    let session = world.pty_session.take().expect("models PTY session");
+    let mut session = session;
+    pty_write(&mut session, "\r");
+    super::finish_pty_session(world, session);
+}
+
+#[then("the three model identifiers should be persisted exactly as entered")]
+fn manual_models_persist_exactly(world: &mut WatnWorld) {
+    if let Some(config_home) = world.env_vars.get("XDG_CONFIG_HOME") {
+        std::env::set_var("XDG_CONFIG_HOME", config_home);
+    }
+    let config = watn::config::load_config().expect("load manual model config");
+    assert_eq!(config.tiers.small.as_deref(), Some("small/manual"));
+    assert_eq!(config.tiers.normal.as_deref(), Some("normal/manual"));
+    assert_eq!(config.tiers.thinking.as_deref(), Some("thinking/manual"));
+}
+
+#[then("the failed catalog endpoint should not become available")]
+fn failed_catalog_endpoint_not_available(_world: &mut WatnWorld) {
+    let config = watn::config::load_config().expect("load manual model config");
+    let provider = config.defaults.provider.as_deref().expect("provider");
+    assert!(config.providers[provider].catalog_endpoint.is_none());
 }
 
 #[given("the provider catalog supports pagination and search")]

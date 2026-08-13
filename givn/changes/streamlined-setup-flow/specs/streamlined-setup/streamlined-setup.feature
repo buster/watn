@@ -338,7 +338,7 @@ Feature: Streamlined setup flow
     Then the requests should use "https://provider.example/v1/models?page=2&limit=50" and "https://provider.example/v1/models?search=o3"
     And the legacy LiteLLM source should receive zero requests
 
-  @givn.added @wip
+  @givn.added
   Scenario: Manual model identifiers are persisted exactly after catalog failure
     Given a configured provider-derived catalog endpoint is unreachable
     When I enter manual models "small/manual", "normal/manual", and "thinking/manual"
