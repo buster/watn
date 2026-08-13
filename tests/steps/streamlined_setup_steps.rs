@@ -822,6 +822,49 @@ fn no_selected_shell_target_changes(world: &mut WatnWorld) {
     assert!(!dir.path().join("home/.bashrc").exists());
 }
 
+#[given("the provider-derived catalog request fails")]
+fn provider_catalog_request_fails(world: &mut WatnWorld) {
+    let server = world
+        .mock_server
+        .0
+        .get_or_insert_with(httpmock::MockServer::start);
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    world.models_mock_id = Some(
+        server
+            .mock(|when, then| {
+                when.method(httpmock::Method::GET).path("/models");
+                then.status(500).body("catalog failure");
+            })
+            .id,
+    );
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+}
+
+#[when("the catalog probe fails")]
+fn catalog_probe_fails(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r\r");
+    wait_for_active_page(session, "Small Model");
+}
+
+#[when("cancel setup after catalog failure")]
+fn cancel_setup_after_catalog_failure(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\x1b");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "n");
+    let session = world.pty_session.take().expect("setup PTY session");
+    super::finish_pty_session(world, session);
+}
+
+#[then("no catalog endpoint should be persisted")]
+fn no_catalog_endpoint_persisted(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("config temp dir");
+    assert!(!dir.path().join("watn/config.toml").exists());
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir

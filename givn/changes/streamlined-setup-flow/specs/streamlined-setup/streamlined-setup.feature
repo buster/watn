@@ -264,13 +264,13 @@ Feature: Streamlined setup flow
     Then the config file should be byte-for-byte unchanged
     And no selected shell target should change
 
-  @givn.added @wip
+  @givn.added
   Scenario: Catalog failure does not persist an unconfirmed provider
     Given no config file exists
     And the provider-derived catalog request fails
-    When I enter a valid provider and credential in coordinated setup
+    When I accept a valid provider endpoint and credential in coordinated setup
     And the catalog probe fails
-    And cancel before final confirmation
+    And cancel setup after catalog failure
     Then no config file should exist
     And no catalog endpoint should be persisted
 
