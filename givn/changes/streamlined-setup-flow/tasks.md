@@ -298,10 +298,10 @@
 
 ### Shell removal preserves bytes outside the managed block
 
-- [ ] RED: target `Shell removal preserves bytes outside the managed block`; evidence:
-- [ ] GREEN: remove only the valid managed block and preserve surrounding bytes. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Shell removal preserves bytes outside the managed block`. Hash: 
+- [x] RED: target `Shell removal preserves bytes outside the managed block`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the scenario-specific completion-block fixture step was undefined.
+- [x] GREEN: remove only the valid managed block and preserve surrounding bytes. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Shell removal preserves bytes outside the managed block`. Hash: `37fd0ca`
 
 ### Missing model roles trigger implicit setup even with a usable provider
 
