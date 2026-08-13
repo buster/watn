@@ -246,7 +246,7 @@ Feature: Streamlined setup flow
     Then setup should exit with a configuration error
     And the malformed config file should be byte-for-byte unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Cancelling after provider and credential validation does not create a config file
     Given no config file exists
     And a catalog request sentinel is installed
