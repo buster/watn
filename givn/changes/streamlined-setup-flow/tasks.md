@@ -60,10 +60,10 @@
 
 ### Models setup gives guidance when no provider is configured
 
-- [ ] RED: target `Models setup gives guidance when no provider is configured`; evidence:
-- [ ] GREEN: make `watn models` provide focused guidance without opening provider UI. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Models setup gives guidance when no provider is configured`. Hash: 
+- [x] RED: target `Models setup gives guidance when no provider is configured`; evidence: non-zero; the new non-TTY models invocation step was undefined.
+- [x] GREEN: make `watn models` print focused provider guidance without opening UI. Production files: `src/models/mod.rs`; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Models setup gives guidance when no provider is configured`. Hash: `ec16b0e`
 
 ### Available catalog restricts model choices
 
