@@ -316,6 +316,53 @@ fn no_configuration_field_should_change(world: &mut WatnWorld) {
     assert_eq!(before, &after);
 }
 
+#[given("a usable provider credential is configured")]
+fn usable_provider_credential_configured(world: &mut WatnWorld) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n"
+            .to_string(),
+    );
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+}
+
+#[given("one required model role is missing")]
+fn one_required_model_role_missing(world: &mut WatnWorld) {
+    let raw = world.raw_config.take().expect("provider config fixture");
+    world.raw_config = Some(format!(
+        "{raw}\n[tiers]\nsmall = \"small-model\"\nnormal = \"normal-model\"\n"
+    ));
+}
+
+#[when("I start an interactive request")]
+fn start_interactive_request(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["hello"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_ref().expect("request PTY session");
+    wait_for_active_page(session, "Provider");
+}
+
+#[then("the setup coordinator should open")]
+fn setup_coordinator_should_open(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("request PTY session");
+    let output = visible_output(&pty_snapshot(session));
+    assert!(
+        output.contains("Setup"),
+        "setup coordinator did not open: {output:?}"
+    );
+    assert!(
+        output.contains("Provider"),
+        "provider page missing: {output:?}"
+    );
+}
+
+#[then("the original request should not be sent before setup completes")]
+fn original_request_not_sent_before_setup(world: &mut WatnWorld) {
+    let mock_id = world.mock_server.1.expect("chat request mock");
+    let server = world.mock_server.0.as_ref().expect("chat request server");
+    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+}
+
 #[then(regex = r##"^the selected reasoning should be exactly "([^"]+)"$"##)]
 fn selected_reasoning_exact(world: &mut WatnWorld, reasoning: String) {
     let session = world.pty_session.as_ref().expect("models PTY session");
