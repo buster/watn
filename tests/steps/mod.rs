@@ -595,6 +595,9 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
     for (key, value) in &world.env_vars {
         cmd.env(key.as_str(), value.as_str());
     }
+    if world.pending_config.contains_key("start_review") {
+        cmd.env("WATN_SETUP_START_REVIEW", "1");
+    }
     if let Some(profile) = std::env::var_os("LLVM_PROFILE_FILE") {
         cmd.env("LLVM_PROFILE_FILE", profile);
     }
