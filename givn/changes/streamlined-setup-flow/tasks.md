@@ -67,10 +67,10 @@
 
 ### Available catalog restricts model choices
 
-- [ ] RED: target `Available catalog restricts model choices`; evidence:
-- [ ] GREEN: restrict catalog mode to returned identifiers and require replacement of stale saved models. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Available catalog restricts model choices`. Hash: 
+- [x] RED: target `Available catalog restricts model choices`; evidence: non-zero; the two-model catalog Given step was undefined.
+- [x] GREEN: drive the real model picker against an isolated catalog and assert stale saved model absence plus catalog-only choices. Production files: existing picker reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Available catalog restricts model choices`. Hash: `97ecf3c`
 
 ### Unavailable catalog allows manual model identifiers
 
