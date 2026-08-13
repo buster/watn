@@ -407,7 +407,7 @@ Feature: Streamlined setup flow
     Then there should be exactly one "custom" provider entry
     And no arbitrary provider key should be created
 
-  @givn.added @wip
+  @givn.added
   Scenario: Free-form reasoning survives persistence and request construction
     Given a configured provider with model "plain-model" for the small role
     When I configure reasoning as "  provider-specific-mode  "

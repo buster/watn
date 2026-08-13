@@ -1829,6 +1829,67 @@ fn configured_provider_with_small_model(world: &mut WatnWorld, model: String) {
     world.pending_mock_no_reasoning_assert = true;
 }
 
+#[when(regex = r##"^I configure reasoning as "([^"]+)"$"##)]
+fn configure_free_form_reasoning(world: &mut WatnWorld, reasoning: String) {
+    let raw = world.raw_config.take().expect("provider config fixture");
+    world.raw_config = Some(format!(
+        "{raw}\n[tiers.reasoning]\nsmall = \"{reasoning}\"\n"
+    ));
+    world
+        .pending_config
+        .insert("configured_reasoning".to_string(), reasoning.clone());
+    world.pending_mock_no_reasoning_assert = false;
+    world.pending_mock_expected_reasoning_body =
+        Some(format!("\"reasoning_effort\":\"{reasoning}\""));
+}
+
+#[when("confirm the setup")]
+fn confirm_free_form_setup(world: &mut WatnWorld) {
+    assert!(
+        world.pending_config.contains_key("configured_reasoning"),
+        "reasoning must be configured before confirmation"
+    );
+}
+
+#[when("send a request through the small role")]
+fn send_request_through_small_role(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["-1", "hello"], None);
+}
+
+#[then(regex = r##"^the saved reasoning should be exactly "([^"]+)"$"##)]
+fn saved_reasoning_exact(world: &mut WatnWorld, expected: String) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let content = std::fs::read_to_string(path).expect("saved config");
+    let config: watn::config::types::Config = toml::from_str(&content).expect("parse saved config");
+    assert_eq!(
+        config.tiers.reasoning.small.as_deref(),
+        Some(expected.as_str())
+    );
+}
+
+#[then(regex = r##"^the request should contain reasoning_effort exactly "([^"]+)"$"##)]
+fn request_contains_reasoning_effort_exact(world: &mut WatnWorld, expected: String) {
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "request failed: {:?}",
+        world.stderr_output
+    );
+    let body = world
+        .pending_mock_expected_reasoning_body
+        .as_ref()
+        .expect("reasoning request assertion");
+    assert_eq!(body, &format!("\"reasoning_effort\":\"{expected}\""));
+    let mock_id = world.mock_server.1.expect("request mock");
+    let server = world.mock_server.0.as_ref().expect("request mock server");
+    assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
+}
+
 #[given("the small role reasoning is \"off\"")]
 fn small_role_reasoning_off(world: &mut WatnWorld) {
     let mut raw = world.raw_config.take().expect("provider config fixture");

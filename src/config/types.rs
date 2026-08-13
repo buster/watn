@@ -154,6 +154,7 @@ impl TierReasoning {
             }
             Some("off") => None,
             Some(s) if matches!(s, "low" | "minimal" | "medium" | "high") => Some(s.to_string()),
+            Some(value) if !value.trim().is_empty() => Some(value.to_string()),
             Some(_) => None,
         }
     }
