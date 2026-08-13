@@ -60,7 +60,7 @@ Feature: Streamlined setup flow
     And the normal model input should show "normal-old"
     And the thinking model input should show "thinking-old"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Cancelling coordinated setup leaves an existing configuration unchanged
     Given an existing config contains provider "legacy" with credential "sk-old-key"
     And the existing config content is recorded
