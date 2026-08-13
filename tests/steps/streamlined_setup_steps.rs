@@ -316,6 +316,18 @@ fn provider_setup_saves_provider(
         api_key: credential,
     };
     watn::config::save_provider_draft(&mut config, &draft).expect("save provider draft");
+    let server = world
+        .mock_server
+        .0
+        .get_or_insert_with(httpmock::MockServer::start);
+    world.models_mock_id = Some(
+        server
+            .mock(|when, then| {
+                when.method(httpmock::Method::GET).path("/models");
+                then.status(200).body(r#"{"data":[{"id":"unused"}]}"#);
+            })
+            .id,
+    );
 }
 
 #[given("the config file contains pricing and LiteLLM settings")]

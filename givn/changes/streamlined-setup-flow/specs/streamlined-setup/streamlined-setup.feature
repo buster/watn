@@ -108,7 +108,7 @@ Feature: Streamlined setup flow
     Then provider "legacy" should remain unchanged
     And the pricing and LiteLLM settings should remain unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider setup does not probe the catalog
     Given no provider is configured
     When provider setup saves provider "custom" with endpoint "https://llm.example/v1" and credential "sk-key"
