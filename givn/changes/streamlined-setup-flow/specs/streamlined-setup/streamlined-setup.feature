@@ -115,7 +115,7 @@ Feature: Streamlined setup flow
     When provider setup saves provider "custom" with endpoint "https://llm.example/v1" and credential "sk-key"
     Then no model catalog request should be sent
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Models setup configures all three roles from an available catalog
     Given a configured provider with catalog models "small-model", "normal-model", and "thinking-model"
     When I start `watn models` in a terminal
