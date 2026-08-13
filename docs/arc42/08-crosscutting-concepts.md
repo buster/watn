@@ -33,12 +33,15 @@ is printed; a stalled or pending stream that cannot be joined exits within the
 
 Provider setup and model setup return typed results rather than exiting inside
 their lower-level functions. Escape cancellation maps to status 1; Ctrl-C maps
-to status 130. Provider setup does not save partial input. If provider setup
-succeeds and model setup is cancelled or fails, the provider remains saved, the
-automatic flow stops, and the original request is not sent. Invalid endpoints
-and empty credentials remain in the setup flow with an inline validation
-message. A missing saved environment reference is an authentication error and
-does not fall through to another environment variable.
+to status 130. Coordinated setup does not save partial input: provider,
+catalog, model, reasoning, and shell draft values remain in memory until final
+review confirmation. A catalog/model failure or cancellation leaves the
+baseline unchanged, and a first-run cancellation leaves the file absent.
+Focused provider and model commands save only their owned domain after their own
+confirmation. Invalid endpoints, empty credentials, and whitespace-only custom
+reasoning remain in the setup flow with inline validation. A missing saved
+environment reference is an authentication error and does not fall through to
+another environment variable.
 
 ## Shell shortcut safety and file ownership
 
@@ -117,9 +120,9 @@ Config is merged in order (later overrides earlier):
 3. **Environment variables** — `WATN_*` (e.g. `WATN_PROVIDER`, `WATN_MODEL`)
 4. **CLI flags** — `-1`/`-2`/`-3`, `--model`, `--provider` (highest priority)
 
-Provider readiness is a separate local check. A commented auto-init template is
-not ready; a provider is ready only when its endpoint and literal or resolved
-credential are available. OpenRouter has a built-in endpoint fallback only when
+Provider readiness is a separate local check. An absent config file is not
+created as a template during readiness; a provider is ready only when its
+endpoint and literal or resolved credential are available. OpenRouter has a built-in endpoint fallback only when
 no `[providers.openrouter]` entry exists. A saved literal or exact environment
 reference is authoritative. Only an absent `api_key` permits provider-specific
 fallback followed by generic `WATN_API_KEY`. Readiness never consults the
@@ -153,13 +156,18 @@ request, while the serializer preserves the reference.
 
 ## Catalog source resolution
 
-Model discovery does not share the chat provider's endpoint by accident. When
-`[litellm]` exists, its endpoint is used for `/models`, pagination, and search;
-the selected provider remains the chat destination. LiteLLM authentication is
-optional. If its key is absent, the request omits `Authorization`; if a key is
-an environment reference, the reference is expanded at the request boundary.
-When `[litellm]` is absent, discovery falls back to the selected provider and
-uses that provider's credential-source precedence.
+Model discovery is provider-local. A saved provider catalog base is reused when
+it belongs to the selected provider and has not been invalidated; otherwise the
+accepted completion endpoint supplies the derived base. Setup probes
+`GET <catalog-base>/models`, uses the selected provider credential, and promotes
+an edited or newly derived base only after valid model data is returned.
+Pagination and search use the same provider-local source. Empty or malformed
+data, missing identifiers, duplicate identifiers, unreachable endpoints, and
+failed edits switch to manual mode according to the saved-endpoint state.
+
+The legacy `[litellm]` section remains readable and is preserved as unrelated
+configuration, but it is not contacted, migrated, or used as a fallback by
+setup or model discovery. Chat requests remain on the selected provider.
 
 Request tests use separate loopback twins and match exact method, path, query,
 and Authorization. A mock hit without source-specific assertions is not
@@ -178,21 +186,19 @@ considered evidence of correct routing.
   replaces only the selected fixed entry and preserves unrelated providers and
   configuration.
 
-## Auto-init (first-run template)
+## First-run and atomic configuration snapshots
 
-On the first invocation, when no config file exists at the standard XDG path
-(`$XDG_CONFIG_HOME/watn/config.toml`), the binary writes a template file with
-all options commented out. The template is generated from code
-(`Config::template_content()`) rather than a hardcoded string, ensuring that
-adding a new config field automatically includes it in the template.
+On the first invocation, when no config file exists at the standard XDG path,
+the setup coordinator starts with in-memory defaults. It does not write a
+template before or during the draft. The file is created only by successful
+final confirmation. Malformed or unreadable existing configuration is reported
+and left untouched.
 
-The template includes commented-out sections for defaults, tiers, custom
-providers, and pricing. The file write is silent and does not interrupt the
-command the user issued. If a config file already exists, nothing is written.
-
-All subsequent provider and model saves use the same direct-write mechanism and
-apply mode `0600` after the write on Unix. Atomic temp-file/rename behavior is
-not promised. An interrupted direct write remains a known risk.
+The confirmed candidate is serialized once to a same-directory temporary file,
+flushed, given mode `0600` on Unix, and renamed over the destination. A failed
+serialization, permission update, or rename leaves the previous destination in
+place and prevents shell operations from starting. Shell target files are
+separate desired-state operations and are not rolled back with the config.
 
 ## Model tier resolution
 
@@ -235,13 +241,17 @@ prompt.
 
 ## Reasoning and verbose mode
 
-When the thinking tier (`-3` / `--thinking`) is activated, the request body includes a top-level `reasoning_effort` parameter:
+When a tier has a non-`off` reasoning value, the request body includes a top-level `reasoning_effort` parameter:
 
 ```json
 {"reasoning_effort": "high"}
 ```
 
-This signals the API to generate reasoning tokens alongside the answer. A valid non-`off` configured strength may be sent for any model tier; the thinking tier retains its compatibility default of `high` when no value is configured.
+This signals the API to generate reasoning tokens alongside the answer. Any
+non-empty configured value, including provider-specific text, is sent exactly as
+persisted. `off` omits the field. Catalog metadata may provide suggestions and
+may block `off` for mandatory reasoning, but it does not reject a non-empty
+custom value.
 
 Response chunks from the API may include a `reasoning` or
 `reasoning_content` field in the delta object alongside the `content` field. The
@@ -293,13 +303,15 @@ matching while incomplete catalogs use debounced remote search. The wizard
 retains search worker handles, invalidates generations on exit, and joins every
 worker before returning; there is no separate legacy model prompt path.
 
-## Keyboard-driven SetupWizard model pages
+## Keyboard-driven setup questions
 
-The interactive `watn setup`, `watn provider`, and `watn models` flows (TTY
-stdin) share a ratatui-based setup wizard. It renders one bordered page at a
-time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
+The interactive `watn setup`, `watn provider`, `watn models`, and `watn shell`
+flows (TTY stdin) share a ratatui-based draft coordinator. The complete flow
+renders one bordered question at a time for provider identity, completion
+endpoint, credential source, provider-local catalog, three separate model and
+reasoning pairs, two shell desired states, and a final review:
 
-- The active page and `Page n of 5` position.
+- The active question and its position in the focused command flow.
 - A visible block cursor on the active editable line.
 - A green border around the input block currently receiving keyboard input; the
   border moves between credential storage/value and model/reasoning regions.
@@ -308,7 +320,8 @@ time with tabs for URL, API key, Small Model, Middle Model, and Large Model:
 - Model-specific reasoning options derived from the catalog's supported efforts,
   default effort, enabled flag, and mandatory flag.
 - A scrollbar showing position when the catalog exceeds the available rows.
-- A reasoning-strength selector (off, low, minimal, medium, high) for the current level.
+- Catalog-supported reasoning suggestions plus a custom non-empty entry; `off`
+  is omitted from requests and is blocked for mandatory reasoning.
 - A status line for the empty state or the unsupported-search notice.
 
 Key bindings:
@@ -328,25 +341,25 @@ Filter matching is per-word and order-independent against the model id: the
 query is split on whitespace and every word must appear (case-insensitive)
 anywhere in the id, in any order ("dee flash" matches "DeepSeek V4 Flash").
 When the provider cannot be searched remotely, matching falls back to this
-local rule over the models already fetched. Reasoning choices are then derived
-per model: mandatory models cannot choose `off`, disabled models offer `off`,
-and supported efforts are limited to the catalog response. A model change
-resets the tier's reasoning choice to that model's default or first valid
-effort.
+local rule over the models already fetched. Reasoning choices are suggested per
+model: mandatory models cannot choose `off`, disabled models offer `off`, and a
+custom non-empty value remains available alongside catalog choices. A model
+change selects that model's catalog default when available but does not discard
+an explicit custom value without user confirmation.
 
-## Keyboard-driven provider setup
+## Focused provider, model, and shell setup
 
-The shared setup wizard uses URL, API key, Small Model, Middle Model, and Large
-Model pages. URL input explains OpenAI/LiteLLM compatibility. API key input
-first selects configuration storage or an environment reference, then asks for
-the corresponding value. Model pages use the same searchable table and visible
-cursor. The currently focused block is marked with a green border while
-inactive blocks retain their normal border styling. `watn provider` starts at
-URL and ends after API key; `watn models` starts at Small Model; `watn setup`
-and automatic first use traverse all pages.
-Escape asks whether to save current valid settings or discard them. The
-terminal is restored on success, validation failure, save/discard, and
-cancellation.
+Provider setup presents OpenRouter, OpenAI, or Custom, then completion endpoint
+and credential source. It never probes the catalog. Models setup requires a
+ready provider, uses only its catalog source, and persists only roles and
+reasoning. Shell setup presents completion and Ctrl-W desired states
+independently and inspects target markers only after the user opts in.
+
+Coordinated setup retains all values in memory through the final review. Escape
+discards the draft and Ctrl-C returns 130; neither changes configuration or
+shell targets. The terminal is restored on success, validation failure,
+review/discard, and cancellation. Back-navigation keeps draft values and marks
+catalog-backed selections stale when the provider changes.
 
 The stale-result guard uses `Arc<AtomicU64>` as a generation counter. Each
 filter change increments the counter before dispatching a search; the worker
@@ -356,30 +369,27 @@ older completed result while a late older result is discarded.
 
 ## Per-level reasoning configuration
 
-Each tier's reasoning strength is persisted in config under `[tiers.reasoning]`:
+Each tier's reasoning value is persisted in config under `[tiers.reasoning]`:
 
 ```toml
 [tiers.reasoning]
-small = "off"    # one of off | low | minimal | medium | high
+small = "off"    # off omits the request field; other non-empty values are sent verbatim
 normal = "low"
 thinking = "high"
 ```
 
-When a request runs on a tier, `reasoning_effort` is resolved from the closed
-set `off`, `low`, `minimal`, `medium`, and `high`. `off`, empty, and unknown
-values send no reasoning. When a tier has no explicit reasoning configured, the
-prior default is preserved (thinking -> `high`, others -> none) for backwards
-compatibility. Model metadata defaults are applied by the same policy in the
-interactive and non-interactive selection paths; mandatory reasoning preserves
-a valid existing non-off value or returns a typed policy error when metadata
-has no usable effort, and no empty value is serialized.
+When a request runs on a tier, `off` is omitted and every other non-empty value
+is copied byte-for-byte into `reasoning_effort`. Empty and whitespace-only setup
+values are rejected. Existing unknown values remain active. Model metadata
+supplies defaults and may prohibit `off` for mandatory reasoning, but it does
+not turn the persisted value into a closed enum.
 
 ## PTY-based E2E test harness
 
-The two provider-setup E2E scenarios use `portable-pty` (dev-dep) to create a
-real pseudo-terminal for the ratatui/crossterm subprocess. Regular provider
-scenarios use the renderer-independent setup/config seam and do not pipe stdin
-into a terminal renderer.
+The five setup interaction-inventory E2E scenarios use `portable-pty` (dev-dep)
+to create a real pseudo-terminal for the ratatui/crossterm subprocess. Regular
+scenarios may use isolated config and loopback seams for focused assertions,
+but every E2E scenario drives the actual CLI terminal.
 
 The test helper `run_binary_pty`:
 1. Creates a PTY pair (master + slave).

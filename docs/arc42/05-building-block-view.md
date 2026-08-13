@@ -9,7 +9,7 @@ graph TB
     Provider["Provider<br/>(trait + adapters)"]
     Transport["Transport boundary<br/>(configured endpoint / debug test override)"]
     Setup["Provider Setup<br/>(ratatui onboarding)"]
-    Wizard["Setup Wizard<br/>(five pages)"]
+    Wizard["Setup coordinator<br/>(draft questions + review)"]
     Output["Output<br/>(metadata + command)"]
     Models["Models<br/>(catalog and model-picker)"]
     Exec["Exec<br/>(command execution)"]
@@ -43,13 +43,13 @@ graph TB
 | Building block | Responsibility |
 |---|---|
 | CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes; run the streaming call on a worker thread, poll completion and the interrupt flag, and bound cancellation by a 500 ms grace before exiting 130 |
-| Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources and resolve the catalog source |
+| Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources, provider-local catalog state, and atomic candidate snapshots |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, require `[DONE]`, and abort with `Interrupted` when the shared interrupt flag is set |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |
-| Provider Setup | Guide endpoint and credential selection in a TTY, render a bordered source list plus aligned detail table and guidance paragraph, validate input, return a typed result, persist the selected fixed provider through its caller, and restore the terminal on every exit |
-| Setup Wizard | Own the shared URL, API key, and Small/Middle/Large Model pages; show the active tab, cursor, green border around the focused input region, visible model filter query, current page, model selection, save/discard prompt, and optional post-confirmation shortcut selection; save a confirmed provider draft before catalog access and return optional provider, completed model drafts, and shortcut choices |
+| Provider Setup | Guide explicit provider identity, endpoint, and credential selection in a TTY, validate input, return a typed result, migrate the selected provider to its canonical name at final confirmation, and restore the terminal on every exit |
+| Setup Wizard | Own the coordinated draft, focused provider/model/shell ranges, separate model/reasoning questions, catalog status, review, back-navigation, and shell desired state; no coordinated field is saved before final confirmation |
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
-| Models | Resolve a dedicated LiteLLM-or-provider catalog source; query list, page, and search endpoints; choose local filtering for complete catalogs and provider search for incomplete catalogs; apply validated reasoning defaults; return a typed setup result and persist tiers without replacing provider/catalog settings |
+| Models | Resolve a provider-local catalog source; query list, page, and search endpoints with the provider credential; choose local filtering for complete catalogs and provider search for incomplete catalogs; offer catalog suggestions plus custom reasoning; return a typed setup result and persist roles without replacing provider-owned fields |
 | Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
 | Completion | Parse the closed `CompletionShell` selector, derive scripts from the authoritative Clap command definition, render Bash/Elvish/Fish/PowerShell/Zsh, and write only successful script bytes to stdout |
 | Shell parser boundary | Consume an installed completion script; parser acceptance is verified separately for Bash, Elvish, Fish, PowerShell, and Zsh when the executable is available and is not a provider or configuration dependency |
@@ -73,23 +73,24 @@ builders receive an effective endpoint and remain free of environment lookups.
 
 ### Catalog source
 
-The catalog-source resolver selects `[litellm]` when configured and otherwise
-uses the active provider. It carries the raw credential source until the
-request boundary, where a literal or exact environment reference is expanded.
-An absent LiteLLM key produces no Authorization header. The active provider
-resolver used by chat is separate and is never replaced by the catalog source.
+The catalog resolver uses the selected provider's saved or derived catalog base
+and its credential source. The legacy `[litellm]` section remains readable and
+is copied through unrelated config writes, but it is not contacted, migrated, or
+used as a fallback by setup or model discovery. List, page, and search requests
+share the provider-local source and exact Authorization behavior.
 
 ### Setup persistence
 
-The wizard's provider-confirmation transition is the first durable boundary. It
-validates and saves the provider source before catalog loading, while model-tier
-updates remain a later, independent write. This permits catalog failure or
-post-confirmation cancellation to preserve the provider without manufacturing
-empty or partial tier values.
+The coordinator's final review is the only durable boundary for coordinated
+setup. It writes one complete candidate snapshot or leaves the baseline
+unchanged. Focused provider and model commands save only their owned fields at
+their own final confirmations. A selected arbitrary provider name migrates to
+`custom` in the same successful snapshot; shell target writes remain independent
+after config success.
 
 ### Config
 
-**Responsibility:** Load, merge, expose configuration values, and bootstrap the config file on first run.
+**Responsibility:** Load, merge, expose configuration values, distinguish absent and malformed files, and write confirmed candidate snapshots without implicit template creation.
 
 | Element | Responsibility |
 |---|---|
@@ -98,7 +99,7 @@ empty or partial tier values.
 | `ProviderReadiness` | Decide locally whether a configured provider and credential can be resolved without probing the network or consulting the E2E transport override |
 | `CredentialResolver` | Apply saved-literal/reference precedence, expand a complete `${VARIABLE}` reference at request or model-discovery time, and fall back only when `api_key` is absent |
 | `Config` struct | Serde-deserializable root config with `providers`, `tiers`, `pricing`, `litellm` |
-| `AutoInit` | On first run (no config file exists), writes a commented-out template to the standard XDG path before proceeding |
+| `SetupRequired` | Decide locally whether provider or any required model role is incomplete; a first-run file is created only after final setup confirmation |
 
 ### Models
 
@@ -106,10 +107,10 @@ empty or partial tier values.
 
 | Element | Responsibility |
 |---|---|
-| `ModelExplorer` | Query provider `/models` endpoint (with optional `?search=` and pagination params), parse response, and expose catalog completeness |
-| `SetupWizard` model pages | Own the shared Small, Middle, and Large Model pages, page event loop, visible query, reasoning focus, focused-widget border styling, search-worker lifecycle, and persistence boundary |
+| `ModelExplorer` | Query the selected provider's `/models` endpoint (with optional `?search=` and pagination params), reject unusable identifiers, and expose catalog completeness/status |
+| `SetupWizard` model questions | Own separate model and reasoning questions, page event loop, visible query, focused-widget border styling, search-worker lifecycle, manual fallback, and final review boundary |
 | `model-picker` | Provides model-search and local-filter logic; the wizard selects the complete-catalog local path or incomplete-catalog remote path, and remote results use a stale-generation guard |
-| `ConfigWriter` | Persist selected tier assignments and per-level reasoning strengths through the existing direct writer, enforcing Unix mode `0600` after every save |
+| `ConfigWriter` | Serialize a candidate snapshot atomically, persist selected tier assignments and verbatim reasoning strings, enforce Unix mode `0600`, and preserve unrelated fields |
 
 ### Exec
 
@@ -128,7 +129,7 @@ configuration or provider execution.
 |---|---|
 | `CompletionShell` | Closed selector accepting only `bash`, `elvish`, `fish`, `powershell`, and `zsh`; rejects every other value with the literal `unsupported shell '<value>'; choose bash, elvish, fish, powershell, or zsh` parser contract |
 | Completion-generation branch | `run_completions` calls `Cli::command()` and maps the validated selector to the corresponding `clap_complete` renderer; it does not maintain a second command tree |
-| Output boundary | Writes the selected script to stdout only, leaves stderr empty, and returns before config auto-init, provider resolution, network access, or spinner setup |
+| Output boundary | Writes the selected script to stdout only, leaves stderr empty, and returns before config creation, provider resolution, network access, or spinner setup |
 
 ## Repository hygiene boundary
 

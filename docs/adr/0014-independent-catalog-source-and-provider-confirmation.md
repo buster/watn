@@ -1,6 +1,6 @@
 # ADR-0014: Independent catalog source and provider confirmation
 
-- **Status:** accepted
+- **Status:** superseded by ADR-0020 and ADR-0021
 - **Date:** 2026-08-10
 - **Decision-makers:** architect
 
