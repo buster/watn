@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
@@ -1103,6 +1104,17 @@ impl SetupWizard {
                 return Ok(());
             }
         };
+        let mut identifiers = HashSet::new();
+        if models
+            .iter()
+            .any(|model| model.id.trim().is_empty() || !identifiers.insert(model.id.clone()))
+        {
+            self.catalog_manual = true;
+            self.validation =
+                "Catalog discovery unavailable. Model identifiers must be unique and non-empty."
+                    .to_string();
+            return Ok(());
+        }
         self.catalog_complete = catalog_complete;
         for slot in 0..3 {
             self.models[slot] = models.clone();
