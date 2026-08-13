@@ -54,7 +54,7 @@ pub fn run_models_result(
         return match crate::setup::run_with_config(&config, crate::setup::SetupEntryPoint::Models) {
             Ok(crate::setup::SetupWizardOutcome::Saved(result)) => {
                 let mut updated = config.clone();
-                match crate::setup::apply_result(&mut updated, &result) {
+                match crate::setup::apply_models_result(&mut updated, &result) {
                     Ok(()) => {
                         if result.choices.iter().all(Option::is_some) {
                             println!(

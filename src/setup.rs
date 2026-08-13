@@ -313,6 +313,37 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
     Ok(())
 }
 
+pub fn apply_models_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
+    let mut updated = config.clone();
+    let mut changed_tiers = false;
+    for (index, choice) in result.choices.iter().enumerate() {
+        let Some(choice) = choice else {
+            continue;
+        };
+        changed_tiers = true;
+        match index {
+            0 => {
+                updated.tiers.small = Some(choice.model.id.clone());
+                updated.tiers.reasoning.small = Some(choice.reasoning.clone());
+            }
+            1 => {
+                updated.tiers.normal = Some(choice.model.id.clone());
+                updated.tiers.reasoning.normal = Some(choice.reasoning.clone());
+            }
+            2 => {
+                updated.tiers.thinking = Some(choice.model.id.clone());
+                updated.tiers.reasoning.thinking = Some(choice.reasoning.clone());
+            }
+            _ => unreachable!(),
+        }
+    }
+    if changed_tiers {
+        config::save_config(&updated)?;
+        *config = updated;
+    }
+    Ok(())
+}
+
 pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
     if !result.completion_enabled && !result.shortcut_enabled {
         return Ok(());
