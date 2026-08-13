@@ -49,7 +49,7 @@ fn configured_provider_with_catalog_models(
 #[when("advance to the small model question")]
 fn advance_to_small_model_question(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for _ in 0..3 {
+    for _ in 0..4 {
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(150));
     }
@@ -116,5 +116,124 @@ fn normal_model_question_active(world: &mut WatnWorld) {
     assert!(
         page.contains("Normal Model"),
         "normal model page was not active: {page:?}"
+    );
+}
+
+#[given(regex = r##"^the provider credential is the literal "([^"]+)"$"##)]
+fn provider_credential_literal(world: &mut WatnWorld, credential: String) {
+    let raw = world.raw_config.take().expect("provider config fixture");
+    world.raw_config = Some(
+        raw.lines()
+            .map(|line| {
+                if line.trim_start().starts_with("api_key =") {
+                    format!("api_key = \"{credential}\"")
+                } else {
+                    line.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+    );
+}
+
+#[given(regex = r##"^the config file contains models "([^"]+)", "([^"]+)", and "([^"]+)"$"##)]
+fn config_contains_models(world: &mut WatnWorld, small: String, normal: String, thinking: String) {
+    let mut raw = world.raw_config.take().expect("provider config fixture");
+    raw.push_str(&format!(
+        "\n\n[tiers]\nsmall = \"{small}\"\nnormal = \"{normal}\"\nthinking = \"{thinking}\"\n"
+    ));
+    world.raw_config = Some(raw);
+
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+    world
+        .pending_config
+        .insert("preserve_setup_endpoint".to_string(), "true".to_string());
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+    world.pending_mock_returned_models = vec![small, normal, thinking];
+}
+
+#[then(regex = r##"^the provider question should show "([^"]+)" selected$"##)]
+fn provider_question_shows_selected(world: &mut WatnWorld, provider: String) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = pty_snapshot(session);
+    let page = latest_page(&output);
+    assert!(
+        page.contains("Provider"),
+        "provider page was not active: {page:?}"
+    );
+    let label = match provider.as_str() {
+        "openrouter" => "OpenRouter",
+        "openai" => "OpenAI",
+        _ => "Custom",
+    };
+    assert!(page.contains(label), "selected provider missing: {page:?}");
+}
+
+#[then(regex = r##"^the completion endpoint input should show "([^"]+)"$"##)]
+fn completion_endpoint_input_shows(world: &mut WatnWorld, endpoint: String) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    let output = wait_for_active_page(session, "URL");
+    assert!(
+        output.contains(&endpoint),
+        "endpoint was not prefilled: {output:?}"
+    );
+}
+
+#[then("the credential input should remain masked")]
+fn credential_input_remains_masked(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    let output = wait_for_active_page(session, "API key");
+    assert!(
+        output.contains("********"),
+        "credential was not masked: {output:?}"
+    );
+    assert!(
+        !output.contains("sk-existing-key"),
+        "literal credential was exposed: {output:?}"
+    );
+}
+
+#[then(regex = r##"^the small model input should show "([^"]+)"$"##)]
+fn small_model_input_shows(world: &mut WatnWorld, model: String) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r\r");
+    let output = wait_for_active_page(session, "Small Model");
+    assert!(
+        output.contains(&model),
+        "small model was not prefilled: {output:?}"
+    );
+}
+
+#[then(regex = r##"^the normal model input should show "([^"]+)"$"##)]
+fn normal_model_input_shows(world: &mut WatnWorld, model: String) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Small Reasoning");
+    pty_write(session, "\r");
+    let output = wait_for_active_page(session, "Normal Model");
+    assert!(
+        output.contains(&model),
+        "normal model was not prefilled: {output:?}"
+    );
+}
+
+#[then(regex = r##"^the thinking model input should show "([^"]+)"$"##)]
+fn thinking_model_input_shows(world: &mut WatnWorld, model: String) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Normal Reasoning");
+    pty_write(session, "\r");
+    let output = wait_for_active_page(session, "Thinking Model");
+    assert!(
+        output.contains(&model),
+        "thinking model was not prefilled: {output:?}"
     );
 }

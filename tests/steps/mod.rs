@@ -298,8 +298,12 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
             if reuse_existing_server {
                 let raw = world.raw_config.clone().unwrap_or_default();
-                config_content = rewrite_provider_endpoints(&raw, &base_url)
-                    .replace("http://localhost:4000", &base_url);
+                config_content = if world.pending_config.contains_key("preserve_setup_endpoint") {
+                    raw
+                } else {
+                    rewrite_provider_endpoints(&raw, &base_url)
+                        .replace("http://localhost:4000", &base_url)
+                };
                 has_config = !no_config;
             } else {
                 let raw = world.raw_config.clone().unwrap_or_default();

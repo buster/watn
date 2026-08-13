@@ -47,7 +47,7 @@ Feature: Streamlined setup flow
     When I choose reasoning "low" for the small role
     Then the normal model question should be active
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rerunning coordinated setup prefills current values and preserves a masked literal credential
     Given a config file contains provider "custom" with endpoint "https://llm.example/v1"
     And the provider credential is the literal "sk-existing-key"
