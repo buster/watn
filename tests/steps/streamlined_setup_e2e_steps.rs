@@ -25,6 +25,58 @@ fn wait_for_page(session: &super::PtySession, title: &str) {
     }
 }
 
+#[then("provider setup should show provider choices \"OpenRouter\", \"OpenAI\", and \"Custom\"")]
+fn provider_choices_are_visible(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("provider PTY session");
+    let output = visible_output(&pty_snapshot(session));
+    for choice in ["OpenRouter", "OpenAI", "Custom"] {
+        assert!(
+            output.contains(choice),
+            "provider choice missing: {output:?}"
+        );
+    }
+}
+
+#[when(regex = r##"^I choose provider "OpenAI"$"##)]
+fn choose_openai_provider(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "\x1b[A\r");
+    wait_for_page(session, "URL");
+}
+
+#[when(regex = r##"^choose environment variable "([^\"]+)"$"##)]
+fn choose_e2e_environment_variable(world: &mut WatnWorld, variable: String) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "e");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\x15");
+    pty_write(session, &format!("{variable}\r"));
+    let session = world.pty_session.take().expect("provider PTY session");
+    finish_pty_session(world, session);
+}
+
+#[then("provider setup should exit successfully")]
+fn provider_setup_exits_successfully(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "provider output: {:?}",
+        world.output
+    );
+}
+
+#[then(regex = r##"^the config file should contain credential reference "([^\"]+)"$"##)]
+fn config_contains_credential_reference(world: &mut WatnWorld, reference: String) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let content = std::fs::read_to_string(path).expect("provider config");
+    assert!(content.contains(&format!("api_key = \"{reference}\"")));
+}
+
 #[when(regex = r##"^I choose provider "OpenRouter"$"##)]
 fn choose_openrouter_provider(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");

@@ -68,7 +68,7 @@ Feature: Streamlined setup flow
     And cancel setup before final confirmation
     Then the config file should be byte-for-byte unchanged
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Provider setup configures an OpenAI provider with an environment credential
     Given no provider is configured
     And environment variable OPENAI_API_KEY is set to "sk-openai-test"
