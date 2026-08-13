@@ -151,10 +151,10 @@
 
 ### Catalog failure does not persist an unconfirmed provider
 
-- [ ] RED: target `Catalog failure does not persist an unconfirmed provider`; evidence:
-- [ ] GREEN: preserve absent baseline after catalog failure and cancellation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Catalog failure does not persist an unconfirmed provider`. Hash: 
+- [x] RED: target `Catalog failure does not persist an unconfirmed provider`; evidence: non-zero; catalog-failure and cancellation steps were undefined.
+- [x] GREEN: drive a failing provider-local catalog probe from a no-config coordinator and assert no provider/config/catalog state is persisted after cancellation. Production files: existing draft/manual fallback path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Catalog failure does not persist an unconfirmed provider`. Hash: `450c683`
 
 ### A successful edited catalog endpoint is promoted only at final confirmation
 
