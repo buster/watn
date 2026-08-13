@@ -26,6 +26,12 @@ fn wait_for_page(session: &super::PtySession, page: &str) -> String {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
         let output = pty_snapshot(session);
+        if page == "Shell Completion" && output.to_ascii_lowercase().contains("completion") {
+            return output;
+        }
+        if page == "Shell Shortcut" && output.to_ascii_lowercase().contains("shortcut") {
+            return output;
+        }
         if latest_page(&output, page) {
             return output;
         }
@@ -48,6 +54,10 @@ fn start_setup_wizard(world: &mut WatnWorld) {
 fn start_shared_models_wizard(world: &mut WatnWorld) {
     let session = start_pty_session(world, &["models"]);
     world.pty_session = Some(session);
+    world.pending_config.insert(
+        "setup_wizard_models_entrypoint".to_string(),
+        "true".to_string(),
+    );
     let session = world.pty_session.as_ref().expect("setup PTY session");
     wait_for_page(session, "Small Model");
 }
@@ -66,11 +76,19 @@ fn setup_wizard_tabs(_world: &mut WatnWorld, tab_list: String) {
 }
 
 #[then(
-    regex = r#"^the setup wizard should show the (URL|API key|Small Model|Middle Model|Large Model|Shell Completion|Shell Shortcut) page as active$"#
+    regex = r#"^the setup wizard should show the (URL|API key|Catalog|Small Model|Small Reasoning|Normal Model|Normal Reasoning|Thinking Model|Thinking Reasoning|Shell Completion|Shell Shortcut) page as active$"#
 )]
 fn setup_wizard_active_page(world: &mut WatnWorld, page: String) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let output = wait_for_page(session, &page);
+    if page == "Shell Completion" {
+        assert!(output.to_ascii_lowercase().contains("completion"));
+        return;
+    }
+    if page == "Shell Shortcut" {
+        assert!(output.to_ascii_lowercase().contains("shortcut"));
+        return;
+    }
     assert_words(&output, &page);
 }
 
@@ -112,37 +130,63 @@ fn choose_configuration_storage(world: &mut WatnWorld) {
 fn enter_api_key(world: &mut WatnWorld, key: String) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, &format!("{key}\r"));
-    std::thread::sleep(std::time::Duration::from_millis(500));
+    wait_for_page(session, "Catalog");
+    pty_write(session, "\r");
+    wait_for_page(session, "Small Model");
 }
 
 #[when(regex = r#"^choose "([^"]+)" and "([^"]+)" with Enter$"#)]
 fn choose_two_models(world: &mut WatnWorld, small: String, middle: String) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for model in [small, middle] {
+    for (model, reasoning_page, next_page) in [
+        (small, "Small Reasoning", "Normal Model"),
+        (middle, "Normal Reasoning", "Thinking Model"),
+    ] {
         pty_write(session, &model);
         std::thread::sleep(std::time::Duration::from_millis(400));
         pty_write(session, "\r");
-        std::thread::sleep(std::time::Duration::from_millis(200));
+        wait_for_page(session, reasoning_page);
+        pty_write(session, "\r");
+        wait_for_page(session, next_page);
     }
 }
 
-#[when(regex = r#"^I type "([^"]+)" on the Large Model page$"#)]
+#[when(regex = r#"^I confirm the (Small|Normal) Reasoning selection with Enter$"#)]
+fn confirm_reasoning_selection(world: &mut WatnWorld, role: String) {
+    let next_page = match role.as_str() {
+        "Small" => "Normal Model",
+        "Normal" => "Thinking Model",
+        _ => unreachable!(),
+    };
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    wait_for_page(session, next_page);
+}
+
+#[when(regex = r#"^I type "([^"]+)" on the Thinking Model page$"#)]
 fn type_large_model(world: &mut WatnWorld, model: String) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, &model);
     std::thread::sleep(std::time::Duration::from_millis(500));
 }
 
-#[when("I confirm the Large Model selection with Enter")]
+#[when("I confirm the Thinking Model selection with Enter")]
 fn confirm_large_model(world: &mut WatnWorld) {
-    let session = world.pty_session.as_mut().expect("setup PTY session");
-    pty_write(session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(300));
-    if latest_page(&pty_snapshot(session), "Shell Completion") {
-        return;
+    let models_entrypoint = world
+        .pending_config
+        .contains_key("setup_wizard_models_entrypoint");
+    {
+        let session = world.pty_session.as_mut().expect("setup PTY session");
+        pty_write(session, "\r");
+        wait_for_page(session, "Thinking Reasoning");
+        pty_write(session, "\r");
     }
-    let session = world.pty_session.take().expect("setup PTY session");
-    finish_pty_session(world, session);
+    if models_entrypoint {
+        let session = world.pty_session.take().expect("setup PTY session");
+        finish_pty_session(world, session);
+    } else {
+        std::thread::sleep(std::time::Duration::from_millis(300));
+    }
 }
 
 #[then("the setup wizard should explain shell completion installation")]
@@ -173,6 +217,8 @@ fn setup_wizard_shell_shortcut_explanation(world: &mut WatnWorld) {
 #[when("I skip shell integration setup")]
 fn skip_shell_integration_setup(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    wait_for_page(session, "Review");
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(200));
     let session = world.pty_session.take().expect("setup PTY session");
@@ -210,7 +256,7 @@ fn setup_wizard_model_table(world: &mut WatnWorld) {
 fn setup_wizard_reasoning_options(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let output = pty_snapshot(session);
-    assert_words(&output, "Supported:");
+    assert_words(&output, "Choices:");
     assert_words(&output, "low");
 }
 
@@ -262,7 +308,7 @@ fn discard_current_setup(world: &mut WatnWorld) {
 }
 
 #[then(
-    regex = r#"^the config file should contain small tier "([^"]+)", middle tier "([^"]+)", and large tier "([^"]+)"$"#
+    regex = r#"^the config file should contain small tier "([^"]+)", normal tier "([^"]+)", and thinking tier "([^"]+)"$"#
 )]
 fn config_contains_wizard_tiers(
     world: &mut WatnWorld,

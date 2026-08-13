@@ -23,37 +23,70 @@ type StreamOutcome = (
 #[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Ask in plain language. Get one command.")]
 struct Cli {
-    #[arg(group = "input", num_args = 1..)]
+    #[arg(
+        group = "input",
+        num_args = 1..,
+        value_name = "QUESTION",
+        help = "Natural-language question to turn into a command"
+    )]
     question: Vec<String>,
 
-    #[arg(short = '1', long = "small")]
+    #[arg(short = '1', long = "small", help = "Use the small/fast model tier")]
     tier_small: bool,
 
-    #[arg(short = '2', long = "normal")]
+    #[arg(short = '2', long = "normal", help = "Use the balanced model tier")]
     tier_normal: bool,
 
-    #[arg(short = '3', long = "thinking")]
+    #[arg(
+        short = '3',
+        long = "thinking",
+        help = "Use the thinking/reasoning model tier"
+    )]
     tier_thinking: bool,
 
-    #[arg(long = "model", conflicts_with_all = ["tier_small", "tier_normal", "tier_thinking"])]
+    #[arg(
+        long = "model",
+        conflicts_with_all = ["tier_small", "tier_normal", "tier_thinking"],
+        help = "Use an explicit model instead of a tier"
+    )]
     model: Option<String>,
 
-    #[arg(short = 'x', long = "execute")]
+    #[arg(
+        short = 'x',
+        long = "execute",
+        help = "Prompt before executing the generated command"
+    )]
     execute: bool,
 
-    #[arg(short = 'v', long = "verbose")]
+    #[arg(
+        short = 'v',
+        long = "verbose",
+        help = "Print provider reasoning to stderr when available"
+    )]
     verbose: bool,
 
-    #[arg(long = "provider")]
+    #[arg(long = "provider", help = "Select a configured provider")]
     provider: Option<String>,
 
-    #[arg(long = "set-small")]
+    #[arg(
+        long = "set-small",
+        value_name = "MODEL",
+        help = "Set the small-tier model non-interactively"
+    )]
     set_small: Option<String>,
 
-    #[arg(long = "set-normal")]
+    #[arg(
+        long = "set-normal",
+        value_name = "MODEL",
+        help = "Set the normal-tier model non-interactively"
+    )]
     set_normal: Option<String>,
 
-    #[arg(long = "set-thinking")]
+    #[arg(
+        long = "set-thinking",
+        value_name = "MODEL",
+        help = "Set the thinking-tier model non-interactively"
+    )]
     set_thinking: Option<String>,
 
     #[command(subcommand)]
@@ -62,9 +95,15 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Commands {
+    #[command(
+        about = "Configure provider, models, reasoning, and shell integrations interactively"
+    )]
     Setup,
+    #[command(about = "Configure model tiers and reasoning settings interactively")]
     Models,
+    #[command(about = "Configure a provider endpoint and credential")]
     Provider,
+    #[command(about = "Configure shell completion and Ctrl-W integrations")]
     Shell,
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"

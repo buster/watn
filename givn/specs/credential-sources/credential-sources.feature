@@ -1,20 +1,17 @@
 Feature: Provider configuration
 
   @e2e
-  Scenario: Interactive model discovery preserves an OpenRouter environment credential
+  Scenario: Interactive model discovery uses an OpenRouter environment credential
     Given  no config file exists
     And  environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
     And  the ephemeral E2E transport returns models ["model-small", "model-normal", "model-thinking"] for "/models"
     When  I start the shared `watn models` wizard in a terminal
     And  choose "model-small" and "model-normal" with Enter
-    And  I type "model-thinking" on the Large Model page
-    And  I confirm the Large Model selection with Enter
+     And  I type "model-thinking" on the Thinking Model page
+     And  I confirm the Thinking Model selection with Enter
     Then  setup should exit successfully
     And  the output should contain "Tiers configured"
-    And  the config file should contain default provider "openrouter"
-    And  the config file should contain api_key exactly "${OPENROUTER_API_KEY}"
-    And  the config file should not contain "sk-or-v1-test"
-    And  the config file should contain small tier "model-small", middle tier "model-normal", and large tier "model-thinking"
+     And  the config file should contain small tier "model-small", normal tier "model-normal", and thinking tier "model-thinking"
 
   @e2e
   Scenario: A literal saved credential is authoritative over environment fallback

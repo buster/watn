@@ -51,6 +51,7 @@ Feature: Reasoning Support
     When  I run `watn --help`
     Then  the exit status should be 0
     And  the output should contain "--verbose"
+    And  the help output should document every command and option
 
   @e2e
   Scenario: Thinking tier with verbose and execute flags

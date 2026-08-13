@@ -326,7 +326,7 @@
 
 ## E2E Setup
 
-- [ ] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` run with isolated loopback httpmock twins and portable PTYs; record full-suite and E2E scenario counts, with E2E strictly smaller. Evidence: `./run-tests.sh` is green at `147 scenarios`, `844 steps`; `./run-tests.sh --e2e` collects `75 scenarios` (`58 passed`, `17 failed`), so the strict subset count is proven but the gate is blocked by legacy permanent E2E wizard/layout scenarios.
+- [x] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` run with isolated loopback httpmock twins and portable PTYs; record full-suite and E2E scenario counts, with E2E strictly smaller. Evidence: `./run-tests.sh` passed with `148 scenarios` and `851 steps`; `./run-tests.sh --e2e` passed with `75 scenarios` and `554 steps`. The E2E tag filter is a strict subset of the full suite.
 - [x] Register and prove `tests/steps/streamlined_setup_e2e_steps.rs` against the real CLI terminal. Evidence: module is registered in `tests/steps/mod.rs`; targeted `./run-tests.sh --e2e --name` runs passed for all five current inventory scenarios with real PTY interaction: coordinated setup `24 steps`, provider `12 steps`, models `11 steps`, shell `10 steps`, and incomplete request `8 steps`.
 
 ## E2E Scenarios

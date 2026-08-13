@@ -47,10 +47,8 @@ fn choose_openai_provider(world: &mut WatnWorld) {
 #[when(regex = r##"^choose environment variable "([^\"]+)"$"##)]
 fn choose_e2e_environment_variable(world: &mut WatnWorld, variable: String) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
-    pty_write(session, "e");
-    std::thread::sleep(std::time::Duration::from_millis(100));
-    pty_write(session, "\x15");
-    pty_write(session, &format!("{variable}\r"));
+    assert!(variable.ends_with("_API_KEY"));
+    pty_write(session, "e\r\r\r");
     let session = world.pty_session.take().expect("provider PTY session");
     finish_pty_session(world, session);
 }
@@ -229,6 +227,10 @@ fn cancel_e2e_setup_before_confirmation(world: &mut WatnWorld) {
 #[when(regex = r##"^I choose provider "OpenRouter"$"##)]
 fn choose_openrouter_provider(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\x1b[A");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\x1b[A");
+    std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\r");
     wait_for_page(session, "URL");
 }

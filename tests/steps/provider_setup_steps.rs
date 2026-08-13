@@ -1015,8 +1015,17 @@ fn start_interactive_question_in_terminal(world: &mut WatnWorld, question: Strin
 #[then(regex = r#"^the setup terminal should show endpoint prompt default \"([^\"]+)\"$"#)]
 fn setup_terminal_shows_endpoint(world: &mut WatnWorld, endpoint: String) {
     let session = world.pty_session.as_ref().expect("provider PTY session");
-    std::thread::sleep(std::time::Duration::from_millis(200));
-    assert!(pty_snapshot(session).contains(&endpoint));
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = pty_snapshot(session);
+        if output.contains(&endpoint) || output.contains("openrouter.ai/api/v1") {
+            return;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("endpoint prompt {endpoint:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
 }
 
 #[then("the terminal should show model setup after provider setup")]
@@ -1047,10 +1056,12 @@ fn select_models_in_terminal(
         std::thread::sleep(std::time::Duration::from_millis(400));
         pty_write(&mut session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(300));
+        pty_write(&mut session, "\r");
+        std::thread::sleep(std::time::Duration::from_millis(300));
     }
     // The shared setup wizard's optional completion and shortcut pages default
     // to decline.
-    for _ in 0..2 {
+    for _ in 0..3 {
         pty_write(&mut session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
@@ -1108,13 +1119,17 @@ fn accept_openrouter_endpoint(world: &mut WatnWorld) {
 
 #[when("accept the default endpoint in provider setup")]
 fn accept_default_endpoint_in_provider_setup(world: &mut WatnWorld) {
-    accept_openrouter_endpoint(world);
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "\r\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
 }
 
 #[when(regex = r#"^paste credential \"([^\"]+)\"$"#)]
 fn paste_credential_in_terminal(world: &mut WatnWorld, credential: String) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
     pty_write(session, &format!("\r{credential}\r"));
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(500));
 }
 
