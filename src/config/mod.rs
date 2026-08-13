@@ -79,6 +79,7 @@ pub fn resolve_provider(config: &Config, provider_name: &str) -> Result<Provider
             endpoint: "https://api.openai.com/v1".to_string(),
             api_key: std::env::var("WATN_OPENAI_API_KEY").ok(),
             default_model: None,
+            catalog_endpoint: None,
         });
     }
 
@@ -90,6 +91,7 @@ pub fn resolve_provider(config: &Config, provider_name: &str) -> Result<Provider
             endpoint: "https://openrouter.ai/api/v1".to_string(),
             api_key: None,
             default_model: None,
+            catalog_endpoint: None,
         });
     }
 
@@ -193,6 +195,7 @@ pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result
             endpoint: draft.endpoint.clone(),
             api_key: Some(draft.api_key.clone()),
             default_model: None,
+            catalog_endpoint: None,
         },
     );
     save_config(config)

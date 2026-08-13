@@ -396,6 +396,7 @@ impl SetupWizard {
                     endpoint: OPENROUTER_ENDPOINT.to_string(),
                     api_key: None,
                     default_model: None,
+                    catalog_endpoint: None,
                 }
             }
             Err(error) => return Err(error),
