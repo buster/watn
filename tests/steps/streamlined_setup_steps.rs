@@ -10,16 +10,52 @@ fn latest_page(output: &str) -> &str {
         .unwrap_or(output)
 }
 
+fn visible_output(output: &str) -> String {
+    regex::Regex::new(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+        .expect("ANSI pattern")
+        .replace_all(output, "")
+        .to_string()
+}
+
 fn wait_for_active_page(session: &super::PtySession, title: &str) -> String {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
         let output = pty_snapshot(session);
-        let page = latest_page(&output);
+        let visible = visible_output(&output);
+        let page = latest_page(&visible);
         if title.split_whitespace().all(|word| page.contains(word)) {
             return output;
         }
         if std::time::Instant::now() >= deadline {
             panic!("active setup page {title:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
+fn wait_for_visible_text(session: &super::PtySession, text: &str) -> String {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = pty_snapshot(session);
+        if visible_output(&output).contains(text) {
+            return output;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("visible setup text {text:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
+fn wait_for_page_marker(session: &super::PtySession, marker: &str) -> String {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = pty_snapshot(session);
+        if visible_output(&output).contains(marker) {
+            return output;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("setup page marker {marker:?} was not rendered: {output:?}");
         }
         std::thread::sleep(std::time::Duration::from_millis(25));
     }
@@ -137,7 +173,7 @@ fn advance_to_small_model_question(world: &mut WatnWorld) {
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(150));
     }
-    wait_for_active_page(session, "Small Model");
+    wait_for_page_marker(session, "┌Small Model");
 }
 
 #[then("the setup coordinator should show the provider question first")]
@@ -818,7 +854,9 @@ fn accept_provider_credential_catalog_probe(world: &mut WatnWorld) {
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\r");
-    wait_for_active_page(session, "Small Model");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    wait_for_page_marker(session, "┌Small Model");
 }
 
 #[then("no selected shell target should change")]
@@ -1037,6 +1075,87 @@ fn setup_does_not_select_invalid_entries(world: &mut WatnWorld) {
 fn setup_allows_manual_model_selection(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");
     assert!(pty_snapshot(session).contains("Manual"));
+}
+
+#[given("a complete coordinated setup draft with provider, catalog, models, reasoning, and shell choices")]
+fn complete_coordinated_setup_draft(world: &mut WatnWorld) {
+    configured_provider_with_catalog_models(
+        world,
+        "small-model".to_string(),
+        "normal-model".to_string(),
+        "thinking-model".to_string(),
+    );
+    let mut raw = world.raw_config.take().expect("provider config fixture");
+    raw.push_str(
+        "\n[tiers]\nsmall = \"small-model\"\nnormal = \"normal-model\"\nthinking = \"thinking-model\"\n\n[tiers.reasoning]\nsmall = \"off\"\nnormal = \"off\"\nthinking = \"off\"\n",
+    );
+    world.raw_config = Some(raw);
+    world
+        .env_vars
+        .insert("WATN_SETUP_START_REVIEW".to_string(), "1".to_string());
+}
+
+#[when("I open the final setup review")]
+fn open_final_setup_review(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["setup"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    wait_for_visible_text(session, "Provider:");
+}
+
+#[then("the review should show the provider and completion endpoint")]
+fn review_shows_provider_endpoint(world: &mut WatnWorld) {
+    let snapshot = pty_snapshot(world.pty_session.as_ref().expect("review PTY"));
+    let visible = visible_output(&snapshot);
+    let output = latest_page(&visible);
+    assert!(output.contains("Provider:"), "review output: {output:?}");
+    assert!(output.contains("Completion"), "review output: {output:?}");
+    assert!(output.contains("endpoint:"), "review output: {output:?}");
+}
+
+#[then("the review should show catalog endpoint status")]
+fn review_shows_catalog_status(world: &mut WatnWorld) {
+    let snapshot = pty_snapshot(world.pty_session.as_ref().expect("review PTY"));
+    let visible = visible_output(&snapshot);
+    let output = latest_page(&visible);
+    assert!(output.contains("Catalog:"));
+}
+
+#[then("the review should show all three model and reasoning pairs")]
+fn review_shows_model_reasoning_pairs(world: &mut WatnWorld) {
+    let snapshot = pty_snapshot(world.pty_session.as_ref().expect("review PTY"));
+    let visible = visible_output(&snapshot);
+    let output = latest_page(&visible);
+    for value in ["small-model", "normal-model", "thinking-model", "off"] {
+        assert!(output.contains(value), "review value missing: {output:?}");
+    }
+}
+
+#[then("the review should show completion and Ctrl-W shell choices")]
+fn review_shows_shell_choices(world: &mut WatnWorld) {
+    let snapshot = pty_snapshot(world.pty_session.as_ref().expect("review PTY"));
+    let visible = visible_output(&snapshot);
+    let output = latest_page(&visible);
+    assert!(output.contains("Completion"));
+    assert!(output.contains("shells:"));
+    assert!(output.contains("Ctrl-W"));
+}
+
+#[then("the review should show credential source and masked status")]
+fn review_shows_masked_credential(world: &mut WatnWorld) {
+    let snapshot = pty_snapshot(world.pty_session.as_ref().expect("review PTY"));
+    let visible = visible_output(&snapshot);
+    let output = latest_page(&visible);
+    assert!(output.contains("Credential:"));
+    assert!(output.contains("masked"));
+}
+
+#[then("the review should not show the resolved credential")]
+fn review_hides_resolved_credential(world: &mut WatnWorld) {
+    let snapshot = pty_snapshot(world.pty_session.as_ref().expect("review PTY"));
+    let visible = visible_output(&snapshot);
+    let output = latest_page(&visible);
+    assert!(!output.contains("sk-review"));
 }
 
 #[given(regex = r##"^a configured provider endpoint "([^"]+)" with credential "([^"]+)"$"##)]
@@ -1570,6 +1689,8 @@ fn deselect_bash_completion_in_shell_setup(world: &mut WatnWorld) {
     pty_write(session, "y");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, " \r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\r");
     let session = world.pty_session.take().expect("shell PTY session");
