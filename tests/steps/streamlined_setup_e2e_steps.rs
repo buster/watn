@@ -181,6 +181,51 @@ fn fish_remains_unchanged(world: &mut WatnWorld) {
     assert!(!config_home.join("fish/config.fish").exists());
 }
 
+#[given("the normal model role is missing")]
+fn normal_model_role_is_missing(world: &mut WatnWorld) {
+    let raw = world.raw_config.take().expect("provider fixture");
+    world.raw_config = Some(format!(
+        "{raw}\n[tiers]\nsmall = \"small-model\"\nthinking = \"thinking-model\"\n"
+    ));
+}
+
+#[given("the request transport would return a successful answer")]
+fn request_transport_would_succeed(world: &mut WatnWorld) {
+    assert!(
+        world.mock_server.1.is_some(),
+        "request mock was not installed"
+    );
+}
+
+#[then("the existing provider values should be prefilled")]
+fn existing_provider_values_are_prefilled(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("request PTY session");
+    pty_write(session, "\r");
+    wait_for_page(session, "URL");
+    let output = visible_output(&pty_snapshot(session));
+    assert!(
+        output.contains("http://"),
+        "provider endpoint missing: {output:?}"
+    );
+    pty_write(session, "\r");
+    wait_for_page(session, "API key");
+    let output = visible_output(&pty_snapshot(session));
+    assert!(
+        output.contains("*") || output.contains("test-key"),
+        "credential prefill missing: {output:?}"
+    );
+}
+
+#[when("I cancel setup before final confirmation")]
+fn cancel_e2e_setup_before_confirmation(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("request PTY session");
+    pty_write(session, "\x1b");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    pty_write(session, "n");
+    let session = world.pty_session.take().expect("request PTY session");
+    finish_pty_session(world, session);
+}
+
 #[when(regex = r##"^I choose provider "OpenRouter"$"##)]
 fn choose_openrouter_provider(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
