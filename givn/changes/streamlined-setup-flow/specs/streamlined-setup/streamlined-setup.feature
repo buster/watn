@@ -364,7 +364,7 @@ Feature: Streamlined setup flow
     And the review should show credential source and masked status
     And the review should not show the resolved credential
 
-  @givn.added @wip
+  @givn.added
   Scenario: Final confirmation is blocked while a required draft value is invalid
     Given a coordinated setup draft has a missing model role
     When I open the final setup review
