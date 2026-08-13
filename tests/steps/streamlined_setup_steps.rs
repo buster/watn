@@ -1034,6 +1034,143 @@ fn setup_allows_manual_model_selection(world: &mut WatnWorld) {
     assert!(pty_snapshot(session).contains("Manual"));
 }
 
+#[given(regex = r##"^a configured provider endpoint "([^"]+)" with credential "([^"]+)"$"##)]
+fn configured_provider_endpoint_with_credential(
+    world: &mut WatnWorld,
+    _endpoint: String,
+    credential: String,
+) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}/v1", server.port());
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world
+        .pending_config
+        .insert("provider_credential".to_string(), credential.clone());
+    world
+        .pending_config
+        .insert("provider_base".to_string(), base_url.clone());
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"{base_url}\"\napi_key = \"{credential}\"\n"
+    ));
+}
+
+#[given(regex = r##"^a legacy LiteLLM source points to "([^"]+)"$"##)]
+fn legacy_litellm_source_points(_world: &mut WatnWorld, _endpoint: String) {
+    // The competing source is installed when its provider-local twin is
+    // configured below; keeping this Given separate mirrors the user contract.
+}
+
+#[given(
+    regex = r##"^the provider-local catalog returns models \["([^"]+)", "([^"]+)", "([^"]+)"\]$"##
+)]
+fn provider_local_catalog_returns_models(
+    world: &mut WatnWorld,
+    small: String,
+    normal: String,
+    thinking: String,
+) {
+    let server = world.mock_server.0.as_ref().expect("catalog mock server");
+    let credential = world
+        .pending_config
+        .get("provider_credential")
+        .cloned()
+        .expect("provider credential");
+    let models = vec![small, normal, thinking];
+    let data = serde_json::json!({
+        "data": models.iter().map(|id| serde_json::json!({"id": id})).collect::<Vec<_>>()
+    });
+    let provider_id = server
+        .mock(move |when, then| {
+            when.method(httpmock::Method::GET)
+                .path("/models")
+                .header("Authorization", format!("Bearer {credential}"));
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(data.to_string());
+        })
+        .id;
+    let legacy_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/legacy/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(r#"{"data":[{"id":"legacy-model"}]}"#);
+        })
+        .id;
+    let base = world
+        .pending_config
+        .get("provider_base")
+        .expect("provider base");
+    let legacy_base = base.trim_end_matches("/v1");
+    let mut raw = world.raw_config.take().expect("provider config fixture");
+    raw.push_str(&format!(
+        "\n[litellm]\nendpoint = \"{legacy_base}/legacy\"\napi_key = \"sk-legacy\"\n"
+    ));
+    world.raw_config = Some(raw);
+    world
+        .pending_config
+        .insert("provider_catalog_mock".to_string(), provider_id.to_string());
+    world
+        .pending_config
+        .insert("legacy_catalog_mock".to_string(), legacy_id.to_string());
+    world.pending_mock_returned_models = models;
+}
+
+#[when("I run `watn models` and select the provider-local models")]
+fn run_models_select_provider_local(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["models"], Some("0\n1\n2\n"));
+}
+
+#[then("every provider-local catalog request should receive the provider credential")]
+fn provider_catalog_request_uses_provider_credential(world: &mut WatnWorld) {
+    let id: usize = world
+        .pending_config
+        .get("provider_catalog_mock")
+        .expect("provider catalog mock")
+        .parse()
+        .expect("provider catalog mock id");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    assert_eq!(httpmock::Mock::new(id, server).hits(), 1);
+}
+
+#[then("every provider-local catalog request should receive the provider models")]
+fn provider_catalog_request_returns_provider_models(world: &mut WatnWorld) {
+    if let Some(config_home) = world.env_vars.get("XDG_CONFIG_HOME") {
+        std::env::set_var("XDG_CONFIG_HOME", config_home);
+    }
+    let config = watn::config::load_config().expect("load selected models");
+    assert_eq!(config.tiers.small.as_deref(), Some("provider-small"));
+    assert_eq!(config.tiers.normal.as_deref(), Some("provider-normal"));
+    assert_eq!(config.tiers.thinking.as_deref(), Some("provider-thinking"));
+}
+
+#[then("the legacy LiteLLM source should receive zero requests")]
+fn legacy_litellm_receives_zero_requests(world: &mut WatnWorld) {
+    let id: usize = world
+        .pending_config
+        .get("legacy_catalog_mock")
+        .expect("legacy catalog mock")
+        .parse()
+        .expect("legacy catalog mock id");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    assert_eq!(httpmock::Mock::new(id, server).hits(), 0);
+}
+
+#[then("the legacy LiteLLM configuration should remain unchanged")]
+fn legacy_litellm_config_unchanged(_world: &mut WatnWorld) {
+    if let Some(config_home) = _world.env_vars.get("XDG_CONFIG_HOME") {
+        std::env::set_var("XDG_CONFIG_HOME", config_home);
+    }
+    let config = watn::config::load_config().expect("load legacy catalog config");
+    assert_eq!(
+        config
+            .litellm
+            .as_ref()
+            .map(|catalog| catalog.api_key.as_deref()),
+        Some(Some("sk-legacy"))
+    );
+}
+
 #[then("setup should report that catalog discovery is unusable")]
 fn setup_reports_unusable_catalog(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");

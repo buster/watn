@@ -317,14 +317,14 @@ Feature: Streamlined setup flow
     And setup should not deduplicate or select those entries
     And setup should allow manual model selection
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider catalog takes precedence over a conflicting legacy LiteLLM source
     Given a configured provider endpoint "https://provider.example/v1" with credential "sk-provider"
     And a legacy LiteLLM source points to "https://litellm.example/v1"
-    And the provider catalog returns models ["provider-small", "provider-normal", "provider-thinking"]
-    When I run `watn models` and select the provider models
-    Then every catalog request should use "https://provider.example/v1/models"
-    And every catalog request should use Authorization exactly "Bearer sk-provider"
+    And the provider-local catalog returns models ["provider-small", "provider-normal", "provider-thinking"]
+    When I run `watn models` and select the provider-local models
+    Then every provider-local catalog request should receive the provider credential
+    And every provider-local catalog request should receive the provider models
     And the legacy LiteLLM source should receive zero requests
     And the legacy LiteLLM configuration should remain unchanged
 

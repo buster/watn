@@ -44,22 +44,11 @@ pub fn run_models_result(
         }
     };
 
-    let (endpoint, api_key) = if let Some(catalog) = &config.litellm {
-        let key = match catalog.api_key.as_deref() {
-            Some(source) => match crate::config::expand_api_key(source) {
-                Ok(key) => Some(key),
-                Err(error) => return ModelSetupResult::Failed(error),
-            },
-            None => None,
-        };
-        (catalog.endpoint.clone(), key)
-    } else {
-        let key = match crate::config::get_provider_api_key(provider_name, &provider_config) {
-            Ok(key) => Some(key),
-            Err(error) => return ModelSetupResult::Failed(error),
-        };
-        (provider_config.endpoint.clone(), key)
+    let api_key = match crate::config::get_provider_api_key(provider_name, &provider_config) {
+        Ok(key) => Some(key),
+        Err(error) => return ModelSetupResult::Failed(error),
     };
+    let endpoint = provider_config.endpoint.clone();
 
     if std::io::stdin().is_terminal() {
         return match crate::setup::run_with_config(&config, crate::setup::SetupEntryPoint::Models) {
