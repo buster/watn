@@ -287,6 +287,7 @@ fn decline_both_shell_integration_questions(_world: &mut WatnWorld) {
             api_key: "test-key".to_string(),
         },
         choices: [None, None, None],
+        catalog_endpoint: None,
         completion_shells: Vec::new(),
         shortcut_shells: Vec::new(),
         completion_enabled: false,
@@ -338,6 +339,7 @@ fn usable_provider_credential_configured(world: &mut WatnWorld) {
 #[given("a configured provider has endpoint, credential, catalog endpoint, default model, pricing, LiteLLM settings, and an unrelated provider")]
 fn configured_provider_with_owned_and_unrelated_fields(world: &mut WatnWorld) {
     let server = httpmock::MockServer::start();
+    let base = format!("http://127.0.0.1:{}", server.port());
     let models = serde_json::json!({
         "data": [{"id": "new-small"}, {"id": "new-normal"}, {"id": "new-thinking"}]
     });
@@ -351,6 +353,9 @@ fn configured_provider_with_owned_and_unrelated_fields(world: &mut WatnWorld) {
         .id;
     world.mock_server = crate::MockServerWrap(Some(server), None);
     world.models_mock_id = Some(mock_id);
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base);
     world.raw_config = Some(
         "[defaults]\nprovider = \"custom\"\nmodel = \"default-model\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"saved-key\"\ncatalog_endpoint = \"https://catalog.example/v1\"\ndefault_model = \"provider-default\"\n\n[providers.unrelated]\nendpoint = \"https://unrelated.example/v1\"\napi_key = \"unrelated-key\"\ndefault_model = \"unrelated-model\"\n\n[tiers]\nsmall = \"old-small\"\nnormal = \"old-normal\"\nthinking = \"old-thinking\"\n\n[pricing]\n\"old-small\" = { input = 1.0, output = 2.0 }\n\n[litellm]\nendpoint = \"https://litellm.example\"\napi_key = \"litellm-key\"\n"
             .to_string(),
@@ -518,6 +523,7 @@ fn confirm_setup_review_with_shell_integrations_selected(world: &mut WatnWorld) 
             api_key: "new-key".to_string(),
         },
         choices: [None, None, None],
+        catalog_endpoint: None,
         completion_shells: vec![watn::shell_shortcut::Shell::Bash],
         shortcut_shells: vec![watn::shell_shortcut::Shell::Zsh],
         completion_enabled: true,
@@ -626,7 +632,7 @@ fn selected_reasoning_exact(world: &mut WatnWorld, reasoning: String) {
 #[when("advance to the small model question")]
 fn advance_to_small_model_question(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    for _ in 0..4 {
+    for _ in 0..5 {
         pty_write(session, "\r");
         std::thread::sleep(std::time::Duration::from_millis(150));
     }
@@ -634,8 +640,17 @@ fn advance_to_small_model_question(world: &mut WatnWorld) {
 }
 
 #[then("the setup coordinator should show the provider question first")]
-fn setup_coordinator_provider_question(_world: &mut WatnWorld) {
-    unimplemented!()
+fn setup_coordinator_provider_question(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = visible_output(&pty_snapshot(session));
+    assert!(
+        output.contains("Setup"),
+        "setup coordinator missing: {output:?}"
+    );
+    assert!(
+        output.contains("Provider"),
+        "provider question missing: {output:?}"
+    );
 }
 
 #[then("the small model question should not contain the reasoning choices")]
@@ -719,10 +734,17 @@ fn config_contains_models(world: &mut WatnWorld, small: String, normal: String, 
     raw.push_str(&format!(
         "\n\n[tiers]\nsmall = \"{small}\"\nnormal = \"{normal}\"\nthinking = \"{thinking}\"\n"
     ));
-    world.raw_config = Some(raw);
-
     let server = httpmock::MockServer::start();
     let base_url = format!("http://127.0.0.1:{}", server.port());
+    let mut config_with_catalog = String::new();
+    for line in raw.lines() {
+        config_with_catalog.push_str(line);
+        config_with_catalog.push('\n');
+        if line.trim() == "[providers.custom]" {
+            config_with_catalog.push_str(&format!("catalog_endpoint = \"{base_url}\"\n"));
+        }
+    }
+    world.raw_config = Some(config_with_catalog);
     world.mock_server = crate::MockServerWrap(Some(server), None);
     world
         .env_vars
@@ -781,8 +803,16 @@ fn credential_input_remains_masked(world: &mut WatnWorld) {
 #[then(regex = r##"^the small model input should show "([^"]+)"$"##)]
 fn small_model_input_shows(world: &mut WatnWorld, model: String) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    pty_write(session, "\r\r");
-    let output = wait_for_active_page(session, "Small Model");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    for _ in 0..5 {
+        pty_write(session, "\r");
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        if visible_output(&pty_snapshot(session)).contains(&model) {
+            break;
+        }
+    }
+    let output = wait_for_visible_text(session, &model);
     assert!(
         output.contains(&model),
         "small model was not prefilled: {output:?}"
@@ -1115,6 +1145,7 @@ fn apply_coordinated_shell_failure(world: &mut WatnWorld) {
             api_key: "sk-shell-test".to_string(),
         },
         choices,
+        catalog_endpoint: None,
         completion_shells: vec![watn::shell_shortcut::Shell::Bash],
         shortcut_shells: vec![watn::shell_shortcut::Shell::Zsh],
         completion_enabled: true,
@@ -1677,6 +1708,8 @@ fn navigate_back_to_small_reasoning(world: &mut WatnWorld) {
     wait_for_active_page(session, "API key");
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(250));
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Catalog");
     pty_write(session, "\r");
     wait_for_active_page(session, "Small Model");
     pty_write(session, "\r");

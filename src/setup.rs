@@ -42,6 +42,7 @@ pub enum SetupEntryPoint {
 pub struct SetupWizardResult {
     pub provider: ProviderDraft,
     pub choices: [Option<LevelChoice>; 3],
+    pub catalog_endpoint: Option<String>,
     pub completion_shells: Vec<Shell>,
     pub shortcut_shells: Vec<Shell>,
     pub completion_enabled: bool,
@@ -83,6 +84,7 @@ enum SetupPage {
     Provider,
     Url,
     ApiKey,
+    Catalog,
     SmallModel,
     SmallReasoning,
     NormalModel,
@@ -100,6 +102,7 @@ impl SetupPage {
             Self::Provider => "Provider",
             Self::Url => "URL",
             Self::ApiKey => "API key",
+            Self::Catalog => "Catalog",
             Self::SmallModel => "Small Model",
             Self::SmallReasoning => "Small Reasoning",
             Self::NormalModel => "Normal Model",
@@ -117,15 +120,16 @@ impl SetupPage {
             Self::Provider => 0,
             Self::Url => 1,
             Self::ApiKey => 2,
-            Self::SmallModel => 3,
-            Self::SmallReasoning => 4,
-            Self::NormalModel => 5,
-            Self::NormalReasoning => 6,
-            Self::ThinkingModel => 7,
-            Self::ThinkingReasoning => 8,
-            Self::ShellCompletion => 9,
-            Self::ShellShortcut => 10,
-            Self::Review => 11,
+            Self::Catalog => 3,
+            Self::SmallModel => 4,
+            Self::SmallReasoning => 5,
+            Self::NormalModel => 6,
+            Self::NormalReasoning => 7,
+            Self::ThinkingModel => 8,
+            Self::ThinkingReasoning => 9,
+            Self::ShellCompletion => 10,
+            Self::ShellShortcut => 11,
+            Self::Review => 12,
         }
     }
 
@@ -153,7 +157,8 @@ impl SetupPage {
         match self {
             Self::Provider => Some(Self::Url),
             Self::Url => Some(Self::ApiKey),
-            Self::ApiKey => Some(Self::SmallModel),
+            Self::ApiKey => Some(Self::Catalog),
+            Self::Catalog => Some(Self::SmallModel),
             Self::SmallModel => Some(Self::SmallReasoning),
             Self::SmallReasoning => Some(Self::NormalModel),
             Self::NormalModel => Some(Self::NormalReasoning),
@@ -171,7 +176,8 @@ impl SetupPage {
             Self::Provider => None,
             Self::Url => None,
             Self::ApiKey => Some(Self::Url),
-            Self::SmallModel => Some(Self::ApiKey),
+            Self::Catalog => Some(Self::ApiKey),
+            Self::SmallModel => Some(Self::Catalog),
             Self::SmallReasoning => Some(Self::SmallModel),
             Self::NormalModel => Some(Self::SmallReasoning),
             Self::NormalReasoning => Some(Self::NormalModel),
@@ -243,6 +249,9 @@ pub fn run_with_config(
 pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
     let mut updated = config.clone();
     config::update_provider_draft(&mut updated, &result.provider);
+    if let Some(provider) = updated.providers.get_mut(&result.provider.name) {
+        provider.catalog_endpoint = result.catalog_endpoint.clone();
+    }
     for (index, choice) in result.choices.iter().enumerate() {
         let Some(choice) = choice else {
             continue;
@@ -396,6 +405,7 @@ struct SetupWizard {
     first_page: SetupPage,
     last_page: SetupPage,
     endpoint: String,
+    catalog_endpoint: String,
     storage: CredentialStorage,
     credential_input: String,
     credential_focus: CredentialFocus,
@@ -507,6 +517,14 @@ impl SetupWizard {
             parse_custom_reasoning(config.tiers.reasoning.normal.as_deref()),
             parse_custom_reasoning(config.tiers.reasoning.thinking.as_deref()),
         ];
+        let endpoint = if provider.endpoint.is_empty() {
+            OPENROUTER_ENDPOINT.to_string()
+        } else {
+            provider.endpoint
+        };
+        let catalog_endpoint = provider
+            .catalog_endpoint
+            .unwrap_or_else(|| endpoint.clone());
         let shell_environment = shell_shortcut::ShellEnvironment::from_process();
         let detected_shells = shell_environment.detected_shells();
         let completion_selected = if entry == SetupEntryPoint::Shell {
@@ -536,11 +554,8 @@ impl SetupWizard {
             page: first_page,
             first_page,
             last_page,
-            endpoint: (if provider.endpoint.is_empty() {
-                OPENROUTER_ENDPOINT.to_string()
-            } else {
-                provider.endpoint
-            }),
+            endpoint,
+            catalog_endpoint,
             storage,
             credential_input,
             credential_focus: if first_page >= SetupPage::SmallModel {
@@ -608,6 +623,7 @@ impl SetupWizard {
             if key.code == KeyCode::Char('u') && key.modifiers.contains(KeyModifiers::CONTROL) {
                 match self.page {
                     SetupPage::Url => self.endpoint.clear(),
+                    SetupPage::Catalog => self.catalog_endpoint.clear(),
                     SetupPage::ApiKey if self.credential_focus == CredentialFocus::Value => {
                         self.credential_input.clear()
                     }
@@ -837,6 +853,7 @@ impl SetupWizard {
                 self.completed = [None, None, None];
                 self.catalog_complete = false;
                 self.catalog_manual = false;
+                self.catalog_endpoint.clear();
                 self.validation = "Catalog pending provider revalidation".to_string();
             }
             if self.provider_name == "custom"
@@ -923,6 +940,9 @@ impl SetupWizard {
                 {
                     self.credential_input = suggested_api_key_env(&self.endpoint).to_string();
                 }
+                if self.catalog_endpoint.is_empty() {
+                    self.catalog_endpoint = self.endpoint.clone();
+                }
             }
             SetupPage::ApiKey => {
                 if self.credential_input.trim().is_empty() {
@@ -935,6 +955,14 @@ impl SetupWizard {
                     self.validation = "environment variable name is invalid".to_string();
                     return Err(Error::ConfigError(self.validation.clone()));
                 }
+                self.validation.clear();
+            }
+            SetupPage::Catalog => {
+                self.catalog_endpoint =
+                    crate::provider::setup::normalize_endpoint(&self.catalog_endpoint)
+                        .inspect_err(|error| {
+                            self.validation = error.to_string();
+                        })?;
                 self.validation.clear();
             }
             _ => {}
@@ -968,6 +996,7 @@ impl SetupWizard {
         Ok(SetupWizardResult {
             provider,
             choices: self.completed.clone(),
+            catalog_endpoint: Some(self.catalog_endpoint.clone()),
             completion_shells: selected_shells(self.completion_enabled, self.completion_selected),
             shortcut_shells: selected_shells(self.shortcut_enabled, self.shortcut_selected),
             completion_enabled: self.completion_enabled,
@@ -994,6 +1023,13 @@ impl SetupWizard {
                     self.endpoint.push(character);
                 } else {
                     self.endpoint.pop();
+                }
+            }
+            SetupPage::Catalog => {
+                if let Some(character) = character {
+                    self.catalog_endpoint.push(character);
+                } else {
+                    self.catalog_endpoint.pop();
                 }
             }
             SetupPage::ApiKey if self.credential_focus == CredentialFocus::Value => {
@@ -1158,11 +1194,15 @@ impl SetupWizard {
         let key = self.request_credential().inspect_err(|error| {
             self.validation = error.to_string();
         })?;
-        let page = match fetch_models_page_info(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
-            Ok(page) if !page.models.is_empty() => Ok((page.models, page.complete)),
-            Ok(_) => fetch_models(&self.endpoint, Some(&key)).map(|models| (models, true)),
-            Err(error) => Err(error),
-        };
+        let page =
+            match fetch_models_page_info(&self.catalog_endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key))
+            {
+                Ok(page) if !page.models.is_empty() => Ok((page.models, page.complete)),
+                Ok(_) => {
+                    fetch_models(&self.catalog_endpoint, Some(&key)).map(|models| (models, true))
+                }
+                Err(error) => Err(error),
+            };
         let (models, catalog_complete) = match page {
             Ok(value) if !value.0.is_empty() => value,
             Ok(_) => {
@@ -1231,7 +1271,7 @@ impl SetupWizard {
         self.selection[slot] = 0;
         self.search_pending[slot] = true;
         self.search_status[slot] = Some("Searching...".to_string());
-        let endpoint = self.endpoint.clone();
+        let endpoint = self.catalog_endpoint.clone();
         let key = self.request_credential().ok();
         let models = self.models[slot].clone();
         let generation_ref = Arc::clone(&self.generation);
@@ -1384,6 +1424,7 @@ impl SetupWizard {
             Line::from("Provider"),
             Line::from("URL"),
             Line::from("API key"),
+            Line::from("Catalog"),
             Line::from("Small Model"),
             Line::from("Small Reasoning"),
             Line::from("Normal Model"),
@@ -1409,6 +1450,7 @@ impl SetupWizard {
         let focus = match self.page {
             SetupPage::Review => "review",
             SetupPage::Provider => "provider choice",
+            SetupPage::Catalog => "catalog endpoint",
             SetupPage::ShellCompletion => match self.completion_focus {
                 ShellInstallFocus::Question => "completion confirmation",
                 ShellInstallFocus::Shells => "completion shells",
@@ -1448,6 +1490,7 @@ impl SetupWizard {
             SetupPage::Provider => self.draw_provider(frame, areas[2]),
             SetupPage::Url => self.draw_url(frame, areas[2]),
             SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
+            SetupPage::Catalog => self.draw_catalog(frame, areas[2]),
             SetupPage::SmallModel | SetupPage::NormalModel | SetupPage::ThinkingModel => {
                 self.draw_model(frame, areas[2]);
             }
@@ -1508,6 +1551,25 @@ impl SetupWizard {
         frame.render_widget(explanation, chunks[0]);
         let input = Paragraph::new(format!("> {}█", self.endpoint))
             .block(setup_block("URL (editing)", true));
+        frame.render_widget(input, chunks[1]);
+        self.draw_validation(frame, chunks[2]);
+    }
+
+    fn draw_catalog(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let chunks = Layout::vertical([
+            Constraint::Min(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+        ])
+        .split(area);
+        let explanation = Paragraph::new(
+            "Accept the provider-derived model catalog endpoint or enter a separate OpenAI-compatible catalog URL.",
+        )
+        .block(Block::bordered().title("Catalog endpoint explanation"))
+        .wrap(Wrap { trim: true });
+        frame.render_widget(explanation, chunks[0]);
+        let input = Paragraph::new(format!("> {}█", self.catalog_endpoint))
+            .block(setup_block("Catalog endpoint (editing)", true));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
