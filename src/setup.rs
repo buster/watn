@@ -760,7 +760,16 @@ impl SetupWizard {
 
     fn move_next(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
         if self.page == SetupPage::Provider {
+            let previous_provider = self.provider_name.clone();
             self.provider_name = provider_choices()[self.provider_cursor].to_string();
+            if previous_provider != self.provider_name {
+                self.models = [Vec::new(), Vec::new(), Vec::new()];
+                self.suggestions = [Vec::new(), Vec::new(), Vec::new()];
+                self.completed = [None, None, None];
+                self.catalog_complete = false;
+                self.catalog_manual = false;
+                self.validation = "Catalog pending provider revalidation".to_string();
+            }
             if self.provider_name == "custom"
                 && self.config.defaults.provider.as_deref() != Some("custom")
                 && self.endpoint == OPENROUTER_ENDPOINT
