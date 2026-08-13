@@ -1,0 +1,367 @@
+# Tasks: streamlined-setup-flow
+
+## Setup: strict feature runner and step skeleton
+
+- [x] Configure `./run-tests.sh` and `./run-tests.sh --e2e` as the verification commands; keep `Cucumber::fail_on_skipped()` strictness; create/register `tests/steps/streamlined_setup_steps.rs` and `tests/steps/streamlined_setup_e2e_steps.rs`; prove an undefined or `unimplemented!()` step exits non-zero. Evidence: `./run-tests.sh` exited nonzero with `Step doesn't match any function` for the active setup scenario; summary was `104 scenarios (103 passed, 1 failed)` and `595 steps (594 passed, 1 failed)`.
+- [x] Confirm the runner executes permanent `givn/specs/**` and active change `specs/**`, and confirm the E2E tag filter is a strict subset. Evidence: the failed run collected the active `Streamlined setup flow` feature before permanent features; `run-tests.sh` uses `not @wip and not @e2e`, while `run-tests.sh --e2e` uses `@e2e and not @wip`.
+- [x] Setup production files changed: no production files changed during runner setup; the test skeleton is intentionally isolated and production implementation begins in the first scenario GREEN phase. Evidence: `tests/steps/mod.rs`, `tests/steps/streamlined_setup_steps.rs`, and `tests/steps/streamlined_setup_e2e_steps.rs` compile with the existing runner.
+- [x] Setup commit hash: `b6924d7`
+
+## Non-E2E Scenarios
+
+### Coordinated setup displays one separate reasoning question after each model
+
+- [x] RED: remove only this scenario's `@wip`, add strict stubs, and run `./run-tests.sh --name "Coordinated setup displays one separate reasoning question after each model"`. Evidence: non-zero; `Step doesn't match any function` at the active scenario's `advance to the small model question` step.
+- [x] GREEN: implement separate model/reasoning question state and assertions. Production files: `src/setup.rs`; test/runner files: `tests/steps/streamlined_setup_steps.rs`, `run-tests.sh`. Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: clean up without behavior change and rerun the same command. Evidence: post-`cargo fmt --all` targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] COMMIT: commit message references `Coordinated setup displays one separate reasoning question after each model`. Hash: `1e165d5`
+
+### Rerunning coordinated setup prefills current values and preserves a masked literal credential
+
+- [x] RED: target `Rerunning coordinated setup prefills current values and preserves a masked literal credential`; remove only its `@wip`; evidence: non-zero; the first unimplemented `provider credential` step reported `Step doesn't match any function`.
+- [x] GREEN: implement prefilled draft values and masked credential preservation. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`, `tests/steps/mod.rs`; spec: active scenario. Evidence: targeted run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR: rerun the named scenario after cleanup. Evidence: post-format targeted run passed with `10 steps (10 passed)`; first separate-reasoning scenario also remained green after the provider page addition.
+- [x] COMMIT: commit title references `Rerunning coordinated setup prefills current values and preserves a masked literal credential`. Hash: `0bfc8a9`
+
+### Cancelling coordinated setup leaves an existing configuration unchanged
+
+- [x] RED: target `Cancelling coordinated setup leaves an existing configuration unchanged`; evidence: non-zero; the first new `existing config content is recorded` step was undefined.
+- [x] GREEN: implement baseline recording and real PTY Escape/discard cancellation assertion. Production files: none beyond existing cancellation path; test/spec files: `tests/steps/streamlined_setup_steps.rs`, active feature. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Cancelling coordinated setup leaves an existing configuration unchanged`. Hash: `c19ba7b`
+
+### Provider setup requires a custom endpoint
+
+- [x] RED: target `Provider setup requires a custom endpoint`; evidence: non-zero; the first new `choose provider "Custom"` step was undefined.
+- [x] GREEN: implement explicit provider choice rendering and empty Custom endpoint validation. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; spec: active scenario. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Provider setup requires a custom endpoint`. Hash: `a525c6d`
+
+### Provider setup refuses an unresolved environment credential
+
+- [x] RED: target `Provider setup refuses an unresolved environment credential`; evidence: non-zero; the new unresolved-environment assertion step was undefined.
+- [x] GREEN: validate the unresolved environment source through the existing provider setup seam and prevent a provider write. Production files: existing validation/persistence path reused; test files: `tests/steps/provider_setup_steps.rs`, `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Provider setup refuses an unresolved environment credential`. Hash: `5e97e24`
+
+### Provider setup preserves unrelated settings
+
+- [x] RED: target `Provider setup preserves unrelated settings`; evidence: non-zero; the new combined provider-save step was undefined.
+- [x] GREEN: exercise the existing provider persistence seam with concrete preservation assertions for unrelated provider, pricing, and LiteLLM data. Production files: existing config writer reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Provider setup preserves unrelated settings`. Hash: `22097ad`
+
+### Provider setup does not probe the catalog
+
+- [x] RED: target `Provider setup does not probe the catalog`; evidence: non-zero; the existing no-catalog assertion found no catalog mock because the new save step was not implemented.
+- [x] GREEN: add an exact zero-hit catalog twin around the provider save seam; provider save performs no discovery request. Production files: existing provider path reused; test/spec files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `3 steps (3 passed)`.
+- [x] COMMIT: commit title references `Provider setup does not probe the catalog`. Hash: `28039cd`
+
+### Models setup gives guidance when no provider is configured
+
+- [x] RED: target `Models setup gives guidance when no provider is configured`; evidence: non-zero; the new non-TTY models invocation step was undefined.
+- [x] GREEN: make `watn models` print focused provider guidance without opening UI. Production files: `src/models/mod.rs`; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Models setup gives guidance when no provider is configured`. Hash: `ec16b0e`
+
+### Available catalog restricts model choices
+
+- [x] RED: target `Available catalog restricts model choices`; evidence: non-zero; the two-model catalog Given step was undefined.
+- [x] GREEN: drive the real model picker against an isolated catalog and assert stale saved model absence plus catalog-only choices. Production files: existing picker reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Available catalog restricts model choices`. Hash: `97ecf3c`
+
+### Unavailable catalog allows manual model identifiers
+
+- [x] RED: target `Unavailable catalog allows manual model identifiers`; evidence: non-zero; the unreachable-catalog Given step was undefined.
+- [x] GREEN: implement catalog failure fallback and visible manual model mode. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Unavailable catalog allows manual model identifiers`. Hash: `17247e4`
+
+### Catalog metadata selects supported reasoning efforts for the chosen model
+
+- [x] RED: target `Catalog metadata selects supported reasoning efforts for the chosen model`; evidence: non-zero; the catalog metadata Given step was undefined.
+- [x] GREEN: implement metadata-supported effort filtering, default selection, and non-mandatory `off` availability, and drive the provider catalog twin. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)` and `Choices: off` visible for non-mandatory `low/medium/high` metadata.
+- [x] COMMIT: commit title references `Catalog metadata selects supported reasoning efforts for the chosen model`. Hashes: `533ac96`, `08c4c22`
+
+### Missing reasoning metadata provides generic efforts and free-form input
+
+- [x] RED: target `Missing reasoning metadata provides generic efforts and free-form input`; evidence: non-zero; the no-metadata catalog Given step was undefined.
+- [x] GREEN: implement generic reasoning choices including `minimal`, metadata warning, custom input, and string-valued level choices. Production files: `src/models/dialog.rs`, `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `8 steps (8 passed)`.
+- [x] COMMIT: commit title references `Missing reasoning metadata provides generic efforts and free-form input`. Hash: `37d93dc`
+
+### Off reasoning omits the reasoning setting from a request
+
+- [x] RED: target `Off reasoning omits the reasoning setting from a request`; evidence: non-zero; the small-role request step was undefined.
+- [x] GREEN: drive a real small-tier request against a blocking reasoning-body twin and assert successful omission. Production files: existing request policy reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Off reasoning omits the reasoning setting from a request`. Hash: `36a6c30`
+
+### Shell setup prefills installed integrations and removes only managed blocks when deselected
+
+- [x] RED: target `Shell setup prefills installed integrations and removes only managed blocks when deselected`; evidence: non-zero; `watn shell` command/step was not implemented.
+- [x] GREEN: add `watn shell`, filesystem prefill, provider-independent shell result application, and marker-safe completion removal. Production files: `src/main.rs`, `src/setup.rs`, `src/shell_completion.rs`, `src/shell_shortcut.rs`; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted PTY run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Shell setup prefills installed integrations and removes only managed blocks when deselected`. Hash: `bd53ed3`
+
+### Shell setup refuses malformed managed markers
+
+- [x] RED: target `Shell setup refuses malformed managed markers`; evidence: non-zero; malformed shell setup step was undefined.
+- [x] GREEN: drive duplicated markers through `watn shell`, assert the user-visible error, and verify unchanged target bytes. Production files: existing marker validation/rejection reused; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Shell setup refuses malformed managed markers`. Hash: `00ddeff`
+
+### Shell failure does not discard successful shell changes or configuration
+
+- [x] RED: target `Shell failure does not discard successful shell changes or configuration`; evidence: non-zero; coordinated shell failure fixture steps were undefined.
+- [x] GREEN: exercise independent shell application with a writable Bash target and directory Zsh target, asserting retained Bash/config and nonzero aggregate result. Production files: existing independent shell result path reused; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)` and no unused-variable warning.
+- [x] COMMIT: commit title references `Shell failure does not discard successful shell changes or configuration`. Hash: `b618dc4`
+
+### Non-interactive incomplete request prints setup guidance without probing
+
+- [x] RED: target `Non-interactive incomplete request prints setup guidance without probing`; evidence: non-zero; the nonzero-status step was undefined.
+- [x] GREEN: drive the real non-TTY request, add a zero-hit catalog sentinel, and assert actionable setup guidance with no catalog/chat requests. Production files: existing readiness/guidance path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Non-interactive incomplete request prints setup guidance without probing`. Hash: `424a1c6`
+
+### Malformed configuration is reported without modification
+
+- [x] RED: target `Malformed configuration is reported without modification`; evidence: non-zero; malformed-config fixture and unique unchanged-file assertion were undefined.
+- [x] GREEN: load config before non-TTY setup guidance, report parse error, and assert malformed bytes remain unchanged. Production files: `src/main.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Malformed configuration is reported without modification`. Hash: `a179247`
+
+### Cancelling after provider and credential validation does not create a config file
+
+- [x] RED: target `Cancelling after provider and credential validation does not create a config file`; evidence: non-zero; coordinated provider/credential cancellation steps were undefined.
+- [x] GREEN: remove implicit template creation, remove the pre-catalog provider write, and assert no file/provider/catalog request after PTY cancellation. Production files: `src/config/mod.rs`, `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`; dead template writer removed. Evidence: targeted run passed with `7 steps (7 passed)` and no warnings.
+- [x] COMMIT: commit title references `Cancelling after provider and credential validation does not create a config file`. Hashes: `9605824`, `19eee5d`
+
+### Cancelling after a successful catalog probe leaves the baseline unchanged
+
+- [x] RED: target `Cancelling after a successful catalog probe leaves the baseline unchanged`; evidence: non-zero; catalog-probe cancellation steps were undefined.
+- [x] GREEN: drive provider/credential/catalog setup through PTY and cancel after a successful provider-local probe; assert byte-for-byte config and shell-target preservation. Production files: existing draft/cancel path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Cancelling after a successful catalog probe leaves the baseline unchanged`. Hash: `dafd953`
+
+### Catalog failure does not persist an unconfirmed provider
+
+- [x] RED: target `Catalog failure does not persist an unconfirmed provider`; evidence: non-zero; catalog-failure and cancellation steps were undefined.
+- [x] GREEN: drive a failing provider-local catalog probe from a no-config coordinator and assert no provider/config/catalog state is persisted after cancellation. Production files: existing draft/manual fallback path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Catalog failure does not persist an unconfirmed provider`. Hash: `450c683`
+
+### A successful edited catalog endpoint is promoted only at final confirmation
+
+- [x] RED: target `A successful edited catalog endpoint is promoted only at final confirmation`; evidence: non-zero; provider-local catalog endpoint fixture was undefined.
+- [x] GREEN: add backward-compatible persisted `catalog_endpoint` state and assert edited endpoint remains draft-only until confirmation. Production files: `src/config/types.rs`, `src/config/mod.rs`, `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`, `tests/steps/transport_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)` and no step warnings.
+- [x] COMMIT: commit title references `A successful edited catalog endpoint is promoted only at final confirmation`. Hash: `a8596e9`
+
+### A failed edited catalog endpoint preserves the previous endpoint
+
+- [x] RED: target `A failed edited catalog endpoint preserves the previous endpoint`; evidence: non-zero; reachable/edited catalog fixture steps were undefined.
+- [x] GREEN: assert failed edit keeps the persisted provider-local catalog endpoint and exposes manual fallback without a pre-confirmation write. Production files: persisted catalog model reused; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `A failed edited catalog endpoint preserves the previous endpoint`. Hash: `72c6ac9`
+
+### A failed new catalog endpoint remains unset
+
+- [x] RED: target `A failed new catalog endpoint remains unset`; evidence: non-zero; no-saved-catalog fixture steps were undefined.
+- [x] GREEN: assert a provider without saved catalog state keeps the field unset after an unreachable derived endpoint and remains eligible for manual entry. Production files: persisted catalog model reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `A failed new catalog endpoint remains unset`. Hash: `3a500ca`
+
+### Invalid catalog data switches to manual model selection
+
+- [x] RED: target `Invalid catalog data switches to manual model selection`; evidence: non-zero; empty-catalog fixture and terminal start step were undefined.
+- [x] GREEN: drive an empty provider catalog through the real model PTY and assert unusable discovery, no invented models, and manual entry. Production files: existing manual fallback path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Invalid catalog data switches to manual model selection`. Hash: `942ac46`
+
+### Catalog entries without unique non-empty identifiers are rejected
+
+- [x] RED: target `Catalog entries without unique non-empty identifiers are rejected`; evidence: non-zero; invalid-identifier fixture and assertions were undefined.
+- [x] GREEN: reject empty/duplicate provider model identifiers and expose manual selection. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Catalog entries without unique non-empty identifiers are rejected`. Hash: `9e36b7d`
+
+### Provider catalog takes precedence over a conflicting legacy LiteLLM source
+
+- [x] RED: target `Provider catalog takes precedence over a conflicting legacy LiteLLM source`; evidence: non-zero; provider-local source fixtures and exact competing-source assertions were undefined.
+- [x] GREEN: route non-TTY model discovery through the provider endpoint/credential and assert one provider hit, selected provider models, zero legacy hits, and preserved legacy config. Production files: `src/models/mod.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `8 steps (8 passed)` and no warnings.
+- [x] COMMIT: commit title references `Provider catalog takes precedence over a conflicting legacy LiteLLM source`. Hash: `363b28a`
+
+### Provider catalog pagination and search use the provider source
+
+- [x] RED: target `Provider catalog pagination and search use the provider source`; evidence: non-zero; provider page/search and legacy-source fixtures were undefined.
+- [x] GREEN: route provider page/search requests through exact provider-local paths and credential, with a zero-hit legacy twin. Production files: provider-local model path from previous scenario; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`; blocking requests run outside the async Cucumber context. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Provider catalog pagination and search use the provider source`. Hash: `e4c36de`
+
+### Manual model identifiers are persisted exactly after catalog failure
+
+- [x] RED: target `Manual model identifiers are persisted exactly after catalog failure`; evidence: non-zero; manual-model entry/confirmation steps were undefined.
+- [x] GREEN: drive all three manual model and reasoning questions through the real PTY after catalog failure and assert exact persisted identifiers plus unset catalog state. Production files: existing manual draft/result path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Manual model identifiers are persisted exactly after catalog failure`. Hash: `078d40d`
+
+### Changing provider invalidates catalog-backed model choices
+
+- [x] RED: target `Changing provider invalidates catalog-backed model choices`; evidence: non-zero; provider-change invalidation steps were undefined.
+- [x] GREEN: establish the provider-change revalidation contract and clear catalog/model state when the provider changes. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Changing provider invalidates catalog-backed model choices`. Hashes: `dc6b529`, `17324f3`
+
+### The final review shows all draft domains without exposing a secret
+
+- [x] RED: target `The final review shows all draft domains without exposing a secret`; evidence: non-zero; review state/rendering and draft fixture were undefined.
+- [x] GREEN: add explicit review state after shell questions, render provider/catalog/credential/model/reasoning/shell data, and assert no resolved secret through the real PTY. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`; terminal sequencing was reduced to a test-support review entry point and visible review assertions. Evidence: targeted run passed with `8 steps (8 passed)`.
+- [x] COMMIT: commit title references `The final review shows all draft domains without exposing a secret`. Hashes: `d309baf`, `fbc8151`, `fa80e18`
+
+### Final confirmation is blocked while a required draft value is invalid
+
+- [x] RED: target `Final confirmation is blocked while a required draft value is invalid`; evidence: non-zero; missing-role review fixture and assertions were undefined.
+- [x] GREEN: start the real review state with an incomplete baseline, press confirmation, and assert the review remains active with the missing role and unchanged files. Production files: review state from prior scenario; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Final confirmation is blocked while a required draft value is invalid`. Hash: `27a3a9d`
+
+### Back navigation preserves draft values across model and reasoning questions
+
+- [x] RED: target `Back navigation preserves draft values across model and reasoning questions`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` with the draft-navigation PTY step failing before implementation.
+- [x] GREEN: preserve draft state across backward/forward navigation. Production files: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all` and PTY synchronization cleanup. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Back navigation preserves draft values across model and reasoning questions`. Hash: `c34562e`
+
+### Selected provider migration moves an arbitrary provider to custom
+
+- [x] RED: target `Selected provider migration moves an arbitrary provider to custom`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the first migration step was undefined.
+- [x] GREEN: implement selected arbitrary-key migration and source removal. Production files: `src/config/mod.rs`; test file: `tests/steps/provider_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Selected provider migration moves an arbitrary provider to custom`. Hash: `88a8fc5`
+
+### Provider migration preserves the destination default model on collision
+
+- [x] RED: target `Provider migration preserves the destination default model on collision`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the source default-model fixture step was undefined.
+- [x] GREEN: verify deterministic custom collision/default-model precedence through the migration persistence path from `src/config/mod.rs`. Production reuse: `src/config/mod.rs`; test file: `tests/steps/provider_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Provider migration preserves the destination default model on collision`. Hash: `dc46166`
+
+### Provider migration is idempotent after the first conversion
+
+- [x] RED: target `Provider migration is idempotent after the first conversion`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the canonical-provider fixture step was undefined.
+- [x] GREEN: make canonical reruns stable with one custom entry. Production reuse: `src/config/mod.rs`; test file: `tests/steps/provider_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Provider migration is idempotent after the first conversion`. Hash: `bf9587e`
+
+### Free-form reasoning survives persistence and request construction
+
+- [x] RED: target `Free-form reasoning survives persistence and request construction`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the free-form reasoning step was undefined.
+- [x] GREEN: persist and send non-empty reasoning strings unchanged. Production file: `src/config/types.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`; the request mock required the exact `reasoning_effort` body value.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Free-form reasoning survives persistence and request construction`. Hash: `dc25ded`
+
+### Existing unknown reasoning remains active after rerunning setup
+
+- [x] RED: target `Existing unknown reasoning remains active after rerunning setup`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the persisted-unknown-reasoning fixture step was undefined.
+- [x] GREEN: preserve unknown persisted reasoning values through reload and request construction. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`; PTY review reload and isolated request mock both passed.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Existing unknown reasoning remains active after rerunning setup`. Hash: `50e3598`
+
+### Whitespace-only custom reasoning is rejected
+
+- [x] RED: target `Whitespace-only custom reasoning is rejected`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the custom-reasoning step was undefined.
+- [x] GREEN: reject blank reasoning and preserve baseline. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Whitespace-only custom reasoning is rejected`. Hash: `1ae2247`
+
+### Catalog reasoning choices still permit a custom non-empty value
+
+- [x] RED: target `Catalog reasoning choices still permit a custom non-empty value`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the catalog-effort fixture step was undefined.
+- [x] GREEN: combine catalog suggestions with free-form reasoning entry. Production reuse: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)` through a real `/models` mock and PTY reasoning page.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Catalog reasoning choices still permit a custom non-empty value`. Hash: `b997685`
+
+### Declining shell setup performs no target inspection or write
+
+- [x] RED: target `Declining shell setup performs no target inspection or write`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the shell-decline fixture step was undefined.
+- [x] GREEN: make shell decline side-effect free. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)` with absent Bash/Zsh/Fish targets and unchanged config bytes.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Declining shell setup performs no target inspection or write`. Hash: `5268f5c`
+
+### Shell removal preserves bytes outside the managed block
+
+- [x] RED: target `Shell removal preserves bytes outside the managed block`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the scenario-specific completion-block fixture step was undefined.
+- [x] GREEN: remove only the valid managed block and preserve surrounding bytes. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Shell removal preserves bytes outside the managed block`. Hash: `37fd0ca`
+
+### Missing model roles trigger implicit setup even with a usable provider
+
+- [x] RED: target `Missing model roles trigger implicit setup even with a usable provider`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the usable-provider fixture step was undefined.
+- [x] GREEN: include role completeness in implicit setup readiness. Production files: `src/config/mod.rs`, `src/main.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`; PTY setup opened and chat mock hits remained zero.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Missing model roles trigger implicit setup even with a usable provider`. Hash: `38df9d5`
+
+### Focused model setup preserves provider-owned and unrelated fields
+
+- [x] RED: target `Focused model setup preserves provider-owned and unrelated fields`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the provider-preservation fixture step was undefined.
+- [x] GREEN: restrict model command persistence to roles/reasoning and successful catalog state. Production files: `src/models/mod.rs`, `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)` through the focused `watn models` PTY flow.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Focused model setup preserves provider-owned and unrelated fields`. Hash: `c9f6223`
+
+### A failed final config write prevents shell operations
+
+- [x] RED: target `A failed final config write prevents shell operations`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the coordinated-draft fixture step was undefined.
+- [x] GREEN: implement atomic config failure boundary before shell application. Production files: `src/config/mod.rs`, `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)` with injected config-write failure, no shell targets, and unchanged bytes.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `A failed final config write prevents shell operations`. Hash: `9e7996c`
+
+## E2E Setup
+
+- [x] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` run with isolated loopback httpmock twins and portable PTYs; record full-suite and E2E scenario counts, with E2E strictly smaller. Evidence: `./run-tests.sh` passed with `148 scenarios` and `851 steps`; `./run-tests.sh --e2e` passed with `75 scenarios` and `554 steps`. The E2E tag filter is a strict subset of the full suite.
+- [x] Register and prove `tests/steps/streamlined_setup_e2e_steps.rs` against the real CLI terminal. Evidence: module is registered in `tests/steps/mod.rs`; targeted `./run-tests.sh --e2e --name` runs passed for all five current inventory scenarios with real PTY interaction: coordinated setup `24 steps`, provider `12 steps`, models `11 steps`, shell `10 steps`, and incomplete request `8 steps`.
+
+## E2E Scenarios
+
+### Coordinated setup completes provider models reasoning and shell choices
+
+- [x] RED: remove only this scenario's `@wip`, add E2E stubs, and run `./run-tests.sh --e2e` targeting `Coordinated setup completes provider models reasoning and shell choices`. Evidence: non-zero; `1 scenario (1 failed)`, `5 steps (4 passed, 1 failed)` on the existing unimplemented provider-question step.
+- [x] GREEN: drive the real `watn setup` PTY flow and assert visible questions/review/result, with config/mock checks secondary. Production file: `src/setup.rs`; E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`; shared PTY file: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `24 steps (24 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `24 steps (24 passed)`.
+- [x] COMMIT: commit title references `Coordinated setup completes provider models reasoning and shell choices`. Hash: `80a1488`
+
+### Provider setup configures an OpenAI provider with an environment credential
+
+- [x] RED: target `Provider setup configures an OpenAI provider with an environment credential`; evidence: non-zero; `1 scenario (1 failed)`, `4 steps (3 passed, 1 failed)` because provider-choice assertion was undefined.
+- [x] GREEN: drive the real `watn provider` PTY flow and assert terminal success plus persisted reference. Production files: `src/provider/setup.rs`, `src/setup.rs`; E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] COMMIT: commit title references `Provider setup configures an OpenAI provider with an environment credential`. Hash: `a1cb95b`
+
+### Models setup configures all three roles from an available catalog
+
+- [x] RED: target `Models setup configures all three roles from an available catalog`; evidence: non-zero; `1 scenario (1 failed)`, `3 steps (2 passed, 1 failed)` because the initial-role assertion was undefined.
+- [x] GREEN: drive the real `watn models` PTY flow and assert visible role progression/result plus config. E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`; shared model PTY steps reused from `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] COMMIT: commit title references `Models setup configures all three roles from an available catalog`. Hash: `ee3e334`
+
+### Shell setup independently configures completion and Ctrl-W integrations
+
+- [x] RED: target `Shell setup independently configures completion and Ctrl-W integrations`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the isolated-shell fixture step was undefined.
+- [x] GREEN: drive the real `watn shell` PTY flow and assert visible independent choices/result plus target files. E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] COMMIT: commit title references `Shell setup independently configures completion and Ctrl-W integrations`. Hash: `4332d45`
+
+### Incomplete interactive request opens setup and does not send the original request
+
+- [x] RED: target `Incomplete interactive request opens setup and does not send the original request`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the missing-role fixture step was undefined.
+- [x] GREEN: drive the real interactive request PTY, assert coordinator output, cancellation, exit, and zero chat requests. E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] COMMIT: commit title references `Incomplete interactive request opens setup and does not send the original request`. Hash: `3d913f5`

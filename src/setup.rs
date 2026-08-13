@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
@@ -23,7 +24,7 @@ use crate::models::dialog::{LevelChoice, ReasoningStrength};
 use crate::models::list::{fetch_models, fetch_models_page_info, word_matches, ModelEntry};
 use crate::models::picker::execute_search;
 use crate::provider::setup::{
-    build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation,
+    build_provider_draft, suggested_api_key_env, ProviderDraft, SetupCancellation, OPENAI_ENDPOINT,
     OPENROUTER_ENDPOINT,
 };
 use crate::shell_completion;
@@ -34,14 +35,18 @@ pub enum SetupEntryPoint {
     Setup,
     Provider,
     Models,
+    Shell,
 }
 
 #[derive(Debug)]
 pub struct SetupWizardResult {
     pub provider: ProviderDraft,
     pub choices: [Option<LevelChoice>; 3],
+    pub catalog_endpoint: Option<String>,
     pub completion_shells: Vec<Shell>,
     pub shortcut_shells: Vec<Shell>,
+    pub completion_enabled: bool,
+    pub shortcut_enabled: bool,
 }
 
 #[derive(Debug)]
@@ -65,72 +70,122 @@ pub fn selected_shortcut_shells(enabled: bool, selected: [bool; 3]) -> Vec<Shell
     selected_shells(enabled, selected)
 }
 
+pub fn validate_reasoning_value(value: &str) -> Result<(), Error> {
+    if value.trim().is_empty() {
+        return Err(Error::ConfigError(
+            "reasoning effort cannot be empty".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum SetupPage {
+    Provider,
     Url,
     ApiKey,
+    Catalog,
     SmallModel,
-    MiddleModel,
-    LargeModel,
+    SmallReasoning,
+    NormalModel,
+    NormalReasoning,
+    ThinkingModel,
+    ThinkingReasoning,
     ShellCompletion,
     ShellShortcut,
+    Review,
 }
 
 impl SetupPage {
     fn title(self) -> &'static str {
         match self {
+            Self::Provider => "Provider",
             Self::Url => "URL",
             Self::ApiKey => "API key",
+            Self::Catalog => "Catalog",
             Self::SmallModel => "Small Model",
-            Self::MiddleModel => "Middle Model",
-            Self::LargeModel => "Large Model",
+            Self::SmallReasoning => "Small Reasoning",
+            Self::NormalModel => "Normal Model",
+            Self::NormalReasoning => "Normal Reasoning",
+            Self::ThinkingModel => "Thinking Model",
+            Self::ThinkingReasoning => "Thinking Reasoning",
             Self::ShellCompletion => "Shell Completion",
             Self::ShellShortcut => "Shell Shortcut",
+            Self::Review => "Review",
         }
     }
 
     fn index(self) -> usize {
         match self {
-            Self::Url => 0,
-            Self::ApiKey => 1,
-            Self::SmallModel => 2,
-            Self::MiddleModel => 3,
-            Self::LargeModel => 4,
-            Self::ShellCompletion => 5,
-            Self::ShellShortcut => 6,
+            Self::Provider => 0,
+            Self::Url => 1,
+            Self::ApiKey => 2,
+            Self::Catalog => 3,
+            Self::SmallModel => 4,
+            Self::SmallReasoning => 5,
+            Self::NormalModel => 6,
+            Self::NormalReasoning => 7,
+            Self::ThinkingModel => 8,
+            Self::ThinkingReasoning => 9,
+            Self::ShellCompletion => 10,
+            Self::ShellShortcut => 11,
+            Self::Review => 12,
         }
     }
 
     fn model_slot(self) -> Option<usize> {
         match self {
+            Self::Provider => None,
             Self::SmallModel => Some(0),
-            Self::MiddleModel => Some(1),
-            Self::LargeModel => Some(2),
+            Self::NormalModel => Some(1),
+            Self::ThinkingModel => Some(2),
+            _ => None,
+        }
+    }
+
+    fn reasoning_slot(self) -> Option<usize> {
+        match self {
+            Self::Provider => None,
+            Self::SmallReasoning => Some(0),
+            Self::NormalReasoning => Some(1),
+            Self::ThinkingReasoning => Some(2),
             _ => None,
         }
     }
 
     fn next(self) -> Option<Self> {
         match self {
+            Self::Provider => Some(Self::Url),
             Self::Url => Some(Self::ApiKey),
-            Self::ApiKey => Some(Self::SmallModel),
-            Self::SmallModel => Some(Self::MiddleModel),
-            Self::MiddleModel => Some(Self::LargeModel),
-            Self::LargeModel => Some(Self::ShellCompletion),
+            Self::ApiKey => Some(Self::Catalog),
+            Self::Catalog => Some(Self::SmallModel),
+            Self::SmallModel => Some(Self::SmallReasoning),
+            Self::SmallReasoning => Some(Self::NormalModel),
+            Self::NormalModel => Some(Self::NormalReasoning),
+            Self::NormalReasoning => Some(Self::ThinkingModel),
+            Self::ThinkingModel => Some(Self::ThinkingReasoning),
+            Self::ThinkingReasoning => Some(Self::ShellCompletion),
             Self::ShellCompletion => Some(Self::ShellShortcut),
-            Self::ShellShortcut => None,
+            Self::ShellShortcut => Some(Self::Review),
+            Self::Review => None,
         }
     }
 
     fn previous(self) -> Option<Self> {
         match self {
+            Self::Provider => None,
             Self::Url => None,
             Self::ApiKey => Some(Self::Url),
-            Self::SmallModel => Some(Self::ApiKey),
-            Self::MiddleModel => Some(Self::SmallModel),
-            Self::LargeModel => Some(Self::MiddleModel),
-            Self::ShellCompletion => Some(Self::LargeModel),
+            Self::Catalog => Some(Self::ApiKey),
+            Self::SmallModel => Some(Self::Catalog),
+            Self::SmallReasoning => Some(Self::SmallModel),
+            Self::NormalModel => Some(Self::SmallReasoning),
+            Self::NormalReasoning => Some(Self::NormalModel),
+            Self::ThinkingModel => Some(Self::NormalReasoning),
+            Self::ThinkingReasoning => Some(Self::ThinkingModel),
+            Self::ShellCompletion => Some(Self::ThinkingReasoning),
             Self::ShellShortcut => Some(Self::ShellCompletion),
+            Self::Review => Some(Self::ShellShortcut),
         }
     }
 }
@@ -192,35 +247,33 @@ pub fn run_with_config(
 }
 
 pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
-    config::save_provider_draft(config, &result.provider)?;
-
     let mut updated = config.clone();
-    let mut changed_tiers = false;
+    config::update_provider_draft(&mut updated, &result.provider);
+    if let Some(provider) = updated.providers.get_mut(&result.provider.name) {
+        provider.catalog_endpoint = result.catalog_endpoint.clone();
+    }
     for (index, choice) in result.choices.iter().enumerate() {
         let Some(choice) = choice else {
             continue;
         };
-        changed_tiers = true;
         match index {
             0 => {
                 updated.tiers.small = Some(choice.model.id.clone());
-                updated.tiers.reasoning.small = Some(choice.reasoning.as_str().to_string());
+                updated.tiers.reasoning.small = Some(choice.reasoning.clone());
             }
             1 => {
                 updated.tiers.normal = Some(choice.model.id.clone());
-                updated.tiers.reasoning.normal = Some(choice.reasoning.as_str().to_string());
+                updated.tiers.reasoning.normal = Some(choice.reasoning.clone());
             }
             2 => {
                 updated.tiers.thinking = Some(choice.model.id.clone());
-                updated.tiers.reasoning.thinking = Some(choice.reasoning.as_str().to_string());
+                updated.tiers.reasoning.thinking = Some(choice.reasoning.clone());
             }
             _ => unreachable!(),
         }
     }
-    if changed_tiers {
-        config::save_config(&updated)?;
-        *config = updated;
-    }
+    config::save_config(&updated)?;
+    *config = updated;
 
     let environment = shell_shortcut::ShellEnvironment::from_process();
     let mut installation_failures = Vec::new();
@@ -264,12 +317,95 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
     Ok(())
 }
 
+pub fn apply_models_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
+    let mut updated = config.clone();
+    let mut changed_tiers = false;
+    for (index, choice) in result.choices.iter().enumerate() {
+        let Some(choice) = choice else {
+            continue;
+        };
+        changed_tiers = true;
+        match index {
+            0 => {
+                updated.tiers.small = Some(choice.model.id.clone());
+                updated.tiers.reasoning.small = Some(choice.reasoning.clone());
+            }
+            1 => {
+                updated.tiers.normal = Some(choice.model.id.clone());
+                updated.tiers.reasoning.normal = Some(choice.reasoning.clone());
+            }
+            2 => {
+                updated.tiers.thinking = Some(choice.model.id.clone());
+                updated.tiers.reasoning.thinking = Some(choice.reasoning.clone());
+            }
+            _ => unreachable!(),
+        }
+    }
+    if changed_tiers {
+        config::save_config(&updated)?;
+        *config = updated;
+    }
+    Ok(())
+}
+
+pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
+    if !result.completion_enabled && !result.shortcut_enabled {
+        return Ok(());
+    }
+
+    let environment = shell_shortcut::ShellEnvironment::from_process();
+    let selected_completion = &result.completion_shells;
+    let selected_shortcut = &result.shortcut_shells;
+    let mut failures = Vec::new();
+
+    for shell in Shell::ALL {
+        if result.completion_enabled {
+            if selected_completion.contains(&shell) {
+                if let Some(error) =
+                    shell_completion::install_with_environment(&[shell], &environment)
+                        .aggregate_error()
+                {
+                    failures.push(error.to_string());
+                }
+            } else if let Some(error) =
+                shell_completion::remove_with_environment(&[shell], &environment).aggregate_error()
+            {
+                failures.push(error.to_string());
+            }
+        }
+
+        if result.shortcut_enabled {
+            if selected_shortcut.contains(&shell) {
+                if let Some(error) =
+                    shell_shortcut::install_with_environment(&[shell], &environment)
+                        .aggregate_error()
+                {
+                    failures.push(error.to_string());
+                }
+            } else if let Some(error) =
+                shell_shortcut::remove_with_environment(&[shell], &environment).aggregate_error()
+            {
+                failures.push(error.to_string());
+            }
+        }
+    }
+
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::ConfigError(failures.join("; ")))
+    }
+}
+
 struct SetupWizard {
     config: Config,
+    provider_name: String,
+    provider_cursor: usize,
     page: SetupPage,
     first_page: SetupPage,
     last_page: SetupPage,
     endpoint: String,
+    catalog_endpoint: String,
     storage: CredentialStorage,
     credential_input: String,
     credential_focus: CredentialFocus,
@@ -277,13 +413,16 @@ struct SetupWizard {
     queries: [String; 3],
     suggestions: [Vec<ModelEntry>; 3],
     selection: [usize; 3],
+    manual_models: [String; 3],
     completed: [Option<LevelChoice>; 3],
     reasoning: [ReasoningStrength; 3],
+    custom_reasoning: [Option<String>; 3],
     reasoning_explicit: [bool; 3],
     model_focus: ModelFocus,
     search_status: [Option<String>; 3],
     search_pending: [bool; 3],
     catalog_complete: bool,
+    catalog_manual: bool,
     generation: Arc<AtomicU64>,
     search_tx: Sender<SearchMessage>,
     search_rx: Receiver<SearchMessage>,
@@ -320,6 +459,7 @@ impl SetupWizard {
                     endpoint: OPENROUTER_ENDPOINT.to_string(),
                     api_key: None,
                     default_model: None,
+                    catalog_endpoint: None,
                 }
             }
             Err(error) => return Err(error),
@@ -340,14 +480,22 @@ impl SetupWizard {
             }
             None => (CredentialStorage::Configuration, String::new()),
         };
-        let first_page = match entry {
-            SetupEntryPoint::Models => SetupPage::SmallModel,
-            SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Url,
+        let first_page = if entry == SetupEntryPoint::Setup
+            && std::env::var("WATN_SETUP_START_REVIEW").as_deref() == Ok("1")
+        {
+            SetupPage::Review
+        } else {
+            match entry {
+                SetupEntryPoint::Models => SetupPage::SmallModel,
+                SetupEntryPoint::Shell => SetupPage::ShellCompletion,
+                SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Provider,
+            }
         };
         let last_page = match entry {
             SetupEntryPoint::Provider => SetupPage::ApiKey,
-            SetupEntryPoint::Setup => SetupPage::ShellShortcut,
-            SetupEntryPoint::Models => SetupPage::LargeModel,
+            SetupEntryPoint::Shell => SetupPage::Review,
+            SetupEntryPoint::Setup => SetupPage::Review,
+            SetupEntryPoint::Models => SetupPage::ThinkingReasoning,
         };
         let initial_models = [
             config.tiers.small.clone(),
@@ -364,19 +512,50 @@ impl SetupWizard {
             config.tiers.reasoning.normal.is_some(),
             config.tiers.reasoning.thinking.is_some(),
         ];
-        let detected_shells = shell_shortcut::ShellEnvironment::from_process().detected_shells();
+        let custom_reasoning = [
+            parse_custom_reasoning(config.tiers.reasoning.small.as_deref()),
+            parse_custom_reasoning(config.tiers.reasoning.normal.as_deref()),
+            parse_custom_reasoning(config.tiers.reasoning.thinking.as_deref()),
+        ];
+        let endpoint = if provider.endpoint.is_empty() {
+            OPENROUTER_ENDPOINT.to_string()
+        } else {
+            provider.endpoint
+        };
+        let catalog_endpoint = provider
+            .catalog_endpoint
+            .unwrap_or_else(|| endpoint.clone());
+        let shell_environment = shell_shortcut::ShellEnvironment::from_process();
+        let detected_shells = shell_environment.detected_shells();
+        let completion_selected = if entry == SetupEntryPoint::Shell {
+            Shell::ALL.map(|shell| {
+                shell_completion::has_managed_block_with_environment(shell, &shell_environment)
+            })
+        } else {
+            Shell::ALL.map(|shell| detected_shells.contains(&shell))
+        };
+        let shortcut_selected = if entry == SetupEntryPoint::Shell {
+            Shell::ALL.map(|shell| {
+                shell_shortcut::has_managed_block_with_environment(shell, &shell_environment)
+            })
+        } else {
+            Shell::ALL.map(|shell| detected_shells.contains(&shell))
+        };
         let generation = Arc::new(AtomicU64::new(0));
         let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
             config: config.clone(),
+            provider_name: provider_name.to_string(),
+            provider_cursor: match provider_name {
+                "openrouter" => 0,
+                "openai" => 1,
+                _ => 2,
+            },
             page: first_page,
             first_page,
             last_page,
-            endpoint: (if provider.endpoint.is_empty() {
-                OPENROUTER_ENDPOINT.to_string()
-            } else {
-                provider.endpoint
-            }),
+            endpoint,
+            catalog_endpoint,
             storage,
             credential_input,
             credential_focus: if first_page >= SetupPage::SmallModel {
@@ -388,13 +567,16 @@ impl SetupWizard {
             queries: Default::default(),
             suggestions: [Vec::new(), Vec::new(), Vec::new()],
             selection: [0, 0, 0],
+            manual_models: Default::default(),
             completed: [None, None, None],
             reasoning,
+            custom_reasoning,
             reasoning_explicit,
             model_focus: ModelFocus::Table,
             search_status: [None, None, None],
             search_pending: [false, false, false],
             catalog_complete: false,
+            catalog_manual: false,
             generation,
             search_tx,
             search_rx,
@@ -405,11 +587,11 @@ impl SetupWizard {
             completion_focus: ShellInstallFocus::Question,
             completion_enabled: false,
             completion_cursor: 0,
-            completion_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
+            completion_selected,
             shortcut_focus: ShellInstallFocus::Question,
             shortcut_enabled: false,
             shortcut_cursor: 0,
-            shortcut_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
+            shortcut_selected,
         };
         if wizard.storage == CredentialStorage::Environment && wizard.credential_input.is_empty() {
             wizard.credential_input = suggested_api_key_env(&wizard.endpoint).to_string();
@@ -441,6 +623,7 @@ impl SetupWizard {
             if key.code == KeyCode::Char('u') && key.modifiers.contains(KeyModifiers::CONTROL) {
                 match self.page {
                     SetupPage::Url => self.endpoint.clear(),
+                    SetupPage::Catalog => self.catalog_endpoint.clear(),
                     SetupPage::ApiKey if self.credential_focus == CredentialFocus::Value => {
                         self.credential_input.clear()
                     }
@@ -589,7 +772,13 @@ impl SetupWizard {
                 Ok(None)
             }
             SetupPage::ShellShortcut => {
-                Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
+                if self.last_page == SetupPage::ShellShortcut {
+                    Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
+                } else {
+                    self.page = SetupPage::Review;
+                    self.validation.clear();
+                    Ok(None)
+                }
             }
             _ => unreachable!("shell installation page handler used on another page"),
         }
@@ -638,6 +827,13 @@ impl SetupWizard {
                     && matches!(character, 'p' | 'P' | 'e' | 'E')
                 {
                     self.choose_storage(character);
+                } else if let Some(slot) = self.page.reasoning_slot() {
+                    if matches!(character, 'c' | 'C') {
+                        self.custom_reasoning[slot] = Some(String::new());
+                        self.reasoning_explicit[slot] = true;
+                    } else {
+                        self.edit_input(Some(character));
+                    }
                 } else {
                     self.edit_input(Some(character));
                 }
@@ -648,6 +844,33 @@ impl SetupWizard {
     }
 
     fn move_next(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
+        if self.page == SetupPage::Provider {
+            let previous_provider = self.provider_name.clone();
+            self.provider_name = provider_choices()[self.provider_cursor].to_string();
+            if previous_provider != self.provider_name {
+                self.endpoint = match self.provider_name.as_str() {
+                    "openrouter" => OPENROUTER_ENDPOINT.to_string(),
+                    "openai" => OPENAI_ENDPOINT.to_string(),
+                    _ => self.endpoint.clone(),
+                };
+                self.models = [Vec::new(), Vec::new(), Vec::new()];
+                self.suggestions = [Vec::new(), Vec::new(), Vec::new()];
+                self.completed = [None, None, None];
+                self.catalog_complete = false;
+                self.catalog_manual = false;
+                self.catalog_endpoint.clear();
+                self.validation = "Catalog pending provider revalidation".to_string();
+            }
+            if self.provider_name == "custom"
+                && self.config.defaults.provider.as_deref() != Some("custom")
+                && matches!(
+                    self.endpoint.as_str(),
+                    OPENROUTER_ENDPOINT | OPENAI_ENDPOINT
+                )
+            {
+                self.endpoint.clear();
+            }
+        }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.credential_focus = CredentialFocus::Value;
             self.validation.clear();
@@ -662,6 +885,19 @@ impl SetupWizard {
                 return Ok(None);
             }
         }
+        if let Some(slot) = self.page.reasoning_slot() {
+            if let Some(custom) = &self.custom_reasoning[slot] {
+                if let Err(error) = validate_reasoning_value(custom) {
+                    self.validation = error.to_string();
+                    return Ok(None);
+                }
+            }
+            self.reasoning_explicit[slot] = true;
+            let value = self.reasoning_value(slot);
+            if let Some(choice) = self.completed[slot].as_mut() {
+                choice.reasoning = value;
+            }
+        }
         if self.page == self.last_page {
             return Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))));
         }
@@ -671,10 +907,6 @@ impl SetupWizard {
                 self.validation.clear();
                 self.model_focus = ModelFocus::Table;
                 if next.model_slot().is_some() {
-                    if self.first_page == SetupPage::Url {
-                        let draft = self.current_provider()?;
-                        config::save_provider_draft(&mut self.config, &draft)?;
-                    }
                     if let Err(error) = self.ensure_catalog() {
                         self.page = SetupPage::ApiKey;
                         self.credential_focus = CredentialFocus::Value;
@@ -696,13 +928,8 @@ impl SetupWizard {
                     self.credential_focus = CredentialFocus::Value;
                 }
                 if let Some(slot) = self.page.model_slot() {
-                    self.generation.fetch_add(1, Ordering::SeqCst);
-                    self.queries[slot].clear();
-                    self.suggestions[slot] = self.models[slot].clone();
-                    self.selection[slot] = 0;
-                    self.search_pending[slot] = false;
-                    self.search_status[slot] = None;
-                    self.sync_reasoning(slot);
+                    self.selection[slot] =
+                        self.selection[slot].min(self.suggestions[slot].len().saturating_sub(1));
                 }
             }
         }
@@ -721,6 +948,9 @@ impl SetupWizard {
                 {
                     self.credential_input = suggested_api_key_env(&self.endpoint).to_string();
                 }
+                if self.catalog_endpoint.is_empty() {
+                    self.catalog_endpoint = self.endpoint.clone();
+                }
             }
             SetupPage::ApiKey => {
                 if self.credential_input.trim().is_empty() {
@@ -733,6 +963,14 @@ impl SetupWizard {
                     self.validation = "environment variable name is invalid".to_string();
                     return Err(Error::ConfigError(self.validation.clone()));
                 }
+                self.validation.clear();
+            }
+            SetupPage::Catalog => {
+                self.catalog_endpoint =
+                    crate::provider::setup::normalize_endpoint(&self.catalog_endpoint)
+                        .inspect_err(|error| {
+                            self.validation = error.to_string();
+                        })?;
                 self.validation.clear();
             }
             _ => {}
@@ -754,11 +992,23 @@ impl SetupWizard {
     }
 
     fn result(&self) -> Result<SetupWizardResult, Error> {
+        let provider = if self.first_page == SetupPage::ShellCompletion {
+            ProviderDraft {
+                name: "custom".to_string(),
+                endpoint: String::new(),
+                api_key: String::new(),
+            }
+        } else {
+            self.current_provider()?
+        };
         Ok(SetupWizardResult {
-            provider: self.current_provider()?,
+            provider,
             choices: self.completed.clone(),
+            catalog_endpoint: Some(self.catalog_endpoint.clone()),
             completion_shells: selected_shells(self.completion_enabled, self.completion_selected),
             shortcut_shells: selected_shells(self.shortcut_enabled, self.shortcut_selected),
+            completion_enabled: self.completion_enabled,
+            shortcut_enabled: self.shortcut_enabled,
         })
     }
 
@@ -783,6 +1033,13 @@ impl SetupWizard {
                     self.endpoint.pop();
                 }
             }
+            SetupPage::Catalog => {
+                if let Some(character) = character {
+                    self.catalog_endpoint.push(character);
+                } else {
+                    self.catalog_endpoint.pop();
+                }
+            }
             SetupPage::ApiKey if self.credential_focus == CredentialFocus::Value => {
                 if let Some(character) = character {
                     self.credential_input.push(character);
@@ -790,12 +1047,20 @@ impl SetupWizard {
                     self.credential_input.pop();
                 }
             }
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel
+            SetupPage::SmallModel | SetupPage::NormalModel | SetupPage::ThinkingModel
                 if self.model_focus == ModelFocus::Table =>
             {
                 let Some(slot) = self.page.model_slot() else {
                     return;
                 };
+                if self.catalog_manual {
+                    if let Some(character) = character {
+                        self.manual_models[slot].push(character);
+                    } else {
+                        self.manual_models[slot].pop();
+                    }
+                    return;
+                }
                 if let Some(character) = character {
                     self.queries[slot].push(character);
                 } else {
@@ -803,19 +1068,42 @@ impl SetupWizard {
                 }
                 self.search(slot);
             }
+            SetupPage::SmallReasoning
+            | SetupPage::NormalReasoning
+            | SetupPage::ThinkingReasoning => {
+                let Some(slot) = self.page.reasoning_slot() else {
+                    return;
+                };
+                if self.custom_reasoning[slot].is_some() {
+                    let input = self.custom_reasoning[slot].get_or_insert_default();
+                    if let Some(character) = character {
+                        input.push(character);
+                    } else {
+                        input.pop();
+                    }
+                }
+            }
             _ => {}
         }
     }
 
     fn move_up(&mut self) {
+        if self.page == SetupPage::Provider {
+            self.provider_cursor = self.provider_cursor.saturating_sub(1);
+            return;
+        }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.storage = CredentialStorage::Configuration;
             return;
         }
-        let Some(slot) = self.page.model_slot() else {
+        let Some(slot) = self
+            .page
+            .reasoning_slot()
+            .or_else(|| self.page.model_slot())
+        else {
             return;
         };
-        if self.model_focus == ModelFocus::Reasoning {
+        if self.page.reasoning_slot().is_some() || self.model_focus == ModelFocus::Reasoning {
             self.cycle_reasoning(slot, -1);
         } else {
             self.selection[slot] = self.selection[slot].saturating_sub(1);
@@ -824,6 +1112,10 @@ impl SetupWizard {
     }
 
     fn move_down(&mut self) {
+        if self.page == SetupPage::Provider {
+            self.provider_cursor = (self.provider_cursor + 1).min(provider_choices().len() - 1);
+            return;
+        }
         if self.page == SetupPage::ApiKey && self.credential_focus == CredentialFocus::Storage {
             self.storage = CredentialStorage::Environment;
             if self.credential_input.is_empty() {
@@ -831,10 +1123,14 @@ impl SetupWizard {
             }
             return;
         }
-        let Some(slot) = self.page.model_slot() else {
+        let Some(slot) = self
+            .page
+            .reasoning_slot()
+            .or_else(|| self.page.model_slot())
+        else {
             return;
         };
-        if self.model_focus == ModelFocus::Reasoning {
+        if self.page.reasoning_slot().is_some() || self.model_focus == ModelFocus::Reasoning {
             self.cycle_reasoning(slot, 1);
         } else if !self.suggestions[slot].is_empty() {
             self.selection[slot] = (self.selection[slot] + 1).min(self.suggestions[slot].len() - 1);
@@ -859,15 +1155,40 @@ impl SetupWizard {
     }
 
     fn confirm_model(&mut self, slot: usize) -> Result<(), Error> {
+        if self.catalog_manual {
+            let model = self.manual_models[slot].trim();
+            if model.is_empty() {
+                self.validation = "enter a non-empty manual model identifier".to_string();
+                return Err(Error::ConfigError(self.validation.clone()));
+            }
+            self.completed[slot] = Some(LevelChoice {
+                model: ModelEntry {
+                    id: model.to_string(),
+                    name: None,
+                    context_length: None,
+                    pricing: None,
+                    supported_features: Vec::new(),
+                    reasoning: None,
+                },
+                reasoning: self.reasoning_value(slot),
+            });
+            return Ok(());
+        }
         if self.search_pending[slot] || self.suggestions[slot].is_empty() {
             self.validation = "wait for a model result before continuing".to_string();
             return Err(Error::ConfigError(self.validation.clone()));
         }
         self.completed[slot] = Some(LevelChoice {
             model: self.suggestions[slot][self.selection[slot]].clone(),
-            reasoning: self.reasoning[slot],
+            reasoning: self.reasoning_value(slot),
         });
         Ok(())
+    }
+
+    fn reasoning_value(&self, slot: usize) -> String {
+        self.custom_reasoning[slot]
+            .clone()
+            .unwrap_or_else(|| self.reasoning[slot].as_str().to_string())
     }
 
     fn ensure_catalog(&mut self) -> Result<(), Error> {
@@ -881,14 +1202,41 @@ impl SetupWizard {
         let key = self.request_credential().inspect_err(|error| {
             self.validation = error.to_string();
         })?;
-        let (models, catalog_complete) =
-            match fetch_models_page_info(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
-                Ok(page) if !page.models.is_empty() => (page.models, page.complete),
-                _ => (fetch_models(&self.endpoint, Some(&key))?, true),
+        let page =
+            match fetch_models_page_info(&self.catalog_endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key))
+            {
+                Ok(page) if !page.models.is_empty() => Ok((page.models, page.complete)),
+                Ok(_) => {
+                    fetch_models(&self.catalog_endpoint, Some(&key)).map(|models| (models, true))
+                }
+                Err(error) => Err(error),
             };
-        if models.is_empty() {
-            self.validation = "no models returned from endpoint".to_string();
-            return Err(Error::ConfigError(self.validation.clone()));
+        let (models, catalog_complete) = match page {
+            Ok(value) if !value.0.is_empty() => value,
+            Ok(_) => {
+                self.catalog_manual = true;
+                self.validation =
+                    "Catalog discovery unavailable. Enter a manual model identifier.".to_string();
+                return Ok(());
+            }
+            Err(error) => {
+                self.catalog_manual = true;
+                self.validation = format!(
+                    "Catalog discovery unavailable. Enter a manual model identifier: {error}"
+                );
+                return Ok(());
+            }
+        };
+        let mut identifiers = HashSet::new();
+        if models
+            .iter()
+            .any(|model| model.id.trim().is_empty() || !identifiers.insert(model.id.clone()))
+        {
+            self.catalog_manual = true;
+            self.validation =
+                "Catalog discovery unavailable. Model identifiers must be unique and non-empty."
+                    .to_string();
+            return Ok(());
         }
         self.catalog_complete = catalog_complete;
         for slot in 0..3 {
@@ -931,7 +1279,7 @@ impl SetupWizard {
         self.selection[slot] = 0;
         self.search_pending[slot] = true;
         self.search_status[slot] = Some("Searching...".to_string());
-        let endpoint = self.endpoint.clone();
+        let endpoint = self.catalog_endpoint.clone();
         let key = self.request_credential().ok();
         let models = self.models[slot].clone();
         let generation_ref = Arc::clone(&self.generation);
@@ -1009,20 +1357,23 @@ impl SetupWizard {
             return vec![
                 ReasoningStrength::Off,
                 ReasoningStrength::Low,
+                ReasoningStrength::Minimal,
                 ReasoningStrength::Medium,
                 ReasoningStrength::High,
             ];
         };
         let mut options = Vec::new();
-        if !metadata.mandatory {
-            options.push(ReasoningStrength::Off);
-        }
         for effort in &metadata.supported_efforts {
             if let Some(value) = ReasoningStrength::parse(effort) {
-                if !options.contains(&value) {
+                if !(metadata.mandatory && value == ReasoningStrength::Off)
+                    && !options.contains(&value)
+                {
                     options.push(value);
                 }
             }
+        }
+        if !metadata.mandatory && !options.contains(&ReasoningStrength::Off) {
+            options.insert(0, ReasoningStrength::Off);
         }
         if options.is_empty() {
             options.push(ReasoningStrength::Off);
@@ -1031,6 +1382,9 @@ impl SetupWizard {
     }
 
     fn sync_reasoning(&mut self, slot: usize) {
+        if self.custom_reasoning[slot].is_some() {
+            return;
+        }
         let options = self.reasoning_options(slot);
         if !self.reasoning_explicit[slot] || !options.contains(&self.reasoning[slot]) {
             self.reasoning[slot] = self.suggestions[slot]
@@ -1051,7 +1405,12 @@ impl SetupWizard {
             .unwrap_or(0) as i32;
         let next = (current + direction).rem_euclid(options.len() as i32) as usize;
         self.reasoning[slot] = options[next];
+        self.custom_reasoning[slot] = None;
         self.reasoning_explicit[slot] = true;
+        let value = self.reasoning_value(slot);
+        if let Some(choice) = self.completed[slot].as_mut() {
+            choice.reasoning = value;
+        }
     }
 
     fn draw(&self, frame: &mut Frame) {
@@ -1066,13 +1425,19 @@ impl SetupWizard {
         frame.render_widget(panel, frame.area());
 
         let mut tab_titles = vec![
+            Line::from("Provider"),
             Line::from("URL"),
             Line::from("API key"),
+            Line::from("Catalog"),
             Line::from("Small Model"),
-            Line::from("Middle Model"),
-            Line::from("Large Model"),
+            Line::from("Small Reasoning"),
+            Line::from("Normal Model"),
+            Line::from("Normal Reasoning"),
+            Line::from("Thinking Model"),
+            Line::from("Thinking Reasoning"),
             Line::from("Shell Completion"),
             Line::from("Shell Shortcut"),
+            Line::from("Review"),
         ];
         tab_titles.truncate(self.last_page.index() + 1);
         let tabs = Tabs::new(tab_titles)
@@ -1087,6 +1452,9 @@ impl SetupWizard {
         frame.render_widget(tabs, areas[0]);
 
         let focus = match self.page {
+            SetupPage::Review => "review",
+            SetupPage::Provider => "provider choice",
+            SetupPage::Catalog => "catalog endpoint",
             SetupPage::ShellCompletion => match self.completion_focus {
                 ShellInstallFocus::Question => "completion confirmation",
                 ShellInstallFocus::Shells => "completion shells",
@@ -1095,16 +1463,22 @@ impl SetupWizard {
                 ShellInstallFocus::Question => "shortcut confirmation",
                 ShellInstallFocus::Shells => "shortcut shells",
             },
-            _ => match self.page.model_slot() {
-                Some(_) => match self.model_focus {
-                    ModelFocus::Table => "model table",
-                    ModelFocus::Reasoning => "reasoning",
-                },
-                None => match self.credential_focus {
-                    CredentialFocus::Storage => "storage choice",
-                    CredentialFocus::Value => "input",
-                },
-            },
+            _ => {
+                if self.page.reasoning_slot().is_some() {
+                    "reasoning"
+                } else {
+                    match self.page.model_slot() {
+                        Some(_) => match self.model_focus {
+                            ModelFocus::Table => "model table",
+                            ModelFocus::Reasoning => "reasoning",
+                        },
+                        None => match self.credential_focus {
+                            CredentialFocus::Storage => "storage choice",
+                            CredentialFocus::Value => "input",
+                        },
+                    }
+                }
+            }
         };
         let header = Paragraph::new(format!(
             "Page {} of {}  |  {}  |  Focus: {}",
@@ -1116,11 +1490,17 @@ impl SetupWizard {
         frame.render_widget(header, areas[1]);
 
         match self.page {
+            SetupPage::Review => self.draw_review(frame, areas[2]),
+            SetupPage::Provider => self.draw_provider(frame, areas[2]),
             SetupPage::Url => self.draw_url(frame, areas[2]),
             SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel => {
+            SetupPage::Catalog => self.draw_catalog(frame, areas[2]),
+            SetupPage::SmallModel | SetupPage::NormalModel | SetupPage::ThinkingModel => {
                 self.draw_model(frame, areas[2]);
             }
+            SetupPage::SmallReasoning
+            | SetupPage::NormalReasoning
+            | SetupPage::ThinkingReasoning => self.draw_reasoning(frame, areas[2]),
             SetupPage::ShellCompletion => self.draw_shell_install(frame, areas[2], false),
             SetupPage::ShellShortcut => self.draw_shell_install(frame, areas[2], true),
         }
@@ -1145,7 +1525,13 @@ impl SetupWizard {
                         "Up/Down move  Space toggle  Enter finish  Esc save/discard"
                     }
                 },
-                _ => "Enter/Tab next  Shift-Tab back  Ctrl-R reasoning  Esc save/discard  Ctrl-C quit",
+                SetupPage::Review => "Enter confirm  Shift-Tab back  Esc discard  Ctrl-C quit",
+                _ if self.page.model_slot().is_some() => {
+                    "Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
+                }
+                _ => {
+                    "Up/Down choose  Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
+                }
             }
         };
         let footer = Paragraph::new(footer)
@@ -1171,6 +1557,129 @@ impl SetupWizard {
             .block(setup_block("URL (editing)", true));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
+    }
+
+    fn draw_catalog(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let chunks = Layout::vertical([
+            Constraint::Min(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+        ])
+        .split(area);
+        let explanation = Paragraph::new(
+            "Accept the provider-derived model catalog endpoint or enter a separate OpenAI-compatible catalog URL.",
+        )
+        .block(Block::bordered().title("Catalog endpoint explanation"))
+        .wrap(Wrap { trim: true });
+        frame.render_widget(explanation, chunks[0]);
+        let input = Paragraph::new(format!("> {}█", self.catalog_endpoint))
+            .block(setup_block("Catalog endpoint (editing)", true));
+        frame.render_widget(input, chunks[1]);
+        self.draw_validation(frame, chunks[2]);
+    }
+
+    fn draw_provider(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let choices = provider_choices();
+        let items = choices.iter().map(|provider| {
+            ListItem::new(match *provider {
+                "openrouter" => "OpenRouter",
+                "openai" => "OpenAI",
+                _ => "Custom",
+            })
+        });
+        let mut state = ListState::default();
+        state.select(Some(self.provider_cursor));
+        let list = List::new(items)
+            .block(setup_block("Provider (editing)", true))
+            .highlight_style(
+                Style::default()
+                    .bg(Color::Cyan)
+                    .fg(Color::Black)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .highlight_symbol("> ");
+        frame.render_stateful_widget(list, area, &mut state);
+    }
+
+    fn draw_review(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let provider = self.provider_name.as_str();
+        let catalog = if self.catalog_manual {
+            "manual fallback"
+        } else if self.models[0].is_empty() {
+            "unset"
+        } else {
+            "available"
+        };
+        let credential = match self.storage {
+            CredentialStorage::Configuration => "literal (masked)",
+            CredentialStorage::Environment => "environment reference",
+        };
+        let mut lines = vec![
+            format!("Provider: {provider}"),
+            format!("Completion endpoint: {}", self.endpoint),
+            format!("Catalog: {catalog}"),
+            format!("Credential: {credential}"),
+        ];
+        for (index, role) in ["small", "normal", "thinking"].iter().enumerate() {
+            if let Some(choice) = &self.completed[index] {
+                lines.push(format!(
+                    "{role}: {} / {}",
+                    choice.model.id, choice.reasoning
+                ));
+            } else if let Some(model) = &self.initial_models[index] {
+                lines.push(format!(
+                    "{role}: {} / {}",
+                    model,
+                    [
+                        self.config.tiers.reasoning.small.as_deref(),
+                        self.config.tiers.reasoning.normal.as_deref(),
+                        self.config.tiers.reasoning.thinking.as_deref(),
+                    ][index]
+                        .unwrap_or("off")
+                ));
+            } else {
+                lines.push(format!("{role}: incomplete"));
+            }
+        }
+        let completion = Shell::ALL
+            .iter()
+            .filter(|shell| {
+                self.completion_selected
+                    [Shell::ALL.iter().position(|value| value == *shell).unwrap()]
+            })
+            .map(|shell| shell.name())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let shortcut = Shell::ALL
+            .iter()
+            .filter(|shell| {
+                self.shortcut_selected[Shell::ALL.iter().position(|value| value == *shell).unwrap()]
+            })
+            .map(|shell| shell.name())
+            .collect::<Vec<_>>()
+            .join(", ");
+        lines.push(format!(
+            "Completion shells: {}",
+            if completion.is_empty() {
+                "none"
+            } else {
+                &completion
+            }
+        ));
+        lines.push(format!(
+            "Ctrl-W shells: {}",
+            if shortcut.is_empty() {
+                "none"
+            } else {
+                &shortcut
+            }
+        ));
+        frame.render_widget(
+            Paragraph::new(lines.join("\n"))
+                .block(setup_block("Review", true))
+                .wrap(Wrap { trim: true }),
+            area,
+        );
     }
 
     fn draw_api_key(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
@@ -1219,7 +1728,7 @@ impl SetupWizard {
         let Some(slot) = self.page.model_slot() else {
             return;
         };
-        let chunks = Layout::vertical([Constraint::Min(7), Constraint::Length(3)]).split(area);
+        let chunks = Layout::vertical([Constraint::Min(7)]).split(area);
         let rows = self.suggestions[slot]
             .iter()
             .enumerate()
@@ -1246,14 +1755,32 @@ impl SetupWizard {
                     ),
                     Cell::from(model.supported_features.join(", ")),
                 ])
-            });
+            })
+            .chain(self.catalog_manual.then(|| {
+                Row::new([
+                    Cell::from("Catalog discovery unavailable"),
+                    Cell::from(""),
+                    Cell::from(""),
+                    Cell::from(self.validation.clone()),
+                ])
+            }))
+            .chain(self.catalog_manual.then(|| {
+                Row::new([
+                    Cell::from("Manual model identifier"),
+                    Cell::from(""),
+                    Cell::from(""),
+                    Cell::from("type a model id"),
+                ])
+            }));
         let mut table_state = TableState::default();
         if !self.suggestions[slot].is_empty() {
             table_state.select(Some(
                 self.selection[slot].min(self.suggestions[slot].len() - 1),
             ));
         }
-        let title = if self.queries[slot].is_empty() {
+        let title = if self.catalog_manual {
+            format!("{} (manual entry)", self.page.title())
+        } else if self.queries[slot].is_empty() {
             format!("{} (editing)", self.page.title())
         } else {
             format!(
@@ -1300,38 +1827,51 @@ impl SetupWizard {
                 &mut scrollbar_state,
             );
         }
-        let options = self.reasoning_options(slot);
-        let options = options
+    }
+
+    fn draw_reasoning(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let Some(slot) = self.page.reasoning_slot() else {
+            return;
+        };
+        let model = self
+            .completed
+            .get(slot)
+            .and_then(Option::as_ref)
+            .map(|choice| choice.model.id.as_str())
+            .or_else(|| {
+                self.suggestions[slot]
+                    .get(self.selection[slot])
+                    .map(|model| model.id.as_str())
+            })
+            .unwrap_or("(no model selected)");
+        let options = self
+            .reasoning_options(slot)
             .iter()
             .map(ReasoningStrength::as_str)
             .collect::<Vec<_>>()
             .join(", ");
-        let reasoning = Paragraph::new(format!(
-            "Reasoning {}: {}  |  Supported: {}{}",
-            if self.model_focus == ModelFocus::Reasoning {
-                "(focused)"
-            } else {
-                ""
-            },
-            self.reasoning[slot].as_str(),
+        let metadata_notice = self.suggestions[slot]
+            .get(self.selection[slot])
+            .and_then(|model| model.reasoning.as_ref())
+            .is_none()
+            .then_some("Notice: reasoning metadata unavailable")
+            .unwrap_or("");
+        let text = format!(
+            "Model: {}\n{}\nChoose reasoning effort with Up/Down, then press Enter.\nSelected: {}\nChoices: {}\nCustom: {}",
+            model,
+            metadata_notice,
+            self.reasoning_value(slot),
             options,
-            if self.suggestions[slot]
-                .get(self.selection[slot])
-                .and_then(|model| model.reasoning.as_ref())
-                .map(|reasoning| reasoning.mandatory)
-                .unwrap_or(false)
-            {
-                "  | mandatory"
-            } else {
-                ""
-            }
-        ))
-        .block(setup_block(
-            "Model reasoning",
-            self.model_focus == ModelFocus::Reasoning,
-        ))
-        .wrap(Wrap { trim: true });
-        frame.render_widget(reasoning, chunks[1]);
+            self.custom_reasoning[slot]
+                .as_deref()
+                .unwrap_or("press c to enter a custom effort")
+        );
+        frame.render_widget(
+            Paragraph::new(text)
+                .block(setup_block(self.page.title(), true))
+                .wrap(Wrap { trim: true }),
+            area,
+        );
     }
 
     fn draw_shell_install(&self, frame: &mut Frame, area: ratatui::layout::Rect, shortcut: bool) {
@@ -1412,6 +1952,16 @@ fn parse_reasoning(value: Option<&str>) -> ReasoningStrength {
     value
         .and_then(ReasoningStrength::parse)
         .unwrap_or(ReasoningStrength::Off)
+}
+
+fn parse_custom_reasoning(value: Option<&str>) -> Option<String> {
+    value
+        .filter(|value| ReasoningStrength::parse(value).is_none())
+        .map(str::to_string)
+}
+
+fn provider_choices() -> [&'static str; 3] {
+    ["openrouter", "openai", "custom"]
 }
 
 fn valid_environment_name(name: &str) -> bool {

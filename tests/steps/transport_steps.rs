@@ -137,6 +137,7 @@ fn configured_provider_credentials(world: &mut WatnWorld, api_key: String, model
             endpoint,
             api_key: Some(api_key),
             default_model: Some(model),
+            catalog_endpoint: None,
         },
     );
     let temp_dir = tempfile::tempdir().expect("create transport config directory");
@@ -548,6 +549,7 @@ fn configured_provider_record(world: &mut WatnWorld, path: String, api_key: Stri
             endpoint: configured_endpoint.clone(),
             api_key: Some(api_key),
             default_model: Some(model),
+            catalog_endpoint: None,
         },
     );
     world.env_vars.insert(

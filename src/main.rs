@@ -23,37 +23,70 @@ type StreamOutcome = (
 #[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Ask in plain language. Get one command.")]
 struct Cli {
-    #[arg(group = "input", num_args = 1..)]
+    #[arg(
+        group = "input",
+        num_args = 1..,
+        value_name = "QUESTION",
+        help = "Natural-language question to turn into a command"
+    )]
     question: Vec<String>,
 
-    #[arg(short = '1', long = "small")]
+    #[arg(short = '1', long = "small", help = "Use the small/fast model tier")]
     tier_small: bool,
 
-    #[arg(short = '2', long = "normal")]
+    #[arg(short = '2', long = "normal", help = "Use the balanced model tier")]
     tier_normal: bool,
 
-    #[arg(short = '3', long = "thinking")]
+    #[arg(
+        short = '3',
+        long = "thinking",
+        help = "Use the thinking/reasoning model tier"
+    )]
     tier_thinking: bool,
 
-    #[arg(long = "model", conflicts_with_all = ["tier_small", "tier_normal", "tier_thinking"])]
+    #[arg(
+        long = "model",
+        conflicts_with_all = ["tier_small", "tier_normal", "tier_thinking"],
+        help = "Use an explicit model instead of a tier"
+    )]
     model: Option<String>,
 
-    #[arg(short = 'x', long = "execute")]
+    #[arg(
+        short = 'x',
+        long = "execute",
+        help = "Prompt before executing the generated command"
+    )]
     execute: bool,
 
-    #[arg(short = 'v', long = "verbose")]
+    #[arg(
+        short = 'v',
+        long = "verbose",
+        help = "Print provider reasoning to stderr when available"
+    )]
     verbose: bool,
 
-    #[arg(long = "provider")]
+    #[arg(long = "provider", help = "Select a configured provider")]
     provider: Option<String>,
 
-    #[arg(long = "set-small")]
+    #[arg(
+        long = "set-small",
+        value_name = "MODEL",
+        help = "Set the small-tier model non-interactively"
+    )]
     set_small: Option<String>,
 
-    #[arg(long = "set-normal")]
+    #[arg(
+        long = "set-normal",
+        value_name = "MODEL",
+        help = "Set the normal-tier model non-interactively"
+    )]
     set_normal: Option<String>,
 
-    #[arg(long = "set-thinking")]
+    #[arg(
+        long = "set-thinking",
+        value_name = "MODEL",
+        help = "Set the thinking-tier model non-interactively"
+    )]
     set_thinking: Option<String>,
 
     #[command(subcommand)]
@@ -62,9 +95,16 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Commands {
+    #[command(
+        about = "Configure provider, models, reasoning, and shell integrations interactively"
+    )]
     Setup,
+    #[command(about = "Configure model tiers and reasoning settings interactively")]
     Models,
+    #[command(about = "Configure a provider endpoint and credential")]
     Provider,
+    #[command(about = "Configure shell completion and Ctrl-W integrations")]
+    Shell,
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"
     )]
@@ -128,6 +168,7 @@ fn main() {
                 run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
             }
             Commands::Provider => run_provider_setup_command(),
+            Commands::Shell => run_shell_setup_command(),
             Commands::Completions { shell } => run_completions(shell),
         }
         return;
@@ -168,7 +209,11 @@ fn main() {
         .unwrap_or(config.defaults.provider.as_deref().unwrap_or("openrouter"));
 
     let explicit_provider = cli.provider.is_some() || std::env::var("WATN_PROVIDER").is_ok();
-    if !explicit_provider && !config::provider_ready(&config, provider_name) {
+    let explicit_model = cli.model.is_some();
+    if !explicit_provider
+        && !explicit_model
+        && (!config::provider_ready(&config, provider_name) || !config::model_roles_ready(&config))
+    {
         if !std::io::stdin().is_terminal() {
             watn::provider::setup::print_setup_guidance();
             std::process::exit(1);
@@ -497,10 +542,6 @@ fn run_provider_setup_command() {
 }
 
 fn run_setup_command() {
-    if !std::io::stdin().is_terminal() {
-        watn::provider::setup::print_setup_guidance();
-        std::process::exit(1);
-    }
     let mut config = match load_config() {
         Ok(config) => config,
         Err(error) => {
@@ -508,6 +549,10 @@ fn run_setup_command() {
             std::process::exit(exit_code(&error));
         }
     };
+    if !std::io::stdin().is_terminal() {
+        watn::provider::setup::print_setup_guidance();
+        std::process::exit(1);
+    }
     match watn::setup::run_with_config(&config, SetupEntryPoint::Setup) {
         Ok(SetupWizardOutcome::Saved(result)) => {
             if let Err(error) = watn::setup::apply_result(&mut config, &result) {
@@ -515,6 +560,36 @@ fn run_setup_command() {
                 std::process::exit(exit_code(&error));
             }
             println!("Setup complete");
+        }
+        Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
+            exit_setup_cancellation(cancellation);
+        }
+        Err(error) => {
+            eprintln!("{}", error);
+            std::process::exit(exit_code(&error));
+        }
+    }
+}
+
+fn run_shell_setup_command() {
+    if !std::io::stdin().is_terminal() {
+        eprintln!("Run `watn shell` in a terminal to configure shell integrations.");
+        std::process::exit(1);
+    }
+    let config = match load_config() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("{}", error);
+            std::process::exit(exit_code(&error));
+        }
+    };
+    match watn::setup::run_with_config(&config, SetupEntryPoint::Shell) {
+        Ok(SetupWizardOutcome::Saved(result)) => {
+            if let Err(error) = watn::setup::apply_shell_result(&result) {
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
+            }
+            println!("Shell setup complete");
         }
         Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
             exit_setup_cancellation(cancellation);

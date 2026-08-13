@@ -39,35 +39,22 @@ pub fn run_models_result(
     let provider_config = match resolve_provider(&config, provider_name) {
         Ok(p) => p,
         Err(_) => {
-            println!("No provider endpoint configured.");
-            println!("To configure providers manually, edit ~/.config/watn/config.toml");
-            println!("See the configuration guide for details.");
+            eprintln!("No provider is configured. Run `watn provider` in a terminal.");
             return ModelSetupResult::Saved;
         }
     };
 
-    let (endpoint, api_key) = if let Some(catalog) = &config.litellm {
-        let key = match catalog.api_key.as_deref() {
-            Some(source) => match crate::config::expand_api_key(source) {
-                Ok(key) => Some(key),
-                Err(error) => return ModelSetupResult::Failed(error),
-            },
-            None => None,
-        };
-        (catalog.endpoint.clone(), key)
-    } else {
-        let key = match crate::config::get_provider_api_key(provider_name, &provider_config) {
-            Ok(key) => Some(key),
-            Err(error) => return ModelSetupResult::Failed(error),
-        };
-        (provider_config.endpoint.clone(), key)
+    let api_key = match crate::config::get_provider_api_key(provider_name, &provider_config) {
+        Ok(key) => Some(key),
+        Err(error) => return ModelSetupResult::Failed(error),
     };
+    let endpoint = provider_config.endpoint.clone();
 
     if std::io::stdin().is_terminal() {
         return match crate::setup::run_with_config(&config, crate::setup::SetupEntryPoint::Models) {
             Ok(crate::setup::SetupWizardOutcome::Saved(result)) => {
                 let mut updated = config.clone();
-                match crate::setup::apply_result(&mut updated, &result) {
+                match crate::setup::apply_models_result(&mut updated, &result) {
                     Ok(()) => {
                         if result.choices.iter().all(Option::is_some) {
                             println!(

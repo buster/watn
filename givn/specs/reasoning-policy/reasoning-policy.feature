@@ -23,11 +23,11 @@ Feature: Reasoning default and persistence policy
     When  I resolve the model reasoning default
     Then  the resolver should return a reasoning policy error
 
-  Scenario: Unknown persisted reasoning sends no reasoning request
+  Scenario: Unknown persisted reasoning remains active and is sent
     Given  a model "gpt-4o" assigned to the normal tier with reasoning "bogus"
     When  I run `watn -2 "summarise the changes"`
     Then  the exit status should be 0
-    And  the API request should not include reasoning
+     And  the API request should include reasoning with effort "bogus"
 
   Scenario: Non-TTY model assignment never persists empty reasoning values
     Given  a configured provider "test" with models endpoint

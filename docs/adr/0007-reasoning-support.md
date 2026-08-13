@@ -1,6 +1,6 @@
 # ADR-0007: Reasoning support via reasoning_effort parameter
 
-- **Status:** accepted
+- **Status:** superseded by ADR-0022 for the reasoning-value domain
 - **Date:** 2025-08-07
 - **Decision-makers:** architect
 

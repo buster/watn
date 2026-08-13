@@ -4,6 +4,23 @@ use crate::WatnWorld;
 
 use super::{finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write, start_pty_session};
 
+fn wait_for_page(session: &super::PtySession, title: &str) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = pty_snapshot(session);
+        if output.rfind("Page").is_some_and(|index| {
+            let current = &output[index..];
+            title.split_whitespace().all(|word| current.contains(word))
+        }) {
+            return;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("model picker page {title:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
 fn assert_label(output: &str, label: &str) {
     for word in label.split_whitespace() {
         assert!(
@@ -45,7 +62,7 @@ fn model_picker_bordered_panel(world: &mut WatnWorld, title: String) {
     );
 }
 
-#[then("the model picker should show tabs for the three model tiers")]
+#[then("the model picker should show the visible Small and Normal model tabs")]
 fn model_picker_tier_tabs(world: &mut WatnWorld) {
     let session = world
         .pty_session
@@ -53,7 +70,7 @@ fn model_picker_tier_tabs(world: &mut WatnWorld) {
         .expect("model picker PTY session");
     let output = pty_snapshot(session);
     assert_label(&output, "Setup pages");
-    for tier in ["Small", "Middle", "Large"] {
+    for tier in ["Small Model", "Normal Model"] {
         assert_label(&output, tier);
     }
 }
@@ -91,9 +108,11 @@ fn move_to_next_model_and_advance(world: &mut WatnWorld) {
         .as_mut()
         .expect("model picker PTY session");
     pty_write(session, "\x1b[B");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    wait_for_page(session, "Small Model");
     pty_write(session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    wait_for_page(session, "Small Reasoning");
+    pty_write(session, "\r");
+    wait_for_page(session, "Normal Model");
 }
 
 #[then(regex = r#"^the model picker should show the active tier \"([^\"]+)\"$"#)]
@@ -104,8 +123,8 @@ fn model_picker_active_tier(world: &mut WatnWorld, tier: String) {
         .expect("model picker PTY session");
     let expected = match tier.as_str() {
         "small" => "Small Model",
-        "normal" => "Middle Model",
-        "thinking" => "Large Model",
+        "normal" => "Normal Model",
+        "thinking" => "Thinking Model",
         other => other,
     };
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);

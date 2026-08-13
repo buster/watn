@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 pub const OPENROUTER_ENDPOINT: &str = "https://openrouter.ai/api/v1";
+pub const OPENAI_ENDPOINT: &str = "https://api.openai.com/v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SetupCancellation {
@@ -64,6 +65,8 @@ pub fn normalize_endpoint(endpoint: &str) -> Result<String, Error> {
 pub fn provider_name(endpoint: &str) -> &'static str {
     if endpoint == OPENROUTER_ENDPOINT {
         "openrouter"
+    } else if endpoint == OPENAI_ENDPOINT {
+        "openai"
     } else {
         "custom"
     }
@@ -72,6 +75,8 @@ pub fn provider_name(endpoint: &str) -> &'static str {
 pub fn suggested_api_key_env(endpoint: &str) -> &'static str {
     if endpoint == OPENROUTER_ENDPOINT {
         "OPENROUTER_API_KEY"
+    } else if endpoint == OPENAI_ENDPOINT {
+        "OPENAI_API_KEY"
     } else {
         "WATN_API_KEY"
     }

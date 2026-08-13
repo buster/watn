@@ -6,7 +6,8 @@ Feature: Unified setup wizard
     And  no supported provider environment variable is set
     And  the ephemeral E2E transport returns models ["model-small", "model-middle", "model-large"] for "/models"
     When  I start `watn setup` in a terminal
-    Then  the setup wizard should show tabs "URL", "API key", "Small Model", "Middle Model", "Large Model", "Shell Completion", "Shell Shortcut"
+    And  I choose provider "OpenRouter"
+    Then  the setup wizard should show tabs "URL", "API key", "Catalog", "Small Model", "Normal Model"
     And  the setup wizard should show the URL page as active
     And  the setup wizard should explain OpenAI and LiteLLM compatibility
     And  the setup wizard should show a visible cursor on the active input
@@ -14,9 +15,9 @@ Feature: Unified setup wizard
     And  choose to store the API key in the configuration
     And  enter API key "sk-wizard-key" and advance to Small Model
     And  choose "model-small" and "model-middle" with Enter
-    When  I type "model-large" on the Large Model page
-    Then  the setup wizard should show the Large Model page as active
-    When  I confirm the Large Model selection with Enter
+    When  I type "model-large" on the Thinking Model page
+    Then  the setup wizard should show the Thinking Model page as active
+    When  I confirm the Thinking Model selection with Enter
     Then  the setup wizard should show the Shell Completion page as active
     And  the setup wizard should explain shell completion installation
     When  I skip shell completion setup
@@ -25,7 +26,7 @@ Feature: Unified setup wizard
     When  I skip shell integration setup
     Then  setup should exit successfully
     And  the config file should contain api_key exactly "sk-wizard-key"
-    And  the config file should contain small tier "model-small", middle tier "model-middle", and large tier "model-large"
+    And  the config file should contain small tier "model-small", normal tier "model-middle", and thinking tier "model-large"
 
   @e2e
   Scenario: Models command opens the shared wizard on Small Model
@@ -34,9 +35,11 @@ Feature: Unified setup wizard
     Then  the setup wizard should show the Small Model page as active
     And  the setup wizard should show the URL and API key tabs
     And  the setup wizard should show model choices in a table
-    And  the setup wizard should show model-specific reasoning options
     When  I choose the second model and advance with Enter
-    Then  the setup wizard should show the Middle Model page as active
+    Then  the setup wizard should show the Small Reasoning page as active
+    And  the setup wizard should show model-specific reasoning options
+    When  I confirm the Small Reasoning selection with Enter
+    Then  the setup wizard should show the Normal Model page as active
 
   @e2e
   Scenario: Escape asks whether to save or discard current setup

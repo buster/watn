@@ -307,6 +307,29 @@ fn wait_for_border(world: &mut WatnWorld, title: &str) -> Vec<Foreground> {
     }
 }
 
+fn wait_for_active_page(session: &super::PtySession, title: &str) {
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        let output = super::pty_snapshot(session);
+        if title == "Shell Completion" && output.to_ascii_lowercase().contains("completion") {
+            return;
+        }
+        if title == "Shell Shortcut" && output.to_ascii_lowercase().contains("shortcut") {
+            return;
+        }
+        if output.rfind("Page").is_some_and(|index| {
+            let current = &output[index..];
+            title.split_whitespace().all(|word| current.contains(word))
+        }) {
+            return;
+        }
+        if Instant::now() >= deadline {
+            panic!("setup page {title:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
 fn assert_green(signature: &[Foreground], title: &str) {
     assert!(
         !signature.is_empty(),
@@ -391,6 +414,12 @@ fn active_url_border(world: &mut WatnWorld) {
     assert_green(&signature, "URL (editing)");
 }
 
+#[then("the setup wizard should show the active provider input with a green border")]
+fn active_provider_border(world: &mut WatnWorld) {
+    let signature = wait_for_border(world, "Provider (editing)");
+    assert_green(&signature, "Provider (editing)");
+}
+
 #[then("the setup wizard should show the active credential location with a green border")]
 fn active_credential_border(world: &mut WatnWorld) {
     let storage = wait_for_border(world, "Where should the API key be stored?");
@@ -432,8 +461,6 @@ fn inactive_credential_border(world: &mut WatnWorld) {
 fn active_model_border(world: &mut WatnWorld) {
     let model = wait_for_border(world, "Small Model (editing)");
     assert_green(&model, "Small Model (editing)");
-    let reasoning = wait_for_border(world, "Model reasoning");
-    remember_signature(world, "model-reasoning", &reasoning);
 }
 
 #[then("the inactive reasoning input should retain its default border styling")]
@@ -452,8 +479,15 @@ fn toggle_reasoning_focus(world: &mut WatnWorld) {
 
 #[then("the setup wizard should show the reasoning input with a green border")]
 fn active_reasoning_border(world: &mut WatnWorld) {
-    let signature = wait_for_border(world, "Model reasoning");
-    assert_green(&signature, "Model reasoning");
+    let signature = wait_for_border(world, "Reasoning");
+    assert_green(&signature, "Reasoning");
+}
+
+#[when("I advance to the Small Reasoning page")]
+fn advance_to_small_reasoning_page(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Small Reasoning");
 }
 
 #[then("the inactive model input should retain its default border styling")]
@@ -467,16 +501,25 @@ fn inactive_model_border(world: &mut WatnWorld) {
     );
 }
 
-#[when("I confirm the Large Model selection and configure the shortcut")]
+#[when("I confirm the Thinking Model selection and configure the shortcut")]
 fn confirm_large_model_and_configure_shortcut(world: &mut WatnWorld) {
     {
         let session = world.pty_session.as_mut().expect("setup PTY session");
         pty_write(session, "\r");
     }
-    let _ = wait_for_border(world, "Shell completion");
+    {
+        let session = world.pty_session.as_ref().expect("setup PTY session");
+        wait_for_active_page(session, "Thinking Reasoning");
+    }
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
-    let _ = wait_for_border(world, "Shell shortcut");
+    {
+        let session = world.pty_session.as_ref().expect("setup PTY session");
+        wait_for_active_page(session, "Shell Completion");
+    }
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Shell Shortcut");
 }
 
 #[then("the setup wizard should show the shortcut question with a green border")]

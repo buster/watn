@@ -7,7 +7,7 @@
 | R-001 | OpenAI API schema drifts from the implemented subset | Low | Medium | Pin tested provider versions in CI; add schema-version field to config |
 | R-002 | Users configure providers with non-standard `/v1/chat/completions` paths | Medium | Low | Document the requirement |
 | R-003 | Config file with secrets (API keys) committed to version control | Medium | High | Support env-var-only API key config; warn if config file is world-readable |
-| R-004 | LiteLLM `/models` endpoint schema drifts | Low | Low | Parse response leniently; error gracefully on unexpected format |
+| R-004 | Provider-local `/models` endpoint schema drifts | Low | Low | Parse response leniently, reject empty/duplicate identifiers, switch to manual mode, and report unexpected format |
 | R-005 | User confirms execution and the command is destructive | Low | High | Tool prints the command before prompting; user sees what they are confirming |
 | R-006 | Execution flow UX — command content is streamed to stdout before the prompt and may be mistaken for already-executed work | Medium | Medium | Keep command content on stdout for piping, put the confirmation prompt and metadata on stderr, and require confirmation before execution |
 | R-007 | Model returns empty reasoning tokens on thinking tier | Medium | Low | Trim reasoning content before printing; skip print if content is empty/whitespace after trimming |
@@ -16,23 +16,23 @@
 | R-010 | Arrow/page escape sequences differ across terminal emulators in the SetupWizard | Low | Medium | Standard sequences (`\x1b[A/B`, `\x1b[5~/6~`); PTY E2E tests pin `TERM=xterm-256color`; ratatui/crossterm parse both classic and application-cursor modes |
 | R-011 | A user chooses literal credential storage and the API key remains on disk | Medium | High | Prefer environment-backed references, mask input, apply mode `0600`, and warn on world-readable config files |
 | R-012 | Automatic onboarding requires an interactive terminal and a reachable model catalog | Medium | Medium | Detect non-TTY use, print actionable setup guidance, keep explicit `watn provider` and `watn models` commands available, and allow rerunning setup after a catalog failure |
-| R-013 | Provider setup succeeds but model selection is cancelled or fails, leaving a provider without tiers | Medium | Medium | Save provider first, return a typed model result, preserve the provider on failure, report the model failure clearly, map Escape/Ctrl-C to 1/130, and make model setup repeatable |
+| R-013 | Coordinated setup is cancelled or model selection fails, leaving an unconfirmed draft | Medium | High | Keep the complete draft in memory, write only after final review, preserve the baseline on failure, and make focused provider/model commands repeatable |
 | R-014 | Explicit `--provider` or `WATN_PROVIDER` selection does not receive automatic onboarding | Medium | Medium | Preserve the existing error contract deliberately, print the existing actionable error, and document `watn provider` as the explicit setup path |
 | R-015 | Successful automatic setup does not resume the original request | Medium | Low | Exit clearly after model selection, assert no chat request was sent, and document that the user reruns the original question |
-| R-016 | Fixed `openrouter` and `custom` names can collide with manually maintained entries | Medium | High | Replace only the selected fixed entry, preserve unrelated providers and config, and document the intentional collision before implementation |
-| R-017 | Direct config writes are not atomic and may be interrupted | Low | High | Keep the existing direct-write mechanism as the explicit constraint, enforce mode `0600` after every save, and do not promise temp-file/rename semantics |
+| R-016 | Canonical provider migration can collide with an existing `custom` entry | Medium | High | Define source-key removal, destination default-model precedence, saved-credential authority, unrelated-provider preservation, and idempotent reruns |
+| R-017 | A confirmed config snapshot may fail during serialization or replacement | Low | High | Write a same-directory temporary file, flush and permission it, rename only after preparation succeeds, and prevent shell operations on failure |
 | R-018 | The ephemeral E2E transport override could leak into persistence/readiness or cover only one request path | Medium | High | Apply it only at HTTP construction under the debug-plus-feature guard, never consult it during readiness, assert the exact persisted endpoint, and cover every touched `/models` and `/chat/completions` path |
 | R-019 | Structured columns and multiple regions can become cramped or unreadable on small terminals | Medium | Medium | Use Ratatui layout constraints, truncation-safe cells, wrapped paragraphs, and PTY coverage at the supported test size; keep keyboard flow independent of visual width |
 | R-020 | Debounced worker results can race with user input or outlive the SetupWizard | Medium | Medium | Keep the query visible, choose local filtering for complete catalogs, increment a generation for every remote query, check it before and after the debounce and before apply, ignore Enter while pending, and join every retained worker before exit |
-| R-021 | A shared wizard can make a partial save ambiguous when the user leaves before model selection is complete | Medium | Medium | Keep provider and completed model choices separate in the runtime result, validate before Save, and write only completed sections while Discard performs no write |
+| R-021 | A shared coordinator can make a complete draft and focused save boundary ambiguous | Medium | Medium | Use one final snapshot for coordinated setup, domain-owned writes for focused commands, and explicit review/cancellation scenarios |
 | R-022 | Migrating Tab and Escape changes can surprise users of the existing model pages | Medium | Medium | Keep Shift-Tab as the explicit back-page key, make Ctrl-R reasoning focus visible, migrate permanent scenarios, and retain command-specific entry points |
 | R-023 | `watn models` and `watn provider` can start the shared wizard with stale or incomplete page state | Medium | Medium | Seed endpoint, credential storage, current tier selections, and model-specific reasoning from the loaded config; define and test each entry point's initial/final page range |
 | R-024 | A release build with `test-support` could accidentally retain the endpoint override | Medium | High | Guard the lookup with `cfg(all(feature = "test-support", debug_assertions))`; inspect the release-profile artifact and keep the configured-endpoint source invariant explicit |
 | R-025 | A stale or overwritten debug executable could make transport tests execute the wrong binary | Medium | High | Build the two debug variants sequentially through Cargo's shared target cache, copy each to a unique temporary path, pass only those absolute paths to the harness, and fail before scenarios when a path is missing |
 | R-026 | Broad mocks could report a successful request from the wrong endpoint or credential | Medium | High | Use separate local twin servers and mocks matching exact method/path/Authorization; assert expected counts, competing zero hits, response source, and persisted endpoint |
-| R-027 | A catalog source may be configured with an endpoint or credential policy that differs from the active chat provider | Medium | High | Resolve catalog and chat sources separately, pass the selected source explicitly to list/page/search calls, and assert exact source, query, and Authorization behavior |
-| R-028 | A malformed reasoning default or supported-effort list could silently change request behavior | Medium | Medium | Use one closed-set policy, ignore unknown efforts, enforce mandatory non-off selection, preserve valid existing choices, and cover request bodies plus persisted TOML |
-| R-029 | Saving a provider at the wrong wizard transition could either lose a confirmed source or write unconfirmed input | Medium | High | Validate and resolve before the first catalog request, persist only at credential confirmation, keep tier writes separate, and drive failure/cancellation through the real wizard |
+| R-027 | A legacy catalog source may receive requests after provider-local routing is selected | Medium | High | Resolve list/page/search only from the selected provider, carry legacy `[litellm]` unchanged, and assert exact provider requests plus zero legacy hits |
+| R-028 | A malformed reasoning default or provider-specific value could silently change request behavior | Medium | Medium | Preserve every non-empty value verbatim, reject whitespace-only setup input, enforce mandatory non-off selection, and cover request bodies plus persisted TOML |
+| R-029 | Saving at the wrong wizard transition could write unconfirmed input or lose focused-domain ownership | Medium | High | Keep coordinated values until final review, save provider/model only at focused confirmation, and drive failure/cancellation through the real wizard |
 | R-030 | A corrected concurrent-search test could still pass without proving worker overlap or cleanup | Medium | Medium | Coordinate slow and fast workers with channels/barriers, apply through the generation guard, assert exact final IDs, and join every worker before scenario exit |
 | R-031 | A provider closes a valid SSE response without `[DONE]`, causing a user to mistake a visible prefix for a complete command | Medium | High | Require `[DONE]`, preserve the prefix for diagnosis, map truncation to network status 3, omit success metadata and execution, and cover clean EOF separately from connection reset |
 | R-032 | A synchronous content callback couples provider read progress to terminal write speed and can fail after visible output | Medium | Medium | Propagate write/flush errors as the existing I/O status, finish the spinner on every path, preserve the prefix, omit metadata and execution, and test with a controlled writer |
@@ -57,6 +57,10 @@
 | R-055 | Flattened comment construction or interactive-buffer redraw could misrepresent the request or not reflect wrapped input | Low | Low | Replace only CR, LF, and TAB with spaces so the request stays one comment line; verify the actual Fish buffer newline while retaining existing Bash commit-time execution and no-evaluation coverage; interactive wrapped-line redraw remains outside the measured contract |
 | R-056 | The 500 ms grace hard-exit can cut off final buffered bytes in a stalled or connecting stream | Medium | Low | Keep the parse-loop flag check for the common streaming case, preserve visible content, and exit 130 without an error; a partial tail is an accepted cost of hard cancellation |
 | R-057 | The detached worker thread can outlive the main thread by microseconds after the grace expires, racing process teardown | Low | Low | Stdout writes are internally locked; the process exits immediately after the flag-driven cleanup so no shared mutable state is exposed |
+| R-058 | A provider-local catalog endpoint may be stale after provider or endpoint change | Medium | High | Invalidate the catalog state on provider/endpoint/credential change, re-probe, preserve the prior saved base on failed edits, and use manual mode when no base is available |
+| R-059 | Migration from an arbitrary provider key may silently replace a user-selected credential or default model | Medium | High | Treat saved credential representation as authoritative, define deterministic destination-default precedence, and assert source removal and unrelated-entry preservation |
+| R-060 | A custom reasoning value may contain whitespace or provider-specific syntax that is normalized accidentally | Medium | Medium | Reject only blank/whitespace-only input, preserve non-empty bytes, and assert round-trip request construction |
+| R-061 | The final configuration write may succeed while a shell target fails | Medium | Medium | Keep config and shell operations independent, retain successful target changes, report every target, and return non-zero for any failed target |
 
 ## Technical debt
 
@@ -65,7 +69,7 @@
 | TD-001 | Non-OpenAI-compatible provider adapters | Medium | Provider trait is designed for extension; new adapters per provider |
 | TD-002 | No input validation of shell commands before execution | Medium | User sees full command before confirming |
 | TD-003 | Crossterm terminal event behavior varies across terminal emulators | Low | Key bindings use standard sequences (arrows, backspace, enter, escape, ctrl-c); non-standard terminals may require `TERM` detection fallbacks |
-| TD-004 | Reasoning config parsing edge cases (unknown strength values read from an edited config) | Low | Parse leniently; only `off`/`low`/`minimal`/`medium`/`high` map to `reasoning_effort`, unknown values fall back to no reasoning |
+| TD-004 | Reasoning config parsing edge cases (provider-specific values read from an edited config) | Low | Parse non-empty strings without normalization; only `off` omits `reasoning_effort`, while provider-specific values remain request-visible |
 | TD-005 | E2E tests need a non-persisted endpoint override to exercise configured-provider paths without live network access | Medium | Keep the override behind the debug-plus-feature guard; use reachable loopback twins and explicit binary paths; assert the exact persisted configured URL before and after routing |
 | TD-009 | Cancellation uses a fixed 500 ms grace heuristic because the blocking reqwest client cannot split connect and read timeouts | Low | Migrate to an async client with `tokio::select!` if a future change makes the grace heuristic or partial-bytes truncation unacceptable |
 
@@ -81,14 +85,15 @@ The following consequences are accepted and mitigated explicitly:
   renderer.
 - No automatic request resume: successful setup exits after model selection;
   the original request is deliberately not sent and must be rerun.
-- Partial onboarding: the provider is saved before model setup, so model
-  cancellation/failure leaves a usable provider and no accidental request.
+ - Partial onboarding: coordinated setup keeps the provider in the draft until
+   final confirmation, so cancellation/failure leaves the baseline unchanged;
+   focused provider setup remains available when a user wants only that domain.
 - Literal secrets on disk: input is masked and every save enforces Unix mode
   `0600`; loading may warn about a pre-existing world-readable file.
 - Fixed-name collisions: `openrouter`/`custom` replacement is limited to one
   entry and unrelated providers/configuration are preserved.
-- Direct-write interruption: no atomic rename guarantee is claimed; the risk is
-  documented rather than hidden behind a false atomicity promise.
+ - Atomic config replacement: a failed snapshot write leaves the previous file
+   untouched, while shell target changes remain independent and may be partial.
 - Test transport seam: the override is ephemeral, construction-time only, and
   verified on all touched HTTP paths without changing readiness or persisted
   endpoint values. The compile-time guard keeps it out of every release
@@ -112,17 +117,16 @@ The following consequences are accepted and mitigated explicitly:
   model pages; the caller persists the valid provider and only completed tier
   assignments, leaving uncompleted tiers unchanged.
 
-- Catalog-source separation: LiteLLM is discovery-only and optional-auth; the
-  active provider remains the chat destination. Separate twins and exact
-  request matchers prevent source crossover.
+ - Provider-local catalog routing: the selected provider owns discovery and
+   authorization; legacy LiteLLM data is retained but inert for setup/model
+   discovery. Separate twins and exact request matchers prevent source crossover.
 - Credential-source preservation: literal and exact environment references are
   retained through setup and expanded only when used. A missing saved reference
   fails before a request rather than falling back to another variable.
-- Reasoning policy: the closed strength set and shared resolver prevent TTY and
-  non-TTY model selection from writing empty or unsupported values.
-- Provider confirmation boundary: saving after validation but before catalog
-  access leaves a usable provider after discovery failure while preserving old
-  tiers and avoiding an unintended original request.
+ - Reasoning policy: catalog suggestions coexist with verbatim non-empty values;
+   `off` omits the field and whitespace-only input is rejected.
+ - Provider confirmation boundary: coordinated final review is the only config
+   write boundary, while focused commands save only their owned domains.
 - Concurrent search evidence: deterministic overlap and worker joins ensure the
   newest-result guarantee is tested rather than inferred from serialized sleeps.
 - Synchronous stream callback: no channel or background stderr writer exists, so

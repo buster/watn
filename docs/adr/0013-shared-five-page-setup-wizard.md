@@ -1,6 +1,6 @@
 # ADR-0013: Shared five-page setup wizard
 
-- **Status:** proposed
+- **Status:** superseded by ADR-0020 and the streamlined setup design
 - **Date:** 2026-08-10
 - **Decision-makers:** architect
 

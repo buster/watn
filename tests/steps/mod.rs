@@ -24,6 +24,8 @@ pub mod setup_persistence_steps;
 pub mod setup_wizard_steps;
 pub mod shell_completions_e2e_steps;
 pub mod shell_completions_steps;
+pub mod streamlined_setup_e2e_steps;
+pub mod streamlined_setup_steps;
 pub mod transport_steps;
 
 pub use transport_steps::TransportState;
@@ -296,8 +298,12 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
             if reuse_existing_server {
                 let raw = world.raw_config.clone().unwrap_or_default();
-                config_content = rewrite_provider_endpoints(&raw, &base_url)
-                    .replace("http://localhost:4000", &base_url);
+                config_content = if world.pending_config.contains_key("preserve_setup_endpoint") {
+                    raw
+                } else {
+                    rewrite_provider_endpoints(&raw, &base_url)
+                        .replace("http://localhost:4000", &base_url)
+                };
                 has_config = !no_config;
             } else {
                 let raw = world.raw_config.clone().unwrap_or_default();
@@ -588,6 +594,9 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
     cmd.env_remove("WATN_TEST_ENDPOINT_OVERRIDE");
     for (key, value) in &world.env_vars {
         cmd.env(key.as_str(), value.as_str());
+    }
+    if world.pending_config.contains_key("start_review") {
+        cmd.env("WATN_SETUP_START_REVIEW", "1");
     }
     if let Some(profile) = std::env::var_os("LLVM_PROFILE_FILE") {
         cmd.env("LLVM_PROFILE_FILE", profile);

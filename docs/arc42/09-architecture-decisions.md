@@ -11,22 +11,27 @@ options, the decision outcome, and consequences.
 | ADR-0003 | Layered XDG configuration | [docs/adr/0003-layered-xdg-configuration.md](../adr/0003-layered-xdg-configuration.md) |
 | ADR-0004 | Model tier dispatch | [docs/adr/0004-model-tier-dispatch.md](../adr/0004-model-tier-dispatch.md) |
 | ADR-0005 | Execution mode with confirmation | [docs/adr/0005-execution-with-confirmation.md](../adr/0005-execution-with-confirmation.md) |
-| ADR-0006 | LiteLLM-powered model discovery | [docs/adr/0006-litellm-model-discovery.md](../adr/0006-litellm-model-discovery.md) |
+| ADR-0006 | LiteLLM-powered model discovery (superseded) | [docs/adr/0006-litellm-model-discovery.md](../adr/0006-litellm-model-discovery.md) |
 | ADR-0007 | Reasoning support via reasoning_effort parameter | [docs/adr/0007-reasoning-support.md](../adr/0007-reasoning-support.md) |
 | ADR-0008 | Template config generated from code | [docs/adr/0008-template-generated-from-code.md](../adr/0008-template-generated-from-code.md) |
 | ADR-0009 | Hybrid filtering for complete and paginated model catalogs | [docs/adr/0009-server-side-filtering-model-catalogs.md](../adr/0009-server-side-filtering-model-catalogs.md) |
 | ADR-0010 | SetupWizard model picker and reasoning selection | [docs/adr/0010-ratatui-model-picker.md](../adr/0010-ratatui-model-picker.md) |
-| ADR-0011 | Interactive provider onboarding with environment-backed credentials | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
+| ADR-0011 | Interactive provider onboarding with environment-backed credentials (superseded for setup persistence) | [docs/adr/0011-interactive-provider-onboarding.md](../adr/0011-interactive-provider-onboarding.md) |
 | ADR-0012 | Structured widget composition for terminal setup views | [docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md](../adr/0012-structured-widget-composition-for-terminal-setup-views.md) |
-| ADR-0013 | Shared five-page setup wizard | [docs/adr/0013-shared-five-page-setup-wizard.md](../adr/0013-shared-five-page-setup-wizard.md) |
-| ADR-0014 | Independent catalog source and provider confirmation boundary | [docs/adr/0014-independent-catalog-source-and-provider-confirmation.md](../adr/0014-independent-catalog-source-and-provider-confirmation.md) |
+| ADR-0013 | Shared five-page setup wizard (superseded) | [docs/adr/0013-shared-five-page-setup-wizard.md](../adr/0013-shared-five-page-setup-wizard.md) |
+| ADR-0014 | Independent catalog source and provider confirmation boundary (superseded) | [docs/adr/0014-independent-catalog-source-and-provider-confirmation.md](../adr/0014-independent-catalog-source-and-provider-confirmation.md) |
 | ADR-0015 | Synchronous stream callback and completion boundary | [docs/adr/0015-synchronous-stream-callback-and-completion-boundary.md](../adr/0015-synchronous-stream-callback-and-completion-boundary.md) |
 | ADR-0016 | Release truth and target-dependent runtime requirements | [docs/adr/0016-release-truth-and-target-dependent-runtime-requirements.md](../adr/0016-release-truth-and-target-dependent-runtime-requirements.md) |
 | ADR-0017 | Completion generation from authoritative command definition | [docs/adr/0017-completion-generation-from-authoritative-command-definition.md](../adr/0017-completion-generation-from-authoritative-command-definition.md) |
 | ADR-0018 | Safe shell shortcut installation and native widgets | [docs/adr/0018-safe-shell-shortcut-installation-and-native-widgets.md](../adr/0018-safe-shell-shortcut-installation-and-native-widgets.md) |
 | ADR-0019 | Interruptible completion via worker thread and bounded grace | [docs/adr/0019-interruptible-completion-via-worker-thread.md](../adr/0019-interruptible-completion-via-worker-thread.md) |
+| ADR-0020 | Final-confirmation setup snapshots | [docs/adr/0020-final-confirmation-setup-snapshots.md](../adr/0020-final-confirmation-setup-snapshots.md) |
+| ADR-0021 | Provider-local catalog discovery | [docs/adr/0021-provider-local-catalog-discovery.md](../adr/0021-provider-local-catalog-discovery.md) |
+| ADR-0022 | Verbatim reasoning values | [docs/adr/0022-verbatim-reasoning-values.md](../adr/0022-verbatim-reasoning-values.md) |
+| ADR-0023 | Canonical provider migration | [docs/adr/0023-canonical-provider-migration.md](../adr/0023-canonical-provider-migration.md) |
+| ADR-0024 | Atomic configuration replacement | [docs/adr/0024-atomic-config-replacement.md](../adr/0024-atomic-config-replacement.md) |
 
-## ADR-0011 summary
+## ADR-0011 summary (superseded where noted)
 
 ADR-0011 chooses a TTY-gated ratatui/crossterm provider setup state machine
 with typed provider/model results and environment-backed credential references.
@@ -34,18 +39,17 @@ The considered linear-prompt alternative is intentionally recorded: it is
 adequate for simple input, but does not provide the same renderer boundary,
 inline validation, masking, terminal restoration, and review-state contract.
 
-The onboarding names are fixed: normalized OpenRouter uses `openrouter`, and
-every other endpoint uses `custom`. A rerun replaces the selected fixed entry,
-so an existing manually maintained `openrouter` or `custom` entry is an
-intentional collision. The default-provider field and that one entry change;
-unrelated providers, tiers, pricing, LiteLLM settings, and other config remain
-unchanged. This fixed-name consequence is part of the decision, not an
-implementation detail.
+The onboarding names remain fixed: normalized OpenRouter uses `openrouter`, and
+every other endpoint uses `custom`. The current change supersedes the old
+arbitrary-provider preservation rule: when the selected baseline provider has an
+arbitrary key, it migrates to `custom` on successful confirmation and the old
+selected key is removed. ADR-0023 defines collision/default-model behavior;
+unrelated providers, tiers, pricing, legacy LiteLLM settings, and other config
+remain unchanged.
 
 The same ADR records the TTY/non-TTY boundary, explicit-provider error
-preservation, saved credential precedence, direct-write `0600` enforcement
-without an atomic rename promise, typed cancellation, no-resume automatic
-completion, and the ephemeral E2E HTTP construction override for both
+preservation, saved credential precedence, typed cancellation, no-resume
+automatic completion, and the ephemeral E2E HTTP construction override for both
 `/models` and `/chat/completions`. The transport refinement makes that override
 available only under `cfg(all(feature = "test-support", debug_assertions))`,
 requires pure URL builders after resolution, and uses two copied debug paths
@@ -62,13 +66,21 @@ selection context, tables align provider/model metadata, paragraphs carry
 decision preserves the existing event loop and state transitions while removing
 direct raw cursor output from these renderers.
 
-## ADR-0014 summary
+## ADR-0014 summary (superseded)
 
-ADR-0014 separates the model catalog source from the active chat provider and
-places provider persistence immediately after valid credential confirmation.
-The decision preserves raw credential sources, makes LiteLLM authentication
-optional, and lets catalog failure or later cancellation preserve a confirmed
-provider without changing tiers or sending the original request.
+ADR-0014 is retained as historical context. Its independent LiteLLM source and
+provider-first persistence boundary are superseded by ADR-0020 and ADR-0021.
+
+## ADR-0020 to ADR-0024 summaries
+
+ADR-0020 makes coordinated setup a final-confirmation snapshot and keeps focused
+commands domain-scoped. ADR-0021 makes the selected provider the only catalog
+source while retaining legacy LiteLLM data as unrelated configuration.
+ADR-0022 accepts arbitrary non-empty reasoning values verbatim and reserves
+`off` for omission. ADR-0023 migrates a selected arbitrary provider key to
+canonical `custom` with deterministic collision/default-model rules. ADR-0024
+uses same-directory atomic replacement for one configuration file and keeps
+shell target operations independent.
 
 ## ADR-0015 summary
 

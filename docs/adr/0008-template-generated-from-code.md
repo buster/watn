@@ -1,6 +1,6 @@
 # ADR-0008: Template config generated from code
 
-**Status:** Accepted
+**Status:** Superseded by ADR-0020 for setup-time file creation
 
 **Date:** 2026-08-07
 

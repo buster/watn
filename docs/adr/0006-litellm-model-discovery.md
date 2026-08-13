@@ -1,6 +1,6 @@
 # ADR-0006: LiteLLM-powered model discovery
 
-- **Status:** accepted
+- **Status:** superseded by ADR-0021
 - **Date:** 2024-12-01
 - **Decision-makers:** architect
 
