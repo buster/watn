@@ -717,6 +717,43 @@ fn malformed_config_is_unchanged(world: &mut WatnWorld) {
     assert_eq!(actual, "[defaults\nprovider = \"broken\"");
 }
 
+#[when("I accept a valid provider endpoint and credential in coordinated setup")]
+fn accept_provider_and_credential_in_setup(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["setup"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    wait_for_active_page(session, "Provider");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "URL");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "API key");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "sk-coordinated");
+}
+
+#[when("cancel before the catalog question")]
+fn cancel_before_catalog_question(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\x1b");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "n");
+    let session = world.pty_session.take().expect("setup PTY session");
+    super::finish_pty_session(world, session);
+}
+
+#[then("no config file should exist")]
+fn no_config_file_should_exist(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("config temp dir");
+    assert!(!dir.path().join("watn/config.toml").exists());
+}
+
+#[then("no provider entry should be persisted")]
+fn no_provider_entry_should_be_persisted(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("config temp dir");
+    assert!(!dir.path().join("watn/config.toml").exists());
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir

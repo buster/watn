@@ -802,10 +802,6 @@ impl SetupWizard {
                 self.validation.clear();
                 self.model_focus = ModelFocus::Table;
                 if next.model_slot().is_some() {
-                    if self.first_page == SetupPage::Provider {
-                        let draft = self.current_provider()?;
-                        config::save_provider_draft(&mut self.config, &draft)?;
-                    }
                     if let Err(error) = self.ensure_catalog() {
                         self.page = SetupPage::ApiKey;
                         self.credential_focus = CredentialFocus::Value;
