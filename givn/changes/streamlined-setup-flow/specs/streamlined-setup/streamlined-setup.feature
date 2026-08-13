@@ -178,7 +178,7 @@ Feature: Streamlined setup flow
     When I send a small-role request through the configured provider
     Then the API request should omit the reasoning effort
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Shell setup independently configures completion and Ctrl-W integrations
     Given no Watn-managed shell integrations are installed
     When I start `watn shell` in a terminal
