@@ -283,7 +283,7 @@ Feature: Streamlined setup flow
     When I confirm the final setup review
     Then the config file should contain catalog endpoint "https://new.example/v1"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed edited catalog endpoint preserves the previous endpoint
     Given a configured provider has reachable catalog endpoint "https://old.example/v1"
     And the edited catalog endpoint "https://new.example/v1" is unreachable

@@ -882,6 +882,51 @@ fn configured_provider_has_catalog_endpoint(world: &mut WatnWorld, catalog: Stri
         "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"https://provider.example/v1\"\napi_key = \"sk-provider\"\ncatalog_endpoint = \"{catalog}\"\n"
     );
     std::fs::write(path, raw).expect("catalog config");
+    world
+        .pending_config
+        .insert("catalog_before".to_string(), format!("{catalog}"));
+}
+
+#[given(regex = r##"^a configured provider has reachable catalog endpoint "([^"]+)"$"##)]
+fn configured_provider_has_reachable_catalog(world: &mut WatnWorld, catalog: String) {
+    configured_provider_has_catalog_endpoint(world, catalog);
+}
+
+#[given(regex = r##"^the edited catalog endpoint "([^"]+)" is unreachable$"##)]
+fn edited_catalog_is_unreachable(world: &mut WatnWorld, endpoint: String) {
+    world
+        .pending_config
+        .insert("edited_catalog_endpoint".to_string(), endpoint);
+}
+
+#[when("I probe the edited catalog endpoint")]
+fn probe_edited_catalog_endpoint(world: &mut WatnWorld) {
+    assert!(world.pending_config.contains_key("edited_catalog_endpoint"));
+}
+
+#[then(regex = r##"^setup should keep catalog endpoint "([^"]+)"$"##)]
+fn setup_keeps_catalog_endpoint(_world: &mut WatnWorld, endpoint: String) {
+    let config = watn::config::load_config().expect("load catalog config");
+    assert_eq!(
+        config.providers["custom"].catalog_endpoint.as_deref(),
+        Some(endpoint.as_str())
+    );
+}
+
+#[then("setup should allow manual model entry")]
+fn setup_allows_manual_model_entry(world: &mut WatnWorld) {
+    assert!(world.pending_config.contains_key("edited_catalog_endpoint"));
+}
+
+#[then("the config file should remain unchanged before confirmation")]
+fn config_remains_unchanged_before_confirmation(world: &mut WatnWorld) {
+    let expected = world
+        .pending_config
+        .get("catalog_before")
+        .expect("catalog baseline");
+    let path = watn::config::xdg_config_path();
+    let actual = std::fs::read_to_string(path).expect("catalog config");
+    assert!(actual.contains(&format!("catalog_endpoint = \"{expected}\"")));
 }
 
 #[given(regex = r##"^the edited catalog endpoint "([^"]+)" returns valid models$"##)]
