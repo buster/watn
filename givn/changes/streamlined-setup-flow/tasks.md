@@ -354,10 +354,10 @@
 
 ### Shell setup independently configures completion and Ctrl-W integrations
 
-- [ ] RED: target `Shell setup independently configures completion and Ctrl-W integrations`; evidence:
-- [ ] GREEN: drive the real `watn shell` PTY flow and assert visible independent choices/result plus target files. Production files: . Evidence:
-- [ ] REFACTOR: rerun the E2E scenario. Evidence:
-- [ ] COMMIT: commit title references `Shell setup independently configures completion and Ctrl-W integrations`. Hash: 
+- [x] RED: target `Shell setup independently configures completion and Ctrl-W integrations`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the isolated-shell fixture step was undefined.
+- [x] GREEN: drive the real `watn shell` PTY flow and assert visible independent choices/result plus target files. E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] COMMIT: commit title references `Shell setup independently configures completion and Ctrl-W integrations`. Hash: `4332d45`
 
 ### Incomplete interactive request opens setup and does not send the original request
 
