@@ -389,7 +389,7 @@ Feature: Streamlined setup flow
     And provider "custom" should contain the legacy endpoint and default model "legacy-model"
     And provider "legacy" should not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider migration preserves the destination default model on collision
     Given the selected provider key is "legacy"
     And provider "legacy" has default model "source-model"
