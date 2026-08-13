@@ -1127,15 +1127,21 @@ impl SetupWizard {
             ];
         };
         let mut options = Vec::new();
-        if !metadata.mandatory {
-            options.push(ReasoningStrength::Off);
-        }
         for effort in &metadata.supported_efforts {
             if let Some(value) = ReasoningStrength::parse(effort) {
                 if !options.contains(&value) {
                     options.push(value);
                 }
             }
+        }
+        if !metadata.mandatory
+            && metadata
+                .supported_efforts
+                .iter()
+                .any(|effort| effort == "off")
+            && !options.contains(&ReasoningStrength::Off)
+        {
+            options.insert(0, ReasoningStrength::Off);
         }
         if options.is_empty() {
             options.push(ReasoningStrength::Off);

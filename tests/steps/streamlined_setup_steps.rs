@@ -77,6 +77,53 @@ fn configured_provider_with_unreachable_catalog(world: &mut WatnWorld) {
     ));
 }
 
+#[given(
+    regex = r##"^a configured provider catalog model "([^"]+)" supports efforts "([^"]+)", "([^"]+)", and "([^"]+)"$"##
+)]
+fn configured_provider_catalog_model_with_reasoning(
+    world: &mut WatnWorld,
+    model: String,
+    first: String,
+    second: String,
+    third: String,
+) {
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}/v1", server.port());
+    let data = serde_json::json!({
+        "data": [{
+            "id": model,
+            "reasoning": {
+                "supported_efforts": [first, second, third],
+                "default_effort": "medium",
+                "default_enabled": true,
+                "mandatory": false
+            }
+        }]
+    });
+    let mock_id = server
+        .mock(move |when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(data.to_string());
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"{endpoint}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[given(regex = r##"^the catalog default effort for "([^"]+)" is "([^"]+)"$"##)]
+fn catalog_default_effort(world: &mut WatnWorld, model: String, effort: String) {
+    assert_eq!(model, "reasoning-model");
+    assert_eq!(effort, "medium");
+    world
+        .pending_config
+        .insert("catalog_default_effort".to_string(), effort);
+}
+
 #[when("advance to the small model question")]
 fn advance_to_small_model_question(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
@@ -466,6 +513,54 @@ fn model_setup_allows_manual_identifier(world: &mut WatnWorld) {
             "manual model entry missing: {output:?}"
         );
     }
+}
+
+#[when(regex = r##"^choose "([^"]+)" for the small role$"##)]
+fn choose_model_for_small_role(world: &mut WatnWorld, model: String) {
+    let session = world.pty_session.as_mut().expect("models PTY session");
+    pty_write(session, &model);
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Small Reasoning");
+}
+
+#[then(
+    regex = r##"^the small reasoning question should show only "([^"]+)", "([^"]+)", and "([^"]+)"$"##
+)]
+fn small_reasoning_shows_only_catalog_efforts(
+    world: &mut WatnWorld,
+    first: String,
+    second: String,
+    third: String,
+) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let snapshot = pty_snapshot(session);
+    let output = latest_page(&snapshot);
+    for effort in [first, second, third] {
+        assert!(
+            output.contains(&effort),
+            "reasoning effort missing: {output:?}"
+        );
+    }
+    assert!(
+        !output.contains("Choices: off"),
+        "off was not catalog-supported: {output:?}"
+    );
+}
+
+#[then(regex = r##"^"([^"]+)" should be selected by default$"##)]
+fn reasoning_effort_selected_by_default(world: &mut WatnWorld, effort: String) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let snapshot = pty_snapshot(session);
+    let output = latest_page(&snapshot);
+    assert!(
+        output.contains("Selected:"),
+        "default effort label missing: {output:?}"
+    );
+    assert!(
+        output.contains(&effort),
+        "default effort missing: {output:?}"
+    );
 }
 
 #[given("the existing config content is recorded")]

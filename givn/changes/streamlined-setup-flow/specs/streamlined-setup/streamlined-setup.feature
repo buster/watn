@@ -150,7 +150,7 @@ Feature: Streamlined setup flow
     Then model setup should warn that catalog discovery is unavailable
     And model setup should allow a manually entered model identifier
 
-  @givn.added @wip
+  @givn.added
   Scenario: Catalog metadata selects supported reasoning efforts for the chosen model
     Given a configured provider catalog model "reasoning-model" supports efforts "low", "medium", and "high"
     And the catalog default effort for "reasoning-model" is "medium"
