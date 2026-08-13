@@ -284,10 +284,10 @@
 
 ### Catalog reasoning choices still permit a custom non-empty value
 
-- [ ] RED: target `Catalog reasoning choices still permit a custom non-empty value`; evidence:
-- [ ] GREEN: combine catalog suggestions with free-form reasoning entry. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Catalog reasoning choices still permit a custom non-empty value`. Hash: 
+- [x] RED: target `Catalog reasoning choices still permit a custom non-empty value`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the catalog-effort fixture step was undefined.
+- [x] GREEN: combine catalog suggestions with free-form reasoning entry. Production reuse: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)` through a real `/models` mock and PTY reasoning page.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Catalog reasoning choices still permit a custom non-empty value`. Hash: `b997685`
 
 ### Declining shell setup performs no target inspection or write
 
