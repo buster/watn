@@ -47,6 +47,8 @@ The classifications used below are:
 4. The same setup page polling, ANSI cleanup, PTY startup, model selection, and suggestion assertion mechanics are implemented in several step modules.
 5. The current suite is green, but that only proves that the global bindings are currently registerable and the scenarios pass. It does not prove that the scenarios are independent or that the concurrency steps exercise a real race.
 6. The regular `search-concurrency` scenario is particularly weak: its steps mutate `picker_suggestions` directly and assert that the option is present rather than starting workers and observing completion order (`tests/steps/search_concurrency_steps.rs:9-46`). Its E2E variant also does not assert exact result exclusion and does not configure delayed responses (`tests/steps/search_concurrency_steps.rs:49-88`).
+7. Semantic normalization identifies high-confidence Examples-row candidates in tier dispatch, execute confirmation, provider validation/cancellation, shell completion, and Bash widget behavior.
+8. Two scenarios exceed 20 steps and 21 more exceed 10 steps. The long scenarios are concentrated around setup workflows; they should be reduced by removing duplicated assertions, not by hiding the workflow in composite steps.
 
 ## Active Scenario Findings
 
@@ -306,6 +308,277 @@ Recommendation:
 - Keep the built-Bash scenario separate because it tests the built binary boundary.
 - Keep unsupported-shell and help scenarios separate because they test different contracts.
 
+## Semantic Similarity
+
+Exact title matching is insufficient. The following pass normalized quoted
+values, command arguments, numbers, common Gherkin words, and assertion verbs,
+then reviewed the highest-similarity groups against the production boundary.
+The result is a distinction between scenarios that should collapse into
+Examples rows and scenarios that should remain separate because they protect a
+different invariant.
+
+The active tree contains 223 scenarios. Twenty-three have at least ten Gherkin
+steps. Two have at least twenty steps, three have fifteen to nineteen, and
+eighteen have ten to fourteen. The 23 long scenarios account for 285 source
+step lines. Length is therefore concentrated: reducing duplication in these
+groups has more value than shortening every scenario mechanically.
+
+### High-Confidence Compression Candidates
+
+| Semantic group | Current scenarios | Assessment | Preferred shape |
+|---|---|---|---|
+| Tier dispatch | `ask.feature:15-36`, `ask.feature:89-106` | `-1`, `-2`, `-3`, explicit model, and default-model dispatch share the same request/status/model assertion. The source of the selected model is the variable. | One Scenario Outline for dispatch source and expected model. Keep configuration precedence examples only where they add a distinct input layer. |
+| Execute confirmation | `ask.feature:39-57` | Enter and `y` are the same accepted branch. `n` is the only distinct negative branch. | One outline with confirmation examples `Enter`, `y`, and `n`, or one accepted scenario plus one negative scenario. |
+| Provider input validation | `provider-setup.feature:79-92` | Invalid endpoint and empty credential both reject the draft, show a validation error, and avoid persistence. | One outline with invalid field, input, expected message, and persistence assertion. |
+| Provider cancellation | `provider-setup.feature:141-155` | Escape and Ctrl-C preserve the same configuration and make no request. The exit status differs. | One outline with cancellation signal and expected status. Keep both examples because signal handling is the behavior under test. |
+| Shell completion generation | `shell-completions.feature:3-155` | Five shell scenarios repeat the command tree, stdout-only, deterministic output, and syntax contract. | One Scenario Outline with shell, syntax marker, repeatability, and optional shell-specific option rows. |
+| Bash widget success | `interactive-shell-shortcut.feature:111-115` and `:169-173` | Both generate a command, preserve the request, and place the cursor at the end. The input fixtures differ only in trailing newlines. | One scenario with normalized output examples. The later scenario's comment assertion is the stronger contract. |
+| Bash widget failure | `interactive-shell-shortcut.feature:131-137` and `:188-194` | Failed output and empty output are exercised twice with equivalent original-buffer assertions. | One scenario with two failure-mode examples and exact buffer assertions. |
+
+These are not merely similar prose. They share the same Given/When shape, the
+same production path, and the same observable result. Converting them to
+Examples preserves coverage while reducing scenario and binding count.
+
+### Near-Same Groups Requiring Boundary Decisions
+
+| Semantic group | Current scenarios | Why they look the same | What must remain distinct |
+|---|---|---|---|
+| Credential source precedence | `credential-sources.feature:17-46`, `provider-setup.feature:187-195` | All test saved, provider-specific, and generic credential sources. | Literal saved key, provider-specific fallback, generic fallback, and missing reference are separate precedence cases. Put them in one decision matrix, but retain a real request assertion for the canonical path. |
+| Reasoning request/display | `reasoning.feature:4-40`, `ratatui-model-picker.feature:39-51`, `reasoning-policy.feature:4-30` | All select a tier and inspect reasoning in a request or output. | Policy resolution, UI choice presentation, request-body inclusion, and verbose stderr output are different boundaries. One example matrix per boundary is preferable to one huge scenario. |
+| Model filtering | `model-autosuggest.feature:14-38`, `ratatui-model-picker.feature:19-75`, `responsive-setup-model-filtering.feature:3-36`, `search-concurrency.feature:3-16` | All type a query and inspect suggestions, including a newer-query-wins case. | Local filtering, provider-backed filtering, stale-result rejection, unsupported-search fallback, and terminal responsiveness. Assign one scenario to each invariant and one scenario per production path only when the path differs. |
+| Tier assignment | `models.feature:6-25`, `credential-sources.feature:4-14`, `catalog-source.feature:4-28`, `setup-persistence.feature:36-43`, `ratatui-model-picker.feature:4-8`, `streamlined-setup.feature:103-115`, `model-autosuggest.feature:4-12` | Most select three models and assert persisted tiers. | Catalog source, credential source, reasoning, preservation of unrelated settings, pagination, and interactive search. These should be focused additions to one canonical assignment flow, not seven complete copies. |
+| Setup onboarding | `unified-setup-wizard.feature:4-29`, `streamlined-setup.feature:4-28`, `provider-setup.feature:43-58` | All walk provider and model setup from a terminal. | Shared coordinated setup, first-use implicit setup, and focused provider/model entry points. The newest full flow should own the coordinated smoke path. |
+| Transport override behavior | `transport.feature:4-41` | All use configured and competing local twins and assert endpoint selection. | Normal binary isolation, test-support override use, and missing/whitespace fallback are different compile/runtime contracts. A parameterized transport audit helper can reduce step code without collapsing the scenarios. |
+| Streaming parser resilience | `incremental-sse-rendering.feature:39-80` | DONE, EOF, malformed event, partial read, and mid-stream failure all process SSE content. | Each drives a different parser or completion boundary. Keep separate scenarios, but share event fixtures and outcome assertions. |
+
+The key rule is: **merge examples, not invariants**. A scenario should become an
+Examples row only when changing the row does not change the user action,
+production boundary, or primary assertion shape.
+
+## Long Scenario Analysis
+
+### 1. `Setup wizard guides provider and model configuration page by page`
+
+Location: `givn/specs/unified-setup-wizard/unified-setup-wizard.feature:4`
+
+Length: 25 steps.
+
+The scenario combines provider choice, endpoint entry, credential persistence,
+three model selections, reasoning navigation, shell completion, shell shortcut,
+final exit, and three config assertions. It is a valid end-to-end transaction,
+but it mixes five independently diagnosable contracts. A failure in shell
+shortcut navigation makes the provider/model coverage appear failed even when
+those earlier behaviors are correct.
+
+Recommended treatment:
+
+- Retain one short coordinated smoke scenario that proves the complete setup transaction and final persistence.
+- Move exact page copy, cursor, and focus assertions to the existing focused setup/layout features.
+- Move shell installation behavior to shell-specific features.
+- Move detailed tier/reasoning persistence to the canonical model assignment scenario.
+- Do not replace the flow with one opaque step such as `complete setup`; that reduces visible steps but hides the interaction contract.
+
+### 2. `Coordinated setup completes provider models reasoning and shell choices`
+
+Location: `givn/specs/streamlined-setup/streamlined-setup.feature:4`
+
+Length: 24 steps.
+
+This is the newer version of the same full transaction. It is more valuable
+than the older unified flow because it includes the final review and explicit
+reasoning values. It should become the canonical coordinated E2E smoke test,
+but its assertions should be reduced to milestone and final-state checks. The
+existing focused scenarios already cover provider validation, model metadata,
+reasoning policy, and shell desired state.
+
+Recommended treatment:
+
+- Keep the full path as one scenario because it is one user transaction.
+- Remove duplicate page explanations and detailed per-field assertions from the smoke path when the focused feature owns them.
+- Use a small number of domain-language actions for the repeated model/reasoning selection mechanics, backed by shared helpers rather than composite steps that hide pages.
+
+### 3. `Configure OpenRouter with an environment-backed credential`
+
+Location: `givn/specs/provider-setup/provider-setup.feature:4`
+
+Length: 17 steps.
+
+The scenario crosses two boundaries: saving an environment credential reference
+and expanding it during a later chat request. That cross-boundary assertion is
+valuable. Splitting it would likely add setup duplication unless the first
+scenario becomes the canonical provider configuration fixture for a focused
+runtime expansion scenario.
+
+Recommended treatment: keep it as one cross-boundary contract, but remove the
+other full provider-configuration flows that assert the same persistence and
+request behavior with only a different named provider.
+
+### 4. `The green border follows optional shortcut focus`
+
+Location: `givn/specs/highlight-active-setup-input/highlight-active-setup-input.feature:39`
+
+Length: 16 steps.
+
+The long prelude is necessary to reach the shell pages through the real TTY,
+but the scenario contains two focus assertions: the shortcut question and the
+shell selection. Splitting them would improve diagnosis but repeat the entire
+PTY setup. The better reduction is a shared setup-navigation helper or a
+test-only state seam that is explicitly documented as bypassing earlier pages.
+
+Recommended treatment: keep the E2E scenario intact unless a deterministic
+fixture can start at the shell page without replacing the real focus behavior.
+Extract only the repeated page-driving mechanics.
+
+### 5. `First normal use starts provider setup and then model setup`
+
+Location: `givn/specs/provider-setup/provider-setup.feature:43`
+
+Length: 15 steps.
+
+This is a cohesive implicit-onboarding transaction. It should not be split into
+provider and model scenarios because the behavior under test is that a normal
+request enters provider setup, continues into model setup, persists both, and
+does not send the original request prematurely.
+
+Recommended treatment: retain one scenario and remove overlapping first-use
+happy paths from older setup features where their unique assertion is already
+covered.
+
+### Length Rules
+
+Use length as a review signal, not an automatic failure:
+
+- 10-14 steps: inspect for repeated setup and repeated assertions.
+- 15-19 steps: require an explicit boundary decision in design review.
+- 20 or more steps: require a justification for keeping one transaction or split it at an independent user intent/persistence boundary.
+
+Do not split a coherent transaction merely to reduce the step count. That often
+creates more scenarios, repeats expensive PTY setup, and weakens the relation
+between the user's action and the final outcome.
+
+## Feature Creation Workflow
+
+The repository needs behavior ownership before feature-file authoring. A change
+should not begin with a new `.feature` file chosen by implementation module.
+
+### Behavior Ledger
+
+Maintain a small active behavior ledger with one row per observable invariant:
+
+| Field | Purpose |
+|---|---|
+| Behavior ID | Stable key such as `model-search/newest-query-wins` |
+| User action | What the user does, independent of code structure |
+| Primary outcome | The one result the scenario must prove |
+| Boundary | CLI, PTY, request construction, resolver, persistence, or renderer |
+| Canonical feature/scenario | Current owner |
+| Variants | Input or response examples, not additional owners |
+| Supersedes | Older scenario replaced by this one |
+| Coverage gap | Explicit untested edge, if any |
+
+The ledger prevents a new `search-concurrency`, `responsive-filtering`, or
+`autosuggest` scenario from claiming the same invariant without declaring the
+production path difference.
+
+### Scenario Decision Tree
+
+Before adding a scenario, answer these questions in order:
+
+1. Does an active scenario already prove the same invariant at the same boundary?
+   - Add an Examples row or strengthen the existing scenario.
+2. Does the new case change only values, flags, providers, shells, or response order?
+   - Use a Scenario Outline or data table.
+3. Does it add one assertion to an existing user action?
+   - Extend the canonical scenario or replace it with the stronger scenario; do not keep both by default.
+4. Does it exercise a different production boundary?
+   - Keep a layered scenario, and encode the boundary in its title and behavior ledger.
+5. Does it introduce a new persistence or cancellation boundary?
+   - Add a scenario only for that invariant.
+6. Is it long because it crosses multiple independent user intents?
+   - Split at the transaction boundary, not at arbitrary step counts.
+
+### Authoring Rules
+
+- Start from the user interaction inventory, not the changed source file list.
+- One canonical scenario owns the happy path for an action at each interface boundary.
+- Use Scenario Outlines for value matrices and response-order matrices.
+- Use `Background` only for stable domain setup. Do not hide meaningful user actions in it.
+- Keep Given steps declarative. A Given may create a fixture, but should not silently perform the behavior under test.
+- Keep When steps focused on one user action or one external event.
+- Keep Then steps focused on observable outcomes. Group related assertions only when they describe one result.
+- Avoid composite steps that execute an entire multi-page workflow. They reduce visible step count by hiding coverage, not by removing behavior.
+- Add a new step binding only after searching for an equivalent normalized action and assertion.
+
+## Feature Merging Workflow
+
+Merging a givn change should be a semantic reconciliation, not a file move.
+
+1. Generate an active-tree report of exact scenario titles, normalized scenario fingerprints, and normalized step-expression fingerprints.
+2. Compare every change scenario against permanent specs and other active change specs.
+3. Classify each match as `new`, `variant`, `layered`, `supersedes`, or `duplicate`.
+4. For `variant`, convert repeated value cases into Examples rows where the assertion shape is the same.
+5. For `supersedes`, delete the old scenario in the same atomic change and record the replacement in the ledger and task evidence.
+6. For `layered`, retain both scenarios only when the production boundary differs; name that boundary explicitly.
+7. Re-run the active suite and compare scenario count, source step count, and executed step count. A green suite with a larger count is not automatically progress.
+8. Archive only after the permanent tree has no unresolved duplicate or unowned semantic match.
+
+The merge report should show net behavior, not only added files:
+
+```text
+new invariants:        N
+new examples:          N
+superseded scenarios:  N
+removed duplicate steps: N
+net scenario delta:    N
+net source-step delta: N
+```
+
+This makes additive drift visible when a change claims to consolidate or
+replace behavior.
+
+## Coverage Compression Without Coverage Loss
+
+Scenario count is not coverage. Coverage should be tracked as a matrix of:
+
+```text
+invariant x production boundary x meaningful path
+```
+
+For this repository, the matrix should distinguish at least:
+
+- Local model filtering versus provider-backed filtering.
+- Older model picker versus coordinated setup picker.
+- Provider save before catalog discovery versus final review atomicity.
+- Resolver policy versus request construction versus terminal output.
+- Regular subprocess versus real PTY.
+- Normal binary versus test-support transport override.
+
+Within one matrix cell, prefer one canonical scenario plus Examples rows. Across
+different cells, retain the scenario only when the boundary changes the failure
+mode or user-visible contract.
+
+The practical target is not minimum scenario count. It is minimum **unique
+setup and binding count per covered matrix cell**. Removing a scenario that is
+the only real PTY or persistence-boundary test lowers coverage even if line
+coverage remains unchanged. Removing a scenario that repeats the same action,
+fixture, production path, and assertion increases signal without lowering
+coverage.
+
+## Proposed Repository Gates
+
+Add these checks to the feature review/archive path:
+
+- Duplicate active scenario titles fail.
+- Semantic fingerprint matches require a disposition in the behavior ledger.
+- New scenarios with more than 14 steps require a split-or-keep rationale.
+- New scenarios with more than 19 steps require explicit design-review approval.
+- A new step binding with a normalized match to an existing binding fails or requires justification.
+- Archive reports net scenario and source-step deltas.
+- A change that adds no new behavior IDs but adds scenarios fails review unless it records a replacement or boundary change.
+
+These gates preserve high coverage while stopping the current pattern of adding
+another complete feature family for an invariant that already exists.
+
 ## Step Definition Findings
 
 The current runner passed without a duplicate-binding panic, so there is no active exact binding collision comparable to the historical `selected_tiers` collision removed by `e0dff35`. The merge opportunities are semantic and implementation-level.
@@ -480,6 +753,8 @@ Every feature review should answer:
 5. Reduce the model tier assignment matrix to canonical core, catalog-source, persistence, reasoning, and pagination/search contracts.
 6. Reassess the older unified setup happy path after the streamlined setup flow is the canonical coordinated smoke test.
 7. Convert shell completion variants to an outline and add active-spec duplicate lint.
+8. Introduce the behavior ledger and semantic fingerprint disposition before the next feature is authored.
+9. Apply the length review thresholds to setup workflows and report net scenario/step deltas during merge.
 
 ## Verification Evidence
 
