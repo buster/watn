@@ -361,7 +361,7 @@
 
 ### Incomplete interactive request opens setup and does not send the original request
 
-- [ ] RED: target `Incomplete interactive request opens setup and does not send the original request`; evidence:
-- [ ] GREEN: drive the real interactive request PTY, assert coordinator output, cancellation, exit, and zero chat requests. Production files: . Evidence:
-- [ ] REFACTOR: rerun the E2E scenario. Evidence:
-- [ ] COMMIT: commit title references `Incomplete interactive request opens setup and does not send the original request`. Hash: 
+- [x] RED: target `Incomplete interactive request opens setup and does not send the original request`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the missing-role fixture step was undefined.
+- [x] GREEN: drive the real interactive request PTY, assert coordinator output, cancellation, exit, and zero chat requests. E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] COMMIT: commit title references `Incomplete interactive request opens setup and does not send the original request`. Hash: `3d913f5`
