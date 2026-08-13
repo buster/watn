@@ -281,6 +281,62 @@ fn provider_setup_shows_unresolved_environment(world: &mut WatnWorld, variable: 
     );
 }
 
+#[when(
+    regex = r##"^provider setup saves provider "([^"]+)" with endpoint "([^"]+)" and credential "([^"]+)"$"##
+)]
+fn provider_setup_saves_provider(
+    world: &mut WatnWorld,
+    provider: String,
+    endpoint: String,
+    credential: String,
+) {
+    let dir = tempfile::tempdir().expect("provider setup temp dir");
+    let config_home = dir.path().to_string_lossy().to_string();
+    world.temp_dir = Some(dir);
+    world
+        .env_vars
+        .insert("XDG_CONFIG_HOME".to_string(), config_home.clone());
+    std::env::set_var("XDG_CONFIG_HOME", &config_home);
+    let path = std::path::Path::new(&config_home)
+        .join("watn")
+        .join("config.toml");
+    std::fs::create_dir_all(path.parent().expect("config parent")).expect("config directory");
+    std::fs::write(
+        &path,
+        world
+            .raw_config
+            .as_deref()
+            .expect("provider config fixture"),
+    )
+    .expect("provider config");
+    let mut config = watn::config::load_config().expect("load provider config");
+    let draft = watn::provider::setup::ProviderDraft {
+        name: provider,
+        endpoint,
+        api_key: credential,
+    };
+    watn::config::save_provider_draft(&mut config, &draft).expect("save provider draft");
+}
+
+#[given("the config file contains pricing and LiteLLM settings")]
+fn config_contains_pricing_and_litellm(world: &mut WatnWorld) {
+    let mut raw = world.raw_config.take().expect("provider config fixture");
+    raw.push_str(
+        "\n\n[pricing]\n\"legacy-small\" = { input = 1.0, output = 2.0 }\n\n[litellm]\nendpoint = \"https://legacy-litellm.example\"\napi_key = \"sk-litellm\"\n",
+    );
+    world.raw_config = Some(raw);
+}
+
+#[then("the pricing and LiteLLM settings should remain unchanged")]
+fn pricing_and_litellm_remain_unchanged(_world: &mut WatnWorld) {
+    let config = watn::config::load_config().expect("load preserved config");
+    assert_eq!(config.pricing["legacy-small"].input, 1.0);
+    assert_eq!(
+        config.litellm.as_ref().map(|value| value.endpoint.as_str()),
+        Some("https://legacy-litellm.example")
+    );
+}
+
 #[given("the existing config content is recorded")]
 fn record_existing_config_content(world: &mut WatnWorld) {
     world.pending_config.insert(
