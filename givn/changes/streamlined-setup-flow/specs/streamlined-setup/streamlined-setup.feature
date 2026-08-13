@@ -207,7 +207,7 @@ Feature: Streamlined setup flow
     Then shell setup should report a malformed managed block
     And the Bash file should remain unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shell failure does not discard successful shell changes or configuration
     Given Bash can accept a Watn completion block
     And Zsh cannot be modified
