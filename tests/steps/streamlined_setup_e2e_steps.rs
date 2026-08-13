@@ -1,4 +1,4 @@
-use cucumber::{then, when};
+use cucumber::{given, then, when};
 
 use super::{finish_pty_session, pty_snapshot, pty_write};
 use crate::WatnWorld;
@@ -75,6 +75,110 @@ fn config_contains_credential_reference(world: &mut WatnWorld, reference: String
         .join("watn/config.toml");
     let content = std::fs::read_to_string(path).expect("provider config");
     assert!(content.contains(&format!("api_key = \"{reference}\"")));
+}
+
+#[given("no Watn-managed shell integrations are installed")]
+fn no_managed_shell_integrations_installed(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("E2E shell temp dir");
+    let base = temp.path().to_path_buf();
+    let home = base.join("home");
+    let config = base.join("config");
+    std::fs::create_dir_all(&home).expect("E2E shell home");
+    std::fs::create_dir_all(&config).expect("E2E shell config");
+    world.temp_dir = Some(temp);
+    world
+        .env_vars
+        .insert("HOME".to_string(), home.to_string_lossy().to_string());
+    world.env_vars.insert(
+        "XDG_CONFIG_HOME".to_string(),
+        config.to_string_lossy().to_string(),
+    );
+    std::env::set_var("HOME", &home);
+    std::env::set_var("XDG_CONFIG_HOME", &config);
+}
+
+#[then("shell setup should show independent completion and Ctrl-W questions")]
+fn shell_questions_are_independent(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    let output = visible_output(&pty_snapshot(session)).to_ascii_lowercase();
+    assert!(
+        output.contains("shell completion"),
+        "completion question missing: {output:?}"
+    );
+}
+
+#[then("the shell choices should include only Bash, Fish, and Zsh")]
+fn shell_choices_are_closed(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "y");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let output = visible_output(&pty_snapshot(session));
+    for shell in ["Bash", "Fish", "Zsh"] {
+        assert!(output.contains(shell), "shell choice missing: {output:?}");
+    }
+}
+
+#[when("I choose Bash for completion")]
+fn choose_bash_completion(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, " \r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let output = visible_output(&pty_snapshot(session)).to_ascii_lowercase();
+    assert!(
+        output.contains("shortcut"),
+        "shortcut question missing: {output:?}"
+    );
+}
+
+#[when("choose Zsh for the Ctrl-W shortcut")]
+fn choose_zsh_shortcut(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "y");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    pty_write(session, "\x1b[B \r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("shell PTY session");
+    finish_pty_session(world, session);
+}
+
+#[then("shell setup should exit successfully")]
+fn shell_setup_exits_successfully(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "shell output: {:?}",
+        world.output
+    );
+}
+
+fn e2e_shell_home(world: &WatnWorld) -> std::path::PathBuf {
+    std::path::PathBuf::from(world.env_vars.get("HOME").expect("E2E HOME"))
+}
+
+#[then("Bash should contain a Watn-managed completion block")]
+fn bash_contains_e2e_completion(world: &mut WatnWorld) {
+    let content = std::fs::read_to_string(e2e_shell_home(world).join(".bashrc"))
+        .expect("Bash completion target");
+    assert!(content.contains(watn::shell_completion::OPEN_MARKER));
+}
+
+#[then("Zsh should contain a Watn-managed Ctrl-W block")]
+fn zsh_contains_e2e_shortcut(world: &mut WatnWorld) {
+    let content =
+        std::fs::read_to_string(e2e_shell_home(world).join(".zshrc")).expect("Zsh shortcut target");
+    assert!(content.contains(watn::shell_shortcut::OPEN_MARKER));
+}
+
+#[then("Fish should remain unchanged")]
+fn fish_remains_unchanged(world: &mut WatnWorld) {
+    let config_home = std::path::PathBuf::from(
+        world
+            .env_vars
+            .get("XDG_CONFIG_HOME")
+            .expect("E2E XDG config"),
+    );
+    assert!(!config_home.join("fish/config.fish").exists());
 }
 
 #[when(regex = r##"^I choose provider "OpenRouter"$"##)]
