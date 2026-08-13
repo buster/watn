@@ -135,7 +135,7 @@ Feature: Streamlined setup flow
     Then the output should instruct me to run `watn provider`
     And no provider question should be shown
 
-  @givn.added @wip
+  @givn.added
   Scenario: Available catalog restricts model choices
     Given a configured provider with catalog models "catalog-one" and "catalog-two"
     And the config file contains model "not-in-catalog" for the small role

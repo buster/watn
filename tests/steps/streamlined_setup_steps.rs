@@ -46,6 +46,25 @@ fn configured_provider_with_catalog_models(
     world.pending_mock_returned_models = vec![first, second, third];
 }
 
+#[given(regex = r##"^a configured provider with catalog models "([^"]+)" and "([^"]+)"$"##)]
+fn configured_provider_with_two_catalog_models(
+    world: &mut WatnWorld,
+    first: String,
+    second: String,
+) {
+    world.raw_config = Some(build_config(
+        "custom",
+        None,
+        Some(vec![("custom", "http://mock", "test-key", "")]),
+        None,
+        None,
+        None,
+    ));
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+    world.pending_mock_returned_models = vec![first, second];
+}
+
 #[when("advance to the small model question")]
 fn advance_to_small_model_question(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
@@ -373,6 +392,46 @@ fn pricing_and_litellm_remain_unchanged(_world: &mut WatnWorld) {
     assert_eq!(
         config.litellm.as_ref().map(|value| value.endpoint.as_str()),
         Some("https://legacy-litellm.example")
+    );
+}
+
+#[given(regex = r##"^the config file contains model "([^"]+)" for the small role$"##)]
+fn config_contains_small_model(world: &mut WatnWorld, model: String) {
+    let mut raw = world.raw_config.take().expect("provider config fixture");
+    raw.push_str(&format!("\n\n[tiers]\nsmall = \"{model}\"\n"));
+    world.raw_config = Some(raw);
+}
+
+#[then("the small role should require a replacement model")]
+fn small_role_requires_replacement(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    let page = latest_page(&output);
+    assert!(
+        page.contains("Small Model"),
+        "small model page was not active: {page:?}"
+    );
+    assert!(
+        !page.contains("not-in-catalog"),
+        "stale model remained selectable: {page:?}"
+    );
+}
+
+#[then(regex = r##"^the model choices should include only "([^"]+)" and "([^"]+)"$"##)]
+fn model_choices_are_catalog_only(world: &mut WatnWorld, first: String, second: String) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = latest_page(&pty_snapshot(session)).to_string();
+    assert!(
+        output.contains(&first),
+        "first catalog model missing: {output:?}"
+    );
+    assert!(
+        output.contains(&second),
+        "second catalog model missing: {output:?}"
+    );
+    assert!(
+        !output.contains("not-in-catalog"),
+        "stale model was displayed: {output:?}"
     );
 }
 
