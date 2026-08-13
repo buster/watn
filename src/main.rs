@@ -499,10 +499,6 @@ fn run_provider_setup_command() {
 }
 
 fn run_setup_command() {
-    if !std::io::stdin().is_terminal() {
-        watn::provider::setup::print_setup_guidance();
-        std::process::exit(1);
-    }
     let mut config = match load_config() {
         Ok(config) => config,
         Err(error) => {
@@ -510,6 +506,10 @@ fn run_setup_command() {
             std::process::exit(exit_code(&error));
         }
     };
+    if !std::io::stdin().is_terminal() {
+        watn::provider::setup::print_setup_guidance();
+        std::process::exit(1);
+    }
     match watn::setup::run_with_config(&config, SetupEntryPoint::Setup) {
         Ok(SetupWizardOutcome::Saved(result)) => {
             if let Err(error) = watn::setup::apply_result(&mut config, &result) {
