@@ -305,10 +305,10 @@
 
 ### Missing model roles trigger implicit setup even with a usable provider
 
-- [ ] RED: target `Missing model roles trigger implicit setup even with a usable provider`; evidence:
-- [ ] GREEN: include role completeness in implicit setup readiness. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Missing model roles trigger implicit setup even with a usable provider`. Hash: 
+- [x] RED: target `Missing model roles trigger implicit setup even with a usable provider`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the usable-provider fixture step was undefined.
+- [x] GREEN: include role completeness in implicit setup readiness. Production files: `src/config/mod.rs`, `src/main.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`; PTY setup opened and chat mock hits remained zero.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Missing model roles trigger implicit setup even with a usable provider`. Hash: `38df9d5`
 
 ### Focused model setup preserves provider-owned and unrelated fields
 
