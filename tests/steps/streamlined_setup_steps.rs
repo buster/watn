@@ -238,6 +238,41 @@ fn thinking_model_input_shows(world: &mut WatnWorld, model: String) {
     );
 }
 
+#[when("choose provider \"Custom\"")]
+fn choose_custom_provider(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "\x1b[B\x1b[B\r");
+    wait_for_active_page(session, "URL");
+}
+
+#[then("provider setup should not allow the empty endpoint")]
+fn provider_setup_rejects_empty_endpoint(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let output = pty_snapshot(session);
+    for word in ["endpoint", "must", "HTTP", "HTTPS", "URL"] {
+        assert!(
+            output.contains(word),
+            "empty endpoint was accepted: {output:?}"
+        );
+    }
+}
+
+#[when(regex = r##"^I enter endpoint "([^"]+)"$"##)]
+fn enter_setup_endpoint(world: &mut WatnWorld, endpoint: String) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, &endpoint);
+}
+
+#[then("provider setup should allow the credential question")]
+fn provider_setup_allows_credential_question(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("provider PTY session");
+    pty_write(session, "\r");
+    let output = wait_for_active_page(session, "API key");
+    assert!(output.contains("Where should the API key be stored?"));
+}
+
 #[given("the existing config content is recorded")]
 fn record_existing_config_content(world: &mut WatnWorld) {
     world.pending_config.insert(
