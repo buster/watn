@@ -95,10 +95,10 @@
 
 ### Off reasoning omits the reasoning setting from a request
 
-- [ ] RED: target `Off reasoning omits the reasoning setting from a request`; evidence:
-- [ ] GREEN: omit `reasoning_effort` for `off`. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Off reasoning omits the reasoning setting from a request`. Hash: 
+- [x] RED: target `Off reasoning omits the reasoning setting from a request`; evidence: non-zero; the small-role request step was undefined.
+- [x] GREEN: drive a real small-tier request against a blocking reasoning-body twin and assert successful omission. Production files: existing request policy reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Off reasoning omits the reasoning setting from a request`. Hash: `36a6c30`
 
 ### Shell setup prefills installed integrations and removes only managed blocks when deselected
 
