@@ -79,5 +79,5 @@ pub fn resolve_reasoning_default(
 #[derive(Debug, Clone)]
 pub struct LevelChoice {
     pub model: ModelEntry,
-    pub reasoning: ReasoningStrength,
+    pub reasoning: String,
 }

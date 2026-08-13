@@ -235,15 +235,15 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
         match index {
             0 => {
                 updated.tiers.small = Some(choice.model.id.clone());
-                updated.tiers.reasoning.small = Some(choice.reasoning.as_str().to_string());
+                updated.tiers.reasoning.small = Some(choice.reasoning.clone());
             }
             1 => {
                 updated.tiers.normal = Some(choice.model.id.clone());
-                updated.tiers.reasoning.normal = Some(choice.reasoning.as_str().to_string());
+                updated.tiers.reasoning.normal = Some(choice.reasoning.clone());
             }
             2 => {
                 updated.tiers.thinking = Some(choice.model.id.clone());
-                updated.tiers.reasoning.thinking = Some(choice.reasoning.as_str().to_string());
+                updated.tiers.reasoning.thinking = Some(choice.reasoning.clone());
             }
             _ => unreachable!(),
         }
@@ -313,6 +313,7 @@ struct SetupWizard {
     manual_models: [String; 3],
     completed: [Option<LevelChoice>; 3],
     reasoning: [ReasoningStrength; 3],
+    custom_reasoning: [Option<String>; 3],
     reasoning_explicit: [bool; 3],
     model_focus: ModelFocus,
     search_status: [Option<String>; 3],
@@ -432,6 +433,7 @@ impl SetupWizard {
             manual_models: Default::default(),
             completed: [None, None, None],
             reasoning,
+            custom_reasoning: [None, None, None],
             reasoning_explicit,
             model_focus: ModelFocus::Table,
             search_status: [None, None, None],
@@ -681,6 +683,13 @@ impl SetupWizard {
                     && matches!(character, 'p' | 'P' | 'e' | 'E')
                 {
                     self.choose_storage(character);
+                } else if let Some(slot) = self.page.reasoning_slot() {
+                    if matches!(character, 'c' | 'C') {
+                        self.custom_reasoning[slot] = Some(String::new());
+                        self.reasoning_explicit[slot] = true;
+                    } else {
+                        self.edit_input(Some(character));
+                    }
                 } else {
                     self.edit_input(Some(character));
                 }
@@ -715,9 +724,16 @@ impl SetupWizard {
             }
         }
         if let Some(slot) = self.page.reasoning_slot() {
+            if let Some(custom) = &self.custom_reasoning[slot] {
+                if custom.trim().is_empty() {
+                    self.validation = "reasoning effort cannot be empty".to_string();
+                    return Ok(None);
+                }
+            }
             self.reasoning_explicit[slot] = true;
+            let value = self.reasoning_value(slot);
             if let Some(choice) = self.completed[slot].as_mut() {
-                choice.reasoning = self.reasoning[slot];
+                choice.reasoning = value;
             }
         }
         if self.page == self.last_page {
@@ -869,6 +885,21 @@ impl SetupWizard {
                 }
                 self.search(slot);
             }
+            SetupPage::SmallReasoning
+            | SetupPage::NormalReasoning
+            | SetupPage::ThinkingReasoning => {
+                let Some(slot) = self.page.reasoning_slot() else {
+                    return;
+                };
+                if self.custom_reasoning[slot].is_some() {
+                    let input = self.custom_reasoning[slot].get_or_insert_default();
+                    if let Some(character) = character {
+                        input.push(character);
+                    } else {
+                        input.pop();
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -956,7 +987,7 @@ impl SetupWizard {
                     supported_features: Vec::new(),
                     reasoning: None,
                 },
-                reasoning: self.reasoning[slot],
+                reasoning: self.reasoning_value(slot),
             });
             return Ok(());
         }
@@ -966,9 +997,15 @@ impl SetupWizard {
         }
         self.completed[slot] = Some(LevelChoice {
             model: self.suggestions[slot][self.selection[slot]].clone(),
-            reasoning: self.reasoning[slot],
+            reasoning: self.reasoning_value(slot),
         });
         Ok(())
+    }
+
+    fn reasoning_value(&self, slot: usize) -> String {
+        self.custom_reasoning[slot]
+            .clone()
+            .unwrap_or_else(|| self.reasoning[slot].as_str().to_string())
     }
 
     fn ensure_catalog(&mut self) -> Result<(), Error> {
@@ -1122,6 +1159,7 @@ impl SetupWizard {
             return vec![
                 ReasoningStrength::Off,
                 ReasoningStrength::Low,
+                ReasoningStrength::Minimal,
                 ReasoningStrength::Medium,
                 ReasoningStrength::High,
             ];
@@ -1170,9 +1208,11 @@ impl SetupWizard {
             .unwrap_or(0) as i32;
         let next = (current + direction).rem_euclid(options.len() as i32) as usize;
         self.reasoning[slot] = options[next];
+        self.custom_reasoning[slot] = None;
         self.reasoning_explicit[slot] = true;
+        let value = self.reasoning_value(slot);
         if let Some(choice) = self.completed[slot].as_mut() {
-            choice.reasoning = self.reasoning[slot];
+            choice.reasoning = value;
         }
     }
 
@@ -1506,11 +1546,21 @@ impl SetupWizard {
             .map(ReasoningStrength::as_str)
             .collect::<Vec<_>>()
             .join(", ");
+        let metadata_notice = self.suggestions[slot]
+            .get(self.selection[slot])
+            .and_then(|model| model.reasoning.as_ref())
+            .is_none()
+            .then_some("Notice: reasoning metadata unavailable")
+            .unwrap_or("");
         let text = format!(
-            "Model: {}\nChoose reasoning effort with Up/Down, then press Enter.\nSelected: {}\nChoices: {}",
+            "Model: {}\n{}\nChoose reasoning effort with Up/Down, then press Enter.\nSelected: {}\nChoices: {}\nCustom: {}",
             model,
-            self.reasoning[slot].as_str(),
-            options
+            metadata_notice,
+            self.reasoning_value(slot),
+            options,
+            self.custom_reasoning[slot]
+                .as_deref()
+                .unwrap_or("press c to enter a custom effort")
         );
         frame.render_widget(
             Paragraph::new(text)

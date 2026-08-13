@@ -494,6 +494,90 @@ fn model_choices_are_catalog_only(world: &mut WatnWorld, first: String, second: 
     );
 }
 
+#[given(regex = r##"^a configured provider catalog model "([^"]+)" has no reasoning metadata$"##)]
+fn configured_provider_catalog_model_without_reasoning(world: &mut WatnWorld, model: String) {
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}/v1", server.port());
+    let data = serde_json::json!({ "data": [{ "id": model }] });
+    let mock_id = server
+        .mock(move |when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(data.to_string());
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"{endpoint}\"\napi_key = \"test-key\"\n"
+    ));
+}
+
+#[then("the small reasoning question should warn that supported efforts are unavailable")]
+fn small_reasoning_warns_missing_metadata(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    for word in ["reasoning", "metadata", "unavailable"] {
+        assert!(
+            output.contains(word),
+            "metadata warning missing: {output:?}"
+        );
+    }
+}
+
+#[then(
+    regex = r##"^the generic reasoning choices should include "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)", and "([^"]+)"$"##
+)]
+fn generic_reasoning_choices_include(
+    world: &mut WatnWorld,
+    first: String,
+    second: String,
+    third: String,
+    fourth: String,
+    fifth: String,
+) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    for choice in [first, second, third, fourth, fifth] {
+        assert!(
+            output.contains(&choice),
+            "generic effort missing: {output:?}"
+        );
+    }
+}
+
+#[then("the generic reasoning choices should include a custom effort entry")]
+fn generic_reasoning_choices_include_custom(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    assert!(
+        output.contains("custom"),
+        "custom effort entry missing: {output:?}"
+    );
+}
+
+#[when(regex = r##"^I enter custom reasoning effort "([^"]+)"$"##)]
+fn enter_custom_reasoning(world: &mut WatnWorld, effort: String) {
+    let session = world.pty_session.as_mut().expect("models PTY session");
+    pty_write(session, "c");
+    pty_write(session, &effort);
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Normal Model");
+}
+
+#[then(regex = r##"^the small role should use reasoning "([^"]+)"$"##)]
+fn small_role_uses_reasoning(world: &mut WatnWorld, effort: String) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    for character in effort.chars() {
+        assert!(
+            output.contains(character),
+            "custom effort was not retained: {output:?}"
+        );
+    }
+}
+
 #[then("model setup should warn that catalog discovery is unavailable")]
 fn model_setup_warns_catalog_unavailable(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");
