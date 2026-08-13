@@ -52,7 +52,7 @@ clap_complete = "4.6.9"
 [dev-dependencies]
 cucumber = "0.23"
 tokio = { version = "1", features = ["full"] }
-httpmock = "0.7"
+httpmock = "0.8"
 regex = "1"
 tempfile = "3"
 nix = { version = "0.31", features = ["signal", "process"] }
