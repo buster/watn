@@ -11,10 +11,10 @@
 
 ### Coordinated setup displays one separate reasoning question after each model
 
-- [ ] RED: remove only this scenario's `@wip`, add strict stubs, and run `cargo test --locked --test features_runner --features test-support -- --name "Coordinated setup displays one separate reasoning question after each model"`. Evidence:
-- [ ] GREEN: implement separate model/reasoning question state and assertions. Production files: . Evidence:
-- [ ] REFACTOR: clean up without behavior change and rerun the same command. Evidence:
-- [ ] COMMIT: commit message references `Coordinated setup displays one separate reasoning question after each model`. Hash: 
+- [x] RED: remove only this scenario's `@wip`, add strict stubs, and run `./run-tests.sh --name "Coordinated setup displays one separate reasoning question after each model"`. Evidence: non-zero; `Step doesn't match any function` at the active scenario's `advance to the small model question` step.
+- [x] GREEN: implement separate model/reasoning question state and assertions. Production files: `src/setup.rs`; test/runner files: `tests/steps/streamlined_setup_steps.rs`, `run-tests.sh`. Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: clean up without behavior change and rerun the same command. Evidence: post-`cargo fmt --all` targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] COMMIT: commit message references `Coordinated setup displays one separate reasoning question after each model`. Hash: `1e165d5`
 
 ### Rerunning coordinated setup prefills current values and preserves a masked literal credential
 
