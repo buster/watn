@@ -102,10 +102,10 @@
 
 ### Shell setup prefills installed integrations and removes only managed blocks when deselected
 
-- [ ] RED: target `Shell setup prefills installed integrations and removes only managed blocks when deselected`; evidence:
-- [ ] GREEN: implement filesystem prefill and safe managed-block removal. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Shell setup prefills installed integrations and removes only managed blocks when deselected`. Hash: 
+- [x] RED: target `Shell setup prefills installed integrations and removes only managed blocks when deselected`; evidence: non-zero; `watn shell` command/step was not implemented.
+- [x] GREEN: add `watn shell`, filesystem prefill, provider-independent shell result application, and marker-safe completion removal. Production files: `src/main.rs`, `src/setup.rs`, `src/shell_completion.rs`, `src/shell_shortcut.rs`; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted PTY run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `7 steps (7 passed)`.
+- [x] COMMIT: commit title references `Shell setup prefills installed integrations and removes only managed blocks when deselected`. Hash: `bd53ed3`
 
 ### Shell setup refuses malformed managed markers
 
