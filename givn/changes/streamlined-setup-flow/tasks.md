@@ -2,10 +2,10 @@
 
 ## Setup: strict feature runner and step skeleton
 
-- [ ] Configure `./run-tests.sh` and `./run-tests.sh --e2e` as the verification commands; keep `Cucumber::fail_on_skipped()` strictness; create/register `tests/steps/streamlined_setup_steps.rs` and `tests/steps/streamlined_setup_e2e_steps.rs`; prove an undefined or `unimplemented!()` step exits non-zero. Evidence: command/output:
-- [ ] Confirm the runner executes permanent `givn/specs/**` and active change `specs/**`, and confirm the E2E tag filter is a strict subset. Evidence: command/output:
-- [ ] Setup production files changed: `src/main.rs`, `src/setup.rs`, `src/config/mod.rs`, `src/config/types.rs`, `src/models/list.rs`, `src/models/dialog.rs`, `src/provider/setup.rs`, `src/shell_completion.rs`, `src/shell_shortcut.rs`, and any narrowly required support modules. Evidence: compile/output:
-- [ ] Setup commit hash: 
+- [x] Configure `./run-tests.sh` and `./run-tests.sh --e2e` as the verification commands; keep `Cucumber::fail_on_skipped()` strictness; create/register `tests/steps/streamlined_setup_steps.rs` and `tests/steps/streamlined_setup_e2e_steps.rs`; prove an undefined or `unimplemented!()` step exits non-zero. Evidence: `./run-tests.sh` exited nonzero with `Step doesn't match any function` for the active setup scenario; summary was `104 scenarios (103 passed, 1 failed)` and `595 steps (594 passed, 1 failed)`.
+- [x] Confirm the runner executes permanent `givn/specs/**` and active change `specs/**`, and confirm the E2E tag filter is a strict subset. Evidence: the failed run collected the active `Streamlined setup flow` feature before permanent features; `run-tests.sh` uses `not @wip and not @e2e`, while `run-tests.sh --e2e` uses `@e2e and not @wip`.
+- [x] Setup production files changed: no production files changed during runner setup; the test skeleton is intentionally isolated and production implementation begins in the first scenario GREEN phase. Evidence: `tests/steps/mod.rs`, `tests/steps/streamlined_setup_steps.rs`, and `tests/steps/streamlined_setup_e2e_steps.rs` compile with the existing runner.
+- [x] Setup commit hash:
 
 ## Non-E2E Scenarios
 
