@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-13
+
+### Bug Fixes
+
+- **release:** Pass repository to GitHub CLI
+
 ## [0.2.0] - 2026-08-13
 
 ### Bug Fixes
@@ -443,3 +449,5 @@ Bright fireant
 - No Git tag was recorded for this publication.
 
 [0.2.0]: https://github.com/buster/watn/compare/v0.1.4...v0.2.0
+
+[0.2.1]: https://github.com/buster/watn/compare/v0.2.0...v0.2.1
