@@ -1100,6 +1100,9 @@ fn complete_coordinated_setup_draft(world: &mut WatnWorld) {
 
 #[when("I open the final setup review")]
 fn open_final_setup_review(world: &mut WatnWorld) {
+    world
+        .pending_config
+        .insert("start_review".to_string(), "true".to_string());
     let session = super::start_pty_session(world, &["setup"]);
     world.pty_session = Some(session);
     let session = world.pty_session.as_mut().expect("setup PTY session");
