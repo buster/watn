@@ -227,9 +227,10 @@ Feature: Streamlined setup flow
     When I cancel setup before final confirmation
     Then no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-interactive incomplete request prints setup guidance without probing
     Given no config file exists
+    And a catalog request sentinel is installed
     When I run a non-TTY request for "hello"
     Then the exit status should be nonzero
     And stderr should instruct me to run `watn setup` or `watn provider` in a terminal
