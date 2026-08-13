@@ -353,7 +353,7 @@ Feature: Streamlined setup flow
     Then the catalog status should become pending for the new provider
     And the old catalog-backed model should require revalidation or replacement
 
-  @givn.added @wip
+  @givn.added
   Scenario: The final review shows all draft domains without exposing a secret
     Given a complete coordinated setup draft with provider, catalog, models, reasoning, and shell choices
     When I open the final setup review

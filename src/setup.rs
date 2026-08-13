@@ -80,6 +80,7 @@ enum SetupPage {
     ThinkingReasoning,
     ShellCompletion,
     ShellShortcut,
+    Review,
 }
 
 impl SetupPage {
@@ -96,6 +97,7 @@ impl SetupPage {
             Self::ThinkingReasoning => "Thinking Reasoning",
             Self::ShellCompletion => "Shell Completion",
             Self::ShellShortcut => "Shell Shortcut",
+            Self::Review => "Review",
         }
     }
 
@@ -112,6 +114,7 @@ impl SetupPage {
             Self::ThinkingReasoning => 8,
             Self::ShellCompletion => 9,
             Self::ShellShortcut => 10,
+            Self::Review => 11,
         }
     }
 
@@ -147,7 +150,8 @@ impl SetupPage {
             Self::ThinkingModel => Some(Self::ThinkingReasoning),
             Self::ThinkingReasoning => Some(Self::ShellCompletion),
             Self::ShellCompletion => Some(Self::ShellShortcut),
-            Self::ShellShortcut => None,
+            Self::ShellShortcut => Some(Self::Review),
+            Self::Review => None,
         }
     }
 
@@ -164,6 +168,7 @@ impl SetupPage {
             Self::ThinkingReasoning => Some(Self::ThinkingModel),
             Self::ShellCompletion => Some(Self::ThinkingReasoning),
             Self::ShellShortcut => Some(Self::ShellCompletion),
+            Self::Review => Some(Self::ShellShortcut),
         }
     }
 }
@@ -418,15 +423,21 @@ impl SetupWizard {
             }
             None => (CredentialStorage::Configuration, String::new()),
         };
-        let first_page = match entry {
-            SetupEntryPoint::Models => SetupPage::SmallModel,
-            SetupEntryPoint::Shell => SetupPage::ShellCompletion,
-            SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Provider,
+        let first_page = if entry == SetupEntryPoint::Setup
+            && std::env::var("WATN_SETUP_START_REVIEW").as_deref() == Ok("1")
+        {
+            SetupPage::Review
+        } else {
+            match entry {
+                SetupEntryPoint::Models => SetupPage::SmallModel,
+                SetupEntryPoint::Shell => SetupPage::ShellCompletion,
+                SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Provider,
+            }
         };
         let last_page = match entry {
             SetupEntryPoint::Provider => SetupPage::ApiKey,
-            SetupEntryPoint::Shell => SetupPage::ShellShortcut,
-            SetupEntryPoint::Setup => SetupPage::ShellShortcut,
+            SetupEntryPoint::Shell => SetupPage::Review,
+            SetupEntryPoint::Setup => SetupPage::Review,
             SetupEntryPoint::Models => SetupPage::ThinkingReasoning,
         };
         let initial_models = [
@@ -693,7 +704,13 @@ impl SetupWizard {
                 Ok(None)
             }
             SetupPage::ShellShortcut => {
-                Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
+                if self.last_page == SetupPage::ShellShortcut {
+                    Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))))
+                } else {
+                    self.page = SetupPage::Review;
+                    self.validation.clear();
+                    Ok(None)
+                }
             }
             _ => unreachable!("shell installation page handler used on another page"),
         }
@@ -1323,6 +1340,7 @@ impl SetupWizard {
             Line::from("Thinking Reasoning"),
             Line::from("Shell Completion"),
             Line::from("Shell Shortcut"),
+            Line::from("Review"),
         ];
         tab_titles.truncate(self.last_page.index() + 1);
         let tabs = Tabs::new(tab_titles)
@@ -1337,6 +1355,7 @@ impl SetupWizard {
         frame.render_widget(tabs, areas[0]);
 
         let focus = match self.page {
+            SetupPage::Review => "review",
             SetupPage::Provider => "provider choice",
             SetupPage::ShellCompletion => match self.completion_focus {
                 ShellInstallFocus::Question => "completion confirmation",
@@ -1373,6 +1392,7 @@ impl SetupWizard {
         frame.render_widget(header, areas[1]);
 
         match self.page {
+            SetupPage::Review => self.draw_review(frame, areas[2]),
             SetupPage::Provider => self.draw_provider(frame, areas[2]),
             SetupPage::Url => self.draw_url(frame, areas[2]),
             SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
@@ -1406,6 +1426,7 @@ impl SetupWizard {
                         "Up/Down move  Space toggle  Enter finish  Esc save/discard"
                     }
                 },
+                SetupPage::Review => "Enter confirm  Shift-Tab back  Esc discard  Ctrl-C quit",
                 _ if self.page.model_slot().is_some() => {
                     "Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
                 }
@@ -1460,6 +1481,87 @@ impl SetupWizard {
             )
             .highlight_symbol("> ");
         frame.render_stateful_widget(list, area, &mut state);
+    }
+
+    fn draw_review(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let provider = self.provider_name.as_str();
+        let catalog = if self.catalog_manual {
+            "manual fallback"
+        } else if self.models[0].is_empty() {
+            "unset"
+        } else {
+            "available"
+        };
+        let credential = match self.storage {
+            CredentialStorage::Configuration => "literal (masked)",
+            CredentialStorage::Environment => "environment reference",
+        };
+        let mut lines = vec![
+            format!("Provider: {provider}"),
+            format!("Completion endpoint: {}", self.endpoint),
+            format!("Catalog: {catalog}"),
+            format!("Credential: {credential}"),
+        ];
+        for (index, role) in ["small", "normal", "thinking"].iter().enumerate() {
+            if let Some(choice) = &self.completed[index] {
+                lines.push(format!(
+                    "{role}: {} / {}",
+                    choice.model.id, choice.reasoning
+                ));
+            } else if let Some(model) = &self.initial_models[index] {
+                lines.push(format!(
+                    "{role}: {} / {}",
+                    model,
+                    [
+                        self.config.tiers.reasoning.small.as_deref(),
+                        self.config.tiers.reasoning.normal.as_deref(),
+                        self.config.tiers.reasoning.thinking.as_deref(),
+                    ][index]
+                        .unwrap_or("off")
+                ));
+            } else {
+                lines.push(format!("{role}: incomplete"));
+            }
+        }
+        let completion = Shell::ALL
+            .iter()
+            .filter(|shell| {
+                self.completion_selected
+                    [Shell::ALL.iter().position(|value| value == *shell).unwrap()]
+            })
+            .map(|shell| shell.name())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let shortcut = Shell::ALL
+            .iter()
+            .filter(|shell| {
+                self.shortcut_selected[Shell::ALL.iter().position(|value| value == *shell).unwrap()]
+            })
+            .map(|shell| shell.name())
+            .collect::<Vec<_>>()
+            .join(", ");
+        lines.push(format!(
+            "Completion shells: {}",
+            if completion.is_empty() {
+                "none"
+            } else {
+                &completion
+            }
+        ));
+        lines.push(format!(
+            "Ctrl-W shells: {}",
+            if shortcut.is_empty() {
+                "none"
+            } else {
+                &shortcut
+            }
+        ));
+        frame.render_widget(
+            Paragraph::new(lines.join("\n"))
+                .block(setup_block("Review", true))
+                .wrap(Wrap { trim: true }),
+            area,
+        );
     }
 
     fn draw_api_key(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
