@@ -1149,6 +1149,7 @@ fn legacy_litellm_receives_zero_requests(world: &mut WatnWorld) {
     let id: usize = world
         .pending_config
         .get("legacy_catalog_mock")
+        .or_else(|| world.pending_config.get("legacy_recording_mock"))
         .expect("legacy catalog mock")
         .parse()
         .expect("legacy catalog mock id");
@@ -1169,6 +1170,125 @@ fn legacy_litellm_config_unchanged(_world: &mut WatnWorld) {
             .map(|catalog| catalog.api_key.as_deref()),
         Some(Some("sk-legacy"))
     );
+}
+
+#[given("the provider catalog supports pagination and search")]
+fn provider_catalog_supports_page_and_search(world: &mut WatnWorld) {
+    let server = world
+        .mock_server
+        .0
+        .as_ref()
+        .expect("provider catalog server");
+    let credential = world
+        .pending_config
+        .get("provider_credential")
+        .cloned()
+        .expect("provider credential");
+    let page_id = server
+        .mock(move |when, then| {
+            when.method(httpmock::Method::GET)
+                .path("/v1/models")
+                .query_param("page", "2")
+                .query_param("limit", "50")
+                .header("Authorization", format!("Bearer {credential}"));
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(r#"{"data":[{"id":"page-model"}],"meta":{"has_more":false}}"#);
+        })
+        .id;
+    let search_id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET)
+                .path("/v1/models")
+                .query_param("search", "o3");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(r#"{"data":[{"id":"o3-model"}]}"#);
+        })
+        .id;
+    world
+        .pending_config
+        .insert("page_mock".to_string(), page_id.to_string());
+    world
+        .pending_config
+        .insert("search_mock".to_string(), search_id.to_string());
+}
+
+#[given("a legacy LiteLLM source records every request")]
+fn legacy_litellm_records_requests(world: &mut WatnWorld) {
+    let server = world
+        .mock_server
+        .0
+        .as_ref()
+        .expect("provider catalog server");
+    let id = server
+        .mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/legacy/models");
+            then.status(200).body(r#"{"data":[{"id":"legacy-model"}]}"#);
+        })
+        .id;
+    world
+        .pending_config
+        .insert("legacy_recording_mock".to_string(), id.to_string());
+}
+
+#[when("model setup requests page 2 with limit 50")]
+fn model_setup_requests_page_two(world: &mut WatnWorld) {
+    let base = world
+        .pending_config
+        .get("provider_base")
+        .expect("provider base");
+    let key = world
+        .pending_config
+        .get("provider_credential")
+        .expect("provider credential");
+    let endpoint = base.clone();
+    let credential = key.clone();
+    std::thread::spawn(move || {
+        watn::models::list::fetch_models_page_info(&endpoint, 2, 50, Some(&credential))
+    })
+    .join()
+    .expect("page request thread")
+    .expect("page request");
+}
+
+#[when("model setup searches the catalog for \"o3\"")]
+fn model_setup_searches_catalog(world: &mut WatnWorld) {
+    let base = world
+        .pending_config
+        .get("provider_base")
+        .expect("provider base");
+    let key = world
+        .pending_config
+        .get("provider_credential")
+        .expect("provider credential");
+    let endpoint = base.clone();
+    let credential = key.clone();
+    std::thread::spawn(move || {
+        watn::models::list::search_models(&endpoint, "o3", Some(&credential))
+    })
+    .join()
+    .expect("search request thread")
+    .expect("search request");
+}
+
+#[then(regex = r##"^the requests should use "([^"]+)" and "([^"]+)"$"##)]
+fn provider_page_and_search_requests(world: &mut WatnWorld, _page: String, _search: String) {
+    let page_id: usize = world
+        .pending_config
+        .get("page_mock")
+        .expect("page mock")
+        .parse()
+        .expect("page mock id");
+    let search_id: usize = world
+        .pending_config
+        .get("search_mock")
+        .expect("search mock")
+        .parse()
+        .expect("search mock id");
+    let server = world.mock_server.0.as_ref().expect("catalog server");
+    assert_eq!(httpmock::Mock::new(page_id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(search_id, server).hits(), 1);
 }
 
 #[then("setup should report that catalog discovery is unusable")]
