@@ -644,6 +644,44 @@ fn setup_reports_nonzero_result(world: &mut WatnWorld) {
     assert_ne!(world.exit_status, Some(0));
 }
 
+#[then("the exit status should be nonzero")]
+fn exit_status_is_nonzero(world: &mut WatnWorld) {
+    assert_ne!(world.exit_status, Some(0));
+}
+
+#[then("stderr should instruct me to run `watn setup` or `watn provider` in a terminal")]
+fn stderr_instructs_setup_or_provider(world: &mut WatnWorld) {
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(
+        stderr.contains("watn setup"),
+        "setup guidance missing: {stderr:?}"
+    );
+    assert!(
+        stderr.contains("watn provider"),
+        "provider guidance missing: {stderr:?}"
+    );
+    assert!(
+        stderr.contains("terminal"),
+        "terminal guidance missing: {stderr:?}"
+    );
+}
+
+#[given("a catalog request sentinel is installed")]
+fn install_catalog_request_sentinel(world: &mut WatnWorld) {
+    let server = world
+        .mock_server
+        .0
+        .get_or_insert_with(httpmock::MockServer::start);
+    world.models_mock_id = Some(
+        server
+            .mock(|when, then| {
+                when.method(httpmock::Method::GET).path("/models");
+                then.status(200).body(r#"{"data":[{"id":"unused"}]}"#);
+            })
+            .id,
+    );
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir
