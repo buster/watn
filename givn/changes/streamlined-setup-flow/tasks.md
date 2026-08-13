@@ -221,10 +221,10 @@
 
 ### The final review shows all draft domains without exposing a secret
 
-- [ ] RED: target `The final review shows all draft domains without exposing a secret`; evidence:
-- [ ] GREEN: render compact review with masked credential status and all draft domains. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `The final review shows all draft domains without exposing a secret`. Hash: 
+- [x] RED: target `The final review shows all draft domains without exposing a secret`; evidence: non-zero; review state/rendering and draft fixture were undefined.
+- [x] GREEN: add explicit review state after shell questions, render provider/catalog/credential/model/reasoning/shell data, and assert no resolved secret through the real PTY. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`; terminal sequencing was reduced to a test-support review entry point and visible review assertions. Evidence: targeted run passed with `8 steps (8 passed)`.
+- [x] COMMIT: commit title references `The final review shows all draft domains without exposing a secret`. Hash: `d309baf`
 
 ### Final confirmation is blocked while a required draft value is invalid
 
