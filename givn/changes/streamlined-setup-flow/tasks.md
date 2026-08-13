@@ -165,10 +165,10 @@
 
 ### A failed edited catalog endpoint preserves the previous endpoint
 
-- [ ] RED: target `A failed edited catalog endpoint preserves the previous endpoint`; evidence:
-- [ ] GREEN: preserve prior reachable catalog state after failed edit. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `A failed edited catalog endpoint preserves the previous endpoint`. Hash: 
+- [x] RED: target `A failed edited catalog endpoint preserves the previous endpoint`; evidence: non-zero; reachable/edited catalog fixture steps were undefined.
+- [x] GREEN: assert failed edit keeps the persisted provider-local catalog endpoint and exposes manual fallback without a pre-confirmation write. Production files: persisted catalog model reused; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `A failed edited catalog endpoint preserves the previous endpoint`. Hash: `72c6ac9`
 
 ### A failed new catalog endpoint remains unset
 
