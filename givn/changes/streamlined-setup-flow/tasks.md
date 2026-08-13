@@ -109,10 +109,10 @@
 
 ### Shell setup refuses malformed managed markers
 
-- [ ] RED: target `Shell setup refuses malformed managed markers`; evidence:
-- [ ] GREEN: reject malformed marker layouts before any write. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Shell setup refuses malformed managed markers`. Hash: 
+- [x] RED: target `Shell setup refuses malformed managed markers`; evidence: non-zero; malformed shell setup step was undefined.
+- [x] GREEN: drive duplicated markers through `watn shell`, assert the user-visible error, and verify unchanged target bytes. Production files: existing marker validation/rejection reused; test files: `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Shell setup refuses malformed managed markers`. Hash: `00ddeff`
 
 ### Shell failure does not discard successful shell changes or configuration
 
