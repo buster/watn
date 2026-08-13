@@ -291,10 +291,10 @@
 
 ### Declining shell setup performs no target inspection or write
 
-- [ ] RED: target `Declining shell setup performs no target inspection or write`; evidence:
-- [ ] GREEN: make shell decline side-effect free. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Declining shell setup performs no target inspection or write`. Hash: 
+- [x] RED: target `Declining shell setup performs no target inspection or write`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the shell-decline fixture step was undefined.
+- [x] GREEN: make shell decline side-effect free. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)` with absent Bash/Zsh/Fish targets and unchanged config bytes.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Declining shell setup performs no target inspection or write`. Hash: `5268f5c`
 
 ### Shell removal preserves bytes outside the managed block
 
