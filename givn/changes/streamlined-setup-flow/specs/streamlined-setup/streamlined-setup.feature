@@ -170,11 +170,11 @@ Feature: Streamlined setup flow
     When I enter custom reasoning effort "x-high"
     Then the small role should use reasoning "x-high"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Off reasoning omits the reasoning setting from a request
     Given a configured provider with model "plain-model" for the small role
     And the small role reasoning is "off"
-    When I send a request through the configured provider
+    When I send a small-role request through the configured provider
     Then the API request should omit the reasoning effort
 
   @givn.added @e2e @wip
