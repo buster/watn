@@ -347,10 +347,10 @@
 
 ### Models setup configures all three roles from an available catalog
 
-- [ ] RED: target `Models setup configures all three roles from an available catalog`; evidence:
-- [ ] GREEN: drive the real `watn models` PTY flow and assert visible role progression/result plus config. Production files: . Evidence:
-- [ ] REFACTOR: rerun the E2E scenario. Evidence:
-- [ ] COMMIT: commit title references `Models setup configures all three roles from an available catalog`. Hash: 
+- [x] RED: target `Models setup configures all three roles from an available catalog`; evidence: non-zero; `1 scenario (1 failed)`, `3 steps (2 passed, 1 failed)` because the initial-role assertion was undefined.
+- [x] GREEN: drive the real `watn models` PTY flow and assert visible role progression/result plus config. E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`; shared model PTY steps reused from `tests/steps/streamlined_setup_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] COMMIT: commit title references `Models setup configures all three roles from an available catalog`. Hash: `ee3e334`
 
 ### Shell setup independently configures completion and Ctrl-W integrations
 
