@@ -179,10 +179,10 @@
 
 ### Invalid catalog data switches to manual model selection
 
-- [ ] RED: target `Invalid catalog data switches to manual model selection`; evidence:
-- [ ] GREEN: reject empty/malformed catalog data and expose manual entry. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Invalid catalog data switches to manual model selection`. Hash: 
+- [x] RED: target `Invalid catalog data switches to manual model selection`; evidence: non-zero; empty-catalog fixture and terminal start step were undefined.
+- [x] GREEN: drive an empty provider catalog through the real model PTY and assert unusable discovery, no invented models, and manual entry. Production files: existing manual fallback path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Invalid catalog data switches to manual model selection`. Hash: `942ac46`
 
 ### Catalog entries without unique non-empty identifiers are rejected
 
