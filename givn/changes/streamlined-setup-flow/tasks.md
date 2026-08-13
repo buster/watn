@@ -140,7 +140,7 @@
 - [x] RED: target `Cancelling after provider and credential validation does not create a config file`; evidence: non-zero; coordinated provider/credential cancellation steps were undefined.
 - [x] GREEN: remove implicit template creation, remove the pre-catalog provider write, and assert no file/provider/catalog request after PTY cancellation. Production files: `src/config/mod.rs`, `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: rerun the named scenario after `cargo fmt --all`; dead template writer removed. Evidence: targeted run passed with `7 steps (7 passed)` and no warnings.
-- [x] COMMIT: commit title references `Cancelling after provider and credential validation does not create a config file`. Hash: `9605824`
+- [x] COMMIT: commit title references `Cancelling after provider and credential validation does not create a config file`. Hashes: `9605824`, `19eee5d`
 
 ### Cancelling after a successful catalog probe leaves the baseline unchanged
 
