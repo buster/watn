@@ -1829,6 +1829,19 @@ fn configured_provider_with_small_model(world: &mut WatnWorld, model: String) {
     world.pending_mock_no_reasoning_assert = true;
 }
 
+#[given(regex = r##"^a configured provider has small reasoning "([^"]+)"$"##)]
+fn configured_provider_with_small_reasoning(world: &mut WatnWorld, reasoning: String) {
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"test-key\"\n\n[tiers]\nsmall = \"plain-model\"\n\n[tiers.reasoning]\nsmall = \"{reasoning}\"\n"
+    ));
+    world
+        .pending_config
+        .insert("rerun_unknown_reasoning".to_string(), reasoning.clone());
+    world
+        .pending_config
+        .insert("start_review".to_string(), "true".to_string());
+}
+
 #[when(regex = r##"^I configure reasoning as "([^"]+)"$"##)]
 fn configure_free_form_reasoning(world: &mut WatnWorld, reasoning: String) {
     let raw = world.raw_config.take().expect("provider config fixture");
@@ -1845,6 +1858,19 @@ fn configure_free_form_reasoning(world: &mut WatnWorld, reasoning: String) {
 
 #[when("confirm the setup")]
 fn confirm_free_form_setup(world: &mut WatnWorld) {
+    if world.pending_config.contains_key("rerun_unknown_reasoning") {
+        let session = world.pty_session.as_mut().expect("setup PTY session");
+        pty_write(session, "\r");
+        let session = world.pty_session.take().expect("setup PTY session");
+        super::finish_pty_session(world, session);
+        assert_eq!(
+            world.exit_status,
+            Some(0),
+            "setup output: {:?}",
+            world.output
+        );
+        return;
+    }
     assert!(
         world.pending_config.contains_key("configured_reasoning"),
         "reasoning must be configured before confirmation"
@@ -1888,6 +1914,91 @@ fn request_contains_reasoning_effort_exact(world: &mut WatnWorld, expected: Stri
     let mock_id = world.mock_server.1.expect("request mock");
     let server = world.mock_server.0.as_ref().expect("request mock server");
     assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
+}
+
+#[when("I rerun setup without changing the small reasoning value")]
+fn rerun_setup_without_changing_small_reasoning(world: &mut WatnWorld) {
+    world.pending_mock_no_reasoning_assert = false;
+    let reasoning = world
+        .pending_config
+        .get("rerun_unknown_reasoning")
+        .cloned()
+        .expect("existing reasoning");
+    world.pending_mock_expected_reasoning_body =
+        Some(format!("\"reasoning_effort\":\"{reasoning}\""));
+    let session = super::start_pty_session(world, &["setup"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    wait_for_active_page(session, "Review");
+}
+
+#[then(regex = r##"^the saved small reasoning should remain exactly "([^"]+)"$"##)]
+fn saved_small_reasoning_exact(world: &mut WatnWorld, expected: String) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let content = std::fs::read_to_string(path).expect("saved config");
+    let config: watn::config::types::Config = toml::from_str(&content).expect("parse saved config");
+    assert_eq!(
+        config.tiers.reasoning.small.as_deref(),
+        Some(expected.as_str())
+    );
+}
+
+#[then(regex = r##"^a small-role request should contain reasoning_effort exactly "([^"]+)"$"##)]
+fn small_role_request_contains_reasoning_effort(world: &mut WatnWorld, expected: String) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config directory")
+        .path()
+        .join("watn/config.toml");
+    let content = std::fs::read_to_string(&path).expect("saved config");
+    let mut config: watn::config::types::Config =
+        toml::from_str(&content).expect("parse saved config");
+    let server = httpmock::MockServer::start();
+    let endpoint = format!("http://127.0.0.1:{}/v1", server.port());
+    for provider in config.providers.values_mut() {
+        provider.endpoint = endpoint.clone();
+    }
+    std::fs::write(
+        &path,
+        toml::to_string_pretty(&config).expect("serialize request config"),
+    )
+    .expect("write request config");
+    let expected_body = format!("\"reasoning_effort\":\"{expected}\"");
+    let mock_id = server
+        .mock(move |when, then| {
+            when.method(httpmock::Method::POST)
+                .path("/v1/chat/completions")
+                .body_contains(expected_body.as_str());
+            then.status(200)
+                .header("Content-Type", "text/event-stream")
+                .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), Some(mock_id));
+    world.pending_mock_model = None;
+    world.pending_mock_output = None;
+    super::run_binary_with_state(world, &["-1", "hello"], None);
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "request failed: {:?}",
+        world.stderr_output
+    );
+    let mock_id = world.mock_server.1.expect("request mock");
+    let server = world.mock_server.0.as_ref().expect("request mock server");
+    let hits = httpmock::Mock::new(mock_id, server).hits();
+    assert!(
+        hits > 0,
+        "expected reasoning request mock hit; hits={hits}, stdout={:?}, stderr={:?}",
+        world.output,
+        world.stderr_output
+    );
 }
 
 #[given("the small role reasoning is \"off\"")]
