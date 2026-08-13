@@ -242,10 +242,10 @@
 
 ### Selected provider migration moves an arbitrary provider to custom
 
-- [ ] RED: target `Selected provider migration moves an arbitrary provider to custom`; evidence:
-- [ ] GREEN: implement selected arbitrary-key migration and source removal. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Selected provider migration moves an arbitrary provider to custom`. Hash: 
+- [x] RED: target `Selected provider migration moves an arbitrary provider to custom`; evidence: non-zero; `1 scenario (1 failed)`, `1 step (1 failed)` because the first migration step was undefined.
+- [x] GREEN: implement selected arbitrary-key migration and source removal. Production files: `src/config/mod.rs`; test file: `tests/steps/provider_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Selected provider migration moves an arbitrary provider to custom`. Hash: `88a8fc5`
 
 ### Provider migration preserves the destination default model on collision
 
