@@ -380,7 +380,7 @@ Feature: Streamlined setup flow
     When I navigate forward again
     Then the normal model question should be active
 
-  @givn.added @wip
+  @givn.added
   Scenario: Selected provider migration moves an arbitrary provider to custom
     Given the selected provider key is "legacy"
     And provider "legacy" has endpoint "https://legacy.example/v1" and default model "legacy-model"
