@@ -340,10 +340,10 @@
 
 ### Provider setup configures an OpenAI provider with an environment credential
 
-- [ ] RED: target `Provider setup configures an OpenAI provider with an environment credential`; evidence:
-- [ ] GREEN: drive the real `watn provider` PTY flow and assert terminal success plus persisted reference. Production files: . Evidence:
-- [ ] REFACTOR: rerun the E2E scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider setup configures an OpenAI provider with an environment credential`. Hash: 
+- [x] RED: target `Provider setup configures an OpenAI provider with an environment credential`; evidence: non-zero; `1 scenario (1 failed)`, `4 steps (3 passed, 1 failed)` because provider-choice assertion was undefined.
+- [x] GREEN: drive the real `watn provider` PTY flow and assert terminal success plus persisted reference. Production files: `src/provider/setup.rs`, `src/setup.rs`; E2E file: `tests/steps/streamlined_setup_e2e_steps.rs`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] REFACTOR: rerun the E2E scenario after `cargo fmt --all`. Evidence: targeted E2E run passed: `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] COMMIT: commit title references `Provider setup configures an OpenAI provider with an environment credential`. Hash: `a1cb95b`
 
 ### Models setup configures all three roles from an available catalog
 
