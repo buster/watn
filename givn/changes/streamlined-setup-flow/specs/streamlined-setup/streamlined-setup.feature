@@ -36,7 +36,7 @@ Feature: Streamlined setup flow
     And the config file should contain normal model "normal-model" with reasoning "medium"
     And the config file should contain thinking model "thinking-model" with reasoning "high"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Coordinated setup displays one separate reasoning question after each model
     Given a configured provider with catalog models "alpha", "beta", and "gamma"
     When I start `watn setup` in a terminal

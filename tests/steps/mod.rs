@@ -24,6 +24,8 @@ pub mod setup_persistence_steps;
 pub mod setup_wizard_steps;
 pub mod shell_completions_e2e_steps;
 pub mod shell_completions_steps;
+pub mod streamlined_setup_e2e_steps;
+pub mod streamlined_setup_steps;
 pub mod transport_steps;
 
 pub use transport_steps::TransportState;
