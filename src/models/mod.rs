@@ -39,9 +39,7 @@ pub fn run_models_result(
     let provider_config = match resolve_provider(&config, provider_name) {
         Ok(p) => p,
         Err(_) => {
-            println!("No provider endpoint configured.");
-            println!("To configure providers manually, edit ~/.config/watn/config.toml");
-            println!("See the configuration guide for details.");
+            eprintln!("No provider is configured. Run `watn provider` in a terminal.");
             return ModelSetupResult::Saved;
         }
     };

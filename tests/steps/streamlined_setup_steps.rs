@@ -281,6 +281,33 @@ fn provider_setup_shows_unresolved_environment(world: &mut WatnWorld, variable: 
     );
 }
 
+#[when("I run `watn models` without a terminal")]
+fn run_models_without_terminal(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["models"], None);
+}
+
+#[then("the output should instruct me to run `watn provider`")]
+fn output_instructs_provider(world: &mut WatnWorld) {
+    let output = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(
+        output.contains("watn provider"),
+        "provider guidance missing: {output:?}"
+    );
+}
+
+#[then("no provider question should be shown")]
+fn no_provider_question_shown(world: &mut WatnWorld) {
+    let output = format!(
+        "{}{}",
+        world.output.as_deref().unwrap_or_default(),
+        world.stderr_output.as_deref().unwrap_or_default()
+    );
+    assert!(
+        !output.contains("Provider (editing)"),
+        "provider UI was shown: {output:?}"
+    );
+}
+
 #[when(
     regex = r##"^provider setup saves provider "([^"]+)" with endpoint "([^"]+)" and credential "([^"]+)"$"##
 )]

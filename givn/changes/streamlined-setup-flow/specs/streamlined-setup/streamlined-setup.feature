@@ -128,7 +128,7 @@ Feature: Streamlined setup flow
     Then models setup should exit successfully
     And the config file should contain the three selected model roles
 
-  @givn.added @wip
+  @givn.added
   Scenario: Models setup gives guidance when no provider is configured
     Given no provider is configured
     When I run `watn models` without a terminal
