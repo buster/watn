@@ -277,10 +277,10 @@
 
 ### Whitespace-only custom reasoning is rejected
 
-- [ ] RED: target `Whitespace-only custom reasoning is rejected`; evidence:
-- [ ] GREEN: reject blank reasoning and preserve baseline. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Whitespace-only custom reasoning is rejected`. Hash: 
+- [x] RED: target `Whitespace-only custom reasoning is rejected`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the custom-reasoning step was undefined.
+- [x] GREEN: reject blank reasoning and preserve baseline. Production file: `src/setup.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Whitespace-only custom reasoning is rejected`. Hash: `1ae2247`
 
 ### Catalog reasoning choices still permit a custom non-empty value
 
