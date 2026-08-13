@@ -1093,6 +1093,9 @@ fn complete_coordinated_setup_draft(world: &mut WatnWorld) {
     world
         .env_vars
         .insert("WATN_SETUP_START_REVIEW".to_string(), "1".to_string());
+    world
+        .pending_config
+        .insert("start_review".to_string(), "true".to_string());
 }
 
 #[when("I open the final setup review")]
@@ -1184,6 +1187,55 @@ fn review_identifies_missing_role(world: &mut WatnWorld) {
     ));
     assert!(output.contains("small:") || output.contains("thinking:"));
     assert!(output.contains("incomplete"));
+}
+
+#[given(
+    regex = r##"^coordinated setup has selected model "([^"]+)" and reasoning "([^"]+)" for the small role$"##
+)]
+fn coordinated_setup_has_selected_small(world: &mut WatnWorld, model: String, effort: String) {
+    assert_eq!(model, "alpha");
+    assert_eq!(effort, "low");
+    configured_provider_with_catalog_models(
+        world,
+        "alpha".to_string(),
+        "beta".to_string(),
+        "gamma".to_string(),
+    );
+}
+
+#[when("I navigate back from the normal model question to the small reasoning question")]
+fn navigate_back_to_small_reasoning(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["setup"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    for _ in 0..4 {
+        pty_write(session, "\r");
+        std::thread::sleep(std::time::Duration::from_millis(150));
+    }
+    pty_write(session, "alpha");
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    pty_write(session, "\r");
+    wait_for_visible_text(session, "Model: alpha");
+    pty_write(session, "\x1b[B\r");
+    wait_for_page_marker(session, "┌Normal Model");
+    pty_write(session, "\x1b[Z");
+    wait_for_visible_text(session, "Model: alpha");
+}
+
+#[then(regex = r##"^model "([^"]+)" and reasoning "([^"]+)" should remain selected$"##)]
+fn selected_model_reasoning_remain(world: &mut WatnWorld, model: String, effort: String) {
+    let output = visible_output(&pty_snapshot(
+        world.pty_session.as_ref().expect("setup PTY"),
+    ));
+    assert!(output.contains(&format!("Model: {model}")));
+    assert!(output.contains(&effort));
+}
+
+#[when("I navigate forward again")]
+fn navigate_forward_again(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup PTY");
+    pty_write(session, "\r");
+    wait_for_page_marker(session, "┌Normal Model");
 }
 
 #[then("no configuration or shell target should be changed")]

@@ -372,7 +372,7 @@ Feature: Streamlined setup flow
     And the review should identify the missing model role
     And no configuration or shell target should be changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Back navigation preserves draft values across model and reasoning questions
     Given coordinated setup has selected model "alpha" and reasoning "low" for the small role
     When I navigate back from the normal model question to the small reasoning question
