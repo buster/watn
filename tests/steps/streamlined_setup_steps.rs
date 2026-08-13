@@ -65,6 +65,18 @@ fn configured_provider_with_two_catalog_models(
     world.pending_mock_returned_models = vec![first, second];
 }
 
+#[given("a configured provider with an unreachable catalog endpoint")]
+fn configured_provider_with_unreachable_catalog(world: &mut WatnWorld) {
+    world.raw_config = Some(build_config(
+        "custom",
+        None,
+        Some(vec![("custom", "http://127.0.0.1:9/v1", "test-key", "")]),
+        None,
+        None,
+        None,
+    ));
+}
+
 #[when("advance to the small model question")]
 fn advance_to_small_model_question(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
@@ -433,6 +445,27 @@ fn model_choices_are_catalog_only(world: &mut WatnWorld, first: String, second: 
         !output.contains("not-in-catalog"),
         "stale model was displayed: {output:?}"
     );
+}
+
+#[then("model setup should warn that catalog discovery is unavailable")]
+fn model_setup_warns_catalog_unavailable(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    for word in ["Catalog", "discovery", "unavailable"] {
+        assert!(output.contains(word), "catalog warning missing: {output:?}");
+    }
+}
+
+#[then("model setup should allow a manually entered model identifier")]
+fn model_setup_allows_manual_identifier(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("models PTY session");
+    let output = pty_snapshot(session);
+    for word in ["Manual", "model", "identifier"] {
+        assert!(
+            output.contains(word),
+            "manual model entry missing: {output:?}"
+        );
+    }
 }
 
 #[given("the existing config content is recorded")]
