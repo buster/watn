@@ -144,10 +144,10 @@
 
 ### Cancelling after a successful catalog probe leaves the baseline unchanged
 
-- [ ] RED: target `Cancelling after a successful catalog probe leaves the baseline unchanged`; evidence:
-- [ ] GREEN: keep successful probe state in draft only until confirmation. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Cancelling after a successful catalog probe leaves the baseline unchanged`. Hash: 
+- [x] RED: target `Cancelling after a successful catalog probe leaves the baseline unchanged`; evidence: non-zero; catalog-probe cancellation steps were undefined.
+- [x] GREEN: drive provider/credential/catalog setup through PTY and cancel after a successful provider-local probe; assert byte-for-byte config and shell-target preservation. Production files: existing draft/cancel path reused; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Cancelling after a successful catalog probe leaves the baseline unchanged`. Hash: `dafd953`
 
 ### Catalog failure does not persist an unconfirmed provider
 
