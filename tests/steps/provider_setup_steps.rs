@@ -278,6 +278,83 @@ fn default_provider_is(world: &mut WatnWorld, provider: String) {
     assert_eq!(config.defaults.provider.as_deref(), Some(provider.as_str()));
 }
 
+#[given(regex = r#"^the selected provider key is \"([^\"]+)\"$"#)]
+fn selected_provider_key(world: &mut WatnWorld, provider: String) {
+    world
+        .pending_config
+        .insert("selected_provider_key".to_string(), provider);
+}
+
+#[given(
+    regex = r#"^provider \"([^\"]+)\" has endpoint \"([^\"]+)\" and default model \"([^\"]+)\"$"#
+)]
+fn provider_endpoint_and_default_model(
+    world: &mut WatnWorld,
+    provider: String,
+    endpoint: String,
+    default_model: String,
+) {
+    assert_eq!(
+        world.pending_config.get("selected_provider_key"),
+        Some(&provider),
+        "provider fixture must match the selected provider"
+    );
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"{endpoint}\"\napi_key = \"sk-legacy-key\"\ndefault_model = \"{default_model}\"\n"
+    ));
+}
+
+#[when("I confirm provider setup without replacing its credential")]
+fn confirm_provider_setup_without_replacing_credential(world: &mut WatnWorld) {
+    let mut config = load_world_config(world);
+    let provider_name = config.defaults.provider.clone().expect("selected provider");
+    let provider = config
+        .providers
+        .get(&provider_name)
+        .cloned()
+        .expect("selected provider config");
+    let credential = provider.api_key.expect("saved provider credential");
+    let draft = build_provider_draft(&provider.endpoint, &credential).expect("provider draft");
+    save_provider_draft(&mut config, &draft).expect("save migrated provider draft");
+}
+
+#[then(
+    regex = r#"^provider \"([^\"]+)\" should contain endpoint \"([^\"]+)\" and default model \"([^\"]+)\"$"#
+)]
+fn provider_contains_endpoint_and_default_model(
+    world: &mut WatnWorld,
+    provider: String,
+    endpoint: String,
+    default_model: String,
+) {
+    let config = load_world_config(world);
+    let saved = config.providers.get(&provider).expect("provider config");
+    assert_eq!(saved.endpoint, endpoint);
+    assert_eq!(saved.default_model.as_deref(), Some(default_model.as_str()));
+}
+
+#[then(
+    regex = r#"^provider \"([^\"]+)\" should contain the legacy endpoint and default model \"([^\"]+)\"$"#
+)]
+fn migrated_provider_contains_legacy_endpoint_and_default_model(
+    world: &mut WatnWorld,
+    provider: String,
+    default_model: String,
+) {
+    provider_contains_endpoint_and_default_model(
+        world,
+        provider,
+        "https://legacy.example/v1".to_string(),
+        default_model,
+    );
+}
+
+#[then(regex = r#"^provider \"([^\"]+)\" should not exist$"#)]
+fn provider_should_not_exist(world: &mut WatnWorld, provider: String) {
+    let config = load_world_config(world);
+    assert!(!config.providers.contains_key(&provider));
+}
+
 #[then(regex = r#"^provider \"([^\"]+)\" should remain unchanged$"#)]
 fn provider_remains_unchanged(world: &mut WatnWorld, provider: String) {
     let config = load_world_config(world);

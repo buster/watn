@@ -188,14 +188,53 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
 }
 
 pub fn save_provider_draft(config: &mut Config, draft: &ProviderDraft) -> Result<(), Error> {
+    let previous_provider_name = config.defaults.provider.clone();
+    let previous_provider = previous_provider_name
+        .as_ref()
+        .and_then(|name| config.providers.get(name))
+        .cloned();
+    let existing_custom = config.providers.get("custom").cloned();
+    let migrate_arbitrary_provider = draft.name == "custom"
+        && previous_provider_name
+            .as_deref()
+            .is_some_and(|name| !matches!(name, "custom" | "openrouter" | "openai"));
+
+    if migrate_arbitrary_provider {
+        if let Some(name) = previous_provider_name.as_ref() {
+            config.providers.remove(name);
+        }
+    }
+
     config.defaults.provider = Some(draft.name.clone());
     config.providers.insert(
         draft.name.clone(),
         ProviderConfig {
             endpoint: draft.endpoint.clone(),
             api_key: Some(draft.api_key.clone()),
-            default_model: None,
-            catalog_endpoint: None,
+            default_model: existing_custom
+                .as_ref()
+                .and_then(|provider| provider.default_model.clone())
+                .or_else(|| {
+                    migrate_arbitrary_provider
+                        .then(|| {
+                            previous_provider
+                                .as_ref()
+                                .and_then(|provider| provider.default_model.clone())
+                        })
+                        .flatten()
+                }),
+            catalog_endpoint: existing_custom
+                .as_ref()
+                .and_then(|provider| provider.catalog_endpoint.clone())
+                .or_else(|| {
+                    migrate_arbitrary_provider
+                        .then(|| {
+                            previous_provider
+                                .as_ref()
+                                .and_then(|provider| provider.catalog_endpoint.clone())
+                        })
+                        .flatten()
+                }),
         },
     );
     save_config(config)
