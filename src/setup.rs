@@ -70,8 +70,11 @@ enum SetupPage {
     Url,
     ApiKey,
     SmallModel,
-    MiddleModel,
-    LargeModel,
+    SmallReasoning,
+    NormalModel,
+    NormalReasoning,
+    ThinkingModel,
+    ThinkingReasoning,
     ShellCompletion,
     ShellShortcut,
 }
@@ -82,8 +85,11 @@ impl SetupPage {
             Self::Url => "URL",
             Self::ApiKey => "API key",
             Self::SmallModel => "Small Model",
-            Self::MiddleModel => "Middle Model",
-            Self::LargeModel => "Large Model",
+            Self::SmallReasoning => "Small Reasoning",
+            Self::NormalModel => "Normal Model",
+            Self::NormalReasoning => "Normal Reasoning",
+            Self::ThinkingModel => "Thinking Model",
+            Self::ThinkingReasoning => "Thinking Reasoning",
             Self::ShellCompletion => "Shell Completion",
             Self::ShellShortcut => "Shell Shortcut",
         }
@@ -94,18 +100,30 @@ impl SetupPage {
             Self::Url => 0,
             Self::ApiKey => 1,
             Self::SmallModel => 2,
-            Self::MiddleModel => 3,
-            Self::LargeModel => 4,
-            Self::ShellCompletion => 5,
-            Self::ShellShortcut => 6,
+            Self::SmallReasoning => 3,
+            Self::NormalModel => 4,
+            Self::NormalReasoning => 5,
+            Self::ThinkingModel => 6,
+            Self::ThinkingReasoning => 7,
+            Self::ShellCompletion => 8,
+            Self::ShellShortcut => 9,
         }
     }
 
     fn model_slot(self) -> Option<usize> {
         match self {
             Self::SmallModel => Some(0),
-            Self::MiddleModel => Some(1),
-            Self::LargeModel => Some(2),
+            Self::NormalModel => Some(1),
+            Self::ThinkingModel => Some(2),
+            _ => None,
+        }
+    }
+
+    fn reasoning_slot(self) -> Option<usize> {
+        match self {
+            Self::SmallReasoning => Some(0),
+            Self::NormalReasoning => Some(1),
+            Self::ThinkingReasoning => Some(2),
             _ => None,
         }
     }
@@ -114,9 +132,12 @@ impl SetupPage {
         match self {
             Self::Url => Some(Self::ApiKey),
             Self::ApiKey => Some(Self::SmallModel),
-            Self::SmallModel => Some(Self::MiddleModel),
-            Self::MiddleModel => Some(Self::LargeModel),
-            Self::LargeModel => Some(Self::ShellCompletion),
+            Self::SmallModel => Some(Self::SmallReasoning),
+            Self::SmallReasoning => Some(Self::NormalModel),
+            Self::NormalModel => Some(Self::NormalReasoning),
+            Self::NormalReasoning => Some(Self::ThinkingModel),
+            Self::ThinkingModel => Some(Self::ThinkingReasoning),
+            Self::ThinkingReasoning => Some(Self::ShellCompletion),
             Self::ShellCompletion => Some(Self::ShellShortcut),
             Self::ShellShortcut => None,
         }
@@ -127,9 +148,12 @@ impl SetupPage {
             Self::Url => None,
             Self::ApiKey => Some(Self::Url),
             Self::SmallModel => Some(Self::ApiKey),
-            Self::MiddleModel => Some(Self::SmallModel),
-            Self::LargeModel => Some(Self::MiddleModel),
-            Self::ShellCompletion => Some(Self::LargeModel),
+            Self::SmallReasoning => Some(Self::SmallModel),
+            Self::NormalModel => Some(Self::SmallReasoning),
+            Self::NormalReasoning => Some(Self::NormalModel),
+            Self::ThinkingModel => Some(Self::NormalReasoning),
+            Self::ThinkingReasoning => Some(Self::ThinkingModel),
+            Self::ShellCompletion => Some(Self::ThinkingReasoning),
             Self::ShellShortcut => Some(Self::ShellCompletion),
         }
     }
@@ -347,7 +371,7 @@ impl SetupWizard {
         let last_page = match entry {
             SetupEntryPoint::Provider => SetupPage::ApiKey,
             SetupEntryPoint::Setup => SetupPage::ShellShortcut,
-            SetupEntryPoint::Models => SetupPage::LargeModel,
+            SetupEntryPoint::Models => SetupPage::ThinkingReasoning,
         };
         let initial_models = [
             config.tiers.small.clone(),
@@ -662,6 +686,12 @@ impl SetupWizard {
                 return Ok(None);
             }
         }
+        if let Some(slot) = self.page.reasoning_slot() {
+            self.reasoning_explicit[slot] = true;
+            if let Some(choice) = self.completed[slot].as_mut() {
+                choice.reasoning = self.reasoning[slot];
+            }
+        }
         if self.page == self.last_page {
             return Ok(Some(SetupWizardOutcome::Saved(Box::new(self.result()?))));
         }
@@ -790,7 +820,7 @@ impl SetupWizard {
                     self.credential_input.pop();
                 }
             }
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel
+            SetupPage::SmallModel | SetupPage::NormalModel | SetupPage::ThinkingModel
                 if self.model_focus == ModelFocus::Table =>
             {
                 let Some(slot) = self.page.model_slot() else {
@@ -812,10 +842,14 @@ impl SetupWizard {
             self.storage = CredentialStorage::Configuration;
             return;
         }
-        let Some(slot) = self.page.model_slot() else {
+        let Some(slot) = self
+            .page
+            .reasoning_slot()
+            .or_else(|| self.page.model_slot())
+        else {
             return;
         };
-        if self.model_focus == ModelFocus::Reasoning {
+        if self.page.reasoning_slot().is_some() || self.model_focus == ModelFocus::Reasoning {
             self.cycle_reasoning(slot, -1);
         } else {
             self.selection[slot] = self.selection[slot].saturating_sub(1);
@@ -831,10 +865,14 @@ impl SetupWizard {
             }
             return;
         }
-        let Some(slot) = self.page.model_slot() else {
+        let Some(slot) = self
+            .page
+            .reasoning_slot()
+            .or_else(|| self.page.model_slot())
+        else {
             return;
         };
-        if self.model_focus == ModelFocus::Reasoning {
+        if self.page.reasoning_slot().is_some() || self.model_focus == ModelFocus::Reasoning {
             self.cycle_reasoning(slot, 1);
         } else if !self.suggestions[slot].is_empty() {
             self.selection[slot] = (self.selection[slot] + 1).min(self.suggestions[slot].len() - 1);
@@ -1052,6 +1090,9 @@ impl SetupWizard {
         let next = (current + direction).rem_euclid(options.len() as i32) as usize;
         self.reasoning[slot] = options[next];
         self.reasoning_explicit[slot] = true;
+        if let Some(choice) = self.completed[slot].as_mut() {
+            choice.reasoning = self.reasoning[slot];
+        }
     }
 
     fn draw(&self, frame: &mut Frame) {
@@ -1069,8 +1110,11 @@ impl SetupWizard {
             Line::from("URL"),
             Line::from("API key"),
             Line::from("Small Model"),
-            Line::from("Middle Model"),
-            Line::from("Large Model"),
+            Line::from("Small Reasoning"),
+            Line::from("Normal Model"),
+            Line::from("Normal Reasoning"),
+            Line::from("Thinking Model"),
+            Line::from("Thinking Reasoning"),
             Line::from("Shell Completion"),
             Line::from("Shell Shortcut"),
         ];
@@ -1095,16 +1139,22 @@ impl SetupWizard {
                 ShellInstallFocus::Question => "shortcut confirmation",
                 ShellInstallFocus::Shells => "shortcut shells",
             },
-            _ => match self.page.model_slot() {
-                Some(_) => match self.model_focus {
-                    ModelFocus::Table => "model table",
-                    ModelFocus::Reasoning => "reasoning",
-                },
-                None => match self.credential_focus {
-                    CredentialFocus::Storage => "storage choice",
-                    CredentialFocus::Value => "input",
-                },
-            },
+            _ => {
+                if self.page.reasoning_slot().is_some() {
+                    "reasoning"
+                } else {
+                    match self.page.model_slot() {
+                        Some(_) => match self.model_focus {
+                            ModelFocus::Table => "model table",
+                            ModelFocus::Reasoning => "reasoning",
+                        },
+                        None => match self.credential_focus {
+                            CredentialFocus::Storage => "storage choice",
+                            CredentialFocus::Value => "input",
+                        },
+                    }
+                }
+            }
         };
         let header = Paragraph::new(format!(
             "Page {} of {}  |  {}  |  Focus: {}",
@@ -1118,9 +1168,12 @@ impl SetupWizard {
         match self.page {
             SetupPage::Url => self.draw_url(frame, areas[2]),
             SetupPage::ApiKey => self.draw_api_key(frame, areas[2]),
-            SetupPage::SmallModel | SetupPage::MiddleModel | SetupPage::LargeModel => {
+            SetupPage::SmallModel | SetupPage::NormalModel | SetupPage::ThinkingModel => {
                 self.draw_model(frame, areas[2]);
             }
+            SetupPage::SmallReasoning
+            | SetupPage::NormalReasoning
+            | SetupPage::ThinkingReasoning => self.draw_reasoning(frame, areas[2]),
             SetupPage::ShellCompletion => self.draw_shell_install(frame, areas[2], false),
             SetupPage::ShellShortcut => self.draw_shell_install(frame, areas[2], true),
         }
@@ -1145,7 +1198,12 @@ impl SetupWizard {
                         "Up/Down move  Space toggle  Enter finish  Esc save/discard"
                     }
                 },
-                _ => "Enter/Tab next  Shift-Tab back  Ctrl-R reasoning  Esc save/discard  Ctrl-C quit",
+                _ if self.page.model_slot().is_some() => {
+                    "Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
+                }
+                _ => {
+                    "Up/Down choose  Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
+                }
             }
         };
         let footer = Paragraph::new(footer)
@@ -1219,7 +1277,7 @@ impl SetupWizard {
         let Some(slot) = self.page.model_slot() else {
             return;
         };
-        let chunks = Layout::vertical([Constraint::Min(7), Constraint::Length(3)]).split(area);
+        let chunks = Layout::vertical([Constraint::Min(7)]).split(area);
         let rows = self.suggestions[slot]
             .iter()
             .enumerate()
@@ -1300,38 +1358,41 @@ impl SetupWizard {
                 &mut scrollbar_state,
             );
         }
-        let options = self.reasoning_options(slot);
-        let options = options
+    }
+
+    fn draw_reasoning(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let Some(slot) = self.page.reasoning_slot() else {
+            return;
+        };
+        let model = self
+            .completed
+            .get(slot)
+            .and_then(Option::as_ref)
+            .map(|choice| choice.model.id.as_str())
+            .or_else(|| {
+                self.suggestions[slot]
+                    .get(self.selection[slot])
+                    .map(|model| model.id.as_str())
+            })
+            .unwrap_or("(no model selected)");
+        let options = self
+            .reasoning_options(slot)
             .iter()
             .map(ReasoningStrength::as_str)
             .collect::<Vec<_>>()
             .join(", ");
-        let reasoning = Paragraph::new(format!(
-            "Reasoning {}: {}  |  Supported: {}{}",
-            if self.model_focus == ModelFocus::Reasoning {
-                "(focused)"
-            } else {
-                ""
-            },
+        let text = format!(
+            "Model: {}\nChoose reasoning effort with Up/Down, then press Enter.\nSelected: {}\nChoices: {}",
+            model,
             self.reasoning[slot].as_str(),
-            options,
-            if self.suggestions[slot]
-                .get(self.selection[slot])
-                .and_then(|model| model.reasoning.as_ref())
-                .map(|reasoning| reasoning.mandatory)
-                .unwrap_or(false)
-            {
-                "  | mandatory"
-            } else {
-                ""
-            }
-        ))
-        .block(setup_block(
-            "Model reasoning",
-            self.model_focus == ModelFocus::Reasoning,
-        ))
-        .wrap(Wrap { trim: true });
-        frame.render_widget(reasoning, chunks[1]);
+            options
+        );
+        frame.render_widget(
+            Paragraph::new(text)
+                .block(setup_block(self.page.title(), true))
+                .wrap(Wrap { trim: true }),
+            area,
+        );
     }
 
     fn draw_shell_install(&self, frame: &mut Frame, area: ratatui::layout::Rect, shortcut: bool) {
