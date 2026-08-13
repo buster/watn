@@ -579,6 +579,71 @@ fn small_role_uses_reasoning(world: &mut WatnWorld, effort: String) {
     }
 }
 
+#[given("Bash can accept a Watn completion block")]
+fn bash_can_accept_completion(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    std::fs::write(path, "# Bash user content\n").expect("Bash target");
+}
+
+#[given("Zsh cannot be modified")]
+fn zsh_cannot_be_modified(world: &mut WatnWorld) {
+    let base = shell_fixture_path(world)
+        .parent()
+        .expect("home path")
+        .to_path_buf();
+    std::fs::create_dir_all(base.join(".zshrc")).expect("Zsh directory target");
+}
+
+#[when("coordinated setup is confirmed with Bash completion and Zsh Ctrl-W selected")]
+fn apply_coordinated_shell_failure(world: &mut WatnWorld) {
+    let mut config = watn::config::load_config().expect("load shell failure config");
+    let choices = ["small-model", "normal-model", "thinking-model"].map(|model| {
+        Some(watn::models::dialog::LevelChoice {
+            model: watn::models::list::ModelEntry {
+                id: model.to_string(),
+                name: None,
+                context_length: None,
+                pricing: None,
+                supported_features: Vec::new(),
+                reasoning: None,
+            },
+            reasoning: "off".to_string(),
+        })
+    });
+    let result = watn::setup::SetupWizardResult {
+        provider: watn::provider::setup::ProviderDraft {
+            name: "custom".to_string(),
+            endpoint: "https://llm.example/v1".to_string(),
+            api_key: "sk-shell-test".to_string(),
+        },
+        choices,
+        completion_shells: vec![watn::shell_shortcut::Shell::Bash],
+        shortcut_shells: vec![watn::shell_shortcut::Shell::Zsh],
+    };
+    assert!(watn::setup::apply_result(&mut config, &result).is_err());
+    world.exit_status = Some(1);
+}
+
+#[then("the Bash completion change should remain")]
+fn bash_completion_change_remains(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(path).expect("Bash target");
+    assert!(content.contains(watn::shell_completion::OPEN_MARKER));
+}
+
+#[then("the provider and model configuration should be saved")]
+fn provider_and_model_config_saved(_world: &mut WatnWorld) {
+    let path = watn::config::xdg_config_path();
+    let content = std::fs::read_to_string(path).expect("saved config");
+    assert!(content.contains("provider = \"custom\""));
+    assert!(content.contains("small = \"small-model\""));
+}
+
+#[then("setup should report a nonzero result")]
+fn setup_reports_nonzero_result(world: &mut WatnWorld) {
+    assert_ne!(world.exit_status, Some(0));
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir
@@ -596,6 +661,8 @@ fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
         "XDG_CONFIG_HOME".to_string(),
         config_home.to_string_lossy().to_string(),
     );
+    std::env::set_var("HOME", &home);
+    std::env::set_var("XDG_CONFIG_HOME", &config_home);
     home.join(".bashrc")
 }
 
