@@ -301,7 +301,7 @@ Feature: Streamlined setup flow
     And no catalog endpoint should be persisted before confirmation
     And setup should allow manual model entry after unset
 
-  @givn.added @wip
+  @givn.added
   Scenario: Invalid catalog data switches to manual model selection
     Given the provider catalog returns an empty model list
     When I run `watn models` in a terminal
