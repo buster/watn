@@ -74,10 +74,10 @@
 
 ### Unavailable catalog allows manual model identifiers
 
-- [ ] RED: target `Unavailable catalog allows manual model identifiers`; evidence:
-- [ ] GREEN: implement visible catalog failure and manual model mode. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Unavailable catalog allows manual model identifiers`. Hash: 
+- [x] RED: target `Unavailable catalog allows manual model identifiers`; evidence: non-zero; the unreachable-catalog Given step was undefined.
+- [x] GREEN: implement catalog failure fallback and visible manual model mode. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `4 steps (4 passed)`.
+- [x] COMMIT: commit title references `Unavailable catalog allows manual model identifiers`. Hash: `17247e4`
 
 ### Catalog metadata selects supported reasoning efforts for the chosen model
 
