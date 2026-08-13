@@ -175,6 +175,68 @@ pub fn install_with_environment(shells: &[Shell], environment: &ShellEnvironment
     )
 }
 
+pub fn remove_with_environment(shells: &[Shell], environment: &ShellEnvironment) -> InstallReport {
+    remove_blocks_with_environment(
+        shells,
+        environment,
+        "shell shortcut",
+        OPEN_MARKER,
+        CLOSE_MARKER,
+    )
+}
+
+pub fn has_managed_block_with_environment(shell: Shell, environment: &ShellEnvironment) -> bool {
+    has_block_with_environment(shell, environment, OPEN_MARKER, CLOSE_MARKER)
+}
+
+pub(crate) fn has_block_with_environment(
+    shell: Shell,
+    environment: &ShellEnvironment,
+    open_marker: &'static str,
+    close_marker: &'static str,
+) -> bool {
+    let Ok(path) = environment.target_path(shell) else {
+        return false;
+    };
+    let Ok(target) = resolve_target(shell, "shell integration", &path) else {
+        return false;
+    };
+    let Ok(content) = fs::read(target) else {
+        return false;
+    };
+    let open = find_marker(&content, open_marker.as_bytes());
+    let close = find_marker(&content, close_marker.as_bytes());
+    count_marker(&content, open_marker.as_bytes()) == 1
+        && count_marker(&content, close_marker.as_bytes()) == 1
+        && matches!((open, close), (Some(open), Some(close)) if open < close)
+}
+
+pub(crate) fn remove_blocks_with_environment(
+    shells: &[Shell],
+    environment: &ShellEnvironment,
+    kind: &'static str,
+    open_marker: &'static str,
+    close_marker: &'static str,
+) -> InstallReport {
+    let mut report = InstallReport {
+        results: Vec::new(),
+        kind,
+    };
+    let mut selected = shells.to_vec();
+    selected.sort_unstable();
+    selected.dedup();
+    for shell in selected {
+        report.results.push(remove_one(
+            shell,
+            environment,
+            kind,
+            open_marker,
+            close_marker,
+        ));
+    }
+    report
+}
+
 pub(crate) fn install_blocks_with_environment<F>(
     shells: &[Shell],
     environment: &ShellEnvironment,
@@ -255,6 +317,99 @@ fn install_one(
     }
 }
 
+fn remove_one(
+    shell: Shell,
+    environment: &ShellEnvironment,
+    kind: &'static str,
+    open_marker: &str,
+    close_marker: &str,
+) -> TargetResult {
+    let path = match environment.target_path(shell) {
+        Ok(path) => path,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: None,
+                success: false,
+                message: error.to_string(),
+                reload: None,
+            }
+        }
+    };
+    let target = match resolve_target(shell, kind, &path) {
+        Ok(target) => target,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: Some(path),
+                success: false,
+                message: error.to_string(),
+                reload: None,
+            }
+        }
+    };
+    let existing = match fs::read(&target) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return TargetResult {
+                shell,
+                path: Some(path),
+                success: true,
+                message: format!("No Watn {kind} block found for {}", shell.name()),
+                reload: None,
+            }
+        }
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: Some(path.clone()),
+                success: false,
+                message: target_io_error(shell, kind, &path, "read", error).to_string(),
+                reload: None,
+            }
+        }
+    };
+    let open_count = count_marker(&existing, open_marker.as_bytes());
+    let close_count = count_marker(&existing, close_marker.as_bytes());
+    if open_count == 0 && close_count == 0 {
+        return TargetResult {
+            shell,
+            path: Some(path),
+            success: true,
+            message: format!("No Watn {kind} block found for {}", shell.name()),
+            reload: None,
+        };
+    }
+    let content = match build_content(&existing, kind, open_marker, close_marker, "") {
+        Ok(content) => content,
+        Err(error) => {
+            return TargetResult {
+                shell,
+                path: Some(path),
+                success: false,
+                message: error.to_string(),
+                reload: None,
+            }
+        }
+    };
+    match write_target(shell, kind, &target, &content, &path, environment) {
+        Ok(()) => TargetResult {
+            shell,
+            path: Some(path.clone()),
+            success: true,
+            message: format!("Removed Watn {kind} from {}", path.display()),
+            reload: Some(shell.reload_instruction(&path, &environment.home)),
+        },
+        Err(error) => TargetResult {
+            shell,
+            path: Some(path),
+            success: false,
+            message: error.to_string(),
+            reload: None,
+        },
+    }
+}
+
 fn replace_target(
     shell: Shell,
     kind: &str,
@@ -322,6 +477,57 @@ fn replace_target(
             .map_err(|error| target_io_error(shell, kind, path, "replace", error))?;
         // The rename is the committed target change; directory syncing only
         // improves durability and must not report a failure after replacement.
+        let _ = sync_directory(parent);
+        Ok::<(), Error>(())
+    })();
+    if write_result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    write_result
+}
+
+fn write_target(
+    shell: Shell,
+    kind: &str,
+    target: &Path,
+    content: &[u8],
+    display_path: &Path,
+    _environment: &ShellEnvironment,
+) -> Result<(), Error> {
+    let original_mode = fs::metadata(target)
+        .ok()
+        .map(|metadata| metadata.permissions());
+    let parent = target
+        .parent()
+        .ok_or_else(|| target_error(shell, kind, display_path, "target has no parent directory"))?;
+    let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let file_name = target
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("config");
+    let temporary = parent.join(format!(
+        ".{file_name}.watn-{counter}-{}.tmp",
+        std::process::id()
+    ));
+    let write_result = (|| {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|error| {
+                target_io_error(shell, kind, display_path, "create temporary target", error)
+            })?;
+        if let Some(mode) = original_mode {
+            fs::set_permissions(&temporary, mode).map_err(|error| {
+                target_io_error(shell, kind, display_path, "set target permissions", error)
+            })?;
+        }
+        file.write_all(content)
+            .map_err(|error| target_io_error(shell, kind, display_path, "write", error))?;
+        file.sync_all()
+            .map_err(|error| target_io_error(shell, kind, display_path, "sync", error))?;
+        fs::rename(&temporary, target)
+            .map_err(|error| target_io_error(shell, kind, display_path, "replace", error))?;
         let _ = sync_directory(parent);
         Ok::<(), Error>(())
     })();

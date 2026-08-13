@@ -190,7 +190,7 @@ Feature: Streamlined setup flow
     And Zsh should contain a Watn-managed Ctrl-W block
     And Fish should remain unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shell setup prefills installed integrations and removes only managed blocks when deselected
     Given Bash contains a valid Watn-managed completion block
     And Bash contains user-owned shell content

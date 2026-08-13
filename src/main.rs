@@ -65,6 +65,7 @@ enum Commands {
     Setup,
     Models,
     Provider,
+    Shell,
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"
     )]
@@ -128,6 +129,7 @@ fn main() {
                 run_models_command(cli.set_small, cli.set_normal, cli.set_thinking);
             }
             Commands::Provider => run_provider_setup_command(),
+            Commands::Shell => run_shell_setup_command(),
             Commands::Completions { shell } => run_completions(shell),
         }
         return;
@@ -515,6 +517,36 @@ fn run_setup_command() {
                 std::process::exit(exit_code(&error));
             }
             println!("Setup complete");
+        }
+        Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
+            exit_setup_cancellation(cancellation);
+        }
+        Err(error) => {
+            eprintln!("{}", error);
+            std::process::exit(exit_code(&error));
+        }
+    }
+}
+
+fn run_shell_setup_command() {
+    if !std::io::stdin().is_terminal() {
+        eprintln!("Run `watn shell` in a terminal to configure shell integrations.");
+        std::process::exit(1);
+    }
+    let config = match load_config() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("{}", error);
+            std::process::exit(exit_code(&error));
+        }
+    };
+    match watn::setup::run_with_config(&config, SetupEntryPoint::Shell) {
+        Ok(SetupWizardOutcome::Saved(result)) => {
+            if let Err(error) = watn::setup::apply_shell_result(&result) {
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
+            }
+            println!("Shell setup complete");
         }
         Ok(SetupWizardOutcome::Cancelled(cancellation)) => {
             exit_setup_cancellation(cancellation);

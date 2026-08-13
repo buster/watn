@@ -34,6 +34,7 @@ pub enum SetupEntryPoint {
     Setup,
     Provider,
     Models,
+    Shell,
 }
 
 #[derive(Debug)]
@@ -295,6 +296,45 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
     Ok(())
 }
 
+pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
+    let environment = shell_shortcut::ShellEnvironment::from_process();
+    let selected_completion = &result.completion_shells;
+    let selected_shortcut = &result.shortcut_shells;
+    let mut failures = Vec::new();
+
+    for shell in Shell::ALL {
+        if selected_completion.contains(&shell) {
+            if let Some(error) =
+                shell_completion::install_with_environment(&[shell], &environment).aggregate_error()
+            {
+                failures.push(error.to_string());
+            }
+        } else if let Some(error) =
+            shell_completion::remove_with_environment(&[shell], &environment).aggregate_error()
+        {
+            failures.push(error.to_string());
+        }
+
+        if selected_shortcut.contains(&shell) {
+            if let Some(error) =
+                shell_shortcut::install_with_environment(&[shell], &environment).aggregate_error()
+            {
+                failures.push(error.to_string());
+            }
+        } else if let Some(error) =
+            shell_shortcut::remove_with_environment(&[shell], &environment).aggregate_error()
+        {
+            failures.push(error.to_string());
+        }
+    }
+
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::ConfigError(failures.join("; ")))
+    }
+}
+
 struct SetupWizard {
     config: Config,
     provider_name: String,
@@ -378,10 +418,12 @@ impl SetupWizard {
         };
         let first_page = match entry {
             SetupEntryPoint::Models => SetupPage::SmallModel,
+            SetupEntryPoint::Shell => SetupPage::ShellCompletion,
             SetupEntryPoint::Setup | SetupEntryPoint::Provider => SetupPage::Provider,
         };
         let last_page = match entry {
             SetupEntryPoint::Provider => SetupPage::ApiKey,
+            SetupEntryPoint::Shell => SetupPage::ShellShortcut,
             SetupEntryPoint::Setup => SetupPage::ShellShortcut,
             SetupEntryPoint::Models => SetupPage::ThinkingReasoning,
         };
@@ -400,7 +442,22 @@ impl SetupWizard {
             config.tiers.reasoning.normal.is_some(),
             config.tiers.reasoning.thinking.is_some(),
         ];
-        let detected_shells = shell_shortcut::ShellEnvironment::from_process().detected_shells();
+        let shell_environment = shell_shortcut::ShellEnvironment::from_process();
+        let detected_shells = shell_environment.detected_shells();
+        let completion_selected = if entry == SetupEntryPoint::Shell {
+            Shell::ALL.map(|shell| {
+                shell_completion::has_managed_block_with_environment(shell, &shell_environment)
+            })
+        } else {
+            Shell::ALL.map(|shell| detected_shells.contains(&shell))
+        };
+        let shortcut_selected = if entry == SetupEntryPoint::Shell {
+            Shell::ALL.map(|shell| {
+                shell_shortcut::has_managed_block_with_environment(shell, &shell_environment)
+            })
+        } else {
+            Shell::ALL.map(|shell| detected_shells.contains(&shell))
+        };
         let generation = Arc::new(AtomicU64::new(0));
         let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
@@ -450,11 +507,11 @@ impl SetupWizard {
             completion_focus: ShellInstallFocus::Question,
             completion_enabled: false,
             completion_cursor: 0,
-            completion_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
+            completion_selected,
             shortcut_focus: ShellInstallFocus::Question,
             shortcut_enabled: false,
             shortcut_cursor: 0,
-            shortcut_selected: Shell::ALL.map(|shell| detected_shells.contains(&shell)),
+            shortcut_selected,
         };
         if wizard.storage == CredentialStorage::Environment && wizard.credential_input.is_empty() {
             wizard.credential_input = suggested_api_key_env(&wizard.endpoint).to_string();
@@ -828,8 +885,17 @@ impl SetupWizard {
     }
 
     fn result(&self) -> Result<SetupWizardResult, Error> {
+        let provider = if self.first_page == SetupPage::ShellCompletion {
+            ProviderDraft {
+                name: "custom".to_string(),
+                endpoint: String::new(),
+                api_key: String::new(),
+            }
+        } else {
+            self.current_provider()?
+        };
         Ok(SetupWizardResult {
-            provider: self.current_provider()?,
+            provider,
             choices: self.completed.clone(),
             completion_shells: selected_shells(self.completion_enabled, self.completion_selected),
             shortcut_shells: selected_shells(self.shortcut_enabled, self.shortcut_selected),

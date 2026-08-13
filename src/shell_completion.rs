@@ -18,6 +18,20 @@ pub fn install_with_environment(shells: &[Shell], environment: &ShellEnvironment
     )
 }
 
+pub fn remove_with_environment(shells: &[Shell], environment: &ShellEnvironment) -> InstallReport {
+    shell_shortcut::remove_blocks_with_environment(
+        shells,
+        environment,
+        "shell completion",
+        OPEN_MARKER,
+        CLOSE_MARKER,
+    )
+}
+
+pub fn has_managed_block_with_environment(shell: Shell, environment: &ShellEnvironment) -> bool {
+    shell_shortcut::has_block_with_environment(shell, environment, OPEN_MARKER, CLOSE_MARKER)
+}
+
 fn completion_block(shell: Shell) -> &'static str {
     match shell {
         Shell::Bash => BASH_BLOCK,

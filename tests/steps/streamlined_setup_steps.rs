@@ -14,7 +14,8 @@ fn wait_for_active_page(session: &super::PtySession, title: &str) -> String {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
         let output = pty_snapshot(session);
-        if latest_page(&output).contains(title) {
+        let page = latest_page(&output);
+        if title.split_whitespace().all(|word| page.contains(word)) {
             return output;
         }
         if std::time::Instant::now() >= deadline {
@@ -576,6 +577,96 @@ fn small_role_uses_reasoning(world: &mut WatnWorld, effort: String) {
             "custom effort was not retained: {output:?}"
         );
     }
+}
+
+fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
+    let base = world
+        .temp_dir
+        .get_or_insert_with(|| tempfile::tempdir().expect("shell temp dir"))
+        .path()
+        .to_path_buf();
+    let home = base.join("home");
+    std::fs::create_dir_all(&home).expect("shell home");
+    let config_home = base.join("config");
+    std::fs::create_dir_all(&config_home).expect("shell config home");
+    world
+        .env_vars
+        .insert("HOME".to_string(), home.to_string_lossy().to_string());
+    world.env_vars.insert(
+        "XDG_CONFIG_HOME".to_string(),
+        config_home.to_string_lossy().to_string(),
+    );
+    home.join(".bashrc")
+}
+
+#[given("Bash contains a valid Watn-managed completion block")]
+fn bash_contains_managed_completion(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = format!(
+        "# user before\n{}\nmanaged completion\n{}\n# user after\n",
+        watn::shell_completion::OPEN_MARKER,
+        watn::shell_completion::CLOSE_MARKER
+    );
+    std::fs::write(path, content).expect("write Bash fixture");
+}
+
+#[given("Bash contains user-owned shell content")]
+fn bash_contains_user_owned_content(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(&path).expect("Bash fixture");
+    assert!(content.contains("# user before") && content.contains("# user after"));
+}
+
+#[when("I start `watn shell` in a terminal")]
+fn start_shell_setup(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["shell"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Completion");
+}
+
+#[then("Bash completion should be selected")]
+fn bash_completion_is_selected(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "y");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let output = pty_snapshot(session);
+    assert!(
+        output.contains("Bash"),
+        "Bash shell choice missing: {output:?}"
+    );
+    assert!(
+        output.contains("[x]"),
+        "Bash completion was not preselected: {output:?}"
+    );
+}
+
+#[when("I deselect Bash completion")]
+fn deselect_bash_completion(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, " ");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("shell PTY session");
+    super::finish_pty_session(world, session);
+}
+
+#[then("the Watn-managed completion block should be removed from Bash")]
+fn managed_completion_removed_from_bash(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(path).expect("Bash target");
+    assert!(!content.contains(watn::shell_completion::OPEN_MARKER));
+    assert!(!content.contains(watn::shell_completion::CLOSE_MARKER));
+}
+
+#[then("the user-owned shell content should remain")]
+fn user_owned_shell_content_remains(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(path).expect("Bash target");
+    assert!(content.contains("# user before"));
+    assert!(content.contains("# user after"));
 }
 
 #[given(regex = r##"^a configured provider with model "([^"]+)" for the small role$"##)]
