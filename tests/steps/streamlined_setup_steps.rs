@@ -669,6 +669,61 @@ fn user_owned_shell_content_remains(world: &mut WatnWorld) {
     assert!(content.contains("# user after"));
 }
 
+#[given("Bash contains duplicated Watn completion markers")]
+fn bash_contains_duplicated_completion_markers(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = format!(
+        "{}\nfirst\n{}\n{}\nsecond\n{}\n",
+        watn::shell_completion::OPEN_MARKER,
+        watn::shell_completion::CLOSE_MARKER,
+        watn::shell_completion::OPEN_MARKER,
+        watn::shell_completion::CLOSE_MARKER
+    );
+    std::fs::write(path, content).expect("write malformed Bash fixture");
+}
+
+#[when("I deselect Bash completion in shell setup")]
+fn deselect_bash_completion_in_shell_setup(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["shell"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Completion");
+    pty_write(session, "y");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, " \r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("shell PTY session");
+    super::finish_pty_session(world, session);
+}
+
+#[then("shell setup should report a malformed managed block")]
+fn shell_setup_reports_malformed_block(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    for word in ["malformed", "completion", "markers"] {
+        assert!(
+            output.contains(word),
+            "malformed marker error missing: {output:?}"
+        );
+    }
+}
+
+#[then("the Bash file should remain unchanged")]
+fn bash_file_remains_unchanged(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(path).expect("Bash target");
+    assert_eq!(
+        content.matches(watn::shell_completion::OPEN_MARKER).count(),
+        2
+    );
+    assert_eq!(
+        content
+            .matches(watn::shell_completion::CLOSE_MARKER)
+            .count(),
+        2
+    );
+}
+
 #[given(regex = r##"^a configured provider with model "([^"]+)" for the small role$"##)]
 fn configured_provider_with_small_model(world: &mut WatnWorld, model: String) {
     world.raw_config = Some(format!(

@@ -200,7 +200,7 @@ Feature: Streamlined setup flow
     Then the Watn-managed completion block should be removed from Bash
     And the user-owned shell content should remain
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shell setup refuses malformed managed markers
     Given Bash contains duplicated Watn completion markers
     When I deselect Bash completion in shell setup
