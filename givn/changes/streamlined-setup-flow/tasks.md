@@ -186,10 +186,10 @@
 
 ### Catalog entries without unique non-empty identifiers are rejected
 
-- [ ] RED: target `Catalog entries without unique non-empty identifiers are rejected`; evidence:
-- [ ] GREEN: validate identifier uniqueness without inventing or deduplicating models. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Catalog entries without unique non-empty identifiers are rejected`. Hash: 
+- [x] RED: target `Catalog entries without unique non-empty identifiers are rejected`; evidence: non-zero; invalid-identifier fixture and assertions were undefined.
+- [x] GREEN: reject empty/duplicate provider model identifiers and expose manual selection. Production files: `src/setup.rs`; test files: `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Catalog entries without unique non-empty identifiers are rejected`. Hash: `9e36b7d`
 
 ### Provider catalog takes precedence over a conflicting legacy LiteLLM source
 
