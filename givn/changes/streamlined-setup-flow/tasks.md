@@ -263,10 +263,10 @@
 
 ### Free-form reasoning survives persistence and request construction
 
-- [ ] RED: target `Free-form reasoning survives persistence and request construction`; evidence:
-- [ ] GREEN: persist and send non-empty reasoning strings unchanged. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Free-form reasoning survives persistence and request construction`. Hash: 
+- [x] RED: target `Free-form reasoning survives persistence and request construction`; evidence: non-zero; `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)` because the free-form reasoning step was undefined.
+- [x] GREEN: persist and send non-empty reasoning strings unchanged. Production file: `src/config/types.rs`; test file: `tests/steps/streamlined_setup_steps.rs`; spec tag activated for this scenario only. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`; the request mock required the exact `reasoning_effort` body value.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit title references `Free-form reasoning survives persistence and request construction`. Hash: `dc25ded`
 
 ### Existing unknown reasoning remains active after rerunning setup
 
