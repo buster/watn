@@ -310,6 +310,7 @@ struct SetupWizard {
     queries: [String; 3],
     suggestions: [Vec<ModelEntry>; 3],
     selection: [usize; 3],
+    manual_models: [String; 3],
     completed: [Option<LevelChoice>; 3],
     reasoning: [ReasoningStrength; 3],
     reasoning_explicit: [bool; 3],
@@ -317,6 +318,7 @@ struct SetupWizard {
     search_status: [Option<String>; 3],
     search_pending: [bool; 3],
     catalog_complete: bool,
+    catalog_manual: bool,
     generation: Arc<AtomicU64>,
     search_tx: Sender<SearchMessage>,
     search_rx: Receiver<SearchMessage>,
@@ -427,6 +429,7 @@ impl SetupWizard {
             queries: Default::default(),
             suggestions: [Vec::new(), Vec::new(), Vec::new()],
             selection: [0, 0, 0],
+            manual_models: Default::default(),
             completed: [None, None, None],
             reasoning,
             reasoning_explicit,
@@ -434,6 +437,7 @@ impl SetupWizard {
             search_status: [None, None, None],
             search_pending: [false, false, false],
             catalog_complete: false,
+            catalog_manual: false,
             generation,
             search_tx,
             search_rx,
@@ -850,6 +854,14 @@ impl SetupWizard {
                 let Some(slot) = self.page.model_slot() else {
                     return;
                 };
+                if self.catalog_manual {
+                    if let Some(character) = character {
+                        self.manual_models[slot].push(character);
+                    } else {
+                        self.manual_models[slot].pop();
+                    }
+                    return;
+                }
                 if let Some(character) = character {
                     self.queries[slot].push(character);
                 } else {
@@ -929,6 +941,25 @@ impl SetupWizard {
     }
 
     fn confirm_model(&mut self, slot: usize) -> Result<(), Error> {
+        if self.catalog_manual {
+            let model = self.manual_models[slot].trim();
+            if model.is_empty() {
+                self.validation = "enter a non-empty manual model identifier".to_string();
+                return Err(Error::ConfigError(self.validation.clone()));
+            }
+            self.completed[slot] = Some(LevelChoice {
+                model: ModelEntry {
+                    id: model.to_string(),
+                    name: None,
+                    context_length: None,
+                    pricing: None,
+                    supported_features: Vec::new(),
+                    reasoning: None,
+                },
+                reasoning: self.reasoning[slot],
+            });
+            return Ok(());
+        }
         if self.search_pending[slot] || self.suggestions[slot].is_empty() {
             self.validation = "wait for a model result before continuing".to_string();
             return Err(Error::ConfigError(self.validation.clone()));
@@ -951,15 +982,27 @@ impl SetupWizard {
         let key = self.request_credential().inspect_err(|error| {
             self.validation = error.to_string();
         })?;
-        let (models, catalog_complete) =
-            match fetch_models_page_info(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
-                Ok(page) if !page.models.is_empty() => (page.models, page.complete),
-                _ => (fetch_models(&self.endpoint, Some(&key))?, true),
-            };
-        if models.is_empty() {
-            self.validation = "no models returned from endpoint".to_string();
-            return Err(Error::ConfigError(self.validation.clone()));
-        }
+        let page = match fetch_models_page_info(&self.endpoint, 1, CATALOG_PAGE_LIMIT, Some(&key)) {
+            Ok(page) if !page.models.is_empty() => Ok((page.models, page.complete)),
+            Ok(_) => fetch_models(&self.endpoint, Some(&key)).map(|models| (models, true)),
+            Err(error) => Err(error),
+        };
+        let (models, catalog_complete) = match page {
+            Ok(value) if !value.0.is_empty() => value,
+            Ok(_) => {
+                self.catalog_manual = true;
+                self.validation =
+                    "Catalog discovery unavailable. Enter a manual model identifier.".to_string();
+                return Ok(());
+            }
+            Err(error) => {
+                self.catalog_manual = true;
+                self.validation = format!(
+                    "Catalog discovery unavailable. Enter a manual model identifier: {error}"
+                );
+                return Ok(());
+            }
+        };
         self.catalog_complete = catalog_complete;
         for slot in 0..3 {
             self.models[slot] = models.clone();
@@ -1362,14 +1405,32 @@ impl SetupWizard {
                     ),
                     Cell::from(model.supported_features.join(", ")),
                 ])
-            });
+            })
+            .chain(self.catalog_manual.then(|| {
+                Row::new([
+                    Cell::from("Catalog discovery unavailable"),
+                    Cell::from(""),
+                    Cell::from(""),
+                    Cell::from(self.validation.clone()),
+                ])
+            }))
+            .chain(self.catalog_manual.then(|| {
+                Row::new([
+                    Cell::from("Manual model identifier"),
+                    Cell::from(""),
+                    Cell::from(""),
+                    Cell::from("type a model id"),
+                ])
+            }));
         let mut table_state = TableState::default();
         if !self.suggestions[slot].is_empty() {
             table_state.select(Some(
                 self.selection[slot].min(self.suggestions[slot].len() - 1),
             ));
         }
-        let title = if self.queries[slot].is_empty() {
+        let title = if self.catalog_manual {
+            format!("{} (manual entry)", self.page.title())
+        } else if self.queries[slot].is_empty() {
             format!("{} (editing)", self.page.title())
         } else {
             format!(

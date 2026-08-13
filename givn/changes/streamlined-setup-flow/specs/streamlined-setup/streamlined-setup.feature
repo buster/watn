@@ -143,7 +143,7 @@ Feature: Streamlined setup flow
     Then the small role should require a replacement model
     And the model choices should include only "catalog-one" and "catalog-two"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Unavailable catalog allows manual model identifiers
     Given a configured provider with an unreachable catalog endpoint
     When I start `watn models` in a terminal
