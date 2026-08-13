@@ -289,6 +289,8 @@ fn decline_both_shell_integration_questions(_world: &mut WatnWorld) {
         choices: [None, None, None],
         completion_shells: Vec::new(),
         shortcut_shells: Vec::new(),
+        completion_enabled: false,
+        shortcut_enabled: false,
     };
     watn::setup::apply_shell_result(&result).expect("declining shell setup");
 }
@@ -825,6 +827,8 @@ fn apply_coordinated_shell_failure(world: &mut WatnWorld) {
         choices,
         completion_shells: vec![watn::shell_shortcut::Shell::Bash],
         shortcut_shells: vec![watn::shell_shortcut::Shell::Zsh],
+        completion_enabled: true,
+        shortcut_enabled: true,
     };
     assert!(watn::setup::apply_result(&mut config, &result).is_err());
     world.exit_status = Some(1);
@@ -1868,6 +1872,20 @@ fn bash_contains_managed_completion(world: &mut WatnWorld) {
     std::fs::write(path, content).expect("write Bash fixture");
 }
 
+#[given("Bash contains a valid Watn completion block surrounded by user content")]
+fn bash_contains_completion_block_with_surrounding_content(world: &mut WatnWorld) {
+    bash_contains_managed_completion(world);
+}
+
+#[given("the original Bash bytes are recorded")]
+fn original_bash_bytes_recorded(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    world.pending_config.insert(
+        "bash_before".to_string(),
+        std::fs::read_to_string(path).expect("Bash fixture"),
+    );
+}
+
 #[given("Bash contains user-owned shell content")]
 fn bash_contains_user_owned_content(world: &mut WatnWorld) {
     let path = shell_fixture_path(world);
@@ -1901,14 +1919,39 @@ fn bash_completion_is_selected(world: &mut WatnWorld) {
 
 #[when("I deselect Bash completion")]
 fn deselect_bash_completion(world: &mut WatnWorld) {
+    if world.pty_session.is_none() {
+        let session = super::start_pty_session(world, &["shell"]);
+        world.pty_session = Some(session);
+        let session = world.pty_session.as_mut().expect("shell PTY session");
+        wait_for_active_page(session, "Shell Completion");
+        pty_write(session, "y");
+        std::thread::sleep(std::time::Duration::from_millis(150));
+    }
     let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, " ");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\r");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
     let session = world.pty_session.take().expect("shell PTY session");
     super::finish_pty_session(world, session);
+}
+
+#[then("only the Watn completion block should be removed")]
+fn only_watn_completion_block_removed(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(path).expect("Bash target");
+    assert!(!content.contains(watn::shell_completion::OPEN_MARKER));
+    assert!(!content.contains(watn::shell_completion::CLOSE_MARKER));
+}
+
+#[then("all user-owned bytes should remain in their original order")]
+fn user_owned_bytes_remain_in_original_order(world: &mut WatnWorld) {
+    let path = shell_fixture_path(world);
+    let content = std::fs::read_to_string(path).expect("Bash target");
+    assert_eq!(content, "# user before\n\n# user after\n");
 }
 
 #[then("the Watn-managed completion block should be removed from Bash")]

@@ -44,6 +44,8 @@ pub struct SetupWizardResult {
     pub choices: [Option<LevelChoice>; 3],
     pub completion_shells: Vec<Shell>,
     pub shortcut_shells: Vec<Shell>,
+    pub completion_enabled: bool,
+    pub shortcut_enabled: bool,
 }
 
 #[derive(Debug)]
@@ -312,7 +314,7 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
 }
 
 pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
-    if result.completion_shells.is_empty() && result.shortcut_shells.is_empty() {
+    if !result.completion_enabled && !result.shortcut_enabled {
         return Ok(());
     }
 
@@ -322,28 +324,34 @@ pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
     let mut failures = Vec::new();
 
     for shell in Shell::ALL {
-        if selected_completion.contains(&shell) {
-            if let Some(error) =
-                shell_completion::install_with_environment(&[shell], &environment).aggregate_error()
+        if result.completion_enabled {
+            if selected_completion.contains(&shell) {
+                if let Some(error) =
+                    shell_completion::install_with_environment(&[shell], &environment)
+                        .aggregate_error()
+                {
+                    failures.push(error.to_string());
+                }
+            } else if let Some(error) =
+                shell_completion::remove_with_environment(&[shell], &environment).aggregate_error()
             {
                 failures.push(error.to_string());
             }
-        } else if let Some(error) =
-            shell_completion::remove_with_environment(&[shell], &environment).aggregate_error()
-        {
-            failures.push(error.to_string());
         }
 
-        if selected_shortcut.contains(&shell) {
-            if let Some(error) =
-                shell_shortcut::install_with_environment(&[shell], &environment).aggregate_error()
+        if result.shortcut_enabled {
+            if selected_shortcut.contains(&shell) {
+                if let Some(error) =
+                    shell_shortcut::install_with_environment(&[shell], &environment)
+                        .aggregate_error()
+                {
+                    failures.push(error.to_string());
+                }
+            } else if let Some(error) =
+                shell_shortcut::remove_with_environment(&[shell], &environment).aggregate_error()
             {
                 failures.push(error.to_string());
             }
-        } else if let Some(error) =
-            shell_shortcut::remove_with_environment(&[shell], &environment).aggregate_error()
-        {
-            failures.push(error.to_string());
         }
     }
 
@@ -936,6 +944,8 @@ impl SetupWizard {
             choices: self.completed.clone(),
             completion_shells: selected_shells(self.completion_enabled, self.completion_selected),
             shortcut_shells: selected_shells(self.shortcut_enabled, self.shortcut_selected),
+            completion_enabled: self.completion_enabled,
+            shortcut_enabled: self.shortcut_enabled,
         })
     }
 

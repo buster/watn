@@ -449,7 +449,7 @@ Feature: Streamlined setup flow
     Then no shell target file should be inspected or created
     And no configuration field should change
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shell removal preserves bytes outside the managed block
     Given Bash contains a valid Watn completion block surrounded by user content
     And the original Bash bytes are recorded
