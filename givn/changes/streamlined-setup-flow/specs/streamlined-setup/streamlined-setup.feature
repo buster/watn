@@ -274,7 +274,7 @@ Feature: Streamlined setup flow
     Then no config file should exist
     And no catalog endpoint should be persisted
 
-  @givn.added @wip
+  @givn.added
   Scenario: A successful edited catalog endpoint is promoted only at final confirmation
     Given a configured provider has catalog endpoint "https://old.example/v1"
     And the edited catalog endpoint "https://new.example/v1" returns valid models

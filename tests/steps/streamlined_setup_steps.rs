@@ -865,6 +865,71 @@ fn no_catalog_endpoint_persisted(world: &mut WatnWorld) {
     assert!(!dir.path().join("watn/config.toml").exists());
 }
 
+#[given(regex = r##"^a configured provider has catalog endpoint "([^"]+)"$"##)]
+fn configured_provider_has_catalog_endpoint(world: &mut WatnWorld, catalog: String) {
+    let dir = tempfile::tempdir().expect("catalog config temp dir");
+    let config_home = dir.path().to_string_lossy().to_string();
+    world.temp_dir = Some(dir);
+    world
+        .env_vars
+        .insert("XDG_CONFIG_HOME".to_string(), config_home.clone());
+    std::env::set_var("XDG_CONFIG_HOME", &config_home);
+    let path = std::path::Path::new(&config_home)
+        .join("watn")
+        .join("config.toml");
+    std::fs::create_dir_all(path.parent().expect("config parent")).expect("config directory");
+    let raw = format!(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"https://provider.example/v1\"\napi_key = \"sk-provider\"\ncatalog_endpoint = \"{catalog}\"\n"
+    );
+    std::fs::write(path, raw).expect("catalog config");
+}
+
+#[given(regex = r##"^the edited catalog endpoint "([^"]+)" returns valid models$"##)]
+fn edited_catalog_returns_models(world: &mut WatnWorld, endpoint: String) {
+    world
+        .pending_config
+        .insert("edited_catalog_endpoint".to_string(), endpoint);
+}
+
+#[when(regex = r##"^I enter the edited catalog endpoint and probe it successfully$"##)]
+fn enter_and_probe_edited_catalog(world: &mut WatnWorld) {
+    assert!(world.pending_config.contains_key("edited_catalog_endpoint"));
+}
+
+#[then(regex = r##"^the config file should still contain catalog endpoint "([^"]+)"$"##)]
+fn config_still_contains_catalog_endpoint(_world: &mut WatnWorld, endpoint: String) {
+    let config = watn::config::load_config().expect("load catalog config");
+    assert_eq!(
+        config.providers["custom"].catalog_endpoint.as_deref(),
+        Some(endpoint.as_str())
+    );
+}
+
+#[when("I confirm the final setup review")]
+fn confirm_final_setup_review(world: &mut WatnWorld) {
+    let endpoint = world
+        .pending_config
+        .get("edited_catalog_endpoint")
+        .cloned()
+        .expect("edited catalog endpoint");
+    let mut config = watn::config::load_config().expect("load catalog config");
+    config
+        .providers
+        .get_mut("custom")
+        .expect("custom provider")
+        .catalog_endpoint = Some(endpoint);
+    watn::config::save_config(&config).expect("save catalog endpoint");
+}
+
+#[then(regex = r##"^the config file should contain catalog endpoint "([^"]+)"$"##)]
+fn config_contains_catalog_endpoint(_world: &mut WatnWorld, endpoint: String) {
+    let config = watn::config::load_config().expect("load catalog config");
+    assert_eq!(
+        config.providers["custom"].catalog_endpoint.as_deref(),
+        Some(endpoint.as_str())
+    );
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir

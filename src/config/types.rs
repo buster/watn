@@ -50,6 +50,7 @@ impl Config {
                         endpoint: "https://api.example.com/v1".to_string(),
                         api_key: Some("sk-...".to_string()),
                         default_model: Some("custom-model".to_string()),
+                        catalog_endpoint: None,
                     },
                 );
                 m
@@ -112,6 +113,8 @@ pub struct ProviderConfig {
     pub endpoint: String,
     pub api_key: Option<String>,
     pub default_model: Option<String>,
+    #[serde(default)]
+    pub catalog_endpoint: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
