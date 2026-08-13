@@ -237,3 +237,37 @@ fn thinking_model_input_shows(world: &mut WatnWorld, model: String) {
         "thinking model was not prefilled: {output:?}"
     );
 }
+
+#[given("the existing config content is recorded")]
+fn record_existing_config_content(world: &mut WatnWorld) {
+    world.pending_config.insert(
+        "record_config_before_cancel".to_string(),
+        "true".to_string(),
+    );
+}
+
+#[when("cancel setup before final confirmation")]
+fn cancel_setup_before_confirmation(world: &mut WatnWorld) {
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("config temp dir")
+        .path()
+        .join("watn")
+        .join("config.toml");
+    let before = std::fs::read_to_string(&path).expect("config file before cancellation");
+    world
+        .pending_config
+        .insert("config_before".to_string(), before);
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    pty_write(session, "\x1b");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    pty_write(session, "n");
+    let session = world.pty_session.take().expect("setup PTY session");
+    super::finish_pty_session(world, session);
+    assert_eq!(
+        world.exit_status,
+        Some(1),
+        "setup cancellation should be status 1"
+    );
+}
