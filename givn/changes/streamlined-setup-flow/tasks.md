@@ -39,10 +39,10 @@
 
 ### Provider setup refuses an unresolved environment credential
 
-- [ ] RED: target `Provider setup refuses an unresolved environment credential`; evidence:
-- [ ] GREEN: validate environment references before leaving/saving credential setup. Production files: . Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
-- [ ] COMMIT: commit title references `Provider setup refuses an unresolved environment credential`. Hash: 
+- [x] RED: target `Provider setup refuses an unresolved environment credential`; evidence: non-zero; the new unresolved-environment assertion step was undefined.
+- [x] GREEN: validate the unresolved environment source through the existing provider setup seam and prevent a provider write. Production files: existing validation/persistence path reused; test files: `tests/steps/provider_setup_steps.rs`, `tests/steps/streamlined_setup_steps.rs`; Evidence: targeted run passed: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the named scenario after `cargo fmt --all`. Evidence: targeted run passed with `5 steps (5 passed)`.
+- [x] COMMIT: commit title references `Provider setup refuses an unresolved environment credential`. Hash: `5e97e24`
 
 ### Provider setup preserves unrelated settings
 
