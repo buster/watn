@@ -217,7 +217,7 @@ Feature: Streamlined setup flow
     And the provider and model configuration should be saved
     And setup should report a nonzero result
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Incomplete interactive request opens setup and does not send the original request
     Given a usable provider credential is configured
     And the normal model role is missing
