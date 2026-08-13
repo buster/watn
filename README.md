@@ -1,8 +1,8 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 91%](https://img.shields.io/badge/line%20coverage-91%25-brightgreen)](https://github.com/buster/watn/blob/main/coverage/cobertura-coverage.xml)
-[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](https://github.com/buster/watn/blob/main/coverage/cobertura-coverage.xml)
+[![Line Coverage: 92%](https://img.shields.io/badge/line%20coverage-92%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
 ![Crates.io Version](https://img.shields.io/crates/v/watn)
@@ -184,9 +184,9 @@ GPL-3.0-or-later
 <!-- givn:begin:coverage -->
 ## Coverage
 
-Merged report: [coverage/cobertura-coverage.xml](https://github.com/buster/watn/blob/main/coverage/cobertura-coverage.xml)
+Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 91% (9586/10578)
+Line coverage: 92% (12831/13996)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
