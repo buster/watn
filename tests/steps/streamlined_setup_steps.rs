@@ -754,6 +754,74 @@ fn no_provider_entry_should_be_persisted(world: &mut WatnWorld) {
     assert!(!dir.path().join("watn/config.toml").exists());
 }
 
+#[given("an existing config is recorded byte-for-byte")]
+fn existing_config_recorded(world: &mut WatnWorld) {
+    let dir = tempfile::tempdir().expect("baseline config temp dir");
+    let config_home = dir.path().to_string_lossy().to_string();
+    world.temp_dir = Some(dir);
+    world
+        .env_vars
+        .insert("XDG_CONFIG_HOME".to_string(), config_home.clone());
+    std::env::set_var("XDG_CONFIG_HOME", &config_home);
+    let path = std::path::Path::new(&config_home)
+        .join("watn")
+        .join("config.toml");
+    std::fs::create_dir_all(path.parent().expect("config parent")).expect("config directory");
+    let raw = "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://mock\"\napi_key = \"sk-existing\"\n\n[tiers]\nsmall = \"old-small\"\nnormal = \"old-normal\"\nthinking = \"old-thinking\"\n";
+    std::fs::write(&path, raw).expect("baseline config");
+    world
+        .pending_config
+        .insert("config_before".to_string(), raw.to_string());
+    world.raw_config = Some(raw.to_string());
+}
+
+#[given("the provider catalog returns valid models")]
+fn provider_catalog_returns_valid_models(world: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1: {}", server.port()).replace(": ", ":");
+    let models = serde_json::json!({
+        "data": [{"id": "new-small"}, {"id": "new-normal"}, {"id": "new-thinking"}]
+    });
+    let mock_id = server
+        .mock(move |when, then| {
+            when.method(httpmock::Method::GET).path("/models");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .body(models.to_string());
+        })
+        .id;
+    world.mock_server = crate::MockServerWrap(Some(server), None);
+    world.models_mock_id = Some(mock_id);
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+    world
+        .pending_config
+        .insert("preserve_setup_endpoint".to_string(), "true".to_string());
+}
+
+#[when("I accept the provider, credential, and catalog probe in coordinated setup")]
+fn accept_provider_credential_catalog_probe(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["setup"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_mut().expect("setup PTY session");
+    wait_for_active_page(session, "Provider");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "URL");
+    pty_write(session, "\r");
+    wait_for_active_page(session, "API key");
+    pty_write(session, "\r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    wait_for_active_page(session, "Small Model");
+}
+
+#[then("no selected shell target should change")]
+fn no_selected_shell_target_changes(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("baseline temp dir");
+    assert!(!dir.path().join("home/.bashrc").exists());
+}
+
 fn shell_fixture_path(world: &mut WatnWorld) -> std::path::PathBuf {
     let base = world
         .temp_dir

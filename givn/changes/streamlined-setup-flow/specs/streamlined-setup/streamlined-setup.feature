@@ -255,12 +255,12 @@ Feature: Streamlined setup flow
     And no provider entry should be persisted
     And no model catalog request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Cancelling after a successful catalog probe leaves the baseline unchanged
     Given an existing config is recorded byte-for-byte
     And the provider catalog returns valid models
     When I accept the provider, credential, and catalog probe in coordinated setup
-    And cancel before final confirmation
+    And cancel setup before final confirmation
     Then the config file should be byte-for-byte unchanged
     And no selected shell target should change
 
