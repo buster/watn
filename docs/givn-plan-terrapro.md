@@ -206,6 +206,83 @@ Treat retirement differently from runnable scenario work. A removed scenario's p
 
 Move E2E inventory ownership from "the same feature file must contain a matching E2E scenario" to "the registry must show one adequate E2E evidence cell per distinct real user action." This prevents every new feature slice from adding another full E2E path for the same action.
 
+### Skill Multishot Examples
+
+The revised skills should include concrete paired examples. They prevent agents from treating an abstract rule as permission to create another feature, alias, or local E2E flow.
+
+<example>
+  <bad>
+    givn-spec sees an existing "newest query wins" scenario, creates a new
+    search-concurrency feature anyway, and records it as @givn.added because
+    the implementation module differs.
+  </bad>
+  <good>
+    givn-spec identifies the existing behavior, compares the completion-order
+    inputs and primary assertion, and records a variant disposition. It adds
+    an Examples row to the canonical scenario when only response order differs.
+    It creates a separate scenario only when the proposed PTY boundary has a
+    declared terminal-specific fault-domain rationale.
+  </good>
+</example>
+
+<example>
+  <bad>
+    givn-spec adds a second @e2e setup scenario because a new feature file has
+    its own local interaction inventory, even though the same user action is
+    already covered through the real setup interface.
+  </bad>
+  <good>
+    givn-spec maps the interaction to the registry-wide user-action coverage
+    cell. It reuses the existing E2E evidence unless the new scenario proves a
+    distinct interface, deployment, terminal, browser, or process fault domain.
+    The behavior-impact record states that distinction before a second E2E
+    scenario is accepted.
+  </good>
+</example>
+
+<example>
+  <bad>
+    givn-steps creates "the setup picker shows model <id>" in a new capability
+    module because an existing "the suggestions include <id>" expression has
+    different wording. It copies polling, ANSI cleanup, and suggestion helpers.
+  </bad>
+  <good>
+    givn-steps queries the binding index, reuses or parameterizes the canonical
+    assertion binding, and delegates shared terminal mechanics to the existing
+    helper owner. A new binding is created only after the reuse matrix records
+    a distinct domain action or assertion boundary.
+  </good>
+</example>
+
+<example>
+  <bad>
+    givn-implement removes @wip from a forward-change scenario, observes a
+    passing run because all bindings already exist, and records immediate GREEN
+    as proof that the requested feature was implemented.
+  </bad>
+  <good>
+    givn-implement treats the unexpected pass as a behavior-classification
+    result. It determines whether the scenario is existing evidence, an Examples
+    variant, a duplicate, or characterization. Only the reverse profile, or an
+    approved new coverage-cell exception, may record an immediate passing
+    scenario without normal RED evidence.
+  </good>
+</example>
+
+<example>
+  <bad>
+    givn-review accepts REVIEW: PASS after local tests pass, and givn-archive
+    merges raw delta files based on scenario titles without checking active
+    claims, ownership dispositions, or the staged effective tree.
+  </bad>
+  <good>
+    givn-review consumes the binary behavior report, resolves every semantic
+    candidate, and records layer or supersession rationale. givn-archive reruns
+    the same preflight against a staged effective tree, verifies the projected
+    permanent specs, and promotes only a conflict-free transaction.
+  </good>
+</example>
+
 ## Phase 5: Establish One Authoritative Workflow Contract
 
 Eliminate duplicated policy across assets, generated skills, slash commands, config comments, and runtime behavior.
