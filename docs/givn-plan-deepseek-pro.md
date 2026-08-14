@@ -107,19 +107,195 @@ Make `assets/instructions/*.md` the single normative source (they already serve 
 4. **Matrix rules:** value variants and completion-order variants become Scenario Outlines/Examples rows (F2, F8, F13); one canonical happy path per action per boundary; extend the canonical scenario with one focused assertion instead of re-driving the full flow (F10/F12).
 5. **Length rules:** >14 steps requires a split-or-keep decision recorded in the scenario's docstring or design-review; >19 requires explicit design-review approval.
 
+<givn-spec-examples>
+  <example>
+    <bad>
+A change adds a new capability `search-concurrency` and copies a scenario whose
+title and behavior are already owned by `model-autosuggest` (report F2). No
+`givn spec ownership` was run, no boundary declared:
+
+```gherkin
+@givn.added @e2e @wip
+Scenario: The newest search result stays visible when an older result arrives later
+  Given a catalog with models "o3" and "gpt"
+  When a newer "o3" search completes and an older "gpt" response arrives later
+  Then "o3" stays visible
+```
+
+The duplicate-title gate fires at archive; the invariant is now owned twice.
+    </bad>
+    <good>
+`givn spec ownership "newest search result stays visible"` finds the canonical
+owner. The change modifies the canonical scenario into a Scenario Outline and
+adds the second completion-order row instead of a new scenario:
+
+```gherkin
+@givn.modified @wip @behavior.model-search/newest-query-wins
+Scenario Outline: The newest search result stays visible when an older result arrives later
+  Given a catalog with models "o3" and "gpt"
+  When a "<newer>" search completes and an older "<older>" response arrives later
+  Then only "<newer>" stays visible
+  Examples:
+    | newer | older |
+    | o3    | gpt   |
+    | gpt   | o3    |
+```
+
+One canonical owner; the completion-order matrix lives in Examples rows.
+    </good>
+  </example>
+  <example>
+    <bad>
+A stronger Bash-widget E2E scenario (report F4) is added with `@givn.added`
+while the weaker subset stays active — additive coverage, two scenarios
+asserting the same action with one extra assertion:
+
+```gherkin
+@givn.added @e2e @wip
+Scenario: Bash widget preserves the request as a comment
+  Given a fake watn binary
+  When the user runs the Bash widget with a request
+  Then the generated command is present in the buffer
+  And the Bash process preserves the request as a comment
+```
+    </bad>
+    <good>
+The stronger scenario supersedes the weaker one in the same change, so archive
+removes the old scenario atomically and records the supersession:
+
+```gherkin
+@givn.supersedes "Bash widget runs a watn request through the real shell"
+@givn.added @e2e @wip
+Scenario: Bash widget preserves the request as a comment
+  Given a fake watn binary
+  When the user runs the Bash widget with a request
+  Then the generated command is present in the buffer
+  And the Bash process preserves the request as a comment
+```
+
+Net scenario delta stays 0; the invariant has one owner at the end of the merge.
+    </good>
+  </example>
+</givn-spec-examples>
+
 ### `givn-steps`
 
 1. **Reuse-first via the tool:** before writing a binding, run `givn steps report` and reuse any normalized match (RED step: "reused: keep as-is" becomes checkable). New prose that normalizes to an existing binding is a finding, not wording variation (report: "treat any new global step-expression alias as a design-review item").
 2. **Shared-helper convention:** mandate where cross-capability helpers live (e.g. `tests/steps/mod.rs` in Rust/cucumber-rs) and when delegation is correct (the S6 delegation model as the positive pattern); duplicate bodies across modules are a review-time finding.
 3. **Scenario targeting stays, plus boundary assertion:** keep RED/GREEN/REFACTOR unchanged; add: before GREEN, state which boundary (state-level vs PTY vs subprocess) this scenario owns, so a regular-vs-E2E repeat is intentional, not accidental (F9/F12).
 
+<givn-steps-examples>
+  <example>
+    <bad>
+A new capability module adds fresh prose plus a fifth copy of the page-polling
+mechanics (report S1):
+
+```rust
+#[given("the setup page settles on the model page")]
+async fn setup_settles_on_model_page(world: &mut WatnWorld) {
+    let mut deadline = Instant::now() + Duration::from_secs(10);
+    let mut screen = String::new();
+    loop {
+        screen = world.pty_session().read_until_timeout(...)?;
+        if screen.contains("Page: Model") { break; }
+        if Instant::now() > deadline { panic!("page never appeared"); }
+    }
+    world.last_screen = screen;
+}
+```
+
+A new global binding that normalizes to `the model page is displayed`, with a
+body duplicating `latest_page`/`wait_for_page`. `givn steps report` would have
+flagged both the alias and the duplicated body.
+    </bad>
+    <good>
+Reuse the existing binding and delegate to the shared helper in
+`tests/steps/mod.rs` — no new expression, no new body:
+
+```rust
+#[given("the model page is displayed")]
+async fn model_page_displayed(world: &mut WatnWorld) {
+    wait_for_page(&mut world.pty_session(), "Page: Model").await?;
+}
+```
+
+The reused step's assertions are already proven; the change adds zero bindings
+and zero helper duplicates.
+    </good>
+  </example>
+</givn-steps-examples>
+
 ### `givn-review`
 
 Add **step 0 overlap disposition** (before the fabrication audit): run the overlap lint, and for every `variant`/`supersedes`/`layered` match, record the disposition in review.md — a change that adds no new behavior IDs but adds scenarios fails review unless it records a replacement or boundary change (report's gate list). Superseded scenarios must be removed by the same change, not marked "future cleanup".
 
+<givn-review-examples>
+  <example>
+    <bad>
+review.md records a claim instead of evidence:
+
+```
+Overlap check: no overlaps found.
+REVIEW: PASS
+```
+
+No lint output was captured, no fingerprint matches were listed, and the
+`@givn.supersedes` removal is deferred to "a future cleanup change".
+    </bad>
+    <good>
+review.md records the disposition table produced by the overlap lint, with a
+resolution per match:
+
+```markdown
+## Overlap disposition
+
+| Match | Kind | Disposition |
+|---|---|---|
+| model-autosuggest "Newest search result…" ↔ search-concurrency same title | duplicate | consolidated into Scenario Outline; old scenario superseded in this change |
+| credential-sources "literal credential…" ↔ provider-setup same title | layered | renamed to "… through provider resolution"; boundary tags added |
+| 2 new bindings normalizing to existing expressions | variant | reused existing bindings; aliases removed |
+
+REVIEW: PASS
+```
+
+Every match has a disposition; supersession happened in the same change.
+    </good>
+  </example>
+</givn-review-examples>
+
 ### `givn-design`
 
 Require the Step Definitions table to include, per binding: *reused (from where) / new* and the shared helper it uses — so S1–S5 duplication is visible at design time. Require the design to name the production boundary each non-E2E scenario tests (picker state vs coordinator path vs resolver), mirroring the spec's boundary tags.
+
+<givn-design-examples>
+  <example>
+    <bad>
+The Step Definitions table names files only; reuse provenance and helpers are
+invisible, so a duplicated page-poller sails through design review:
+
+```markdown
+| Scenario | Step expression | Step file |
+|---|---|---|
+| Setup settles on the model page | the setup page settles on the model page | tests/steps/new_capability_steps.rs |
+```
+
+Nothing links this to the four existing `wait_for_page` implementations (S1).
+    </bad>
+    <good>
+The table forces a reuse decision per binding and names the shared helper:
+
+```markdown
+| Scenario | Step expression | Reused / New | Shared helper | Step file |
+|---|---|---|---|---|
+| Setup settles on the model page | the model page is displayed | Reused (setup_wizard_steps.rs) | wait_for_page in tests/steps/mod.rs | — |
+| Model page shows reasoning value | the selected reasoning value is shown | New | config_tiers in tests/steps/mod.rs | tests/steps/new_capability_steps.rs |
+```
+
+"Reused" rows are checked against `givn steps report` before implementation;
+"New" rows must normalize uniquely and may not duplicate an existing body.
+    </good>
+  </example>
+</givn-design-examples>
 
 ### `givn-archive` / `givn-tasks` / `givn-propose` / `givn-explore`
 
