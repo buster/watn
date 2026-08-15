@@ -63,7 +63,7 @@
 - [x] GREEN: Applied the F5 removal and retained the exact-buffer contract.
 - [x] REFACTOR: Ran the retained shortcut failure scenario and the complete
   non-E2E runner.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `e593bae`.
 
 ## Scenario: F6 empty model subset is removed
 
