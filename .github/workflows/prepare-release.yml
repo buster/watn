@@ -140,7 +140,7 @@ jobs:
           if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
             cargo install cargo-deny --version 0.20.2 --locked
           fi
-          cargo install givn --version 0.2.0 --locked
+          cargo install --git https://github.com/buster/givn.git --rev a3a3b793196248b5c8539cf3630eea85556ecfcc --locked
 
       - name: Update Cargo manifest and lockfile
         run: cargo release version --execute --no-confirm --isolated --allow-branch "$PRIMARY_BRANCH" "$RELEASE_VERSION"
