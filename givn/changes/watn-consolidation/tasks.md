@@ -67,11 +67,11 @@
 
 ## Scenario: F6 empty model subset is removed
 
-- [ ] RED: Confirm both empty-picker contracts are present.
-- [ ] GREEN: Apply the F6 removal and retain the picker scenario that also
+- [x] RED: Confirmed both empty-picker contracts in the baseline tree.
+- [x] GREEN: Applied the F6 removal and retained the picker scenario that also
   preserves the entered filter.
-- [ ] REFACTOR: Run the retained picker scenario and full non-E2E runner.
-- [ ] COMMIT: pending.
+- [x] REFACTOR: Ran the retained picker scenario and full non-E2E runner.
+- [x] COMMIT: pending until the scenario commit is created.
 
 ## Scenario: Failed archive preserves the fixture permanent specification tree
 
