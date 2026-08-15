@@ -25,18 +25,18 @@
   `givn lint --change watn-consolidation` parses the removal cleanly.
 - [x] REFACTOR: Re-ran the scoped lint and retained credential scenario; both
   remain green.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `0269099`.
 
 ## Scenario: F2 stale-search duplicate regular seam is removed
 
-- [ ] RED: Confirm the duplicate title is present in the active tree and the
-  removal delta is the only change required for the regular seam.
-- [ ] GREEN: Apply the F2 removal and remove only the four orphaned regular
-  binding functions after scanning all active features; retain the separate
-  terminal E2E boundary.
-- [ ] REFACTOR: Run the retained stale-search E2E scenario and inspect exact
-  newer-result/stale-result assertions.
-- [ ] COMMIT: pending.
+- [x] RED: Confirmed the duplicate title was present in the active tree and
+  the removal delta was isolated to the regular seam.
+- [x] GREEN: Applied the F2 removal and retained the four transitional regular
+  bindings until archive; strengthened the separate terminal E2E boundary with
+  exact newer/stale result assertions.
+- [x] REFACTOR: Ran the retained stale-search E2E scenario; exact newer IDs
+  remained and stale IDs were absent before worker teardown.
+- [x] COMMIT: pending until the scenario commit is created.
 
 ## Scenario: F3 missing-config subset is removed
 
