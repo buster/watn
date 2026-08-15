@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use cucumber::{given, then, when};
 
 use crate::WatnWorld;
-use super::watn_consolidation_support::{feature_text, fixture_specs, invoke_givn, setup_fixture, scenario_titles};
+use super::watn_consolidation_support::{feature_text, fixture_specs, fixture_stdout, invoke_givn, setup_fixture, scenario_titles};
 
 #[given("an isolated watn consolidation fixture with dispositions for every overlap finding")]
 fn isolated_fixture(world: &mut WatnWorld) {
@@ -29,7 +29,7 @@ fn command_exits_zero(world: &mut WatnWorld) {
 
 #[then(regex = r##"^fixture stdout contains "([^"]+)"$"##)]
 fn stdout_contains(world: &mut WatnWorld, text: String) {
-    let output = world.output.as_deref().unwrap_or_default();
+    let output = fixture_stdout(world);
     assert!(output.contains(&text), "stdout missing {text:?}: {output:?}");
 }
 
