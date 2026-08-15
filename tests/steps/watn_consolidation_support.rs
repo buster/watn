@@ -71,6 +71,10 @@ pub(crate) fn invoke_givn(world: &mut WatnWorld, args: &[&str]) {
     world.exit_status = output.status.code();
 }
 
+pub(crate) fn fixture_stdout(world: &WatnWorld) -> &str {
+    world.output.as_deref().unwrap_or_default()
+}
+
 fn givn_binary() -> PathBuf {
     if let Some(path) = std::env::var_os("GIVN_BIN").map(PathBuf::from) {
         assert!(path.is_absolute(), "GIVN_BIN must be an absolute executable path");
