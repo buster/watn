@@ -45,17 +45,17 @@
 - [x] GREEN: Applied the F3 removal; the stronger auto-init scenario remains
   the owner and proves that no config file is created.
 - [x] REFACTOR: Ran the retained auto-init scenario and the non-E2E runner.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `8fadd07`.
 
 ## Scenario: F4 weaker Bash widget E2E is removed
 
-- [ ] RED: Confirm the two Bash widget contracts are both present and the
-  stronger later scenario includes request preservation.
-- [ ] GREEN: Apply the F4 removal without changing the retained Bash E2E
+- [x] RED: Confirmed both Bash widget contracts and the stronger request-
+  preservation assertion in the baseline tree.
+- [x] GREEN: Applied the F4 removal without changing the retained Bash E2E
   interaction.
-- [ ] REFACTOR: Run the retained Bash E2E scenario and assert CLI/shell output,
+- [x] REFACTOR: Ran the retained Bash E2E scenario and asserted shell output,
   request preservation, and non-evaluation.
-- [ ] COMMIT: pending.
+- [x] COMMIT: pending until the scenario commit is created.
 
 ## Scenario: F5 failed/empty Bash subset is removed
 
