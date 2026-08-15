@@ -140,7 +140,6 @@ jobs:
           if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
             cargo install cargo-deny --version 0.20.2 --locked
           fi
-
       - name: Update Cargo manifest and lockfile
         run: cargo release version --execute --no-confirm --isolated --allow-branch "$PRIMARY_BRANCH" "$RELEASE_VERSION"
 

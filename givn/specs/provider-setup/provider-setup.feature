@@ -1,6 +1,7 @@
 Feature: Interactive provider setup
 
   @e2e
+
   Scenario: Configure OpenRouter with an environment-backed credential
     Given  no provider is configured
     And  environment variable OPENROUTER_API_KEY is set to "sk-or-v1-test"
@@ -183,16 +184,6 @@ Feature: Interactive provider setup
     And  ratatui should not be initialized
     And  no model catalog request should be sent to "/models"
     And  no original chat completion request should be sent
-
-  Scenario: A literal saved credential is authoritative over environment fallback
-    Given  a configured provider "custom" with endpoint "https://llm.example.com/v1"
-    And  its saved api_key is "sk-saved-literal"
-    And  environment variable WATN_CUSTOM_API_KEY is set to "sk-env-different"
-    And  environment variable WATN_API_KEY is set to "sk-generic-different"
-    And  its saved default model is "custom-model"
-    When  I send a request through the configured provider
-    Then  the API request should use API key "sk-saved-literal"
-    And  the environment fallback values should not be used
 
   Scenario: Explicit provider selection from the environment preserves missing-key errors
     Given  environment variable WATN_PROVIDER is set to "custom"

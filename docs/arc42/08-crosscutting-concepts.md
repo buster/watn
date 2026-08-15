@@ -405,3 +405,17 @@ ephemeral HTTP construction override; default and all release-profile binaries
 use the configured endpoint. The override is never persisted and never used by
 readiness. The transport scenarios assert the exact captured configured
 loopback endpoint rather than a live or example provider URL.
+
+## Specification ownership and consolidation
+
+The active Gherkin tree is one behavior inventory. A scenario title is owned
+repository-wide, and a duplicate title is a deterministic finding even when
+the scenarios live in different feature families. Shape and subset findings
+are evidence for review, not automatic semantic classification. The reviewer
+records whether a weaker scenario is removed, retained as a distinct boundary,
+or replaced by a stronger added scenario.
+
+Archive applies removals and additions atomically and runs the full Watn
+runner afterward. The review disposition is the human audit trail: it names
+the retained contract and prevents a consolidation from being justified only
+by a green test count.

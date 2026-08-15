@@ -82,3 +82,7 @@
 | Target result | The success or failure report for one selected shortcut target, including its path, reason, and reload instruction when applicable |
 | Aggregate installation failure | A non-zero setup result returned after all selected targets have been attempted and one or more target results failed |
 | Reload instruction | The shell command or guidance that makes a modified startup file active in the current or next shell |
+| Scenario ownership | The repository-wide association between one observable behavior and its canonical permanent scenario |
+| Consolidation disposition | A human review decision recording whether an overlap is removed, retained as a boundary, or replaced by a stronger scenario |
+| Canonical scenario | The retained scenario whose observable contract owns a behavior after consolidation |
+| Net delta | The archive receipt counting added, modified, and removed scenarios in a change |

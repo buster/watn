@@ -30,6 +30,7 @@ options, the decision outcome, and consequences.
 | ADR-0022 | Verbatim reasoning values | [docs/adr/0022-verbatim-reasoning-values.md](../adr/0022-verbatim-reasoning-values.md) |
 | ADR-0023 | Canonical provider migration | [docs/adr/0023-canonical-provider-migration.md](../adr/0023-canonical-provider-migration.md) |
 | ADR-0024 | Atomic configuration replacement | [docs/adr/0024-atomic-config-replacement.md](../adr/0024-atomic-config-replacement.md) |
+| ADR-0025 | Repository-wide specification ownership | [docs/adr/0025-repository-wide-specification-ownership.md](../adr/0025-repository-wide-specification-ownership.md) |
 
 ## ADR-0011 summary (superseded where noted)
 
@@ -183,3 +184,55 @@ Chosen option and the governing details.
 
 How the decision is verified.
 -->
+
+## ADR-0025: Repository-wide specification ownership
+
+---
+status: accepted
+date: 2026-08-15
+decision-makers: watn maintainers
+---
+
+### Context and Problem Statement
+
+The permanent Gherkin tree accumulated exact title duplicates, assertion
+subsets, and repeated boundary coverage across feature families. A green
+runner does not prove that every scenario contributes an independent contract.
+
+### Considered Options
+
+1. Keep the additive tree and rely on local feature reviews.
+2. Introduce anchors, a registry, and compare-and-swap journal semantics for
+   every scenario mutation.
+3. Treat the active tree as one behavior inventory, enforce deterministic
+   ownership findings, and record semantic decisions in review dispositions.
+
+### Decision Outcome
+
+Choose option 3. Scenario titles are unique repository-wide. Deterministic
+title, shape, and subset findings are surfaced before archive. We remove weaker
+scenarios when a stronger canonical contract exists, while naming and retaining
+genuine production boundaries. A stronger replacement is represented by a
+removed-plus-added delta in one archive transaction. Embedding retrieval remains
+advisory evidence and never replaces the deterministic gate.
+
+### Consequences
+
+#### Good
+
+- Duplicate behavior cannot silently accumulate in separate feature families.
+- Consolidation evidence records the retained contract and net delta.
+- The Watn runtime and release artifact remain unchanged.
+
+#### Bad
+
+- Repository-wide review is required before adding a scenario.
+- Maintainers must distinguish a real boundary from a redundant contract.
+- Removing a scenario may orphan a step binding, so active usage must be
+  searched before support code is deleted.
+
+### Confirmation
+
+The `watn-consolidation` change removes the six evidence-backed F1-F6
+scenarios, runs the review dispositions, archives the delta in an isolated
+fixture, and runs the full permanent and E2E suites.

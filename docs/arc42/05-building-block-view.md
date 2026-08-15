@@ -55,6 +55,7 @@ graph TB
 | Shell parser boundary | Consume an installed completion script; parser acceptance is verified separately for Bash, Elvish, Fish, PowerShell, and Zsh when the executable is available and is not a provider or configuration dependency |
 | Shell Shortcut | Resolve selected Bash/Zsh/Fish targets, generate native marked blocks, validate marker counts, replace existing blocks atomically, attempt targets independently, return per-target reports plus aggregate failure, and emit widgets that keep the request visible as a comment above the generated command without evaluation; Fish constructs the separator as an actual newline |
 | Line editor boundary | Bind Ctrl-W, read the complete current buffer, call `command watn -- "$question"`, replace the buffer with a request comment above the generated command using a real Fish line break, and never evaluate the captured text |
+| Specification ownership | Treat active `.feature` files as one permanent behavior inventory; surface duplicate titles, shape matches, subsets, and long-scenario dispositions before archive. |
 
 ## Level 2 — Key building blocks
 

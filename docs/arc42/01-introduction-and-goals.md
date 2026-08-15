@@ -31,6 +31,9 @@ Top requirements:
 22. Setup may install an optional Ctrl-W command-line widget for selected Bash, Zsh, and Fish targets, including implicit first-use setup, without executing generated output
 23. The setup wizard must mark the input region currently receiving keyboard input with a green border while preserving inactive styling and existing navigation
 24. The Ctrl-W widget must keep the original request visible as a comment above the generated command while never evaluating the command
+25. The permanent Gherkin tree must have one canonical owner for each scenario
+    behavior; redundant scenarios are removed only with an auditable retained
+    contract and the complete runner remains green
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 
@@ -48,6 +51,7 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | 8 | Responsiveness and recovery | Incremental content, deterministic completion, visible partial prefixes, and mapped stream/I/O failures must remain observable and safe |
 | 9 | Completion fidelity and script safety | Completion output must match the authoritative command tree, remain byte-for-byte deterministic, parse in its target shell, and never initialise configuration or contact a provider |
 | 10 | Shell integration safety | Shortcut installation must preserve user startup files, be idempotent, report independent target failures, and insert generated text without evaluation |
+| 11 | Specification maintainability | Repository-wide scenario ownership, explicit consolidation dispositions, and a green post-archive suite prevent additive redundancy |
 
 ## Stakeholders
 
