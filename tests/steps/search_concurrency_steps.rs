@@ -4,8 +4,8 @@ use super::{finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write, sta
 use crate::MockServerWrap;
 use crate::WatnWorld;
 use cucumber::{given, then, when};
-use watn::models::list::ModelEntry;
 use std::time::Duration;
+use watn::models::list::ModelEntry;
 
 #[given(
     regex = r##"^a provider returns the results for "([^"]+)" more quickly than the results for "([^"]+)"$"##
@@ -41,7 +41,10 @@ fn newer_suggestions(world: &mut WatnWorld, query: String) {
 
 #[then("search workers are cleaned up before the scenario ends")]
 fn workers_cleaned(world: &mut WatnWorld) {
-    assert_eq!(world.pending_config.get("newer_query"), Some(&"o3".to_string()));
+    assert_eq!(
+        world.pending_config.get("newer_query"),
+        Some(&"o3".to_string())
+    );
 }
 
 #[given("a configured provider \"test\" with a searchable models endpoint")]
@@ -102,8 +105,14 @@ fn type_overlapping_searches(world: &mut WatnWorld) {
 fn terminal_o3_only(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("filter PTY session");
     let output = pty_wait_for_label(session, "o3-result");
-    assert!(output.contains("o3-result"), "new result missing: {output:?}");
-    assert!(!output.contains("gpt-result"), "stale result visible: {output:?}");
+    assert!(
+        output.contains("o3-result"),
+        "new result missing: {output:?}"
+    );
+    assert!(
+        !output.contains("gpt-result"),
+        "stale result visible: {output:?}"
+    );
 }
 
 #[then("the picker should join the search workers before exit")]
@@ -111,8 +120,14 @@ fn picker_workers_joined(world: &mut WatnWorld) {
     std::thread::sleep(Duration::from_millis(800));
     let mut session = world.pty_session.take().expect("filter PTY session");
     let output = pty_snapshot(&session);
-    assert!(output.contains("o3-result"), "new result disappeared: {output:?}");
-    assert!(!output.contains("gpt-result"), "stale result replaced newer result");
+    assert!(
+        output.contains("o3-result"),
+        "new result disappeared: {output:?}"
+    );
+    assert!(
+        !output.contains("gpt-result"),
+        "stale result replaced newer result"
+    );
     pty_write(&mut session, "\x1b");
     finish_pty_session(world, session);
     assert!(world.exit_status.is_some(), "PTY did not terminate");

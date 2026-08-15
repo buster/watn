@@ -32,6 +32,8 @@ graph TB
     API -->|"SSE content events and [DONE]"| CLI
     Catalog -->|"model list"| CLI
     Shell -->|"command output"| User
+    Maintainer["Maintainer / givn workflow"]
+    Maintainer -->|"review and archive consolidation"| CLI
 ```
 
 | Partner / User | Input to system | Output from system |
@@ -42,6 +44,7 @@ graph TB
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
 | Shell startup file | Optional selected-shell installation | One marked native widget block and a reload instruction; malformed or failed targets remain unchanged |
 | Bash/Zsh/Fish line editor | Ctrl-W and the complete current command buffer | A successful non-empty `watn` result inserted below a comment line containing the original request, without evaluation; Fish receives an actual line break in the editable buffer; failures preserve the buffer |
+| Maintainer / givn workflow | Repository-wide scenario review, dispositions, and archive | Duplicate-title, overlap, subset, and net-delta evidence; an archived permanent tree with the same Watn runtime contract |
 
 ## Technical context
 

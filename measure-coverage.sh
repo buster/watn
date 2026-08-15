@@ -29,5 +29,5 @@ measure() {
         --cobertura --output-path "$output_path" -- --tags "$tags"
 }
 
-measure "$non_e2e_path" 'not @wip and not @e2e'
-measure "$e2e_path" '@e2e and not @wip'
+measure "$non_e2e_path" 'not @wip and not @e2e and not @givn.removed'
+measure "$e2e_path" '@e2e and not @wip and not @givn.removed'
