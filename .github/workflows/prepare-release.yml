@@ -140,8 +140,6 @@ jobs:
           if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
             cargo install cargo-deny --version 0.20.2 --locked
           fi
-          cargo install --git https://github.com/buster/givn.git --rev a3a3b793196248b5c8539cf3630eea85556ecfcc --locked
-
       - name: Update Cargo manifest and lockfile
         run: cargo release version --execute --no-confirm --isolated --allow-branch "$PRIMARY_BRANCH" "$RELEASE_VERSION"
 
@@ -274,12 +272,10 @@ jobs:
           cp target/debug/watn "$root/default-debug"
           cargo build --locked --features test-support --bin watn
           cp target/debug/watn "$root/test-support-debug"
-          GIVN_BIN="$(command -v givn)" \
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
             --tags 'not @wip and not @e2e and not @givn.removed'
-          GIVN_BIN="$(command -v givn)" \
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \

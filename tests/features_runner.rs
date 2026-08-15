@@ -35,7 +35,6 @@ pub struct WatnWorld {
     pub(crate) pty_session: Option<crate::steps::PtySession>,
     pub stderr_output: Option<String>,
     pub exit_status: Option<i32>,
-    pub consolidation_before_tree: Option<Vec<(String, Vec<u8>)>>,
     pub pending_mock_model: Option<String>,
     pub pending_mock_output: Option<String>,
     pub pending_mock_usage: Option<bool>,
