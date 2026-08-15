@@ -830,9 +830,7 @@ The flow must not contact an LLM provider. Retrieval results, when available,
 are advisory evidence; deterministic title/shape/subset findings and explicit
 human dispositions control the archive gate.
 
-The two permanent consolidation smoke scenarios use a fresh temporary givn
-project and a `fixture-consolidation` change id. Their subprocess current
-directory is the fixture root, so archiving never targets the already-archived
-`watn-consolidation` change or mutates the Watn checkout. The fixture supplies
-deterministic verify, e2e, and coverage commands and is deleted after the
-scenario.
+The review and archive fixture scenarios belong to Givn's own repository and
+are not part of Watn's runtime or acceptance runner. Watn consumes the
+permanent Gherkin tree produced by that workflow; its CI does not install or
+execute the private Givn binary.
