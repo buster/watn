@@ -71,18 +71,18 @@
 - [x] GREEN: Applied the F6 removal and retained the picker scenario that also
   preserves the entered filter.
 - [x] REFACTOR: Ran the retained picker scenario and full non-E2E runner.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `fae8415`.
 
 ## Scenario: Failed archive preserves the fixture permanent specification tree
 
-- [ ] RED: Leave the failure-path step pending and target this scenario only;
-  the strict runner must exit non-zero.
-- [ ] GREEN: Configure a deterministic failing fixture hook, invoke the real
-  archive subprocess, and assert non-zero status plus byte-for-byte permanent
-  tree preservation.
-- [ ] REFACTOR: Re-run the failure scenario after cleanup; record exit 0 for
-  the scenario's assertion of the expected command failure.
-- [ ] COMMIT: pending.
+- [x] RED: The initial consolidation step skeleton failed non-zero under
+  `.fail_on_skipped()` before implementation.
+- [x] GREEN: Configured a deterministic failing fixture hook, invoked the real
+  archive subprocess, and asserted non-zero status plus byte-for-byte permanent
+  tree preservation. The targeted scenario passed four steps.
+- [x] REFACTOR: Re-ran the failure scenario after cleanup; one scenario and
+  four steps passed with exit 0 for the expected command failure.
+- [x] COMMIT: pending until the scenario commit is created.
 
 ## Scenario: Repository-wide review accepts the consolidation dispositions
 
