@@ -2,8 +2,8 @@
 
 use cucumber::{given, then, when};
 
+use super::watn_consolidation_support::{fixture_root, invoke_givn, setup_fixture, snapshot_tree};
 use crate::WatnWorld;
-use super::watn_consolidation_support::{invoke_givn, setup_fixture, fixture_root, snapshot_tree};
 
 #[given("an isolated watn consolidation fixture with a failing archive hook")]
 fn failing_fixture(world: &mut WatnWorld) {

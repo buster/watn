@@ -1,6 +1,7 @@
 Feature: Model auto-suggest
 
   @e2e
+
   Scenario: Find a model outside the initial page while assigning tiers
     Given  a provider with a paginated model catalog
     And  the initial suggestions include "gpt-4o-mini" and "gpt-4o"
@@ -19,11 +20,6 @@ Feature: Model auto-suggest
     When  I replace the search text with "o3"
     Then  the suggestions include "o3-mini" and "o3-pro"
     And  the suggestions do not include "gpt-4o-mini" or "gpt-4o"
-
-  Scenario: No matching model produces a clear empty state
-    Given  a provider with models "gpt-4o-mini" and "gpt-4o"
-    When  I type "does-not-exist" into the active tier picker
-    Then  the picker says that no models were found
 
   Scenario: The newest search result stays visible when an older result arrives later
     Given  a provider returns the results for "gpt" more slowly than the results for "o3"

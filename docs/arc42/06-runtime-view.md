@@ -803,3 +803,36 @@ The streaming case (join path) preserves the visible prefix and finishes the
 spinner; the grace path terminates bounded by the grace window without cleanup.
 Neither prints final success metadata (`model · tok/s`), runs execution
 confirmation, or reports an error message.
+
+## Scenario: Repository-wide specification consolidation
+
+The consolidation flow is a maintainer workflow around the existing givn
+binary, not a Watn runtime request:
+
+```mermaid
+sequenceDiagram
+    participant Maintainer
+    participant Givn as givn CLI
+    participant Specs as Permanent spec tree
+    participant Runner as Watn Gherkin runner
+
+    Maintainer->>Givn: check review --change watn-consolidation
+    Givn->>Specs: scan active titles, shapes, subsets, and delta ownership
+    Givn-->>Maintainer: findings, dispositions, and net-delta receipt
+    Maintainer->>Givn: archive --change watn-consolidation
+    Givn->>Specs: apply removed/added changes atomically
+    Givn->>Runner: run verify and verify-e2e hooks
+    Runner-->>Givn: green permanent and delta scenarios
+    Givn-->>Maintainer: archived change and merged tree
+```
+
+The flow must not contact an LLM provider. Retrieval results, when available,
+are advisory evidence; deterministic title/shape/subset findings and explicit
+human dispositions control the archive gate.
+
+The two permanent consolidation smoke scenarios use a fresh temporary givn
+project and a `fixture-consolidation` change id. Their subprocess current
+directory is the fixture root, so archiving never targets the already-archived
+`watn-consolidation` change or mutates the Watn checkout. The fixture supplies
+deterministic verify, e2e, and coverage commands and is deleted after the
+scenario.

@@ -27,9 +27,9 @@ pub mod shell_completions_steps;
 pub mod streamlined_setup_e2e_steps;
 pub mod streamlined_setup_steps;
 pub mod transport_steps;
-pub mod watn_consolidation_support;
-pub mod watn_consolidation_steps;
 pub mod watn_consolidation_e2e_steps;
+pub mod watn_consolidation_steps;
+pub mod watn_consolidation_support;
 
 pub use transport_steps::TransportState;
 

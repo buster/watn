@@ -61,6 +61,9 @@
 | R-059 | Migration from an arbitrary provider key may silently replace a user-selected credential or default model | Medium | High | Treat saved credential representation as authoritative, define deterministic destination-default precedence, and assert source removal and unrelated-entry preservation |
 | R-060 | A custom reasoning value may contain whitespace or provider-specific syntax that is normalized accidentally | Medium | Medium | Reject only blank/whitespace-only input, preserve non-empty bytes, and assert round-trip request construction |
 | R-061 | The final configuration write may succeed while a shell target fails | Medium | Medium | Keep config and shell operations independent, retain successful target changes, report every target, and return non-zero for any failed target |
+| R-062 | Consolidation removes a scenario whose unique production boundary was misunderstood | Medium | High | Require a retained-contract or boundary disposition for every removal, keep the full runner and E2E gates green, and archive removals atomically with rollback |
+| R-063 | A removed scenario leaves an orphaned binding or a surviving scenario loses its only step coverage | Medium | Medium | Search all active features and registered step modules before deleting support code; run the complete runner after each consolidation batch |
+| R-064 | Repository-wide overlap output is treated as an automatic semantic classification | Medium | Medium | Deterministic checks report candidates; the maintainer decides merge/delete/boundary in review.md, and retrieval remains advisory |
 
 ## Technical debt
 
@@ -72,6 +75,7 @@
 | TD-004 | Reasoning config parsing edge cases (provider-specific values read from an edited config) | Low | Parse non-empty strings without normalization; only `off` omits `reasoning_effort`, while provider-specific values remain request-visible |
 | TD-005 | E2E tests need a non-persisted endpoint override to exercise configured-provider paths without live network access | Medium | Keep the override behind the debug-plus-feature guard; use reachable loopback twins and explicit binary paths; assert the exact persisted configured URL before and after routing |
 | TD-009 | Cancellation uses a fixed 500 ms grace heuristic because the blocking reqwest client cannot split connect and read timeouts | Low | Migrate to an async client with `tokio::select!` if a future change makes the grace heuristic or partial-bytes truncation unacceptable |
+| TD-010 | Historical feature families contain overlapping scenario ownership and helper mechanics | Medium | Repay through the `watn-consolidation` change, then require repository-wide ownership review before future scenario additions |
 
 ## ADR-0011 bad-consequence coverage
 

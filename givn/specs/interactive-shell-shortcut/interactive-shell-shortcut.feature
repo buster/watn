@@ -10,12 +10,6 @@ Feature: Interactive shell shortcut for watn
     And  the generated Fish configuration should pass a Fish syntax check
 
   @e2e
-  Scenario: The generated Bash widget runs through Bash without evaluating its result
-    Given  an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
-    When  I run the generated Bash widget through Bash with current input "find all images"
-    Then  the Bash process command line should contain "# find all images\nprintf 'hello world'"
-    And  the Bash process should not execute the replacement text
-
   Scenario: Enter accepts the default decline for shortcut setup
     Given  Bash, Zsh, and Fish configuration files with existing user content
     And  a snapshot of every shell configuration file
@@ -184,14 +178,6 @@ Feature: Interactive shell shortcut for watn
     When  I run the Bash widget with current input containing "show files; echo unsafe *\nsecond line"
     Then  the current command line should be exactly "# show files; echo unsafe * second line\nls"
     And  the preserved request comment should be a single line
-
-  Scenario: Failed or empty generation preserves the original buffer
-    Given  an installed Bash shortcut and a fake watn that fails
-    When  I run the Bash widget with current input "list files"
-    Then  the current command line should be exactly "list files"
-    When  the fake watn returns empty output
-    And  I run the Bash widget with current input "show files"
-    Then  the current command line should be exactly "show files"
 
   Scenario: Zsh and Fish widgets preserve the request as a comment
     Given  an installed Zsh and Fish shortcut

@@ -1,13 +1,5 @@
 Feature: Newest model search wins
 
-  Scenario: The newest search result stays visible when an older result arrives later
-    Given  a provider returns the results for "gpt" more quickly than the results for "o3"
-    When  I start the "gpt" search and the "o3" search before either result is applied
-    Then  the suggestions for "o3" are displayed after the newer search completes
-    And  a later result for "gpt" does not replace them
-    And  search workers are cleaned up before the scenario ends
-
-  @e2e
   Scenario: The terminal model picker displays the newest overlapping search result
     Given  a configured provider "test" with a searchable models endpoint
     And  the endpoint returns "gpt" results before "o3" results

@@ -46,6 +46,11 @@ independent target results, and invokes `command watn -- "$question"` without
 evaluating generated output. Successful Fish replacement buffers use an actual
 line break between the request comment and generated command.
 
+The permanent Gherkin tree is also treated as one behavior inventory. Scenario
+ownership, overlap dispositions, and consolidation receipts are recorded by
+the givn workflow; see [ADR-0025](../adr/0025-repository-wide-specification-ownership.md).
+This changes repository evidence only, not the Watn runtime or release artifact.
+
 ## Archive Status
 
 The files in this directory describe the current architecture. Archived givn

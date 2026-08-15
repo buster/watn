@@ -77,8 +77,15 @@ pub(crate) fn fixture_stdout(world: &WatnWorld) -> &str {
 
 fn givn_binary() -> PathBuf {
     if let Some(path) = std::env::var_os("GIVN_BIN").map(PathBuf::from) {
-        assert!(path.is_absolute(), "GIVN_BIN must be an absolute executable path");
-        assert!(path.is_file(), "GIVN_BIN does not point to a file: {}", path.display());
+        assert!(
+            path.is_absolute(),
+            "GIVN_BIN must be an absolute executable path"
+        );
+        assert!(
+            path.is_file(),
+            "GIVN_BIN does not point to a file: {}",
+            path.display()
+        );
         path
     } else {
         PathBuf::from("givn")
@@ -86,7 +93,11 @@ fn givn_binary() -> PathBuf {
 }
 
 pub(crate) fn fixture_root(world: &WatnWorld) -> &Path {
-    world.temp_dir.as_ref().expect("consolidation fixture").path()
+    world
+        .temp_dir
+        .as_ref()
+        .expect("consolidation fixture")
+        .path()
 }
 
 pub(crate) fn fixture_specs(world: &WatnWorld) -> PathBuf {
@@ -101,14 +112,19 @@ pub(crate) fn snapshot_tree(root: &Path) -> Vec<(String, Vec<u8>)> {
 }
 
 fn collect_files(root: &Path, output: &mut Vec<(String, Vec<u8>)>) {
-    let Ok(entries) = fs::read_dir(root) else { return };
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
             collect_files(&path, output);
         } else if let Ok(bytes) = fs::read(&path) {
             output.push((
-                path.strip_prefix(root).unwrap_or(&path).to_string_lossy().into_owned(),
+                path.strip_prefix(root)
+                    .unwrap_or(&path)
+                    .to_string_lossy()
+                    .into_owned(),
                 bytes,
             ));
         }

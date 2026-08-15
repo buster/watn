@@ -28,6 +28,11 @@
 - Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, a preserved request comment above the generated command, and no evaluation
 - Own startup-file edits through exact marker pairs, atomic same-directory replacement, and independent per-shell result aggregation rather than a multi-file transaction
 - Use the existing SetupWizard focus state to color only the active widget border green, preserving the existing layout, selection styles, and cursor contract
+- Treat the permanent Gherkin tree as one behavior inventory: deterministic
+  ownership findings come before human dispositions, and consolidation removes
+  weaker contracts instead of adding another scenario beside a stronger one
+- Preserve distinct production boundaries explicitly in titles and review
+  evidence; do not use embedding scores or scenario length as blocking policy
 
 ## Technology choices
 

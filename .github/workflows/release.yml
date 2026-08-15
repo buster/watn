@@ -177,11 +177,11 @@ jobs:
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
-            --tags 'not @wip and not @e2e'
+            --tags 'not @wip and not @e2e and not @givn.removed'
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
-            --tags '@e2e and not @wip'
+            --tags '@e2e and not @wip and not @givn.removed'
 
       - name: Install pinned Rust security tools
         shell: bash

@@ -26,6 +26,7 @@
 | Shell startup targets are user-owned | Bash and Zsh use `$HOME/.bashrc` and `$HOME/.zshrc`; Fish uses `$XDG_CONFIG_HOME/fish/config.fish` or `$HOME/.config/fish/config.fish`; only an explicitly selected target may be created or changed |
 | Shell widget invocation is non-evaluating | Generated widgets use native line-editor APIs, invoke `command watn -- "$question"` through `PATH`, preserve stderr diagnostics, and never evaluate captured stdout |
 | Shortcut writes are atomic and marker-owned | A target must have zero markers or exactly one ordered marker pair; valid replacements use a same-directory temporary file and rename, while malformed targets are unchanged |
+| Permanent scenario titles are repository-wide unique | A behavior has one canonical owner in the active Gherkin tree; overlap findings are reviewed before archive rather than silently accumulated |
 
 ## Organisational constraints
 
