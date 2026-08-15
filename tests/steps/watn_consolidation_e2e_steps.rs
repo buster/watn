@@ -1,11 +1,9 @@
 //! E2E CLI steps for the givn-driven Watn specification consolidation.
 
-use std::collections::HashMap;
-
 use cucumber::{given, then, when};
 
 use crate::WatnWorld;
-use super::watn_consolidation_support::{feature_text, fixture_specs, fixture_stdout, invoke_givn, setup_fixture, scenario_titles};
+use super::watn_consolidation_support::{duplicate_titles, feature_text, fixture_specs, fixture_stdout, invoke_givn, setup_fixture};
 
 #[given("an isolated watn consolidation fixture with dispositions for every overlap finding")]
 fn isolated_fixture(world: &mut WatnWorld) {
@@ -35,15 +33,7 @@ fn stdout_contains(world: &mut WatnWorld, text: String) {
 
 #[then("the fixture permanent specification tree contains no duplicate scenario titles")]
 fn no_duplicate_titles(world: &mut WatnWorld) {
-    let titles = scenario_titles(fixture_specs(world));
-    let mut counts = HashMap::new();
-    for title in titles {
-        *counts.entry(title).or_insert(0usize) += 1;
-    }
-    let duplicates: Vec<_> = counts
-        .into_iter()
-        .filter_map(|(title, count)| (count > 1).then_some(title))
-        .collect();
+    let duplicates = duplicate_titles(fixture_specs(world));
     assert!(duplicates.is_empty(), "duplicate titles: {duplicates:?}");
 }
 
