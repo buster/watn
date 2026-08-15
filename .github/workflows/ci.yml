@@ -49,6 +49,9 @@ jobs:
       - name: Run library tests
         run: cargo test --locked --lib
 
+      - name: Install givn for specification fixtures
+        run: cargo install givn --version 0.2.0 --locked
+
       - name: Run acceptance scenarios
         shell: bash
         run: |
@@ -59,10 +62,12 @@ jobs:
           cp target/debug/watn "$root/default-debug"
           cargo build --locked --features test-support --bin watn
           cp target/debug/watn "$root/test-support-debug"
+          GIVN_BIN="$(command -v givn)" \
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
             --tags 'not @wip and not @e2e and not @givn.removed'
+          GIVN_BIN="$(command -v givn)" \
           WATN_DEFAULT_DEBUG_BIN="$root/default-debug" \
             WATN_TEST_SUPPORT_DEBUG_BIN="$root/test-support-debug" \
             cargo test --locked --test features_runner --features test-support -- \
