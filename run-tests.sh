@@ -16,33 +16,15 @@ if [ "${1:-}" = "--name" ]; then
     shift 2
 fi
 
-if [ -n "$scenario_name" ]; then
-    feature_files=$(rg --files givn/specs givn/changes 2>/dev/null || true)
-    if [ -n "$feature_files" ]; then
-        removed_titles=$(printf '%s\n' "$feature_files" | xargs perl -ne '
-            if (/^\s*\@givn\.removed\b/) { $removed = 1; next }
-            if (/^\s*\@/) { $removed = 0; next }
-            if (/^\s*Scenario:\s*(.+)$/) {
-                print "$1\n" if $removed;
-                $removed = 0;
-            }
-        ')
-        if printf '%s\n' "$removed_titles" | grep -Fqx "$scenario_name"; then
-            printf 'cannot target removed placeholder scenario by name: %s\n' "$scenario_name" >&2
-            exit 2
-        fi
-    fi
-fi
-
 cargo build --locked --bin watn
 cp target/debug/watn "$root/default-debug"
 cargo build --locked --features test-support --bin watn
 cp target/debug/watn "$root/test-support-debug"
 
 if [ "$e2e" -eq 1 ]; then
-    tags='@e2e and not @wip and not @givn.removed'
+    tags='@e2e and not @wip'
 else
-    tags='not @wip and not @e2e and not @givn.removed'
+    tags='not @wip and not @e2e'
 fi
 
 if [ -n "$scenario_name" ]; then
