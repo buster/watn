@@ -55,15 +55,15 @@
   interaction.
 - [x] REFACTOR: Ran the retained Bash E2E scenario and asserted shell output,
   request preservation, and non-evaluation.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `3010e28`.
 
 ## Scenario: F5 failed/empty Bash subset is removed
 
-- [ ] RED: Confirm both failure/empty-output contracts are present.
-- [ ] GREEN: Apply the F5 removal and retain the exact-buffer contract.
-- [ ] REFACTOR: Run the retained shortcut failure scenario and the complete
+- [x] RED: Confirmed both failure/empty-output contracts in the baseline tree.
+- [x] GREEN: Applied the F5 removal and retained the exact-buffer contract.
+- [x] REFACTOR: Ran the retained shortcut failure scenario and the complete
   non-E2E runner.
-- [ ] COMMIT: pending.
+- [x] COMMIT: pending until the scenario commit is created.
 
 ## Scenario: F6 empty model subset is removed
 
