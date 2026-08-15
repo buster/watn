@@ -5,9 +5,11 @@
 - [x] Confirmed `tests/features_runner.rs` uses `.fail_on_skipped()` and runs
   both permanent specs and active change specs. Proof command:
   `./run-tests.sh --e2e --name "Repository-wide review accepts the consolidation dispositions"`.
-- [x] Added and registered `tests/steps/watn_consolidation_steps.rs` as the
-  single capability step file. New executable steps start with
-  `unimplemented!()`.
+- [x] Added and registered separate capability bindings:
+  `tests/steps/watn_consolidation_steps.rs` for the non-E2E rollback scenario,
+  `tests/steps/watn_consolidation_e2e_steps.rs` for the CLI smoke scenarios,
+  and `tests/steps/watn_consolidation_support.rs` for shared fixture helpers.
+  New executable steps started with `unimplemented!()`.
 - [x] Proved strictness with the pending consolidation E2E step: the targeted
   runner exited non-zero and reported `Step panicked. Captured output: not
   implemented` followed by `1 step failed`. The named-run removal guard is
@@ -63,7 +65,9 @@
 - [x] GREEN: Applied the F5 removal and retained the exact-buffer contract.
 - [x] REFACTOR: Ran the retained shortcut failure scenario and the complete
   non-E2E runner.
-- [x] COMMIT: `e593bae`.
+- [x] COMMIT: `54d4d97` for the task record; the F5 delta was introduced in
+  `3010e28` with the adjacent F4 delta, and its retained-buffer assertion was
+  refactored in `fae8415`.
 
 ## Scenario: F6 empty model subset is removed
 
@@ -71,7 +75,7 @@
 - [x] GREEN: Applied the F6 removal and retained the picker scenario that also
   preserves the entered filter.
 - [x] REFACTOR: Ran the retained picker scenario and full non-E2E runner.
-- [x] COMMIT: `fae8415`.
+- [x] COMMIT: `e593bae`.
 
 ## Scenario: Failed archive preserves the fixture permanent specification tree
 
@@ -82,37 +86,62 @@
   tree preservation. The targeted scenario passed four steps.
 - [x] REFACTOR: Re-ran the failure scenario after cleanup; one scenario and
   four steps passed with exit 0 for the expected command failure.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `9379c3e`.
 
 ## Scenario: Repository-wide review accepts the consolidation dispositions
 
-- [ ] RED: Leave the review fixture step pending and target this E2E scenario;
-  the strict runner must exit non-zero.
-- [ ] GREEN: Create a fresh fixture, invoke `givn check review --change
-  fixture-consolidation`, and assert exact disposition/net-delta stdout and
-  exit status through the real subprocess.
-- [ ] REFACTOR: Re-run the targeted E2E scenario; record exit 0.
-- [ ] COMMIT: pending.
+- [x] RED: The initial consolidation step skeleton failed non-zero under
+  `.fail_on_skipped()` before implementation.
+- [x] GREEN: Created a fresh fixture, invoked `givn check review --change
+  fixture-consolidation`, and asserted exact disposition/net-delta stdout and
+  exit status through the real subprocess. The targeted E2E scenario passed
+  five steps with an absolute `GIVN_BIN`.
+- [x] REFACTOR: Re-ran the targeted E2E scenario after extracting shared
+  fixture stdout handling; one scenario and five steps passed.
+- [x] COMMIT: `1034be9`.
 
 ## Scenario: Archive publishes the consolidated permanent specifications
 
-- [ ] RED: Leave the archive fixture step pending and target this E2E scenario;
-  the strict runner must exit non-zero.
-- [ ] GREEN: Invoke `givn archive --change fixture-consolidation` in a fresh
-  fixture and assert archive stdout, canonical title presence, obsolete title
-  absence, and no duplicate titles.
-- [ ] REFACTOR: Re-run the targeted E2E scenario; record exit 0 and confirm the
-  real Watn checkout is unchanged.
-- [ ] COMMIT: pending.
+- [x] RED: The initial consolidation step skeleton failed non-zero under
+  `.fail_on_skipped()` before implementation.
+- [x] GREEN: Invoked `givn archive --change fixture-consolidation` in a fresh
+  fixture and asserted archive stdout, canonical title presence, obsolete title
+  absence, and no duplicate titles through the real subprocess.
+- [x] REFACTOR: Re-ran the targeted E2E scenario after extracting duplicate-title
+  verification; one scenario and seven steps passed with an absolute `GIVN_BIN`,
+  and the real Watn checkout remained unchanged.
+- [x] COMMIT: `c021902`.
 
 ## Final Gate Evidence
 
-- [ ] Run `givn lint --change watn-consolidation` and record only expected WIP
-  findings before implementation and clean output after implementation.
-- [ ] Run `./run-tests.sh` and record the non-E2E scenario count.
-- [ ] Run `./run-tests.sh --e2e` and record the strictly smaller scenario count.
-- [ ] Run `./run-tests.sh` and record the complete scenario count.
-- [ ] Run `./measure-coverage.sh` and `./merge-coverages.sh`; record merged
-  line/branch output with runner and fixture processes included.
-- [ ] Run `givn check review --change watn-consolidation` and
-  `givn archive --change watn-consolidation`; record both gates.
+- [x] `givn lint --change watn-consolidation` was clean before archive; the
+  post-archive repository-wide lint also completed cleanly with only existing
+  shape/subset/long-scenario advisory output.
+- [x] `./run-tests.sh` passes `149` scenarios and `855` steps.
+- [x] `./run-tests.sh --e2e` passes `77` scenarios and `567` steps; the E2E
+  count is strictly smaller than the combined `226` scenarios and `1422`
+  steps.
+- [x] The complete suite is the combination of the non-E2E and E2E commands;
+  both pass with the isolated consolidation fixture and the permanent Watn
+  suite.
+- [x] Pre-archive `./measure-coverage.sh` and `./merge-coverages.sh` produced a
+  fresh merged report: 13042/14210 lines (91.78%) and 0/0 branches (n/a),
+  including the Gherkin runner and fixture subprocesses.
+- [x] `givn check review --change watn-consolidation` passed verify, verify-e2e,
+  integrity, and overlap dispositions; it reported `net delta: 3 added,
+  0 modified, 6 removed`.
+- [x] Confirmed the archive prerequisites after the signed review: all tracked
+  tasks have evidence, `review.md` contains `REVIEW: PASS`, lint is clean, and
+  the configured verify and verify-e2e hooks pass.
+- [x] `givn archive --change watn-consolidation` succeeded and merged the delta
+  into `givn/specs/`; the change moved to `givn/archive/watn-consolidation/`.
+- [x] The archive hook observed `78` E2E scenarios and `574` steps while the
+  transaction was still carrying the active delta; the direct post-archive
+  E2E rerun passed `76` scenarios and `562` steps against the permanent tree.
+  The archive coverage gate published `13011/14210` lines (`92%`) and `0/0`
+  branches (`n/a`); the fresh post-archive coverage rerun produced
+  `13012/14210` lines (`91.57%`) and `0/0` branches (`n/a`).
+- [x] Archive updated the README coverage badge and merged coverage summary;
+  the merged summary now matches the fresh post-archive report; the permanent
+  tree contains the canonical retained scenarios and no removed placeholder
+  scenario.

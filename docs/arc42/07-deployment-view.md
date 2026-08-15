@@ -47,3 +47,7 @@ checks generated Bash, Zsh, and Fish text; the E2E runner executes `bash -n`,
 `fish -n`, a non-interactive Bash process, and an interactive Fish process under
 a pseudo-terminal with a temporary startup file and fake `watn` on PATH. No
 terminal emulator is required for this capability.
+
+The specification consolidation changes no Watn deployment artifact, runtime
+service, or installed configuration. Its review/archive commands operate on
+repository files before the unchanged executable is released.

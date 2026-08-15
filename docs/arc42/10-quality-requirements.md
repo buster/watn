@@ -119,4 +119,7 @@
  | QS-059 | Flexibility / Compatibility | A selected arbitrary provider key is configured through setup | The selected key migrates to `custom`, collision/default-model rules are deterministic, saved credential representation is preserved, and unrelated providers remain unchanged |
  | QS-060 | Correctness / Compatibility | A custom reasoning value is saved and used after reload | The exact non-empty value appears in TOML and the next request body; `off` is absent from the request body |
  | QS-061 | Recovery / Integrity | Final config serialization or rename fails | The previous config remains unchanged and no shell operation begins |
- | QS-062 | Shell integration / Integrity | A shell integration is deselected | Only one valid Watn-managed block is removed; surrounding user bytes remain unchanged; malformed markers are refused |
+| QS-062 | Shell integration / Integrity | A shell integration is deselected | Only one valid Watn-managed block is removed; surrounding user bytes remain unchanged; malformed markers are refused |
+| QS-063 | Specification maintainability | The active permanent tree is reviewed before consolidation | Duplicate titles are reported deterministically, every delta finding has a disposition, and the review receipt contains the net delta |
+| QS-064 | Specification correctness | A consolidation archives removed and added scenarios | The permanent tree has no duplicate scenario titles, the full runner remains green, and no runtime CLI behavior changes |
+| QS-065 | Specification ownership | A weaker scenario is subsumed by a stronger scenario | The weaker scenario is absent after archive, the retained scenario remains executable, and the review records the retained contract |
