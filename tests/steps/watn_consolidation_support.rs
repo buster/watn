@@ -130,3 +130,14 @@ pub(crate) fn scenario_titles(root: PathBuf) -> Vec<String> {
         .filter_map(|line| line.trim().strip_prefix("Scenario: ").map(str::to_owned))
         .collect()
 }
+
+pub(crate) fn duplicate_titles(root: PathBuf) -> Vec<String> {
+    let mut counts = std::collections::HashMap::new();
+    for title in scenario_titles(root) {
+        *counts.entry(title).or_insert(0usize) += 1;
+    }
+    counts
+        .into_iter()
+        .filter_map(|(title, count)| (count > 1).then_some(title))
+        .collect()
+}
