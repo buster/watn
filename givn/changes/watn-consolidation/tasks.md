@@ -36,16 +36,16 @@
   exact newer/stale result assertions.
 - [x] REFACTOR: Ran the retained stale-search E2E scenario; exact newer IDs
   remained and stale IDs were absent before worker teardown.
-- [x] COMMIT: pending until the scenario commit is created.
+- [x] COMMIT: `cc4bdee`.
 
 ## Scenario: F3 missing-config subset is removed
 
-- [ ] RED: Confirm the duplicate guidance contract is visible in lint/report
-  output and the removal delta is pending.
-- [ ] GREEN: Apply the F3 removal; retain the stronger auto-init scenario that
-  also proves no config file is created.
-- [ ] REFACTOR: Run the retained auto-init scenario and full non-E2E runner.
-- [ ] COMMIT: pending.
+- [x] RED: Confirmed the duplicate guidance contract in the baseline lint
+  output and isolated the F3 removal delta.
+- [x] GREEN: Applied the F3 removal; the stronger auto-init scenario remains
+  the owner and proves that no config file is created.
+- [x] REFACTOR: Ran the retained auto-init scenario and the non-E2E runner.
+- [x] COMMIT: pending until the scenario commit is created.
 
 ## Scenario: F4 weaker Bash widget E2E is removed
 
