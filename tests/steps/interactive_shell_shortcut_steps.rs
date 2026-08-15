@@ -743,13 +743,18 @@ printf 'POINT<<%s>>\n' "$READLINE_POINT"
 
 #[then(regex = r##"^the current command line should be exactly \"([^\"]*)\"$"##)]
 fn current_line(world: &mut WatnWorld, line: String) {
-    let output = world.shortcut_output.as_deref().unwrap_or_default();
-    let actual = output
+    assert_eq!(current_buffer(world), line.replace("\\n", "\n"));
+}
+
+fn current_buffer(world: &WatnWorld) -> &str {
+    world
+        .shortcut_output
+        .as_deref()
+        .unwrap_or_default()
         .split("LINE<<")
         .nth(1)
         .and_then(|value| value.split(">>").next())
-        .expect("widget line output");
-    assert_eq!(actual, line.replace("\\n", "\n"));
+        .expect("widget line output")
 }
 
 #[then("the cursor should be at the end of the current command line")]
