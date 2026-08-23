@@ -116,5 +116,5 @@ concerns rather than RED/GREEN changes to Watn.
   unavailable semantic evidence in `review.md`. `givn status` was re-run and
   shows all gating artifacts complete. No migration feature exists under
   `givn/specs/`.
-- [x] **COMMIT:** Final verification evidence commit recorded below; archived
-  only after all gates are complete.
+- [x] **COMMIT:** Final verification evidence commit: `65c0eaa`. The change
+  is archived only after all gates are complete.
