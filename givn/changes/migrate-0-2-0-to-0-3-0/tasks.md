@@ -46,17 +46,19 @@ concerns rather than RED/GREEN changes to Watn.
 
 ## Generated guidance and ownership
 
-- [ ] **Evidence:** Compare the generated guidance under `.opencode/` and the
-  Givn-owned blocks in `AGENTS.md` with the current resolved instructions.
-  Confirm project-owned content and all `givn/` overrides remain unchanged.
-- [ ] **Verification:** Run `givn instructions specs --change
-  migrate-0-2-0-to-0-3-0`, `givn instructions design --change
-  migrate-0-2-0-to-0-3-0`, `givn instructions review --change
-  migrate-0-2-0-to-0-3-0`, and `givn instructions arc42-docs --change
-  migrate-0-2-0-to-0-3-0`; compare the generated paths against Commit A.
-- [ ] **COMMIT:** Record the verified managed guidance commit
-  `d319e3e6aa04884fa53864d7548408bebc9e7c5e`; do not create a second policy
-  source or overwrite project-owned content.
+- [x] **Evidence:** The generated guidance under `.opencode/` and the Givn-owned
+  blocks in `AGENTS.md` match Commit A; `git diff --exit-code
+  d319e3e6aa04884fa53864d7548408bebc9e7c5e -- .opencode AGENTS.md
+  givn/config.yaml` returned no differences. Project-owned content and all
+  `givn/` overrides remain unchanged, while the pre-existing `.agents/` and
+  `.claude/` outputs remain retained and untouched.
+- [x] **Verification:** The resolved `specs`, `design`, `review`, and
+  `arc42-docs` instructions were each loaded with `givn instructions ...
+  --change migrate-0-2-0-to-0-3-0`; all four commands succeeded. The current
+  worktree was clean after the comparison.
+- [x] **COMMIT:** Verified managed guidance commit:
+  `d319e3e6aa04884fa53864d7548408bebc9e7c5e`. No second policy source was
+  created and no project-owned content was overwritten.
 
 ## Permanent specification and change review
 
