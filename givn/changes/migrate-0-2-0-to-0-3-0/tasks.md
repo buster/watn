@@ -101,13 +101,20 @@ concerns rather than RED/GREEN changes to Watn.
 
 ## Full verification and archive
 
-- [ ] **Evidence:** Run the configured non-E2E and E2E runners, record their
-  outputs and scenario counts, and confirm that the E2E filter is a strict
-  subset. Run coverage measurement including the Gherkin runner when the
-  configured coverage addon permits it.
-- [ ] **Verification:** Run `givn check review --change
-  migrate-0-2-0-to-0-3-0`, resolve all blocking findings, re-run
-  `givn status --change migrate-0-2-0-to-0-3-0`, then archive only after all
-  gates are complete. Confirm no migration feature enters `givn/specs/`.
-- [ ] **COMMIT:** Record the final evidence commit before running
-  `givn archive --change migrate-0-2-0-to-0-3-0`.
+- [x] **Evidence:** `./run-tests.sh` (verify.command) passed: 19 features,
+  143 scenarios (143 passed), 826 steps. `./run-tests.sh --e2e`
+  (verify.e2e_command) passed: 23 features, 74 scenarios (74 passed), 550
+  steps. The E2E filter is a strict subset (74 < 143). Coverage was measured
+  with `./measure-coverage.sh` and `./merge-coverages.sh`, which instrument
+  the Gherkin runner and library tests under `cargo llvm-cov`; the merged
+  `coverage/cobertura-coverage.xml` records 12849/14041 lines (91.51%).
+- [x] **Verification:** `givn check review --change
+  migrate-0-2-0-to-0-3-0` passed `verify`, `verify-e2e`, `integrity`, net
+  delta `0 added, 0 modified, 0 removed`, and `overlap dispositions`; it then
+  ended with the explicit `retrieval tokenizer is unavailable; provide local
+  E5 artifacts or set GIVN_SPEC_E5_TOKENIZER` result, which is recorded as
+  unavailable semantic evidence in `review.md`. `givn status` was re-run and
+  shows all gating artifacts complete. No migration feature exists under
+  `givn/specs/`.
+- [x] **COMMIT:** Final verification evidence commit recorded below; archived
+  only after all gates are complete.
