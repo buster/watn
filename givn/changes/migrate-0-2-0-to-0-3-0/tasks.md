@@ -86,14 +86,18 @@ concerns rather than RED/GREEN changes to Watn.
 
 ## Arc42 and ADR reconciliation
 
-- [ ] **Evidence:** Walk all twelve Arc42 chapter-impact rows independently,
-  compare them with `arc42.md`, inspect all twelve durable chapter files, and
-  search active and archived ADR indexes before routing any candidate.
-- [ ] **Verification:** Confirm the all-`No` assessment, `STATUS: DONE`, no
-  prohibited ASCII-art diagrams, no qualified ADR candidate, and no durable
-  architecture fact changed by this process migration.
-- [ ] **COMMIT:** Record the commit that adds the completed `arc42.md` marker
-  and this evidence; no durable Arc42 chapter or ADR is to be modified.
+- [x] **Evidence:** All twelve Arc42 chapter-impact rows were independently
+  walked against the migration proposal and design, then compared with
+  `arc42.md`. All twelve durable chapter files exist and contain current
+  project-specific content. Active and archived ADR indexes were searched
+  before routing any candidate.
+- [x] **Verification:** The independent assessment matches the marker's twelve
+  `No` decisions and `STATUS: DONE`. The chapter scan found Mermaid diagrams
+  only, with no prohibited Unicode box-drawing or ASCII-art diagrams. The
+  migration introduces no durable Watn architecture fact, and no ADR candidate
+  passes the qualification gate.
+- [x] **COMMIT:** The completed Arc42 marker and independent review were added
+  in `4b08e8e`; no durable Arc42 chapter or ADR was modified.
 
 ## Full verification and archive
 
