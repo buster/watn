@@ -62,17 +62,27 @@ concerns rather than RED/GREEN changes to Watn.
 
 ## Permanent specification and change review
 
-- [ ] **Evidence:** Review the permanent `givn/specs/` tree and confirm that
-  the migration contributes no feature file, no removed `@e2e` tag, no copied
-  obsolete guidance, and no active competing change beyond this maintenance
-  change.
-- [ ] **Verification:** Run `givn lint`; when retrieval support is available,
-  run `givn spec index` and the advisory/review commands required by the
-  current instructions. Record every finding and disposition; unresolved
-  semantic evidence remains blocking.
-- [ ] **COMMIT:** No product or specification commit is expected. The migration
-  plan commit `5cf7bd1631f155a98b8e60485dd9ac10a4e9e983` is the only plan
-  provenance, and `.givn-skip` remains exactly `specs`.
+- [x] **Evidence:** The permanent `givn/specs/` tree contains the existing
+  product behavior inventory; the migration contributes no feature file, no
+  removed `@e2e` tag, no copied obsolete guidance, and no active competing
+  change beyond this maintenance change. The migration directory contains only
+  the deliberate `.givn-skip` value `specs`, so no synthetic product behavior
+  can be archived from this change. Existing lint shape/subset/long-scenario
+  notices are outside the migration delta and are not silently reclassified or
+  modified here.
+- [x] **Verification:** `givn lint` checked 25 files and reported `clean`; the
+  command emitted the existing permanent-tree shape, subset, and long-scenario
+  advisory findings. `givn lint --change migrate-0-2-0-to-0-3-0` confirmed that
+  no change feature files exist. `givn spec index` and
+  `givn spec review --change migrate-0-2-0-to-0-3-0` were attempted and both
+  returned `retrieval tokenizer is unavailable; provide local E5 artifacts or
+  set GIVN_SPEC_E5_TOKENIZER`. This is retained as explicit unavailable
+  semantic evidence, not treated as a pass; there are no migration-local
+  scenarios or candidates to classify.
+- [x] **COMMIT:** No product or specification commit was made or is justified.
+  Plan provenance remains
+  `5cf7bd1631f155a98b8e60485dd9ac10a4e9e983`, and `.givn-skip` remains exactly
+  `specs`.
 
 ## Arc42 and ADR reconciliation
 
