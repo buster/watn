@@ -95,7 +95,7 @@ fn configured_mock_hits(world: &WatnWorld) -> usize {
         .transport
         .configured_mock_id
         .expect("configured provider mock was not created");
-    httpmock::Mock::new(mock_id, configured_server(world)).hits()
+    httpmock::Mock::new(mock_id, configured_server(world)).calls()
 }
 
 #[given(
@@ -367,7 +367,7 @@ fn competing_request_count(world: &mut WatnWorld, count: u32, path: String) {
             "/chat/completions"
         )
     );
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), count as usize);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), count as usize);
 }
 
 #[then(
@@ -476,7 +476,7 @@ fn isolated_request_count(world: &mut WatnWorld, path: String) {
             "/chat/completions"
         )
     );
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 1);
 }
 
 #[then(regex = r##"^the isolated-twin request should have Authorization exactly "([^"]+)"$"##)]
@@ -494,7 +494,7 @@ fn isolated_authorization(world: &mut WatnWorld, authorization: String) {
         .transport
         .isolated_mock_id
         .expect("isolated provider mock was not created");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 1);
 }
 
 #[then(
@@ -646,11 +646,11 @@ fn both_endpoints_request_count(world: &mut WatnWorld, count: u32) {
         .competing_mock_id
         .expect("competing mock was not created");
     assert_eq!(
-        httpmock::Mock::new(configured_mock_id, configured_server).hits(),
+        httpmock::Mock::new(configured_mock_id, configured_server).calls(),
         count as usize
     );
     assert_eq!(
-        httpmock::Mock::new(competing_mock_id, competing_server).hits(),
+        httpmock::Mock::new(competing_mock_id, competing_server).calls(),
         count as usize
     );
 }
