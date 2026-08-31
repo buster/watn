@@ -6,13 +6,17 @@ unmaintained = "none"
 multiple-versions = "warn"
 wildcards = "deny"
 highlight = "all"
+skip = [
+    { name = "core-foundation", version = "0.9.4", reason = "pinned by system-configuration (via hyper-util); rustls-platform-verifier needs 0.10" },
+    { name = "hashbrown", version = "0.16.1", reason = "pinned by kasuari (ratatui-core); indexmap/ratatui-widgets need 0.17" },
+    { name = "syn", version = "2.0.119", reason = "pinned by cucumber-codegen (dev); other proc-macro crates need 3.x" },
+]
 
 [licenses]
 version = 2
 confidence-threshold = 0.8
 allow = [
     "Apache-2.0",
-    "BSD-2-Clause",
     "BSD-3-Clause",
     "CC0-1.0",
     "CDLA-Permissive-2.0",
