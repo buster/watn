@@ -194,25 +194,28 @@ sequenceDiagram
     alt buffer empty
         Editor-->>User: Preserve buffer and repaint
     else buffer non-empty
+        Editor->>Editor: Strip one leading "# " comment prefix
         Editor->>Watn: command watn -- "$question"
         Watn-->>Editor: stdout text, stderr diagnostics, exit status
         alt zero status and non-empty stdout after trailing CR/LF trim
-            Editor->>Editor: Buffer = "# flattened request" + newline + generated text; cursor to end; never evaluate
+            Editor->>Editor: History += "# flattened request"; Buffer = generated text; cursor to end; never evaluate
         else failure or empty output
-            Editor->>Editor: Preserve original buffer
+            Editor->>Editor: Preserve original buffer and record nothing
         end
         Editor-->>User: Redraw prompt
     end
 ```
 
 The request is flattened (CR, LF, and TAB become spaces) so it forms exactly
-one comment line. Embedded line breaks in the generated result remain buffer
-text. When the user presses Enter, the shell ignores the comment and executes
-only the generated command. The shell never passes the captured result to an
-evaluator, so text that resembles a second command is not executed by the
-shortcut. Fish constructs the replacement as one collected buffer with an
-actual line break; the visible characters `\\n` are never used as the
-separator.
+one history comment line. The widget records that comment immediately, so the
+request stays recallable with the shell history even when the generated command
+is never executed; a leading `# ` prefix is stripped from the buffer first, so
+a recalled comment can be edited and re-asked. Embedded line breaks in the
+generated result remain buffer text. When the user presses Enter, only the
+generated command executes as its own history entry. The shell never passes the
+captured result to an evaluator, so text that resembles a second command is not
+executed by the shortcut. Bash appends with `history -s`, Zsh with `print -s`,
+and Fish with `builtin history append`.
 
 ## Scenario: Ask with execution (`-x`)
 
