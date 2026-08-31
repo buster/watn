@@ -6,6 +6,58 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-31
+
+### Bug Fixes
+
+- **release:** Publish repository changelog notes
+
+- **release:** Link crates.io package versions
+
+- **ci:** Install givn for specification fixtures
+
+- **ci:** Pin givn fixture installer to git revision
+
+- **ci:** Remove Watn Givn fixture dependency
+
+- **security:** Update h2 0.4.15 -> 0.4.16 (RUSTSEC-2026-0258)
+
+- **tests:** Rename body_contains to body_includes for httpmock 0.8
+
+- **tests:** Rename hits to calls for httpmock 0.8
+
+- **release:** Exclude AGENTS.md from package
+
+
+### Documentation
+
+- **upgrade:** Record aggregate migration plan migrate-0-2-0-to-0-3-0
+
+- Update README to streamline demo and shortcuts
+
+
+### Features
+
+- **shortcut:** Record Ctrl-W requests in shell history
+
+
+### Other Changes
+
+- Delete docs/givn-refactor-0.3 directory
+
+- Delete docs/givn-embedding-idea.md
+
+
+### Refactoring
+
+- **watn-consolidation:** Retain exact Bash failure assertion
+
+- **watn-consolidation:** Capture fixture review output
+
+- **watn-consolidation:** Verify archived fixture titles
+
+- **ci:** Remove Givn tag filters from Watn
+
 ## [0.2.1] - 2026-08-13
 
 ### Bug Fixes
@@ -451,3 +503,5 @@ Bright fireant
 [0.2.0]: https://github.com/buster/watn/compare/v0.1.4...v0.2.0
 
 [0.2.1]: https://github.com/buster/watn/compare/v0.2.0...v0.2.1
+
+[0.3.0]: https://github.com/buster/watn/compare/v0.2.1...v0.3.0
