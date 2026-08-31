@@ -51,8 +51,8 @@
   - QS-050: Marker validation prevents malformed or duplicate block writes
   - QS-051: The widget preserves the buffer on empty, failed, or empty results
    - QS-052: The widget inserts successful output without evaluating it
-   - QS-055: The widget keeps the original request visible as a comment above the generated command, and only the generated command runs on Enter
-   - QS-056: Fish Ctrl-W uses a real line break between the request comment and generated command
+   - QS-055: The widget records the original request as a `#`-prefixed history comment, leaves only the generated command in the buffer, and only the generated command runs on Enter
+   - QS-056: Recalled history comments can be edited and re-asked because the widget strips one leading `# ` comment prefix
 
 ## Quality scenarios
 
@@ -112,8 +112,8 @@
 | QS-052 | Shell integration / Safety | User presses Ctrl-W and `watn` returns a successful command containing trailing or embedded line breaks | Trailing CR/LF is removed, embedded breaks remain text in the buffer, the cursor moves to the end, the prompt redraws, and no returned text executes |
 | QS-053 | Onboarding / Usability | User moves between URL, credential, model, reasoning, and optional shortcut inputs in the setup wizard | The widget receiving keyboard input has a green border; inactive input widgets retain their existing border styling; layout, key behavior, and visible cursor remain unchanged |
 | QS-054 | Onboarding / Responsiveness | User types a model filter against a complete or delayed catalog | The query remains visible; complete catalogs update locally without a search request; delayed searches do not block another query; only the newest result is applied and workers are joined on exit |
-| QS-055 | Shell integration / Correctness and safety | User presses Ctrl-W and `watn` returns a successful, empty, or failed result | On success the buffer shows `# flattened request` above the generated command, only the generated command runs on Enter, and the text is never evaluated; on failure or empty output the original buffer remains unchanged |
- | QS-056 | Shell integration / Fish compatibility | User presses Ctrl-W in Fish and `watn` returns `df -h` | The editable buffer is exactly `# show available diskspace`, one actual line break, and `df -h`; the generated command is not part of the comment |
+| QS-055 | Shell integration / Correctness and safety | User presses Ctrl-W and `watn` returns a successful, empty, or failed result | On success the shell history gains a `# flattened request` comment entry and the buffer holds only the generated command, only the generated command runs on Enter, and the text is never evaluated; on failure or empty output the original buffer remains unchanged and nothing is recorded |
+ | QS-056 | Shell integration / Fish compatibility | User recalls a `# show available diskspace` comment from the shell history and presses Ctrl-W | The stripped buffer `show available diskspace` is asked as one question and the buffer holds only the generated command |
  | QS-057 | Onboarding / Recovery | User cancels after editing provider, catalog, model, reasoning, and shell values | Existing config and all shell targets remain byte-for-byte unchanged; an absent config remains absent |
  | QS-058 | Correctness / Security | Provider and legacy LiteLLM sources return different catalogs | Only provider-local list/page/search requests occur, with the provider credential; the legacy source receives zero requests |
  | QS-059 | Flexibility / Compatibility | A selected arbitrary provider key is configured through setup | The selected key migrates to `custom`, collision/default-model rules are deterministic, saved credential representation is preserved, and unrelated providers remain unchanged |

@@ -67,24 +67,27 @@ and failure is reported with its path/reason, and any failure produces one
 aggregate setup error after all attempts.
 
 The Bash, Zsh, and Fish widgets use their native line-editor APIs and bind
-Ctrl-W. Each reads the complete buffer and invokes:
+Ctrl-W. Each reads the complete buffer, strips one leading `# ` comment prefix,
+and invokes:
 
 ```sh
 command watn -- "$question"
 ```
 
 Only stdout is captured. A zero-status non-empty result has trailing CR/LF
-characters removed. On success the widget replaces the buffer with a
-`#`-prefixed comment line containing the flattened original request followed
-by a newline and the generated text, with the cursor at the end. Flattening
+characters removed. On success the widget records the flattened original
+request as a `#`-prefixed comment in the shell history — Bash `history -s`,
+Zsh `print -s`, Fish `builtin history append` — and replaces the buffer with
+only the generated text, with the cursor at the end. The comment is recorded
+before any execution, so the request stays recallable from the shell history
+even when the generated command is never run, and a recalled comment can be
+edited and re-asked because the leading `# ` prefix is stripped. Pressing Enter
+executes only the generated command, as its own history entry. Flattening
 replaces CR, LF, and TAB with spaces so the request stays one comment line;
-pressing Enter therefore ignores the comment and executes only the generated
-command. Embedded line breaks in the generated result remain in the buffer.
-Empty input, non-zero status, and empty output preserve the original buffer.
-The prompt is redrawn after every shortcut event. The captured result is
-assigned as text and never evaluated. Fish builds the comment and generated
-text as one collected buffer with a shell-produced actual newline; a literal
-`\\n` sequence is not used as the separator.
+embedded line breaks in the generated result remain in the buffer. Empty input,
+non-zero status, and empty output preserve the original buffer and record
+nothing. The prompt is redrawn after every shortcut event. The captured result
+is assigned as text and never evaluated.
 
 ## Consequences
 
@@ -116,9 +119,15 @@ text as one collected buffer with a shell-produced actual newline; a literal
   every platform-specific file attribute or symlink behavior.
 - Embedded line breaks are retained in the editable buffer, so the inserted
   value may be multiline even though it is never evaluated by the widget.
-- The preserved request is a flattened comment, so a request containing newlines
+- The request comment lives in the shell history instead of the editable
+  buffer, so the buffer no longer shows the provenance of the generated command
+  before execution; the history navigation is the provenance record.
+- The recorded request is a flattened comment, so a request containing newlines
   cannot be reproduced verbatim on the first line; the original wording remains
   readable with separators replaced by spaces.
+- History recording uses per-shell native APIs whose options differ across
+  shell versions and configurations (for example `HISTCONTROL` in Bash);
+  Zsh behavior still relies on generated syntax and contract checks.
 - Supporting another shell requires a new native block, target rule, parser
   checks, and setup choice.
 
@@ -128,10 +137,12 @@ The interactive-shell-shortcut feature verifies the default decline, empty
 selection, basename-only preselection, all three generated blocks, exact marker
 validation, atomic failure preservation, independent aggregate reporting,
 reload guidance, leading-option/reserved-token quoting, status handling,
-trailing and embedded newline behavior, cursor placement, and no-evaluation
-behavior. Installed Bash and Fish parsers validate generated configuration, a
-non-interactive Bash process exercises the generated widget, and a real Fish
-pseudo-terminal captures the corrected editable buffer; regular isolated tests
-cover Zsh generation and shell contracts. The existing
-`./run-tests.sh` and `./run-tests.sh --e2e` wrappers remain the verification
-commands.
+trailing and embedded newline behavior, cursor placement, no-evaluation
+behavior, history comment recording for Bash, and history comment recording
+contracts for Zsh and Fish plus `# ` prefix stripping for re-asking recalled
+comments. Installed Bash and Fish parsers validate generated configuration, a
+non-interactive Bash process exercises the generated widget including its
+history recording, and a real Fish pseudo-terminal captures the corrected
+editable buffer; regular isolated tests cover Zsh generation and shell
+contracts. The existing `./run-tests.sh` and `./run-tests.sh --e2e` wrappers
+remain the verification commands.

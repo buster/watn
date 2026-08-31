@@ -9,7 +9,6 @@ Feature: Interactive shell shortcut for watn
     And  the generated Zsh configuration should pass a Zsh syntax check
     And  the generated Fish configuration should pass a Fish syntax check
 
-  @e2e
   Scenario: Enter accepts the default decline for shortcut setup
     Given  Bash, Zsh, and Fish configuration files with existing user content
     And  a snapshot of every shell configuration file
@@ -105,13 +104,13 @@ Feature: Interactive shell shortcut for watn
   Scenario: A successful widget inserts one normalized command and moves the cursor to its end
     Given  an installed Bash shortcut and a fake watn that returns "printf 'ready'\n\n"
     When  I run the Bash widget with current input "show status"
-    Then  the current command line should be exactly "# show status\nprintf 'ready'"
+    Then  the current command line should be exactly "printf 'ready'"
     And  the cursor should be at the end of the current command line
 
   Scenario: Embedded multiline output remains buffer text without evaluation
     Given  an installed Bash shortcut and a fake watn that returns "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     When  I run the Bash widget with current input "show two lines"
-    Then  the current command line should be exactly "# show two lines\nprintf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
+    Then  the current command line should be exactly "printf 'first line'\ntouch /tmp/watn-shortcut-should-not-run"
     And  the embedded line break should remain in the command line buffer
     And  the cursor should be at the end of the current command line
     And  the replacement text should not have executed
@@ -160,10 +159,11 @@ Feature: Interactive shell shortcut for watn
     Given  a shortcut selection with Bash enabled and Zsh and Fish disabled
     When  the setup result confirms the shortcut selection
     Then  the selected shortcut shells should contain only Bash
-  Scenario: A successful generation keeps the original request visible as a comment
+  Scenario: A successful generation records the request as a history comment
     Given  an installed Bash shortcut and a fake watn that returns "printf 'ready'"
     When  I run the Bash widget with current input "show status"
-    Then  the current command line should be exactly "# show status\nprintf 'ready'"
+    Then  the current command line should be exactly "printf 'ready'"
+    And  the shell history should contain the recorded request comment "# show status"
     And  the cursor should be at the end of the current command line
 
   Scenario: Only the generated command executes when the buffer is committed
@@ -176,13 +176,13 @@ Feature: Interactive shell shortcut for watn
   Scenario: Requests with metacharacters and embedded newlines remain one comment line
     Given  an installed Bash shortcut and a fake watn that returns "ls"
     When  I run the Bash widget with current input containing "show files; echo unsafe *\nsecond line"
-    Then  the current command line should be exactly "# show files; echo unsafe * second line\nls"
-    And  the preserved request comment should be a single line
+    Then  the current command line should be exactly "ls"
+    And  the recorded request history entry should be exactly "# show files; echo unsafe * second line"
 
-  Scenario: Zsh and Fish widgets preserve the request as a comment
+  Scenario: Zsh and Fish widgets record the request in the shell history
     Given  an installed Zsh and Fish shortcut
-    Then  the Zsh configuration should keep the request above the generated command
-    And  the Fish configuration should keep the request above the generated command
+    Then  the Zsh configuration should record the request in the shell history
+    And  the Fish configuration should record the request in the shell history
     And  the generated Zsh configuration should pass a Zsh syntax check
     And  the generated Fish configuration should pass a Fish syntax check
 
@@ -190,11 +190,10 @@ Feature: Interactive shell shortcut for watn
   Scenario: The generated Bash widget keeps the request visible and does not evaluate the command
     Given  an installed Bash shortcut and a fake watn that returns "printf 'hello world'"
     When  I run the generated Bash widget through Bash with current input "find all images"
-    Then  the Bash process command line should contain "# find all images\nprintf 'hello world'"
-    And  the Bash process should preserve the request as a comment
+    Then  the Bash process should record the request "# find all images" in the shell history
     And  the Bash process should not execute the replacement text
   @e2e
-  Scenario: Fish inserts a real line break after Ctrl-W
+  Scenario: Fish replaces the buffer with the generated command after Ctrl-W
     Given  an installed Fish shortcut and a fake watn that returns "df -h"
     When  I press Ctrl-W in the Fish shortcut with current input "show available diskspace"
-    Then  the Fish command line should be exactly "# show available diskspace\ndf -h"
+    Then  the Fish command line should be exactly "df -h"

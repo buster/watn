@@ -70,16 +70,17 @@ and cursor APIs. They call `command watn -- "$question"` through `PATH`, so a
 leading option or the reserved `completions` token remains one question. Only
 stdout is captured; stderr remains visible. A zero-status non-empty result has
 trailing CR/LF characters removed, while embedded line breaks remain buffer
-text. On success the widget replaces the buffer with a `#`-prefixed comment
-line containing the flattened original request followed by a newline and the
-generated text, with the cursor at the end; pressing Enter runs only the
-generated command because the shell ignores the comment. Requests are
-flattened by replacing CR, LF, and TAB with spaces so they stay one comment
-line. Empty input, non-zero status, empty output, and malformed target files do
-not replace user content. The result is assigned as text and never evaluated.
-For Fish, the comment and generated text are assembled with a shell-produced
-newline inside one collected buffer value; a literal `\\n` sequence is not
-treated as a newline and is therefore not emitted.
+text. On success the widget records the flattened original request as a
+`#`-prefixed comment in the shell history (Bash `history -s`, Zsh `print -s`,
+Fish `builtin history append`) and replaces the buffer with only the generated
+text, with the cursor at the end; pressing Enter runs only the generated command
+as its own history entry. The comment is recorded before any execution, so the
+request stays recallable from the shell history even when the command is never
+run, and a leading `# ` prefix is stripped from the buffer before asking so a
+recalled comment can be edited and re-asked. Requests are flattened by replacing
+CR, LF, and TAB with spaces so they stay one comment line. Empty input, non-zero
+status, empty output, and malformed target files do not replace user content.
+The result is assigned as text and never evaluated.
 
 ## Completion generation
 

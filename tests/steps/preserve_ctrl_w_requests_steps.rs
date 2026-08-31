@@ -59,20 +59,6 @@ fn file_should_not_exist(_world: &mut WatnWorld, path: String) {
     );
 }
 
-#[then("the preserved request comment should be a single line")]
-fn preserved_request_comment_single_line(world: &mut WatnWorld) {
-    let buffer = current_buffer(world);
-    assert_eq!(
-        buffer.matches('\n').count(),
-        1,
-        "the request comment should contain no embedded line breaks"
-    );
-    assert!(
-        buffer.starts_with("# "),
-        "the preserved request should be a comment"
-    );
-}
-
 #[given("an installed Zsh and Fish shortcut")]
 fn installed_zsh_and_fish_shortcut(world: &mut WatnWorld) {
     let temp = tempfile::tempdir().expect("create Zsh and Fish temp dir");
@@ -102,20 +88,21 @@ fn installed_zsh_and_fish_shortcut(world: &mut WatnWorld) {
     ]);
 }
 
-#[then("the Zsh configuration should keep the request above the generated command")]
+#[then("the Zsh configuration should record the request in the shell history")]
 fn zsh_request_comment(world: &mut WatnWorld) {
     let content = std::fs::read_to_string(world.shortcut_targets.get("zsh").unwrap())
         .expect("read Zsh target");
-    assert!(content.contains("comment=${question//$'\\n'/ }"));
-    assert!(content.contains("BUFFER=\"# $comment\"$'\\n'\"$result\""));
+    assert!(content.contains("print -s \"# $comment\""));
+    assert!(content.contains("BUFFER=\"$result\""));
+    assert!(content.contains("question=${question#\\# }"));
 }
 
-#[then("the Fish configuration should keep the request above the generated command")]
+#[then("the Fish configuration should record the request in the shell history")]
 fn fish_request_comment(world: &mut WatnWorld) {
     let content = std::fs::read_to_string(world.shortcut_targets.get("fish").unwrap())
         .expect("read Fish target");
     assert!(content.contains("set -l comment (string replace -a '\\n' ' ' -- \"$question\")"));
-    assert!(content
-        .contains("set -l buffer (printf '%s\\n%s' \"# $comment\" \"$result\" | string collect)"));
-    assert!(content.contains("commandline -r -- \"$buffer\""));
+    assert!(content.contains("builtin history append -- \"# $comment\""));
+    assert!(content.contains("commandline -r -- \"$result\""));
+    assert!(content.contains("(string replace -r '^# +' '' -- \"$question\")"));
 }
