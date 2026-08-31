@@ -128,7 +128,7 @@ fn setup_chat_completion_mock(
     let mock = server_ref.mock(move |when, then| {
         let mut when = when.method(Method::POST);
         if let Some(body_req) = &body_requirement {
-            when = when.body_contains(body_req);
+            when = when.body_includes(body_req);
         }
         if let Some(ref auth) = auth_clone {
             when = when.header("Authorization", auth);
@@ -263,7 +263,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                         .mock(move |when, then| {
                             when.method(Method::POST)
                                 .path("/chat/completions")
-                                .body_contains("\"reasoning_effort\"");
+                                .body_includes("\"reasoning_effort\"");
                             then.status(400).body(r#"{"error":"should not reason"}"#);
                         })
                         .id,
@@ -379,7 +379,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                             .mock(move |when, then| {
                                 when.method(Method::POST)
                                     .path("/chat/completions")
-                                    .body_contains("\"reasoning_effort\"");
+                                    .body_includes("\"reasoning_effort\"");
                                 then.status(400).body(r#"{"error":"should not reason"}"#);
                             })
                             .id,

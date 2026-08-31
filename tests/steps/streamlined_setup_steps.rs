@@ -2559,7 +2559,7 @@ fn small_role_request_contains_reasoning_effort(world: &mut WatnWorld, expected:
         .mock(move |when, then| {
             when.method(httpmock::Method::POST)
                 .path("/v1/chat/completions")
-                .body_contains(expected_body.as_str());
+                .body_includes(expected_body.as_str());
             then.status(200)
                 .header("Content-Type", "text/event-stream")
                 .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
