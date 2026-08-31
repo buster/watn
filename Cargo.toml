@@ -21,6 +21,7 @@ exclude = [
     ".opencode/",
     ".ralph/",
     ".github/",
+    "AGENTS.md",
     "PLAN.md",
     "QUESTIONS.md",
     "cliff.toml",
