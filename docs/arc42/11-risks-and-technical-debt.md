@@ -54,7 +54,7 @@
 | R-048 | Automatic first-use onboarding could surprise a user by mutating shell files | Medium | High | Make the shortcut question explicit and opt-in; Enter/no and empty selection perform no shell I/O; report every selected target before returning |
 | R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
 | R-050 | A terminal color palette or environment color policy may make the green active border hard to distinguish or suppress ANSI styling | Low | Low | Keep the visible cursor and focus text unchanged, remove inherited `NO_COLOR` in the PTY child, set `TERM=xterm-256color`, parse green SGR foreground parameters semantically, and retain the cursor/focus text as redundant cues |
-| R-055 | Flattened comment construction or interactive-buffer redraw could misrepresent the request or not reflect wrapped input | Low | Low | Replace only CR, LF, and TAB with spaces so the request stays one comment line; verify the actual Fish buffer newline while retaining existing Bash commit-time execution and no-evaluation coverage; interactive wrapped-line redraw remains outside the measured contract |
+| R-055 | Flattened comment construction or per-shell history recording could misrepresent the request or fail on shells whose history API differs | Low | Low | Replace only CR, LF, and TAB with spaces so the request stays one comment line; use the native history APIs (`history -s`, `print -s`, `builtin history append`); verify the real Fish buffer and Bash commit-time execution and no-evaluation coverage; interactive wrapped-line redraw remains outside the measured contract |
 | R-056 | The 500 ms grace hard-exit can cut off final buffered bytes in a stalled or connecting stream | Medium | Low | Keep the parse-loop flag check for the common streaming case, preserve visible content, and exit 130 without an error; a partial tail is an accepted cost of hard cancellation |
 | R-057 | The detached worker thread can outlive the main thread by microseconds after the grace expires, racing process teardown | Low | Low | Stdout writes are internally locked; the process exits immediately after the flag-driven cleanup so no shared mutable state is exposed |
 | R-058 | A provider-local catalog endpoint may be stale after provider or endpoint change | Medium | High | Invalidate the catalog state on provider/endpoint/credential change, re-probe, preserve the prior saved base on failed edits, and use manual mode when no base is available |
@@ -191,10 +191,12 @@ The shell-shortcut decision has these durable consequences:
 - Multiline output: embedded line breaks remain text in the buffer while only
   trailing CR/LF is normalized; R-047 and the quality scenarios verify that the
   text is never evaluated.
-- Request preservation: the buffer is replaced with a flattened `#`-comment of
-  the request followed by the generated command; the shell executes only the
-  command on Enter. R-055 covers comment flattening and interactive-buffer
-  testability limits, while QS-055 and the real-Bash E2E verify the contract.
+- Request preservation: the widget records a flattened `#`-comment of the
+  request in the shell history and leaves only the generated command in the
+  buffer; the shell executes only the command on Enter and the request stays
+  recallable even when the command is never run. R-055 covers comment
+  flattening, per-shell history APIs, and interactive-buffer testability
+  limits, while QS-055 and the real-Bash E2E verify the contract.
 
 ## ADR-0016 consequence coverage
 

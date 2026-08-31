@@ -198,6 +198,10 @@ fn fish_command_line(world: &mut WatnWorld, expected: String) {
         .as_deref()
         .expect("captured Fish command line");
     assert_eq!(actual, expected);
-    assert_eq!(actual.matches('\n').count(), 1);
+    assert_eq!(
+        actual.matches('\n').count(),
+        0,
+        "the buffer should hold only the generated command"
+    );
     assert!(!actual.contains("\\n"));
 }

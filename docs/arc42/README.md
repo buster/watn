@@ -43,8 +43,10 @@ The shared setup flow also offers an optional Ctrl-W shortcut for Bash, Zsh, and
 Fish, including during implicit first-use onboarding. Installation owns one
 marked startup-file block per selected shell, uses atomic replacement, reports
 independent target results, and invokes `command watn -- "$question"` without
-evaluating generated output. Successful Fish replacement buffers use an actual
-line break between the request comment and generated command.
+evaluating generated output. The widget records the request as a `#`-prefixed
+history comment (recallable and re-askable via the shell history) and leaves
+only the generated command in the buffer; pressing Enter executes that command
+as its own history entry.
 
 ## Archive Status
 

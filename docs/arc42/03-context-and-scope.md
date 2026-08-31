@@ -41,7 +41,7 @@ graph TB
 | LLM provider and provider-local catalog | API key, completion endpoint, provider-local catalog endpoint, search query | HTTP POST to `/v1/chat/completions` and HTTP GET to `/models`, paginated `/models`, and `/models?search=...`; the same provider credential is used and catalog requests never receive chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
 | Shell startup file | Optional selected-shell installation | One marked native widget block and a reload instruction; malformed or failed targets remain unchanged |
-| Bash/Zsh/Fish line editor | Ctrl-W and the complete current command buffer | A successful non-empty `watn` result inserted below a comment line containing the original request, without evaluation; Fish receives an actual line break in the editable buffer; failures preserve the buffer |
+| Bash/Zsh/Fish line editor | Ctrl-W and the complete current command buffer | A successful non-empty `watn` result recorded as a `#`-prefixed history comment of the original request plus a buffer holding only the generated command, without evaluation; a leading `# ` is stripped before asking so recalled comments can be re-asked; failures preserve the buffer |
 
 ## Technical context
 

@@ -16,6 +16,10 @@ fn captured_bash_line(world: &WatnWorld) -> &str {
         .expect("Bash process line output")
 }
 
+fn captured_bash_history(world: &WatnWorld) -> &str {
+    super::interactive_shell_shortcut_steps::current_history(world)
+}
+
 fn assert_shell_syntax(shell: &str, name: &str, path: &Path, required: bool) {
     let result = Command::new(shell)
         .args(["-n", path.to_str().expect("UTF-8 shell target path")])
@@ -57,7 +61,7 @@ fn run_generated_bash(world: &mut WatnWorld, input: String) {
     super::interactive_shell_shortcut_steps::run_bash_widget(world, input);
 }
 
-#[then(regex = r##"^the Bash process command line should contain \"([^\"]*)\"$"##)]
+#[then(regex = r##"^the Bash process command line should be exactly \"([^\"]*)\"$"##)]
 fn bash_process_line(world: &mut WatnWorld, expected: String) {
     let line = captured_bash_line(world);
     assert_eq!(line, expected.replace("\\n", "\n"));
@@ -72,16 +76,13 @@ fn bash_process_no_eval(_world: &mut WatnWorld) {
     assert!(!std::path::Path::new("/tmp/watn-shortcut-should-not-run").exists());
 }
 
-#[then("the Bash process should preserve the request as a comment")]
-fn bash_process_preserves_request(world: &mut WatnWorld) {
-    let line = captured_bash_line(world);
+#[then(
+    regex = r##"^the Bash process should record the request \"([^\"]*)\" in the shell history$"##
+)]
+fn bash_process_records_request(world: &mut WatnWorld, comment: String) {
+    let history = captured_bash_history(world);
     assert!(
-        line.starts_with("# "),
-        "the request should be a shell comment"
-    );
-    assert_eq!(
-        line.matches('\n').count(),
-        1,
-        "the request comment should occupy one line"
+        history.contains(&comment),
+        "the shell history should contain the request comment {comment:?}, got: {history:?}"
     );
 }

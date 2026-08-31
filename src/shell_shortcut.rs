@@ -650,6 +650,10 @@ _watn_widget() {
     if [[ -z $question ]]; then
         return
     fi
+    question=${question#\# }
+    if [[ -z $question ]]; then
+        return
+    fi
 
     result=$(command watn -- "$question")
     local status=$?
@@ -661,7 +665,8 @@ _watn_widget() {
             local comment="${question//$'\n'/ }"
             comment="${comment//$'\r'/ }"
             comment="${comment//$'\t'/ }"
-            READLINE_LINE="# $comment"$'\n'"$result"
+            history -s "# $comment"
+            READLINE_LINE="$result"
             READLINE_POINT=${#READLINE_LINE}
         fi
     fi
@@ -681,6 +686,11 @@ _watn_widget() {
         zle redisplay
         return
     fi
+    question=${question#\# }
+    if [[ -z $question ]]; then
+        zle redisplay
+        return
+    fi
 
     if result=$(command watn -- "$question"); then
         while [[ $result == *$'\r' || $result == *$'\n' ]]; do
@@ -691,7 +701,8 @@ _watn_widget() {
             comment=${question//$'\n'/ }
             comment=${comment//$'\r'/ }
             comment=${comment//$'\t'/ }
-            BUFFER="# $comment"$'\n'"$result"
+            print -s "# $comment"
+            BUFFER="$result"
             CURSOR=${#BUFFER}
         fi
     fi
@@ -713,6 +724,11 @@ function _watn_widget
         commandline -f repaint
         return
     end
+    set question (string replace -r '^# +' '' -- "$question")
+    if test -z "$question"
+        commandline -f repaint
+        return
+    end
 
     set -l result (command watn -- "$question" | string collect)
     set -l status_code $pipestatus[1]
@@ -722,8 +738,8 @@ function _watn_widget
             set -l comment (string replace -a '\n' ' ' -- "$question")
             set comment (string replace -a '\r' ' ' -- "$comment")
             set comment (string replace -a '\t' ' ' -- "$comment")
-            set -l buffer (printf '%s\n%s' "# $comment" "$result" | string collect)
-            commandline -r -- "$buffer"
+            builtin history append -- "# $comment"
+            commandline -r -- "$result"
         end
     end
     commandline -f repaint

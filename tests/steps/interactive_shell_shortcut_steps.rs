@@ -702,6 +702,7 @@ READLINE_POINT=0
 _watn_widget
 printf 'LINE<<%s>>\n' "$READLINE_LINE"
 printf 'POINT<<%s>>\n' "$READLINE_POINT"
+printf 'HIST<<%s>>\n' "$(history | sed 's/^ *[0-9]*  *//')"
 "#;
     let current_path = std::env::var("PATH").unwrap_or_default();
     let path = format!("{}:{current_path}", bin.display());
@@ -768,6 +769,36 @@ fn cursor_end(world: &mut WatnWorld) {
         .and_then(|value| value.split(">>").next())
         .expect("widget line output");
     assert_eq!(point, line.chars().count());
+}
+
+pub(crate) fn current_history(world: &WatnWorld) -> &str {
+    world
+        .shortcut_output
+        .as_deref()
+        .unwrap_or_default()
+        .split("HIST<<")
+        .nth(1)
+        .and_then(|value| value.split(">>").next())
+        .expect("generated Bash history output")
+}
+
+#[then(regex = r##"^the shell history should contain the recorded request comment "([^"]*)"$"##)]
+fn history_contains_request_comment(world: &mut WatnWorld, comment: String) {
+    let history = current_history(world);
+    assert!(
+        history.contains(&comment),
+        "the shell history should contain the request comment {comment:?}, got: {history:?}"
+    );
+}
+
+#[then(regex = r##"^the recorded request history entry should be exactly "([^"]*)"$"##)]
+fn history_entry_exact(world: &mut WatnWorld, comment: String) {
+    let history = current_history(world);
+    assert_eq!(
+        history,
+        comment.replace("\\n", "\n"),
+        "the recorded request history entry should match exactly"
+    );
 }
 
 #[given("an installed Bash shortcut and a fake watn that records invocations")]
