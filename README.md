@@ -14,18 +14,8 @@ or pipe the output anywhere.
 
 ## Demo
 
-```text
-┌──────────────────────────────────────────────┐
-│ $ watn "files changed in the last day"       │
-│                                              │
-│   find . -type f -mtime -1                   │
-│                                              │
-│   deepseek · 100 tok/s · 5.3s · ¯\_(ツ)_/¯   │
-└──────────────────────────────────────────────┘
-```
-
-The demo output is illustrative. The model, throughput, elapsed time, and cost
-depend on the configured provider, response, and local runtime.
+*Ctrl-W shell shortcut to ask watn directly from the current terminal prompt.*
+![shell shortcut](https://raw.githubusercontent.com/buster/watn/main/ctrlw.gif)
 
 ## Quick start
 
@@ -115,9 +105,6 @@ source watn.bash
 *Illustrative `watn setup` wizard screenshot. The current wizard has seven
 pages; this screenshot predates that flow.*
 ![watn setup page](https://raw.githubusercontent.com/buster/watn/main/watnsetup.png)
-
-*Ctrl-W shell shortcut to ask watn directly from the terminal prompt.*
-![shell shortcut](https://raw.githubusercontent.com/buster/watn/main/ctrlw.gif)
 
 *Illustrative command-generation flow.*
 ![command generation](https://raw.githubusercontent.com/buster/watn/main/watncmd.gif)
