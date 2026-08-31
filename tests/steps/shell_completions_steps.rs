@@ -422,7 +422,7 @@ fn config_path(world: &WatnWorld) -> std::path::PathBuf {
 
 fn sentinel_hits(world: &WatnWorld) -> usize {
     let id = world.mock_server.1.expect("sentinel mock");
-    httpmock::Mock::new(id, world.mock_server.0.as_ref().expect("sentinel server")).hits()
+    httpmock::Mock::new(id, world.mock_server.0.as_ref().expect("sentinel server")).calls()
 }
 
 fn completion_environment(world: &WatnWorld) -> watn::shell_shortcut::ShellEnvironment {

@@ -425,7 +425,7 @@ fn suggestions_exclude(world: &mut WatnWorld, model: String) {
 fn no_provider_search(world: &mut WatnWorld) {
     let server = world.mock_server.0.as_ref().expect("catalog server");
     for id in &world.search_mock_ids {
-        assert_eq!(httpmock::Mock::new(*id, server).hits(), 0);
+        assert_eq!(httpmock::Mock::new(*id, server).calls(), 0);
     }
 }
 
@@ -443,7 +443,7 @@ fn provider_received_search(world: &mut WatnWorld, query: String) {
         world
             .search_mock_ids
             .iter()
-            .any(|id| httpmock::Mock::new(*id, server).hits() > 0),
+            .any(|id| httpmock::Mock::new(*id, server).calls() > 0),
         "provider did not receive a search request"
     );
 }

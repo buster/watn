@@ -656,7 +656,7 @@ fn api_request_includes_reasoning(w: &mut WatnWorld, effort: String) {
         w.exit_status
     );
     assert!(
-        mock.hits() > 0,
+        mock.calls() > 0,
         "expected mock to be hit (reasoning effort {})",
         effort
     );
@@ -674,7 +674,7 @@ fn api_request_not_include_reasoning(w: &mut WatnWorld) {
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let blocking = httpmock::Mock::new(blocking_id, server);
     assert_eq!(
-        blocking.hits(),
+        blocking.calls(),
         0,
         "expected no reasoning_effort in the request, but a reasoning request was blocked"
     );
@@ -771,7 +771,7 @@ fn request_sent_to_provider(w: &mut WatnWorld, _provider: String) {
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
     assert!(
-        mock.hits() > 0,
+        mock.calls() > 0,
         "expected chat completion request to be sent to the provider"
     );
 }
@@ -782,7 +782,7 @@ fn request_sent_to_url(w: &mut WatnWorld, _url: String) {
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
     assert!(
-        mock.hits() > 0,
+        mock.calls() > 0,
         "expected chat completion request to be sent to the URL"
     );
 }
@@ -795,7 +795,7 @@ fn should_query_models_at(w: &mut WatnWorld, _url: String) {
         .expect("no models mock was set up — add pending_mock_returned_models to the Given step");
     let mock = httpmock::Mock::new(mock_id, server);
     assert!(
-        mock.hits() > 0,
+        mock.calls() > 0,
         "expected model list request; output={:?}; stderr={:?}",
         w.output,
         w.stderr_output
@@ -808,7 +808,7 @@ fn request_has_auth_header(w: &mut WatnWorld, _key: String) {
     let server = w.mock_server.0.as_ref().expect("no mock server");
     let mock = httpmock::Mock::new(mock_id, server);
     assert!(
-        mock.hits() > 0,
+        mock.calls() > 0,
         "expected chat completion request with Authorization header"
     );
 }

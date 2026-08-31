@@ -90,7 +90,7 @@ fn authentication_failure(world: &mut WatnWorld) {
 fn no_catalog_request(world: &mut WatnWorld) {
     let id = world.models_mock_id.expect("catalog mock");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(id, server).calls(), 0);
 }
 
 #[then(regex = r##"^the saved api_key should remain exactly "([^"]+)"$"##)]

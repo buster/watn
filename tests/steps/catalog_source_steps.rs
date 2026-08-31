@@ -100,7 +100,7 @@ fn catalog_page_and_search(world: &mut WatnWorld, page: u32, limit: u32, query: 
 fn page_request(world: &mut WatnWorld, _path: String) {
     let server = world.mock_server.0.as_ref().expect("catalog server");
     let id: usize = world.pending_config["page_mock"].parse().expect("mock id");
-    assert_eq!(httpmock::Mock::new(id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(id, server).calls(), 1);
 }
 
 #[then(regex = r##"^the catalog search request should be GET "([^"]+)" on the LiteLLM endpoint$"##)]
@@ -109,7 +109,7 @@ fn search_request(world: &mut WatnWorld, _path: String) {
     let id: usize = world.pending_config["search_mock"]
         .parse()
         .expect("mock id");
-    assert_eq!(httpmock::Mock::new(id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(id, server).calls(), 1);
 }
 
 #[then(
@@ -142,7 +142,7 @@ fn provider_catalog_models(world: &mut WatnWorld, values: String) {
 fn provider_request_used(world: &mut WatnWorld) {
     let id = world.models_mock_id.expect("catalog mock");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert!(httpmock::Mock::new(id, server).calls() > 0);
 }
 
 #[then(regex = r##"^the model catalog request should use GET path "([^"]+)"$"##)]
@@ -157,7 +157,7 @@ fn catalog_get_path(world: &mut WatnWorld, path: String) {
 fn provider_auth_header(world: &mut WatnWorld, expected: String) {
     let id = world.models_mock_id.expect("catalog mock");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert!(httpmock::Mock::new(id, server).calls() > 0);
     assert!(expected == "sk-provider-key" || expected == "sk-litellm-key");
 }
 
@@ -227,12 +227,12 @@ fn litellm_request_used(world: &mut WatnWorld) {
     );
     let id = world.models_mock_id.expect("catalog mock");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert!(httpmock::Mock::new(id, server).calls() > 0);
 }
 
 #[then("the model catalog request should not include an Authorization header")]
 fn litellm_request_without_auth(world: &mut WatnWorld) {
     let id = world.models_mock_id.expect("catalog mock");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert!(httpmock::Mock::new(id, server).calls() > 0);
 }

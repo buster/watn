@@ -882,14 +882,14 @@ fn saved_provider_endpoint(world: &mut WatnWorld, endpoint: String) {
 fn model_setup_does_not_start(world: &mut WatnWorld) {
     let mock_id = world.models_mock_id.expect("models mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 0);
 }
 
 #[then(regex = r#"^no model catalog request should be sent to \"([^\"]+)\"$"#)]
 fn no_model_catalog_request(world: &mut WatnWorld, _path: String) {
     let mock_id = world.models_mock_id.expect("models mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 0);
 }
 
 #[then("the config file should not contain selected tier assignments")]
@@ -904,7 +904,7 @@ fn config_has_no_selected_tiers(world: &mut WatnWorld) {
 fn no_original_chat_completion(world: &mut WatnWorld) {
     let mock_id = world.mock_server.1.expect("chat mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 0);
 }
 
 #[given("the request transport returns a successful response for the implicit OpenRouter request")]
@@ -1087,10 +1087,10 @@ fn model_catalog_hits_ephemeral_path(world: &mut WatnWorld, path: String) {
         .and_then(|id| id.parse().ok())
         .expect("models mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    let fixture_hits = httpmock::Mock::new(fixture_mock_id, server).hits();
+    let fixture_hits = httpmock::Mock::new(fixture_mock_id, server).calls();
     let helper_hits = world
         .models_mock_id
-        .map(|id| httpmock::Mock::new(id, server).hits())
+        .map(|id| httpmock::Mock::new(id, server).calls())
         .unwrap_or(0);
     assert!(fixture_hits > 0 || helper_hits > 0);
 }
@@ -1152,7 +1152,7 @@ fn request_hits_e2e_transport(world: &mut WatnWorld, path: String) {
         .parse()
         .expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert!(httpmock::Mock::new(id, server).calls() > 0);
 }
 
 #[then(regex = r#"^the persisted provider endpoint should still be exactly \"([^\"]+)\"$"#)]
@@ -1177,7 +1177,7 @@ fn request_uses_implicit_openrouter(world: &mut WatnWorld) {
         .parse()
         .expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert!(httpmock::Mock::new(id, server).hits() > 0);
+    assert!(httpmock::Mock::new(id, server).calls() > 0);
 }
 
 #[then(regex = r#"^the API request should use API key \"([^\"]+)\"$"#)]
@@ -1195,7 +1195,7 @@ fn api_request_uses_key(world: &mut WatnWorld, key: String) {
         .expect("chat mock id");
     let id = id_value.parse().expect("valid mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    let hits = httpmock::Mock::new(id, server).hits();
+    let hits = httpmock::Mock::new(id, server).calls();
     if hits == 0 {
         assert!(
             world
@@ -1236,12 +1236,12 @@ fn api_request_sent_to(world: &mut WatnWorld, endpoint: String) {
     assert_eq!(format!("{configured}/chat/completions"), endpoint);
     let mock_id = world.mock_server.1.expect("chat mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
+    assert!(httpmock::Mock::new(mock_id, server).calls() > 0);
 }
 
 #[then(regex = r#"^no request should be sent to \"([^\"]+)\"$"#)]
 fn no_request_sent_to(world: &mut WatnWorld, _path: String) {
     let mock_id = world.mock_server.1.expect("chat mock id");
     let server = world.mock_server.0.as_ref().expect("mock server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 0);
 }
