@@ -609,7 +609,7 @@ fn setup_coordinator_should_open(world: &mut WatnWorld) {
 fn original_request_not_sent_before_setup(world: &mut WatnWorld) {
     let mock_id = world.mock_server.1.expect("chat request mock");
     let server = world.mock_server.0.as_ref().expect("chat request server");
-    assert_eq!(httpmock::Mock::new(mock_id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(mock_id, server).calls(), 0);
 }
 
 #[then(regex = r##"^the selected reasoning should be exactly "([^"]+)"$"##)]
@@ -1841,7 +1841,7 @@ fn provider_catalog_request_uses_provider_credential(world: &mut WatnWorld) {
         .parse()
         .expect("provider catalog mock id");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert_eq!(httpmock::Mock::new(id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(id, server).calls(), 1);
 }
 
 #[then("every provider-local catalog request should receive the provider models")]
@@ -1865,7 +1865,7 @@ fn legacy_litellm_receives_zero_requests(world: &mut WatnWorld) {
         .parse()
         .expect("legacy catalog mock id");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert_eq!(httpmock::Mock::new(id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(id, server).calls(), 0);
 }
 
 #[then("the legacy LiteLLM configuration should remain unchanged")]
@@ -2078,8 +2078,8 @@ fn provider_page_and_search_requests(world: &mut WatnWorld, _page: String, _sear
         .parse()
         .expect("search mock id");
     let server = world.mock_server.0.as_ref().expect("catalog server");
-    assert_eq!(httpmock::Mock::new(page_id, server).hits(), 1);
-    assert_eq!(httpmock::Mock::new(search_id, server).hits(), 1);
+    assert_eq!(httpmock::Mock::new(page_id, server).calls(), 1);
+    assert_eq!(httpmock::Mock::new(search_id, server).calls(), 1);
 }
 
 #[then("setup should report that catalog discovery is unusable")]
@@ -2485,7 +2485,7 @@ fn request_contains_reasoning_effort_exact(world: &mut WatnWorld, expected: Stri
     assert_eq!(body, &format!("\"reasoning_effort\":\"{expected}\""));
     let mock_id = world.mock_server.1.expect("request mock");
     let server = world.mock_server.0.as_ref().expect("request mock server");
-    assert!(httpmock::Mock::new(mock_id, server).hits() > 0);
+    assert!(httpmock::Mock::new(mock_id, server).calls() > 0);
 }
 
 #[then(regex = r##"^setup should report that the reasoning value is invalid$"##)]
@@ -2577,7 +2577,7 @@ fn small_role_request_contains_reasoning_effort(world: &mut WatnWorld, expected:
     );
     let mock_id = world.mock_server.1.expect("request mock");
     let server = world.mock_server.0.as_ref().expect("request mock server");
-    let hits = httpmock::Mock::new(mock_id, server).hits();
+    let hits = httpmock::Mock::new(mock_id, server).calls();
     assert!(
         hits > 0,
         "expected reasoning request mock hit; hits={hits}, stdout={:?}, stderr={:?}",
@@ -2610,7 +2610,7 @@ fn api_request_omits_reasoning(world: &mut WatnWorld) {
         .blocking_mock_id
         .expect("reasoning assertion mock was not installed");
     let server = world.mock_server.0.as_ref().expect("request mock server");
-    assert_eq!(httpmock::Mock::new(id, server).hits(), 0);
+    assert_eq!(httpmock::Mock::new(id, server).calls(), 0);
 }
 
 #[then("model setup should warn that catalog discovery is unavailable")]
