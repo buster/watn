@@ -6,6 +6,46 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-01
+
+### Bug Fixes
+
+- **quicksetup:** Use valid OpenRouter default model
+
+
+### Features
+
+- **quicksetup:** Quick setup without a terminal prints guidance instead of asking
+
+- **quicksetup:** A model question without a suggestion requires a non-empty answer
+
+- **quicksetup:** Quick setup does not ask reasoning questions and stores no reasoning
+
+- **quicksetup:** An OpenAI endpoint suggests the OpenAI credential and no model
+
+- **quicksetup:** Shell integrations are pre-selected only for shells available on the path
+
+- **quicksetup:** Explicit provider selection skips the first-run quick setup
+
+- **quicksetup:** Aborting explicit quick setup leaves the previous configuration unchanged
+
+- **quicksetup:** A failed configuration write installs no shell integration
+
+- **quicksetup:** A failed shell installation keeps the saved configuration
+
+- **quicksetup:** An invalid endpoint value re-asks for the endpoint
+
+- **quicksetup:** An unknown shell name shows an error and keeps the list open
+
+- **quicksetup:** A re-asked small model stores the later answer on completion
+
+
+### Refactoring
+
+- **quicksetup:** Move shells_available_on_path to shell_shortcut per design
+
+- **quicksetup:** Drop redundant validators and flatten endpoint answer fallback
+
 ## [0.3.0] - 2026-08-31
 
 ### Bug Fixes
@@ -505,3 +545,5 @@ Bright fireant
 [0.2.1]: https://github.com/buster/watn/compare/v0.2.0...v0.2.1
 
 [0.3.0]: https://github.com/buster/watn/compare/v0.2.1...v0.3.0
+
+[0.3.1]: https://github.com/buster/watn/compare/v0.3.0...v0.3.1
