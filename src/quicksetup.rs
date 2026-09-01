@@ -6,7 +6,7 @@ use crate::provider::setup::{
     build_provider_draft, normalize_endpoint, suggested_api_key_env, OPENROUTER_ENDPOINT,
 };
 use crate::shell_completion;
-use crate::shell_shortcut::{self, Shell, ShellEnvironment};
+use crate::shell_shortcut::{self, Shell, ShellEnvironment, shells_available_on_path};
 
 const OPENROUTER_SUGGESTED_SMALL_MODEL: &str = "google/gemma-4-flash";
 
@@ -140,18 +140,6 @@ fn selected_shells(selected: &[bool; 3]) -> Vec<Shell> {
         .enumerate()
         .filter_map(|(index, shell)| selected[index].then_some(shell))
         .collect()
-}
-
-fn shells_available_on_path() -> [bool; 3] {
-    let path = std::env::var("PATH").unwrap_or_default();
-    Shell::ALL.map(|shell| {
-        path.split(':').any(|dir| {
-            !dir.is_empty() && std::env::var("PATH").is_ok() && {
-                let candidate = std::path::Path::new(dir).join(shell.lowercase_name());
-                candidate.is_file()
-            }
-        })
-    })
 }
 
 fn save_configuration(endpoint: &str, credential: &str, models: [&str; 3]) -> Result<(), Error> {
