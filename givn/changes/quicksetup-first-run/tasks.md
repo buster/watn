@@ -194,14 +194,19 @@ unimplemented steps: `unimplemented!()`.
 
 ### 12. Explicit quick setup overwrites an existing configuration
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): overwrite persistence (provider
-  migration to `custom`, literal credential, tier overwrite); shell
-  deselection writes nothing.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `test(e2e): Explicit quick setup overwrites an existing configuration`
-  Hash:
+- [x] RED: e2e runner targeted → real finding:
+  `shell target unexpectedly created: <tmp>/.bashrc`. With no PATH stubs in
+  the scenario nothing was pre-selected, so typing shell names SELECTED them
+  and confirm installed all three. Fixed by adding the availability Given so
+  the deselection semantics are exercised as intended.
+- [x] GREEN: production files: none (overwrite persistence through the shared
+  migration already in src/quicksetup.rs); delta-spec fix only. Targeted run
+  → `1 scenario (1 passed)`, `20 steps (20 passed)`. Provider migrated to
+  `custom`, literal credential stored, zero catalog requests, zero shell
+  writes after deselecting everything.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `test(e2e): Explicit quick setup overwrites an existing configuration`
+  Hash: 0d85936
 
 ### 13. Aborting quick setup with Ctrl-C on the first run leaves no configuration
 

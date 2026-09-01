@@ -69,7 +69,7 @@ Feature: Quick setup first run
     And no model catalog request should be sent
     And no shell target file should change
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Aborting quick setup with Ctrl-C on the first run leaves no configuration
     Given no watn configuration exists
     And provider requests are captured by a sentinel
