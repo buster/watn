@@ -104,13 +104,16 @@ unimplemented steps: `unimplemented!()`.
 
 ### 6. Explicit provider selection skips the first-run quick setup
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): first-run branch in the request path
-  inside the existing implicit-selection gate; non-TTY path unchanged.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): Explicit provider selection skips the first-run quick setup`
-  Hash:
+- [x] RED: not applicable — all steps were pre-implemented/reused
+  (`I run a request for...` fixture, reused status/config Thens, and the
+  quick-setup-mention assertion); legitimate immediate GREEN per the
+  step-reuse rule. The bypass invariant holds without new production code;
+  the first-run branch itself is exercised by @e2e task 10.
+- [x] GREEN: production files: none. Targeted run → `1 scenario (1 passed)`,
+  `6 steps (6 passed)`.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `feat(quicksetup): Explicit provider selection skips the first-run quick setup`
+  Hash: 4f33af9
 
 ### 7. Aborting explicit quick setup leaves the previous configuration unchanged
 

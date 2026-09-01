@@ -129,7 +129,7 @@ Feature: Quick setup first run
     And the output should not mention the quick setup
     And no config file should exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Aborting explicit quick setup leaves the previous configuration unchanged
     Given an existing watn configuration contains provider "openai" with credential "sk-old-key"
     And the existing config content is recorded

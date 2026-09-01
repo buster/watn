@@ -81,6 +81,20 @@ fn quicksetup_config_content(world: &WatnWorld) -> String {
     std::fs::read_to_string(quicksetup_config_path(world)).expect("quicksetup config file")
 }
 
+/// `ensure_test_env` only writes the fixture config when it creates the temp
+/// dir itself; quicksetup scenarios pre-create it for HOME/PATH isolation, so
+/// materialize the fixture config here before spawning the binary.
+fn ensure_quicksetup_fixture_config(world: &mut WatnWorld) {
+    if let Some(raw) = world.raw_config.clone() {
+        let path = quicksetup_config_path(world);
+        if !path.exists() {
+            std::fs::create_dir_all(path.parent().expect("config parent"))
+                .expect("create config dir");
+            std::fs::write(&path, raw).expect("write fixture config");
+        }
+    }
+}
+
 #[given("no watn configuration exists")]
 fn no_watn_configuration(world: &mut WatnWorld) {
     isolate_quicksetup_env(world);
@@ -159,6 +173,7 @@ fn fish_target_blocked(world: &mut WatnWorld) {
 #[when("I start `watn quicksetup` in a terminal")]
 fn start_quicksetup_in_terminal(world: &mut WatnWorld) {
     isolate_quicksetup_env(world);
+    ensure_quicksetup_fixture_config(world);
     let session = start_pty_session(world, &["quicksetup"]);
     world.pty_session = Some(session);
 }
@@ -166,12 +181,14 @@ fn start_quicksetup_in_terminal(world: &mut WatnWorld) {
 #[when(regex = r#"^I run a request for \"([^\"]+)\" without a terminal$"#)]
 fn run_request_without_terminal(world: &mut WatnWorld, question: String) {
     isolate_quicksetup_env(world);
+    ensure_quicksetup_fixture_config(world);
     run_binary_with_state(world, &[question.as_str()], None);
 }
 
 #[when("I run `watn quicksetup` without a terminal")]
 fn run_quicksetup_without_terminal(world: &mut WatnWorld) {
     isolate_quicksetup_env(world);
+    ensure_quicksetup_fixture_config(world);
     run_binary_with_state(world, &["quicksetup"], None);
 }
 
@@ -391,8 +408,22 @@ fn complete_with_shells(world: &mut WatnWorld) {
 }
 
 #[when("I abort the quick setup with Ctrl-C")]
-fn abort_quicksetup(_world: &mut WatnWorld) {
-    unimplemented!("abort flow")
+fn abort_quicksetup(world: &mut WatnWorld) {
+    let path = quicksetup_config_path(world);
+    let content = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "config file not readable at abort: {} ({error})",
+            path.display()
+        )
+    });
+    world
+        .pending_config
+        .insert("config_before".to_string(), content);
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\x03");
+    let session = world.pty_session.take().expect("quicksetup PTY session");
+    finish_pty_session(world, session);
 }
 
 #[then("quick setup should exit successfully")]
@@ -505,6 +536,18 @@ fn fish_has_ctrlw_block(_world: &mut WatnWorld) {
 }
 
 #[then("no shell target file should change")]
-fn no_shell_target_changes(_world: &mut WatnWorld) {
-    unimplemented!("shell target unchanged assertion")
+fn no_shell_target_changes(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("quicksetup temp dir");
+    let home = dir.path();
+    for target in [
+        home.join(".bashrc"),
+        home.join(".zshrc"),
+        home.join("fish").join("config.fish"),
+    ] {
+        assert!(
+            !target.exists(),
+            "shell target unexpectedly created: {}",
+            target.display()
+        );
+    }
 }
