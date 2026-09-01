@@ -12,12 +12,7 @@ Feature: Streamlined setup flow
     And  choose to paste an API key
     And  enter API key "sk-coordinated-key"
     And  accept the derived catalog endpoint
-    And  choose "small-model" for the small role
-    And  choose reasoning "low" for the small role
-    And  choose "normal-model" for the normal role
-    And  choose reasoning "medium" for the normal role
-    And  choose "thinking-model" for the thinking role
-    And  choose reasoning "high" for the thinking role
+    And  configure all model roles with their reasoning choices
     And  choose no shell completion integrations
     And  choose no Ctrl-W shortcut integrations
     And  confirm the setup review

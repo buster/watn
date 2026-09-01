@@ -5,3 +5,4 @@
 .agents/
 .opencode/
 /givn/.spec-index.json
+/givn/.spec-pair-cache.json

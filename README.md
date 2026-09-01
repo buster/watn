@@ -1,7 +1,7 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 92%](https://img.shields.io/badge/line%20coverage-92%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 91%](https://img.shields.io/badge/line%20coverage-91%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -89,7 +89,7 @@ Execution uses `sh -c` with the generated command.
 | `-V`, `--version` | Print version and exit |
 | `-h`, `--help` | Print help and exit |
 
-Subcommands are `setup`, `provider`, `models`, `completions <SHELL>`, and `help`.
+Subcommands are `setup`, `provider`, `models`, `quicksetup`, `completions <SHELL>`, and `help`.
 Completion scripts are supported for `bash`, `elvish`, `fish`, `powershell`,
 and `zsh`.
 
@@ -173,7 +173,7 @@ GPL-3.0-or-later
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 92% (12849/14041)
+Line coverage: 91% (13488/14743)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:

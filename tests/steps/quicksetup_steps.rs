@@ -5,8 +5,7 @@ use cucumber::{given, then, when};
 use crate::WatnWorld;
 
 use super::{
-    finish_pty_session, pty_wait_for_label, pty_write, run_binary_with_state,
-    start_pty_session,
+    finish_pty_session, pty_wait_for_label, pty_write, run_binary_with_state, start_pty_session,
 };
 
 const STUB_SHELLS: [&str; 3] = ["bash", "zsh", "fish"];
@@ -102,7 +101,9 @@ fn no_watn_configuration(world: &mut WatnWorld) {
     world.pending_mock_no_config_file = true;
 }
 
-#[given(regex = r#"^an existing watn configuration contains provider \"([^\"]+)\" with credential \"([^\"]+)\"$"#)]
+#[given(
+    regex = r#"^an existing watn configuration contains provider \"([^\"]+)\" with credential \"([^\"]+)\"$"#
+)]
 fn existing_watn_configuration(world: &mut WatnWorld, provider: String, credential: String) {
     isolate_quicksetup_env(world);
     world.raw_config = Some(format!(
@@ -388,7 +389,16 @@ fn accept_suggestions_through_models(world: &mut WatnWorld) {
     answer_all_suggestions(world);
 }
 
-#[then(regex = r#"^the shell integration list should mark ([A-Za-z]+) as (selected|not selected)$"#)]
+#[when("I finish quick setup with the remaining suggestions and confirm")]
+fn finish_quicksetup_remaining(world: &mut WatnWorld) {
+    accept_prefilled_normal_model(world);
+    accept_prefilled_thinking_model(world);
+    keep_preselected_shells(world);
+}
+
+#[then(
+    regex = r#"^the shell integration list should mark ([A-Za-z]+) as (selected|not selected)$"#
+)]
 fn shell_list_marks(world: &mut WatnWorld, shell: String, state: String) {
     let session = world.pty_session.as_ref().expect("quicksetup PTY session");
     let output = pty_wait_for_label(session, "Shell integrations");
@@ -511,6 +521,47 @@ fn quicksetup_exit_success(world: &mut WatnWorld) {
     assert_eq!(world.exit_status, Some(0), "quicksetup should exit 0");
 }
 
+#[then("quick setup should persist the selected configuration and integrations")]
+fn quicksetup_persists_selected_configuration(world: &mut WatnWorld) {
+    quicksetup_exit_success(world);
+    output_states_config_location(world);
+    output_states_setup_hint(world);
+
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains("provider = \"openrouter\""),
+        "provider missing: {content:?}"
+    );
+    config_contains_small_model(world, "google/gemma-4-flash".to_string());
+    config_contains_normal_model(world, "google/gemma-4-flash".to_string());
+    config_contains_thinking_model(world, "google/gemma-4-flash".to_string());
+    assert!(
+        content.contains("api_key = \"${OPENROUTER_API_KEY}\""),
+        "credential reference missing: {content:?}"
+    );
+    assert!(
+        !content.contains("sk-quick-key"),
+        "literal credential leaked: {content:?}"
+    );
+
+    let dir = world.temp_dir.as_ref().expect("quicksetup temp dir").path();
+    for (path, shell) in [
+        (dir.join(".bashrc"), "Bash"),
+        (dir.join(".zshrc"), "Zsh"),
+        (dir.join("fish").join("config.fish"), "Fish"),
+    ] {
+        let content = std::fs::read_to_string(&path).expect("shell target");
+        assert!(
+            content.contains(watn::shell_completion::OPEN_MARKER),
+            "{shell} completion block missing: {content:?}"
+        );
+        assert!(
+            content.contains(watn::shell_shortcut::OPEN_MARKER),
+            "{shell} Ctrl-W block missing: {content:?}"
+        );
+    }
+}
+
 #[then("quick setup should report a configuration error")]
 fn quicksetup_config_error(world: &mut WatnWorld) {
     assert_ne!(world.exit_status, Some(0), "quicksetup should exit nonzero");
@@ -537,7 +588,9 @@ fn output_states_config_location(world: &mut WatnWorld) {
     );
 }
 
-#[then(regex = r#"^the output should state that the configuration can be changed with `watn setup`$"#)]
+#[then(
+    regex = r#"^the output should state that the configuration can be changed with `watn setup`$"#
+)]
 fn output_states_setup_hint(world: &mut WatnWorld) {
     let output = world.output.as_deref().unwrap_or_default();
     assert!(

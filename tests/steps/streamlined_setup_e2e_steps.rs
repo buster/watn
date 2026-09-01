@@ -324,6 +324,16 @@ fn choose_e2e_reasoning(world: &mut WatnWorld, effort: String, role: String) {
     }
 }
 
+#[when("configure all model roles with their reasoning choices")]
+fn configure_all_model_roles(world: &mut WatnWorld) {
+    choose_e2e_small_model(world, "small-model".to_string());
+    choose_e2e_reasoning(world, "low".to_string(), "small".to_string());
+    choose_e2e_model(world, "normal-model".to_string(), "normal".to_string());
+    choose_e2e_reasoning(world, "medium".to_string(), "normal".to_string());
+    choose_e2e_model(world, "thinking-model".to_string(), "thinking".to_string());
+    choose_e2e_reasoning(world, "high".to_string(), "thinking".to_string());
+}
+
 #[then("the model setup should begin with the small role")]
 fn model_setup_begins_with_small_role(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("models PTY session");

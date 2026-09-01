@@ -19,32 +19,14 @@ Feature: Quick setup first run
     And no original chat completion request should be sent
 
   @givn.added @e2e
-  Scenario: Completing the quick setup stores the answers and installs the chosen integrations
+  Scenario: Quick setup stores answers and installs integrations
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
     And bash, zsh, and fish are available on the path
     When I start `watn quicksetup` in a terminal
-    And I accept the suggested endpoint
-    And I accept the suggested credential reference
-    And I accept the suggested small model
-    And I accept the pre-filled normal model
-    And I accept the pre-filled thinking model
+    And I accept the suggested endpoint, credential, and models
     And I keep the pre-selected shell integrations and confirm
-    Then quick setup should exit successfully
-    And the output should state the configuration file location
-    And the output should state that the configuration can be changed with `watn setup`
-    And the config file should contain provider "openrouter"
-    And the config file should contain small model "google/gemma-4-flash"
-    And the config file should contain normal model "google/gemma-4-flash"
-    And the config file should contain thinking model "google/gemma-4-flash"
-    And the config file should contain credential reference "${OPENROUTER_API_KEY}"
-    And the config file should not contain "sk-quick-key"
-    And Bash should contain a Watn-managed completion block
-    And Bash should contain a Watn-managed Ctrl-W block
-    And Zsh should contain a Watn-managed completion block
-    And Zsh should contain a Watn-managed Ctrl-W block
-    And Fish should contain a Watn-managed completion block
-    And Fish should contain a Watn-managed Ctrl-W block
+    Then quick setup should persist the selected configuration and integrations
 
   @givn.added @e2e
   Scenario: Explicit quick setup overwrites an existing configuration
@@ -113,7 +95,7 @@ Feature: Quick setup first run
     Then quick setup should exit successfully
 
   @givn.added
-  Scenario: A model question without a suggestion requires a non-empty answer
+  Scenario: An empty model answer is rejected before configuration
     Given no watn configuration exists
     When I start `watn quicksetup` in a terminal
     And I answer the endpoint with "https://llm.example/v1"
@@ -122,24 +104,18 @@ Feature: Quick setup first run
     Then quick setup should still ask for the small model
     And no config file should exist
     When I answer the small model with "my-small"
-    And I accept the pre-filled normal model
-    And I accept the pre-filled thinking model
-    And I keep the pre-selected shell integrations and confirm
+    And I finish quick setup with the remaining suggestions and confirm
     Then quick setup should exit successfully
     And the config file should contain small model "my-small"
 
   @givn.added
-  Scenario: An invalid endpoint value re-asks for the endpoint
+  Scenario: An invalid endpoint is rejected before setup
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
     When I start `watn quicksetup` in a terminal
     And I answer the endpoint with an invalid value
     Then quick setup should still ask for the endpoint
-    When I accept the suggested endpoint
-    And I accept the suggested credential reference
-    And I accept the suggested small model
-    And I accept the pre-filled normal model
-    And I accept the pre-filled thinking model
+    When I accept the suggested endpoint, credential, and models
     And I keep the pre-selected shell integrations and confirm
     Then quick setup should exit successfully
     And the config file should contain provider "openrouter"
