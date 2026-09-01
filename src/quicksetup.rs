@@ -6,7 +6,7 @@ use crate::provider::setup::{
     build_provider_draft, normalize_endpoint, suggested_api_key_env, OPENROUTER_ENDPOINT,
 };
 use crate::shell_completion;
-use crate::shell_shortcut::{self, Shell, ShellEnvironment, shells_available_on_path};
+use crate::shell_shortcut::{self, shells_available_on_path, Shell, ShellEnvironment};
 
 const OPENROUTER_SUGGESTED_SMALL_MODEL: &str = "google/gemma-4-flash";
 
@@ -31,18 +31,11 @@ fn resolve_answer(answer: String, suggestion: Option<&str>) -> Option<String> {
     Some(answer)
 }
 
-fn ask_required(
-    question: &str,
-    suggestion: Option<&str>,
-    validate: impl Fn(&str) -> Result<(), Error>,
-) -> String {
+fn ask_required(question: &str, suggestion: Option<&str>) -> String {
     loop {
         let answer = prompt(question, suggestion);
         match resolve_answer(answer, suggestion) {
-            Some(value) => match validate(&value) {
-                Ok(()) => return value,
-                Err(error) => println!("error: {error}"),
-            },
+            Some(value) => return value,
             None => println!("error: a value is required"),
         }
     }
@@ -52,14 +45,7 @@ fn ask_endpoint() -> String {
     loop {
         let answer = prompt("Completion endpoint", Some(OPENROUTER_ENDPOINT));
         let endpoint = resolve_answer(answer, Some(OPENROUTER_ENDPOINT))
-            .ok_or_else(|| Error::ConfigError("an endpoint is required".to_string()));
-        let endpoint = match endpoint {
-            Ok(endpoint) => endpoint,
-            Err(error) => {
-                println!("error: {error}");
-                continue;
-            }
-        };
+            .unwrap_or_else(|| OPENROUTER_ENDPOINT.to_string());
         match normalize_endpoint(&endpoint) {
             Ok(normalized) => return normalized,
             Err(error) => println!("error: {error}"),
@@ -73,23 +59,11 @@ fn ask_credential(endpoint: &str) -> String {
         .ok()
         .filter(|value| !value.is_empty())
         .map(|_| format!("${{{name}}}"));
-    ask_required("API key", suggestion.as_deref(), |value| {
-        if value.trim().is_empty() {
-            Err(Error::ConfigError("a credential is required".to_string()))
-        } else {
-            Ok(())
-        }
-    })
+    ask_required("API key", suggestion.as_deref())
 }
 
 fn ask_model(question: &str, suggestion: Option<&str>) -> String {
-    ask_required(question, suggestion, |value| {
-        if value.trim().is_empty() {
-            Err(Error::ConfigError("a model is required".to_string()))
-        } else {
-            Ok(())
-        }
-    })
+    ask_required(question, suggestion)
 }
 
 fn render_shell_list(selected: &[bool; 3]) {
@@ -185,9 +159,9 @@ pub fn run() -> Result<(), Error> {
 
     let endpoint = ask_endpoint();
     let credential = ask_credential(&endpoint);
-    let small_suggestion = (endpoint == OPENROUTER_ENDPOINT)
-        .then_some(OPENROUTER_SUGGESTED_SMALL_MODEL);
-    let small = ask_model("Small model", small_suggestion.as_deref());
+    let small_suggestion =
+        (endpoint == OPENROUTER_ENDPOINT).then_some(OPENROUTER_SUGGESTED_SMALL_MODEL);
+    let small = ask_model("Small model", small_suggestion);
     let normal = ask_model("Normal model", Some(&small));
     let thinking = ask_model("Thinking model", Some(&small));
     let shells = ask_shells(shells_available_on_path());

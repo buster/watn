@@ -105,7 +105,9 @@ enum Commands {
     Provider,
     #[command(about = "Configure shell completion and Ctrl-W integrations")]
     Shell,
-    #[command(about = "Configure provider, models, and shell integrations with a minimal question flow")]
+    #[command(
+        about = "Configure provider, models, and shell integrations with a minimal question flow"
+    )]
     Quicksetup,
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"
