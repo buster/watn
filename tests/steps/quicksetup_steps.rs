@@ -287,6 +287,23 @@ fn answer_endpoint(world: &mut WatnWorld, endpoint: String) {
     pty_write(session, &format!("{endpoint}\r"));
 }
 
+#[when("I answer the endpoint with an invalid value")]
+fn answer_endpoint_invalid(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Completion endpoint");
+    pty_write(session, "not-a-valid-url\r");
+}
+
+#[then("quick setup should still ask for the endpoint")]
+fn still_asks_endpoint(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "endpoint must be an HTTP or HTTPS URL");
+    assert!(
+        output.matches("Completion endpoint").count() >= 2,
+        "endpoint question was not re-asked: {output:?}"
+    );
+}
+
 #[when("I accept the suggested credential reference")]
 fn accept_suggested_credential(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("quicksetup PTY session");

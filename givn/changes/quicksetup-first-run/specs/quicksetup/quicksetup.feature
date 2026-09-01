@@ -112,6 +112,22 @@ Feature: Quick setup first run
     And no config file should exist
 
   @givn.added
+  Scenario: An invalid endpoint value re-asks for the endpoint
+    Given no watn configuration exists
+    And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
+    When I start `watn quicksetup` in a terminal
+    And I answer the endpoint with an invalid value
+    Then quick setup should still ask for the endpoint
+    When I accept the suggested endpoint
+    And I accept the suggested credential reference
+    And I accept the suggested small model
+    And I accept the pre-filled normal model
+    And I accept the pre-filled thinking model
+    And I keep the pre-selected shell integrations and confirm
+    Then quick setup should exit successfully
+    And the config file should contain provider "openrouter"
+
+  @givn.added
   Scenario: An OpenAI endpoint suggests the OpenAI credential and no model
     Given no watn configuration exists
     And environment variable OPENAI_API_KEY is set to "sk-openai-test"
@@ -157,7 +173,7 @@ Feature: Quick setup first run
     And no config file should exist
     And no shell target file should change
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed shell installation keeps the saved configuration
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
