@@ -33,6 +33,7 @@ fn e2e_root_tree(world: &mut WatnWorld) {
         "setup",
         "models",
         "provider",
+        "quicksetup",
         "completions",
     ] {
         assert!(

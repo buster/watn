@@ -36,12 +36,12 @@ fn isolate_quicksetup_env(world: &mut WatnWorld) -> PathBuf {
         "XDG_CONFIG_HOME".to_string(),
         dir.to_string_lossy().to_string(),
     );
-    // Replace (not prepend) PATH: the real PATH still contains real shell
-    // binaries that availability detection would otherwise find. The watn
-    // binary is spawned by absolute path, so a minimal PATH is safe.
-    world
-        .env_vars
-        .insert("PATH".to_string(), bin_dir.to_string_lossy().to_string());
+    // Replace (not prepend) the child's PATH: the real PATH still contains
+    // real shell binaries that availability detection would otherwise find.
+    // Kept out of env_vars because WatnWorld::drop removes those keys from
+    // the runner process. The watn binary is spawned by absolute path, so a
+    // minimal PATH is safe.
+    world.path_override = Some(bin_dir.to_string_lossy().to_string());
 
     assert!(
         world
@@ -108,6 +108,19 @@ fn existing_watn_configuration(world: &mut WatnWorld, provider: String, credenti
     world.raw_config = Some(format!(
         "[defaults]\nprovider = \"{provider}\"\n\n[providers.{provider}]\nendpoint = \"https://legacy.example/v1\"\napi_key = \"{credential}\"\n"
     ));
+    ensure_quicksetup_fixture_config(world);
+}
+
+#[given("an existing openrouter configuration without a credential")]
+fn existing_openrouter_without_credential(world: &mut WatnWorld) {
+    isolate_quicksetup_env(world);
+    world.raw_config = Some("[defaults]\nprovider = \"openrouter\"\n".to_string());
+    ensure_quicksetup_fixture_config(world);
+    // Trigger the shared harness chat-completion mock so the
+    // "no original chat completion request" assertion has a sentinel.
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("some output".to_string());
+    world.pending_mock_usage = Some(false);
 }
 
 #[given("bash, zsh, and fish are available on the path")]

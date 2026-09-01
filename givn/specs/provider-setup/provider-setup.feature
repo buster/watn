@@ -42,7 +42,7 @@ Feature: Interactive provider setup
 
   @e2e
   Scenario: First normal use starts provider setup and then model setup
-    Given  no config file exists
+    Given  an existing openrouter configuration without a credential
     And  no supported provider environment variable is set
     And  the ephemeral E2E transport returns models ["model-small", "model-normal", "model-thinking"] for "/models"
     When  I start interactive `watn "hello"` in a terminal
