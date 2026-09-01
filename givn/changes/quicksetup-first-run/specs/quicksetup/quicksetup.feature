@@ -46,10 +46,11 @@ Feature: Quick setup first run
     And Fish should contain a Watn-managed completion block
     And Fish should contain a Watn-managed Ctrl-W block
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Explicit quick setup overwrites an existing configuration
     Given an existing watn configuration contains provider "openai" with credential "sk-old-key"
     And the config file contains models "old-small", "old-normal", and "old-thinking"
+    And bash, zsh, and fish are available on the path
     And provider requests are captured by a sentinel
     When I start `watn quicksetup` in a terminal
     And I answer the endpoint with "https://llm.example/v1"
