@@ -445,15 +445,13 @@ fn complete_with_shells(world: &mut WatnWorld) {
 #[when("I abort the quick setup with Ctrl-C")]
 fn abort_quicksetup(world: &mut WatnWorld) {
     let path = quicksetup_config_path(world);
-    let content = std::fs::read_to_string(&path).unwrap_or_else(|error| {
-        panic!(
-            "config file not readable at abort: {} ({error})",
-            path.display()
-        )
-    });
-    world
-        .pending_config
-        .insert("config_before".to_string(), content);
+    // Record the baseline only when a configuration already exists (explicit
+    // run); on a first run there is nothing to record.
+    if let Ok(content) = std::fs::read_to_string(&path) {
+        world
+            .pending_config
+            .insert("config_before".to_string(), content);
+    }
     let session = world.pty_session.as_mut().expect("quicksetup PTY session");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\x03");
