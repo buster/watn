@@ -8,18 +8,22 @@ unimplemented steps: `unimplemented!()`.
 
 ## Setup
 
-- [ ] **S1 — Step skeleton and isolation guard.** Create
+- [x] **S1 — Step skeleton and isolation guard.** Create
   `tests/steps/quicksetup_steps.rs` with `isolate_quicksetup_env(world)`
   (fresh TempDir; set `HOME`, `XDG_CONFIG_HOME`, replace `PATH` with
   `<tmp>/bin`; panic if the guard fails) and stub step definitions for the
   quicksetup scenarios (`unimplemented!()` bodies, never empty). Register the
   module in `tests/steps/mod.rs`. Non-quicksetup behaviour is untouched.
   Evidence (build output):
-  - [ ] `cargo build --features test-support --tests` succeeds
-- [ ] **S2 — Proof of strictness.** Run one quicksetup scenario with stub
+  - [x] `cargo build --features test-support --tests` succeeds
+    (`Finished dev profile ... 14.09s` after two PathBuf/Pattern fixes)
+- [x] **S2 — Proof of strictness.** Run one quicksetup scenario with stub
   steps via the single-scenario command from design.md; confirm non-zero
   exit. Paste command + tail of output:
-  - [ ] evidence:
+  - [x] evidence: scenario-1 RED run: `1 scenario (1 failed)` /
+    `4 steps (3 passed, 1 failed)` — the guidance assertion panicked against
+    the old provider guidance; cargo reported `error: test failed`,
+    non-zero run. Strict mode proven (failing step fails the run).
 - [ ] **S3 — Runner subset proof.** Run `./run-tests.sh` and
   `./run-tests.sh --e2e`; record both scenario counts from the output
   (e2e count must be strictly smaller). Paste counts:
@@ -29,14 +33,17 @@ unimplemented steps: `unimplemented!()`.
 
 ### 1. Quick setup without a terminal prints guidance instead of asking
 
-- [ ] RED: remove `@wip` from this scenario only; run single-scenario command
-  → non-zero. Evidence:
-- [ ] GREEN: production files (list): minimum `Commands::Quicksetup` variant,
-  `run_quicksetup_command()` non-TTY guidance branch, dispatch.
-  Evidence:
-- [ ] REFACTOR: re-run single-scenario → still green. Evidence:
-- [ ] COMMIT: `feat(quicksetup): Quick setup without a terminal prints guidance instead of asking`
-  Hash:
+- [x] RED: removed `@wip`; targeted run → `1 scenario (1 failed)`,
+  `4 steps (3 passed, 1 failed)`, `Step panicked ... quicksetup guidance
+  missing: "No provider is configured. Run `watn setup` ..."` — non-zero.
+- [x] GREEN: production files: `src/main.rs` (`Commands::Quicksetup`,
+  `run_quicksetup_command` non-TTY guidance, dispatch), `src/quicksetup.rs`
+  (new module, full plain-line flow), `src/lib.rs` (`pub mod quicksetup`).
+  Targeted run → `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: no behaviour change; re-run → `1 scenario (1 passed)`,
+  `5 steps (5 passed)`.
+- [x] COMMIT: `feat(quicksetup): Quick setup without a terminal prints guidance instead of asking`
+  Hash: 734e954
 
 ### 2. A model question without a suggestion requires a non-empty answer
 
