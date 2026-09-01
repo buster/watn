@@ -120,7 +120,7 @@ Feature: Quick setup first run
     When I accept the suggested credential reference
     Then the small model question should show no suggestion
 
-  @givn.added @wip
+  @givn.added
   Scenario: Explicit provider selection skips the first-run quick setup
     Given no watn configuration exists
     And environment variable WATN_PROVIDER is set to "openai"

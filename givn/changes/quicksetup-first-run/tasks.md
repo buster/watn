@@ -90,14 +90,17 @@ unimplemented steps: `unimplemented!()`.
 
 ### 5. Shell integrations are pre-selected only for shells available on the path
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): PATH-based availability helper in
-  `src/shell_shortcut.rs`; shell list rendering with `[ ]`/`[x]`, typed
-  toggle answers, empty line confirm.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): Shell integrations are pre-selected only for shells available on the path`
-  Hash:
+- [x] RED: removed `@wip`; targeted run → stub panic in the accept step,
+  non-zero. (Follow-up RED: multi-shell Then text "Bash and Zsh" did not
+  match the single-shell regex — spec split into per-shell assertions.)
+- [x] GREEN: production files: none beyond scenario 1 (PATH detection already
+  in `shells_available_on_path`); tests/steps/quicksetup_steps.rs implemented
+  the accept-through-models step and shell-list marking assertion. Targeted
+  run → `1 scenario (1 passed)`, `8 steps (8 passed)`. Proves PATH
+  replacement isolation: the runner's real `/usr/bin/fish` is not detected.
+- [x] REFACTOR: removed duplicate stub step and unused import.
+- [x] COMMIT: `feat(quicksetup): Shell integrations are pre-selected only for shells available on the path`
+  Hash: 0b71815
 
 ### 6. Explicit provider selection skips the first-run quick setup
 
