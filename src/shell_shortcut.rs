@@ -109,6 +109,21 @@ impl ShellEnvironment {
     }
 }
 
+/// Detect shells that are available on this system by scanning every `$PATH`
+/// directory for an executable file named exactly the shell's lowercase name.
+/// Unlike `ShellEnvironment::detected_shells`, this does not consult `$SHELL`.
+pub fn shells_available_on_path() -> [bool; 3] {
+    let path = std::env::var("PATH").unwrap_or_default();
+    Shell::ALL.map(|shell| {
+        path.split(':').any(|dir| {
+            !dir.is_empty() && {
+                let candidate = std::path::Path::new(dir).join(shell.lowercase_name());
+                candidate.is_file()
+            }
+        })
+    })
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TargetResult {
     pub shell: Shell,
