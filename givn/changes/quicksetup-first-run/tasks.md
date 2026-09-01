@@ -132,13 +132,19 @@ unimplemented steps: `unimplemented!()`.
 
 ### 8. A failed configuration write installs no shell integration
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): save-failure error path (no install,
-  nonzero exit) using the `WATN_TEST_FAIL_CONFIG_WRITE` seam.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): A failed configuration write installs no shell integration`
-  Hash:
+- [x] RED: two findings: (a) step-text collision with streamlined_setup's
+  `the final configuration write cannot complete` — renamed to
+  `the configuration write is forced to fail` (own world.env_vars-based
+  fixture, auto-cleaned by WatnWorld::drop instead of leaking the fail flag
+  through parent env); (b) the error assertion found empty stderr — the PTY
+  harness merges stderr into the output stream, so the assertion checks the
+  merged stream.
+- [x] GREEN: production files: none (save-failure-before-install ordering
+  already in src/quicksetup.rs); step implementations only. Targeted run →
+  `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `feat(quicksetup): A failed configuration write installs no shell integration`
+  Hash: a4d9838
 
 ### 9. A failed shell installation keeps the saved configuration
 

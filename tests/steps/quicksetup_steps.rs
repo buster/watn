@@ -442,11 +442,6 @@ fn quicksetup_config_error(world: &mut WatnWorld) {
     );
 }
 
-#[then("quick setup should report a nonzero result")]
-fn quicksetup_nonzero_result(_world: &mut WatnWorld) {
-    unimplemented!("nonzero result assertion")
-}
-
 #[then("the output should state the configuration file location")]
 fn output_states_config_location(_world: &mut WatnWorld) {
     unimplemented!("config location assertion")
@@ -457,19 +452,36 @@ fn output_states_setup_hint(_world: &mut WatnWorld) {
     unimplemented!("watn setup hint assertion")
 }
 
+#[then("quick setup should report a nonzero result")]
+fn quicksetup_nonzero_result(world: &mut WatnWorld) {
+    assert_ne!(world.exit_status, Some(0), "quicksetup should exit nonzero");
+}
+
 #[then(regex = r#"^the config file should contain small model \"([^\"]+)\"$"#)]
-fn config_contains_small_model(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("small model config assertion")
+fn config_contains_small_model(world: &mut WatnWorld, model: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("small = \"{model}\"")),
+        "small model {model:?} missing: {content:?}"
+    );
 }
 
 #[then(regex = r#"^the config file should contain normal model \"([^\"]+)\"$"#)]
-fn config_contains_normal_model(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("normal model config assertion")
+fn config_contains_normal_model(world: &mut WatnWorld, model: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("normal = \"{model}\"")),
+        "normal model {model:?} missing: {content:?}"
+    );
 }
 
 #[then(regex = r#"^the config file should contain thinking model \"([^\"]+)\"$"#)]
-fn config_contains_thinking_model(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("thinking model config assertion")
+fn config_contains_thinking_model(world: &mut WatnWorld, model: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("thinking = \"{model}\"")),
+        "thinking model {model:?} missing: {content:?}"
+    );
 }
 
 #[then(regex = r#"^the config file should contain small model \"([^\"]+)\" without reasoning$"#)]
@@ -522,23 +534,45 @@ fn no_reasoning_question(world: &mut WatnWorld) {
 }
 
 #[then("Bash should contain a Watn-managed Ctrl-W block")]
-fn bash_has_ctrlw_block(_world: &mut WatnWorld) {
-    unimplemented!("Bash Ctrl-W block assertion")
+fn bash_has_ctrlw_block(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("quicksetup temp dir");
+    let content = std::fs::read_to_string(dir.path().join(".bashrc")).expect("Bash target");
+    assert!(
+        content.contains(watn::shell_shortcut::OPEN_MARKER),
+        "Bash Ctrl-W block missing: {content:?}"
+    );
 }
 
 #[then("Zsh should contain a Watn-managed completion block")]
-fn zsh_has_completion_block(_world: &mut WatnWorld) {
-    unimplemented!("Zsh completion block assertion")
+fn zsh_has_completion_block(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("quicksetup temp dir");
+    let content = std::fs::read_to_string(dir.path().join(".zshrc")).expect("Zsh target");
+    assert!(
+        content.contains(watn::shell_completion::OPEN_MARKER),
+        "Zsh completion block missing: {content:?}"
+    );
 }
 
 #[then("Fish should contain a Watn-managed completion block")]
-fn fish_has_completion_block(_world: &mut WatnWorld) {
-    unimplemented!("Fish completion block assertion")
+fn fish_has_completion_block(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("quicksetup temp dir");
+    let content =
+        std::fs::read_to_string(dir.path().join("fish").join("config.fish")).expect("Fish target");
+    assert!(
+        content.contains(watn::shell_completion::OPEN_MARKER),
+        "Fish completion block missing: {content:?}"
+    );
 }
 
 #[then("Fish should contain a Watn-managed Ctrl-W block")]
-fn fish_has_ctrlw_block(_world: &mut WatnWorld) {
-    unimplemented!("Fish Ctrl-W block assertion")
+fn fish_has_ctrlw_block(world: &mut WatnWorld) {
+    let dir = world.temp_dir.as_ref().expect("quicksetup temp dir");
+    let content =
+        std::fs::read_to_string(dir.path().join("fish").join("config.fish")).expect("Fish target");
+    assert!(
+        content.contains(watn::shell_shortcut::OPEN_MARKER),
+        "Fish Ctrl-W block missing: {content:?}"
+    );
 }
 
 #[then("no shell target file should change")]
