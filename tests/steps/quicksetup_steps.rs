@@ -532,9 +532,9 @@ fn quicksetup_persists_selected_configuration(world: &mut WatnWorld) {
         content.contains("provider = \"openrouter\""),
         "provider missing: {content:?}"
     );
-    config_contains_small_model(world, "google/gemma-4-flash".to_string());
-    config_contains_normal_model(world, "google/gemma-4-flash".to_string());
-    config_contains_thinking_model(world, "google/gemma-4-flash".to_string());
+    config_contains_small_model(world, "~anthropic/claude-haiku-latest:nitro".to_string());
+    config_contains_normal_model(world, "~anthropic/claude-haiku-latest:nitro".to_string());
+    config_contains_thinking_model(world, "~anthropic/claude-haiku-latest:nitro".to_string());
     assert!(
         content.contains("api_key = \"${OPENROUTER_API_KEY}\""),
         "credential reference missing: {content:?}"
