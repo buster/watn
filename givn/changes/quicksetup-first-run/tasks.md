@@ -117,14 +117,18 @@ unimplemented steps: `unimplemented!()`.
 
 ### 7. Aborting explicit quick setup leaves the previous configuration unchanged
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): none expected beyond existing write-only-
-  at-confirm behaviour; verify no-write-before-confirm invariant. An empty list
-  is acceptable only with that justification recorded here.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): Aborting explicit quick setup leaves the previous configuration unchanged`
-  Hash:
+- [x] RED: removed `@wip`; targeted run → abort step panic, then a real
+  finding: `ensure_test_env` skips writing the fixture config when the temp
+  dir already exists (quicksetup isolation pre-creates it) —
+  `config file not readable at abort` panic. Fixed with
+  `ensure_quicksetup_fixture_config` in the step file.
+- [x] GREEN: production files: none; tests/steps/quicksetup_steps.rs
+  (fixture-config materialization, abort-with-Ctrl-C recording baseline,
+  shell-target absence assertion). Targeted run → `1 scenario (1 passed)`,
+  `6 steps (6 passed)`.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `feat(quicksetup): Aborting explicit quick setup leaves the previous configuration unchanged`
+  Hash: 091f27f
 
 ### 8. A failed configuration write installs no shell integration
 

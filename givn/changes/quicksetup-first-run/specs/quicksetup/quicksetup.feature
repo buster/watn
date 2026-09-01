@@ -146,11 +146,11 @@ Feature: Quick setup first run
     And the output should instruct me to run `watn quicksetup` in a terminal
     And no config file should exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed configuration write installs no shell integration
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
-    And the final configuration write cannot complete
+    And the configuration write is forced to fail
     When I complete the quick setup with the suggested answers and shell integrations selected
     Then quick setup should report a configuration error
     And no config file should exist
