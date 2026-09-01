@@ -155,7 +155,7 @@ fn capture_provider_requests(world: &mut WatnWorld) {
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
 }
 
-#[given("the final configuration write cannot complete")]
+#[given("the configuration write is forced to fail")]
 fn fail_config_write(world: &mut WatnWorld) {
     isolate_quicksetup_env(world);
     world
@@ -432,8 +432,14 @@ fn quicksetup_exit_success(_world: &mut WatnWorld) {
 }
 
 #[then("quick setup should report a configuration error")]
-fn quicksetup_config_error(_world: &mut WatnWorld) {
-    unimplemented!("config error assertion")
+fn quicksetup_config_error(world: &mut WatnWorld) {
+    assert_ne!(world.exit_status, Some(0), "quicksetup should exit nonzero");
+    // The PTY harness merges stderr into the captured output stream.
+    let output = world.output.as_deref().unwrap_or_default();
+    assert!(
+        output.contains("cannot write config"),
+        "config write error missing: {output:?}"
+    );
 }
 
 #[then("quick setup should report a nonzero result")]
