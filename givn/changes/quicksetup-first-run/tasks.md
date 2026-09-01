@@ -47,14 +47,16 @@ unimplemented steps: `unimplemented!()`.
 
 ### 2. A model question without a suggestion requires a non-empty answer
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): `src/quicksetup.rs` question flow,
-  endpoint validation re-ask, empty-suggestion re-ask; `mod quicksetup` in
-  `lib.rs`; TTY dispatch wiring; `config::config_file_exists()`.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): A model question without a suggestion requires a non-empty answer`
-  Hash:
+- [x] RED: removed `@wip`; targeted run → `Step match is ambiguous` for
+  `I enter endpoint` (collision with streamlined_setup regex) — run failed
+  non-zero. Fixed by renaming quicksetup answer steps to unique wording.
+- [x] GREEN: production files: none beyond scenario 1 (flow already covers
+  re-ask); tests/steps/quicksetup_steps.rs implemented the endpoint,
+  credential, small-model answer steps and re-ask assertion. Targeted run →
+  `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: no-op; re-run → `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: `feat(quicksetup): A model question without a suggestion requires a non-empty answer`
+  Hash: 2c38c0b
 
 ### 3. Quick setup does not ask reasoning questions and stores no reasoning
 

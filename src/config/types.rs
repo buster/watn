@@ -122,7 +122,7 @@ pub struct ModelTiers {
     pub small: Option<String>,
     pub normal: Option<String>,
     pub thinking: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "TierReasoning::is_empty")]
     pub reasoning: TierReasoning,
 }
 
@@ -134,6 +134,10 @@ pub struct TierReasoning {
 }
 
 impl TierReasoning {
+    fn is_empty(&self) -> bool {
+        self.small.is_none() && self.normal.is_none() && self.thinking.is_none()
+    }
+
     /// Map a tier ("1"/"2"/"3" or None default "1") to a `reasoning_effort`
     /// value. Returns `None` for "off" or an absent config (no reasoning),
     /// otherwise `Some(strength)`. Backwards compatibility: the thinking tier
