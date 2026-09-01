@@ -109,14 +109,15 @@ Feature: Quick setup first run
     Then quick setup should still ask for the small model
     And no config file should exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: An OpenAI endpoint suggests the OpenAI credential and no model
     Given no watn configuration exists
     And environment variable OPENAI_API_KEY is set to "sk-openai-test"
     When I start `watn quicksetup` in a terminal
     And I answer the endpoint with "https://api.openai.com/v1"
     Then the credential question should suggest "${OPENAI_API_KEY}"
-    And the small model question should show no suggestion
+    When I accept the suggested credential reference
+    Then the small model question should show no suggestion
 
   @givn.added @wip
   Scenario: Explicit provider selection skips the first-run quick setup

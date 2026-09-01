@@ -60,15 +60,17 @@ unimplemented steps: `unimplemented!()`.
 
 ### 3. Quick setup does not ask reasoning questions and stores no reasoning
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): persistence (provider draft via
-  `build_provider_draft`/`update_provider_draft`, tier models, `save_config`),
-  closing message with config path and `watn setup` hint; `${ENV}` credential
-  suggestion when the endpoint's suggested key variable is set.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): Quick setup does not ask reasoning questions and stores no reasoning`
-  Hash:
+- [x] RED: removed `@wip`; targeted run → stub panic in the compound When,
+  `1 scenario (1 failed)`, non-zero.
+- [x] GREEN: production files: `src/config/types.rs`
+  (`skip_serializing_if` for empty `TierReasoning` — reasoning stays
+  absent from the saved file), tests/steps/quicksetup_steps.rs (compound
+  When with session start, no-reasoning + model-without-reasoning
+  assertions). Targeted run → `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: fixed unclosed-impl compile error from the serde edit;
+  re-run → `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: `feat(quicksetup): Quick setup does not ask reasoning questions and stores no reasoning`
+  Hash: a124976
 
 ### 4. An OpenAI endpoint suggests the OpenAI credential and no model
 
