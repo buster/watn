@@ -34,6 +34,33 @@ the full wizard. Setup also assigns model tiers and can install shell
 completion or the optional Ctrl-W shortcut. Ctrl-W turns the current shell
 prompt into a command.
 
+### Quick setup
+
+If no configuration exists, watn starts the quick setup automatically; you can
+also run it explicitly at any time with `watn quicksetup`. It asks for the
+completion endpoint, credential, and the small, normal, and thinking models,
+then offers shell integrations. An empty answer accepts the suggestion.
+Everything is validated locally; no network request is made. Aborting with
+Ctrl-C leaves the existing configuration unchanged; completing an explicit
+quick setup overwrites it.
+
+```text
+$ watn quicksetup
+No configuration file found — starting quick setup.
+Completion endpoint [https://openrouter.ai/api/v1]:
+API key [${OPENROUTER_API_KEY}]:
+Small model [~anthropic/claude-haiku-latest:nitro]:
+Normal model [~anthropic/claude-haiku-latest:nitro]:
+Thinking model [~anthropic/claude-haiku-latest:nitro]:
+Shell integrations (type shell names to toggle, Enter to confirm):
+  [x] Bash
+  [x] Zsh
+  [x] Fish
+Shell integrations:
+Configuration written to /home/you/.config/watn/config.toml.
+Run `watn setup` to change the configuration later.
+```
+
 ## Usage
 
 Pass a question as a positional argument or via stdin. Response content is
