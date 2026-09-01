@@ -89,14 +89,15 @@ Feature: Quick setup first run
     And the config file should contain normal model "google/gemma-4-flash" without reasoning
     And the config file should contain thinking model "google/gemma-4-flash" without reasoning
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shell integrations are pre-selected only for shells available on the path
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
     And bash and zsh are available on the path but fish is not
     When I start `watn quicksetup` in a terminal
     And I accept the suggested endpoint, credential, and models
-    Then the shell integration list should mark Bash and Zsh as selected
+    Then the shell integration list should mark Bash as selected
+    And the shell integration list should mark Zsh as selected
     And the shell integration list should mark Fish as not selected
 
   @givn.added
