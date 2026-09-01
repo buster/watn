@@ -24,10 +24,13 @@ unimplemented steps: `unimplemented!()`.
     `4 steps (3 passed, 1 failed)` — the guidance assertion panicked against
     the old provider guidance; cargo reported `error: test failed`,
     non-zero run. Strict mode proven (failing step fails the run).
-- [ ] **S3 — Runner subset proof.** Run `./run-tests.sh` and
+- [x] **S3 — Runner subset proof.** Run `./run-tests.sh` and
   `./run-tests.sh --e2e`; record both scenario counts from the output
   (e2e count must be strictly smaller). Paste counts:
-  - [ ] evidence:
+  - [x] evidence: regular suite `157 scenarios (157 passed)`, e2e suite
+    `78 scenarios (78 passed)` — e2e count strictly smaller; the tag filters
+    `not @wip and not @e2e` vs `@e2e and not @wip` are distinct tag
+    mechanisms on the same runner.
 
 ## Non-@e2e scenarios (in .feature order)
 
@@ -210,22 +213,37 @@ unimplemented steps: `unimplemented!()`.
 
 ### 13. Aborting quick setup with Ctrl-C on the first run leaves no configuration
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): none expected beyond existing
-  write-only-at-confirm; justify if empty.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `test(e2e): Aborting quick setup with Ctrl-C on the first run leaves no configuration`
-  Hash:
+- [x] RED: e2e runner targeted → abort step panicked
+  (`config file not readable at abort`) because it required an existing
+  config; the first-run path has none. Fixed: baseline recording is
+  conditional on the file existing.
+- [x] GREEN: production files: none; step fix only. Targeted run →
+  `1 scenario (1 passed)`, `8 steps (8 passed)`. No config file, no shell
+  targets, zero sentinel requests after SIGINT.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `test(e2e): Aborting quick setup with Ctrl-C on the first run leaves no configuration`
+  Hash: 15b9e6b
 
 ## Final
 
-- [ ] **F1 — Authoritative command tree.** Add `quicksetup` to the built-binary
+- [x] **F1 — Authoritative command tree.** Add `quicksetup` to the built-binary
   e2e step list in `tests/steps/shell_completions_e2e_steps.rs`; the five
   modified shell-completions scenarios go GREEN. Run the full suite.
-  Evidence:
-- [ ] **F2 — Isolation audit.** Grep `tests/steps/quicksetup_steps.rs`: every
+  Evidence: targeted e2e run `Built Bash completion generation emits the
+  current command tree` → `9 steps (9 passed)`; the five table-driven
+  modified scenarios pass in the full regular suite.
+- [x] **F2 — Isolation audit.** Grep `tests/steps/quicksetup_steps.rs`: every
   `start_pty_session` / `run_binary_with_state` call site preceded by
-  `isolate_quicksetup_env`. Evidence:
-- [ ] **F3 — Full verification.** `./run-tests.sh` exit 0; `./run-tests.sh --e2e`
-  exit 0. Evidence:
+  `isolate_quicksetup_env`. Evidence: the only spawn call sites (lines 177,
+  185, 192) sit inside steps that call `isolate_quicksetup_env` first (or
+  delegate to `start_quicksetup_in_terminal`/compound Whens that do).
+  Additional harness hardening: PATH replacement moved to
+  `WatnWorld.path_override` because `WatnWorld::drop` removes every
+  `env_vars` key from the runner process (a PATH entry there stripped the
+  runner's own PATH and broke 25 unrelated scenarios).
+- [x] **F3 — Full verification.** `./run-tests.sh` exit 0; `./run-tests.sh --e2e`
+  exit 0. Evidence: regular `157 scenarios (157 passed)` / `930 steps`;
+  e2e `78 scenarios (78 passed)` / `620 steps`. The permanent
+  provider-setup first-use scenario was replaced (identical to the
+  `@givn.modified` delta) because quick setup now owns the missing-config
+  first run; an existing-but-incomplete configuration keeps the coordinator.

@@ -27,6 +27,10 @@ impl fmt::Debug for MockServerWrap {
 #[derive(Debug, Default, World)]
 pub struct WatnWorld {
     pub env_vars: HashMap<String, String>,
+    /// Child-only PATH replacement. Kept out of `env_vars` because `Drop`
+    /// removes every entry there from the runner process, which would strip
+    /// the runner's own PATH.
+    pub path_override: Option<String>,
     pub mock_server: MockServerWrap,
     pub temp_dir: Option<tempfile::TempDir>,
     pub pending_config: HashMap<String, String>,

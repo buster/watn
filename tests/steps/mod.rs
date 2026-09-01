@@ -505,6 +505,9 @@ pub(crate) fn apply_env(world: &crate::WatnWorld, cmd: &mut std::process::Comman
     for (key, value) in &world.env_vars {
         cmd.env(key, value);
     }
+    if let Some(path) = &world.path_override {
+        cmd.env("PATH", path);
+    }
 }
 
 pub(crate) fn run_binary_with_state(
@@ -603,6 +606,9 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
         cmd.env("LLVM_PROFILE_FILE", profile);
     }
     cmd.env("TERM", "xterm-256color");
+    if let Some(path) = &world.path_override {
+        cmd.env("PATH", path);
+    }
 
     let child = pair.slave.spawn_command(cmd).expect("spawn pty command");
     drop(pair.slave);
