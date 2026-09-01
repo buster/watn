@@ -221,6 +221,13 @@ fn main() {
             watn::provider::setup::print_setup_guidance();
             std::process::exit(1);
         }
+        if !config::config_file_exists() {
+            if let Err(error) = watn::quicksetup::run() {
+                eprintln!("{}", error);
+                std::process::exit(exit_code(&error));
+            }
+            return;
+        }
         match watn::setup::run_with_config(&config, SetupEntryPoint::Setup) {
             Ok(SetupWizardOutcome::Saved(result)) => {
                 if let Err(error) = watn::setup::apply_result(&mut config, &result) {

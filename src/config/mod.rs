@@ -18,6 +18,10 @@ pub fn xdg_config_path() -> PathBuf {
     base.join("watn").join("config.toml")
 }
 
+pub fn config_file_exists() -> bool {
+    xdg_config_path().exists()
+}
+
 pub fn load_config() -> Result<Config, Error> {
     let config_path = xdg_config_path();
 
