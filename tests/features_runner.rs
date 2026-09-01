@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use watn::models::list::ModelEntry;
 
+use cucumber::feature::Ext;
 use cucumber::gherkin::{Feature, GherkinEnv};
 use cucumber::parser::{self, Parser};
 use cucumber::runner;
@@ -140,7 +141,7 @@ impl Parser<Vec<PathBuf>> for VecParser {
             .map(|path| {
                 let env = GherkinEnv::default();
                 match Feature::parse_path(&path, env) {
-                    Ok(feature) => Ok(feature),
+                    Ok(feature) => feature.expand_examples().map_err(parser::Error::from),
                     Err(e) => Err(parser::Error::Parsing(Arc::new(e))),
                 }
             })

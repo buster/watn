@@ -7,23 +7,9 @@ Feature: Unified setup wizard
     And  the ephemeral E2E transport returns models ["model-small", "model-middle", "model-large"] for "/models"
     When  I start `watn setup` in a terminal
     And  I choose provider "OpenRouter"
-    Then  the setup wizard should show tabs "URL", "API key", "Catalog", "Small Model", "Normal Model"
-    And  the setup wizard should show the URL page as active
-    And  the setup wizard should explain OpenAI and LiteLLM compatibility
-    And  the setup wizard should show a visible cursor on the active input
-    When  I enter the default endpoint and advance to the API key page
-    And  choose to store the API key in the configuration
-    And  enter API key "sk-wizard-key" and advance to Small Model
-    And  choose "model-small" and "model-middle" with Enter
-    When  I type "model-large" on the Thinking Model page
-    Then  the setup wizard should show the Thinking Model page as active
-    When  I confirm the Thinking Model selection with Enter
-    Then  the setup wizard should show the Shell Completion page as active
-    And  the setup wizard should explain shell completion installation
-    When  I skip shell completion setup
-    Then  the setup wizard should show the Shell Shortcut page as active
-    And  the setup wizard should explain shell shortcut installation
-    When  I skip shell integration setup
+    Then  the setup wizard should show the provider controls and guidance
+    When  I configure the provider and models through the wizard
+    And  I complete the optional shell pages without integrations
     Then  setup should exit successfully
     And  the config file should contain api_key exactly "sk-wizard-key"
     And  the config file should contain small tier "model-small", normal tier "model-middle", and thinking tier "model-large"

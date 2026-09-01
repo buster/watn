@@ -107,6 +107,17 @@ fn setup_wizard_visible_cursor(world: &mut WatnWorld) {
     assert!(pty_snapshot(session).contains('█'), "cursor marker missing");
 }
 
+#[then("the setup wizard should show the provider controls and guidance")]
+fn setup_wizard_provider_controls_guidance(world: &mut WatnWorld) {
+    setup_wizard_tabs(
+        world,
+        "\"URL\", \"API key\", \"Catalog\", \"Small Model\", \"Normal Model\"".to_string(),
+    );
+    setup_wizard_active_page(world, "URL".to_string());
+    setup_wizard_compatibility_explanation(world);
+    setup_wizard_visible_cursor(world);
+}
+
 #[when("I enter the default endpoint and advance to the API key page")]
 fn enter_default_endpoint(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
@@ -133,6 +144,16 @@ fn enter_api_key(world: &mut WatnWorld, key: String) {
     wait_for_page(session, "Catalog");
     pty_write(session, "\r");
     wait_for_page(session, "Small Model");
+}
+
+#[when("I configure the provider and models through the wizard")]
+fn configure_provider_and_models(world: &mut WatnWorld) {
+    enter_default_endpoint(world);
+    choose_configuration_storage(world);
+    enter_api_key(world, "sk-wizard-key".to_string());
+    choose_two_models(world, "model-small".to_string(), "model-middle".to_string());
+    type_large_model(world, "model-large".to_string());
+    confirm_large_model(world);
 }
 
 #[when(regex = r#"^choose "([^"]+)" and "([^"]+)" with Enter$"#)]
@@ -223,6 +244,16 @@ fn skip_shell_integration_setup(world: &mut WatnWorld) {
     std::thread::sleep(std::time::Duration::from_millis(200));
     let session = world.pty_session.take().expect("setup PTY session");
     finish_pty_session(world, session);
+}
+
+#[when("I complete the optional shell pages without integrations")]
+fn complete_optional_shell_pages(world: &mut WatnWorld) {
+    setup_wizard_active_page(world, "Shell Completion".to_string());
+    setup_wizard_shell_completion_explanation(world);
+    skip_shell_completion_setup(world);
+    setup_wizard_active_page(world, "Shell Shortcut".to_string());
+    setup_wizard_shell_shortcut_explanation(world);
+    skip_shell_integration_setup(world);
 }
 
 #[then("setup should exit successfully")]

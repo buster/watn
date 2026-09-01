@@ -48,7 +48,7 @@ unimplemented steps: `unimplemented!()`.
 - [x] COMMIT: `feat(quicksetup): Quick setup without a terminal prints guidance instead of asking`
   Hash: 734e954
 
-### 2. A model question without a suggestion requires a non-empty answer
+### 2. An empty model answer is rejected before configuration
 
 - [x] RED: removed `@wip`; targeted run → `Step match is ambiguous` for
   `I enter endpoint` (collision with streamlined_setup regex) — run failed
@@ -182,7 +182,7 @@ unimplemented steps: `unimplemented!()`.
 - [x] COMMIT: `test(e2e): First run without a configuration starts the quick setup`
   Hash: ed48eef
 
-### 11. Completing the quick setup stores the answers and installs the chosen integrations
+### 11. Quick setup stores answers and installs integrations
 
 - [x] RED: e2e runner targeted → stub panic at
   `I accept the pre-filled normal model`, `8 steps (7 passed, 1 failed)`.
@@ -192,7 +192,7 @@ unimplemented steps: `unimplemented!()`.
   `25 steps (25 passed)`. Both managed blocks verified for Bash, Zsh, and
   Fish; the secret itself absent from config.
 - [x] REFACTOR: no-op.
-- [x] COMMIT: `test(e2e): Completing the quick setup stores the answers and installs the chosen integrations`
+- [x] COMMIT: `test(e2e): Quick setup stores answers and installs integrations`
   Hash: 01eaecf
 
 ### 12. Explicit quick setup overwrites an existing configuration
@@ -227,8 +227,9 @@ unimplemented steps: `unimplemented!()`.
 ## Final
 
 - [x] **F1 — Authoritative command tree.** Add `quicksetup` to the built-binary
-  e2e step list in `tests/steps/shell_completions_e2e_steps.rs`; the five
-  modified shell-completions scenarios go GREEN. Run the full suite.
+  e2e step list in `tests/steps/shell_completions_e2e_steps.rs`; consolidate
+  the five regular shell checks into one expanded outline and make the custom
+  runner expand its examples. Run the full suite.
   Evidence: targeted e2e run `Built Bash completion generation emits the
   current command tree` → `9 steps (9 passed)`; the five table-driven
   modified scenarios pass in the full regular suite.
@@ -242,8 +243,60 @@ unimplemented steps: `unimplemented!()`.
   `env_vars` key from the runner process (a PATH entry there stripped the
   runner's own PATH and broke 25 unrelated scenarios).
 - [x] **F3 — Full verification.** `./run-tests.sh` exit 0; `./run-tests.sh --e2e`
-  exit 0. Evidence: regular `157 scenarios (157 passed)` / `930 steps`;
-  e2e `78 scenarios (78 passed)` / `620 steps`. The permanent
-  provider-setup first-use scenario was replaced (identical to the
-  `@givn.modified` delta) because quick setup now owns the missing-config
-  first run; an existing-but-incomplete configuration keeps the coordinator.
+  exit 0. Evidence: regular `160 scenarios (160 passed)` / `958 steps`;
+  e2e `77 scenarios (77 passed)` / `568 steps`. The redundant provider-setup
+  delta copy was removed because the identical existing-incomplete scenario is
+  already permanent; quick setup owns the missing-config first run.
+
+### 14. An invalid endpoint is rejected before setup
+
+- [x] RED: removed `@wip`; targeted run → `1 scenario (1 failed)`,
+  `4 steps (3 passed,́1 failed)` — `I answer the endpoint with an invalid
+  value` matched no step (`Step doesn't match any function`), non-zero.
+
+- [x] GREEN: production files: none (the normalize_endpoint error path
+  and re-ask loop already exist in src/quicksetup.rs); tests/steps/
+  quicksetup_steps.rs implemented the invalid-answer step and the re-ask
+  assertion (waiting on the `endpoint must be an HTTP or HTTPS URL` error
+   and counting ≥2 `Completion endpoint` renders). Targeted run →
+   `1 scenario (1 passed)`, `13 steps (13 passed)`.
+- [x] REFACTOR: no-op (no production code touched by this scenario; the
+  dead-validator removal is committed separately).
+- [x] COMMIT: `feat(quicksetup): An invalid endpoint value re-asks for the endpoint`
+  Hash: 0cb9dd8
+
+### 15. An unknown shell name shows an error and keeps the list open
+
+- [x] RED: targeted run → `1 scenario (1 failed)、5 steps (4 passed、,
+  1 failed)` — `I type an unknown shell name` matched no step, non-zero.
+
+- [x] GREEN: production files: none (the unknown-shell error path
+  already exists in src/quicksetup.rs); tests/steps/quicksetup_steps.rs
+  implemented the type-unknown-shell step and the error assertion (waiting on
+  `unknown shell` and asserting `unknown shell 'tcsh'`; then the flow confirms
+  and exits cleanly). Targeted run → `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: no-op; re-run → `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] COMMIT: `feat(quicksetup): An unknown shell name shows an error and keeps the list open`
+  Hash: 4b816e0
+
+### 16. Re-ask flow completion: an empty small-model answer stores the later answer
+
+- [x] RED: not applicable — all steps were pre-implemented/reused (the re-ask
+  branch itself is exercised by scenario 8's original commit
+  `2c38c0b`; the added continuation steps reuse the existing answer/accept/
+  confirm/config-assertion steps). Legitimate immediate GREEN per the
+  step-reuse rule: targeted run → `1 scenario (1 passed)`, `13 steps (13 passed)`.
+- [x] GREEN: production files: none; delta-spec extension only. The
+  scenario now completes the flow after the re-ask and asserts the stored
+  small model.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `feat(quicksetup): A re-asked small model stores the later answer on completion`
+  Hash: e132cce
+
+###17. Activation: scenario 13 leaves @wip
+
+- [x] The `@wip` marker was removed from the delta spec for `A failed shell
+  installation keeps the saved configuration` (its RED/GREEN evidence was
+  recorded at its original commit `683bbbf` via targeted runs); the scenario
+  now runs in the full suites. Regular `160 scenarios (160 passed)` after
+  activation.

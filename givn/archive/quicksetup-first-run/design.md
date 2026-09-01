@@ -112,22 +112,20 @@ flowchart TD
 - `src/config/mod.rs`: `pub fn config_file_exists() -> bool`.
 - `src/shell_shortcut.rs`: PATH-based availability helper alongside the existing detection.
 - No config schema change; no changes to the wizard, models, provider transport, or output modules.
+- Semantic review remediation keeps long executable scenarios below the retrieval
+  token budget by grouping mechanical PTY sequences behind named test steps.
+  Shell completion coverage uses one five-row `Scenario Outline`; the custom
+  feature runner expands its examples before execution.
 
 ## Step Definitions
 
-- `tests/steps/quicksetup_steps.rs` — the one step file for this capability.
-  It implements the quicksetup Given/When/Then steps: isolation fixture,
-  PATH stubs, PTY start, per-question answers (accept suggestion, enter
-  value, empty answer, shell-list toggles), abort, config and shell-target
-  assertions, non-TTY guidance run. PTY driving reuses
-  `start_pty_session` / `pty_write` / `pty_wait_for_label` /
-  `finish_pty_session` from `tests/steps/mod.rs`.
-- `tests/steps/mod.rs`: add `pub mod quicksetup_steps;`
-- `tests/steps/shell_completions_e2e_steps.rs`: update the authoritative
-  options-and-subcommands list inside the built-binary e2e step ("authoritative
-  root options and subcommands") to include `quicksetup`. The table-driven
-  regular steps in `tests/steps/shell_completions_steps.rs` read the scenario
-  tables and need no change.
+| Capability | File | Responsibility |
+|---|---|---|
+| Quick setup | `tests/steps/quicksetup_steps.rs` | Implement the quicksetup Given/When/Then steps: isolation fixture (`isolate_quicksetup_env`), PATH stubs, PTY start, per-question answers (accept suggestion, enter value, empty answer, shell-list toggles), abort, config and shell-target assertions, non-TTY guidance run, and compact named actions/assertions that preserve the full completion and validation flows. PTY driving reuses `start_pty_session`/`pty_write`/`pty_wait_for_label`/`finish_pty_session` from `tests/steps/mod.rs`. |
+| Step registration and PTY lifecycle | `tests/steps/mod.rs` | Add `pub mod quicksetup_steps;` and reuse the existing PTY/fixture helpers. |
+| Shell completions E2E | `tests/steps/shell_completions_e2e_steps.rs` | Update the authoritative options-and-subcommands list inside the built-binary e2e step to include `quicksetup`. |
+| Shell completions regular | `tests/steps/shell_completions_steps.rs` | Keep the regular shell checks table-driven so all five outline examples execute their syntax, option, determinism, and parser assertions. |
+| Scenario outline expansion | `tests/features_runner.rs` | Expand `Examples` rows after parsing each feature so outline placeholders are substituted before step matching and each example is independently executed. |
 
 ## Test Infrastructure
 
@@ -196,7 +194,7 @@ real files.
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
 | start quick setup automatically on the first run without a config file | First run without a configuration starts the quick setup | CLI | `quicksetup_steps.rs` starts `watn "hello"` in a PTY after `isolate_quicksetup_env`, asserts the announcement and endpoint suggestion in the rendered output |
-| complete quick setup: answer questions, choose shell integrations, confirm | Completing the quick setup stores the answers and installs the chosen integrations | CLI | PTY session driven by `pty_write` keystrokes (Enter and typed shell names) through all five questions and the shell list; `finish_pty_session` captures exit, then config and rc-file assertions run against the isolated HOME |
+| complete quick setup: answer questions, choose shell integrations, confirm | Quick setup stores answers and installs integrations | CLI | PTY session driven by `pty_write` keystrokes (Enter and typed shell names) through all five questions and the shell list; `finish_pty_session` captures exit, then config and rc-file assertions run against the isolated HOME |
 | run `watn quicksetup` explicitly with an existing configuration | Explicit quick setup overwrites an existing configuration | CLI | PTY session with typed endpoint/credential/model answers and typed shell-name deselects; asserts overwritten config, zero sentinel requests, unchanged shell targets |
 | abort quick setup with Ctrl-C | Aborting quick setup with Ctrl-C on the first run leaves no configuration | CLI | PTY session started by the first-run trigger and aborted with the Ctrl-C keystroke; asserts no config file, unchanged shell targets, and zero sentinel requests under the isolated HOME |
 
@@ -221,4 +219,6 @@ the full verification commands.
 2. `src/quicksetup.rs`: prompts, suggestions, validation, persistence, shell install.
 3. CLI wiring: `quicksetup` subcommand, non-TTY guidance, first-run branch swap.
 4. `tests/steps/quicksetup_steps.rs` with `isolate_quicksetup_env` guard and PATH stubs; RED→GREEN per scenario.
-5. Update the shell-completions authoritative-tree step data; run full verify, review, archive.
+5. Compact the retrieval-token-cap scenarios and consolidate shell completion
+   checks into an outline; remove the redundant provider delta copy.
+6. Run full verify, review, archive.
