@@ -79,7 +79,7 @@ Feature: Quick setup first run
     And no shell target file should change
     And no original chat completion request should be sent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Quick setup does not ask reasoning questions and stores no reasoning
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"

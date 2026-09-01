@@ -328,14 +328,42 @@ fn deselect_all_shells(_world: &mut WatnWorld) {
     unimplemented!("deselect shell list")
 }
 
+fn answer_all_suggestions(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Completion endpoint");
+    pty_write(session, "\r");
+    pty_wait_for_label(session, "API key");
+    pty_write(session, "\r");
+    pty_wait_for_label(session, "Small model");
+    pty_write(session, "\r");
+    pty_wait_for_label(session, "Normal model");
+    pty_write(session, "\r");
+    pty_wait_for_label(session, "Thinking model");
+    pty_write(session, "\r");
+    pty_wait_for_label(session, "Shell integrations");
+}
+
 #[when("I complete the quick setup with the suggested answers and no shell integrations")]
-fn complete_no_shells(_world: &mut WatnWorld) {
-    unimplemented!("complete flow without shells")
+fn complete_no_shells(world: &mut WatnWorld) {
+    start_quicksetup_in_terminal(world);
+    answer_all_suggestions(world);
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("quicksetup PTY session");
+    finish_pty_session(world, session);
 }
 
 #[when("I complete the quick setup with the suggested answers and shell integrations selected")]
-fn complete_with_shells(_world: &mut WatnWorld) {
-    unimplemented!("complete flow with shells")
+fn complete_with_shells(world: &mut WatnWorld) {
+    start_quicksetup_in_terminal(world);
+    answer_all_suggestions(world);
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "bash zsh fish\r");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("quicksetup PTY session");
+    finish_pty_session(world, session);
 }
 
 #[when("I abort the quick setup with Ctrl-C")]
@@ -384,18 +412,38 @@ fn config_contains_thinking_model(_world: &mut WatnWorld, _model: String) {
 }
 
 #[then(regex = r#"^the config file should contain small model \"([^\"]+)\" without reasoning$"#)]
-fn config_contains_small_model_without_reasoning(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("small model without reasoning assertion")
+fn config_contains_small_model_without_reasoning(world: &mut WatnWorld, model: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("small = \"{model}\"")),
+        "small model {model:?} missing: {content:?}"
+    );
+    assert!(
+        !content.contains("reasoning"),
+        "unexpected reasoning setting: {content:?}"
+    );
 }
 
 #[then(regex = r#"^the config file should contain normal model \"([^\"]+)\" without reasoning$"#)]
-fn config_contains_normal_model_without_reasoning(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("normal model without reasoning assertion")
+fn config_contains_normal_model_without_reasoning(world: &mut WatnWorld, model: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("normal = \"{model}\"")),
+        "normal model {model:?} missing: {content:?}"
+    );
 }
 
 #[then(regex = r#"^the config file should contain thinking model \"([^\"]+)\" without reasoning$"#)]
-fn config_contains_thinking_model_without_reasoning(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("thinking model without reasoning assertion")
+fn config_contains_thinking_model_without_reasoning(world: &mut WatnWorld, model: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("thinking = \"{model}\"")),
+        "thinking model {model:?} missing: {content:?}"
+    );
+    assert!(
+        !content.contains("reasoning"),
+        "unexpected reasoning setting: {content:?}"
+    );
 }
 
 #[then(regex = r#"^the config file should contain credential \"([^\"]+)\"$"#)]
@@ -404,8 +452,12 @@ fn config_contains_credential(_world: &mut WatnWorld, _credential: String) {
 }
 
 #[then("no reasoning question should have been shown")]
-fn no_reasoning_question(_world: &mut WatnWorld) {
-    unimplemented!("no reasoning question assertion")
+fn no_reasoning_question(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    assert!(
+        !output.to_ascii_lowercase().contains("reasoning"),
+        "reasoning question was shown: {output:?}"
+    );
 }
 
 #[then("Bash should contain a Watn-managed Ctrl-W block")]
