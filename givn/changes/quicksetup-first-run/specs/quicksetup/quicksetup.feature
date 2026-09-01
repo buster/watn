@@ -52,9 +52,9 @@ Feature: Quick setup first run
     And the config file contains models "old-small", "old-normal", and "old-thinking"
     And provider requests are captured by a sentinel
     When I start `watn quicksetup` in a terminal
-    And I enter endpoint "https://llm.example/v1"
-    And I enter credential "sk-new-key"
-    And I enter small model "new-small"
+    And I answer the endpoint with "https://llm.example/v1"
+    And I answer the credential with "sk-new-key"
+    And I answer the small model with "new-small"
     And I accept the pre-filled normal model
     And I accept the pre-filled thinking model
     And I deselect all shell integrations and confirm
@@ -99,12 +99,12 @@ Feature: Quick setup first run
     Then the shell integration list should mark Bash and Zsh as selected
     And the shell integration list should mark Fish as not selected
 
-  @givn.added @wip
+  @givn.added
   Scenario: A model question without a suggestion requires a non-empty answer
     Given no watn configuration exists
     When I start `watn quicksetup` in a terminal
-    And I enter endpoint "https://llm.example/v1"
-    And I enter credential "sk-key"
+    And I answer the endpoint with "https://llm.example/v1"
+    And I answer the credential with "sk-key"
     And I answer the small model question with an empty input
     Then quick setup should still ask for the small model
     And no config file should exist
@@ -114,7 +114,7 @@ Feature: Quick setup first run
     Given no watn configuration exists
     And environment variable OPENAI_API_KEY is set to "sk-openai-test"
     When I start `watn quicksetup` in a terminal
-    And I enter endpoint "https://api.openai.com/v1"
+    And I answer the endpoint with "https://api.openai.com/v1"
     Then the credential question should suggest "${OPENAI_API_KEY}"
     And the small model question should show no suggestion
 

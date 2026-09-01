@@ -4,7 +4,10 @@ use cucumber::{given, then, when};
 
 use crate::WatnWorld;
 
-use super::{run_binary_with_state, start_pty_session};
+use super::{
+    finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write, run_binary_with_state,
+    start_pty_session,
+};
 
 const STUB_SHELLS: [&str; 3] = ["bash", "zsh", "fish"];
 
@@ -222,53 +225,82 @@ fn endpoint_suggestion(_world: &mut WatnWorld, _suggestion: String) {
 }
 
 #[when("I accept the suggested endpoint")]
-fn accept_suggested_endpoint(_world: &mut WatnWorld) {
-    unimplemented!("accept endpoint")
+fn accept_suggested_endpoint(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Completion endpoint");
+    pty_write(session, "\r");
 }
 
-#[when(regex = r#"^I enter endpoint \"([^\"]+)\"$"#)]
-fn enter_endpoint(_world: &mut WatnWorld, _endpoint: String) {
-    unimplemented!("enter endpoint")
+#[when(regex = r#"^I answer the endpoint with \"([^\"]+)\"$"#)]
+fn answer_endpoint(world: &mut WatnWorld, endpoint: String) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Completion endpoint");
+    pty_write(session, &format!("{endpoint}\r"));
 }
 
 #[when("I accept the suggested credential reference")]
-fn accept_suggested_credential(_world: &mut WatnWorld) {
-    unimplemented!("accept credential suggestion")
+fn accept_suggested_credential(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "API key");
+    pty_write(session, "\r");
 }
 
-#[when(regex = r#"^I enter credential \"([^\"]+)\"$"#)]
-fn enter_credential(_world: &mut WatnWorld, _credential: String) {
-    unimplemented!("enter credential")
+#[when(regex = r#"^I answer the credential with \"([^\"]+)\"$"#)]
+fn answer_credential(world: &mut WatnWorld, credential: String) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "API key");
+    pty_write(session, &format!("{credential}\r"));
 }
 
 #[then(regex = r#"^the credential question should suggest \"([^\"]+)\"$"#)]
-fn credential_suggestion(_world: &mut WatnWorld, _suggestion: String) {
-    unimplemented!("credential suggestion assertion")
+fn credential_suggestion(world: &mut WatnWorld, suggestion: String) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "API key");
+    assert!(
+        output.contains(&format!("[{suggestion}]")),
+        "credential suggestion {suggestion:?} missing: {output:?}"
+    );
 }
 
 #[when("I accept the suggested small model")]
-fn accept_suggested_small_model(_world: &mut WatnWorld) {
-    unimplemented!("accept small model")
+fn accept_suggested_small_model(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Small model");
+    pty_write(session, "\r");
 }
 
-#[when(regex = r#"^I enter small model \"([^\"]+)\"$"#)]
-fn enter_small_model(_world: &mut WatnWorld, _model: String) {
-    unimplemented!("enter small model")
+#[when(regex = r#"^I answer the small model with \"([^\"]+)\"$"#)]
+fn answer_small_model(world: &mut WatnWorld, model: String) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Small model");
+    pty_write(session, &format!("{model}\r"));
 }
 
 #[then("the small model question should show no suggestion")]
-fn small_model_no_suggestion(_world: &mut WatnWorld) {
-    unimplemented!("small model no suggestion assertion")
+fn small_model_no_suggestion(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "Small model");
+    assert!(
+        !output.contains("Small model ["),
+        "unexpected small model suggestion: {output:?}"
+    );
 }
 
 #[when("I answer the small model question with an empty input")]
-fn answer_small_model_empty(_world: &mut WatnWorld) {
-    unimplemented!("empty small model answer")
+fn answer_small_model_empty(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Small model");
+    pty_write(session, "\r");
 }
 
 #[then("quick setup should still ask for the small model")]
-fn still_asks_small_model(_world: &mut WatnWorld) {
-    unimplemented!("small model re-ask assertion")
+fn still_asks_small_model(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "value is required");
+    assert!(
+        output.matches("Small model").count() >= 2,
+        "small model question was not re-asked: {output:?}"
+    );
 }
 
 #[when("I accept the pre-filled normal model")]
