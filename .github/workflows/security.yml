@@ -42,8 +42,8 @@ jobs:
             ~/.cargo/git/db/
             ~/go/bin/
             ~/go/pkg/mod/
-            ~/.cache/watn/zizmor-1.29.0/
-          key: watn-security-tools-${{ runner.os }}-${{ runner.arch }}-cargo-audit-0.22.2-cargo-deny-0.20.2-actionlint-1.7.8-zizmor-1.29.0
+            ~/.cache/watn/zizmor-1.30.0/
+          key: watn-security-tools-${{ runner.os }}-${{ runner.arch }}-cargo-audit-0.22.2-cargo-deny-0.20.2-actionlint-1.7.12-zizmor-1.30.0
 
       - name: Install pinned security tools
         shell: bash
@@ -55,15 +55,15 @@ jobs:
           if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
             cargo install cargo-deny --version 0.20.2 --locked
           fi
-          if ! "$HOME/go/bin/actionlint" -version 2>/dev/null | grep -Fq '1.7.8'; then
-            go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.8
+          if ! "$HOME/go/bin/actionlint" -version 2>/dev/null | grep -Fq '1.7.12'; then
+            go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           fi
-          zizmor_home="$HOME/.cache/watn/zizmor-1.29.0"
-          if ! "$zizmor_home/bin/zizmor" --version 2>/dev/null | grep -Fq 'zizmor 1.29.0'; then
+          zizmor_home="$HOME/.cache/watn/zizmor-1.30.0"
+          if ! "$zizmor_home/bin/zizmor" --version 2>/dev/null | grep -Fq 'zizmor 1.30.0'; then
             rm -rf "$zizmor_home"
             python3 -m venv "$zizmor_home"
             "$zizmor_home/bin/pip" install \
-              --disable-pip-version-check zizmor==1.29.0
+              --disable-pip-version-check zizmor==1.30.0
           fi
           printf '%s\n' "$HOME/go/bin" "$zizmor_home/bin" >> "$GITHUB_PATH"
 
