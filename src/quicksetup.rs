@@ -8,7 +8,7 @@ use crate::provider::setup::{
 use crate::shell_completion;
 use crate::shell_shortcut::{self, shells_available_on_path, Shell, ShellEnvironment};
 
-const OPENROUTER_SUGGESTED_SMALL_MODEL: &str = "google/gemma-4-flash";
+const OPENROUTER_SUGGESTED_SMALL_MODEL: &str = "~anthropic/claude-haiku-latest:nitro";
 
 fn prompt(question: &str, suggestion: Option<&str>) -> String {
     match suggestion {

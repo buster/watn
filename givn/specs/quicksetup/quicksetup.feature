@@ -59,9 +59,9 @@ Feature: Quick setup first run
     And  environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
     When  I complete the quick setup with the suggested answers and no shell integrations
     Then  no reasoning question should have been shown
-    And  the config file should contain small model "google/gemma-4-flash" without reasoning
-    And  the config file should contain normal model "google/gemma-4-flash" without reasoning
-    And  the config file should contain thinking model "google/gemma-4-flash" without reasoning
+    And  the config file should contain small model "~anthropic/claude-haiku-latest:nitro" without reasoning
+    And  the config file should contain normal model "~anthropic/claude-haiku-latest:nitro" without reasoning
+    And  the config file should contain thinking model "~anthropic/claude-haiku-latest:nitro" without reasoning
 
   Scenario: Shell integrations are pre-selected only for shells available on the path
     Given  no watn configuration exists
@@ -155,6 +155,6 @@ Feature: Quick setup first run
     When  I complete the quick setup with the suggested answers and shell integrations selected
     Then  quick setup should report a nonzero result
     And  the config file should contain provider "openrouter"
-    And  the config file should contain small model "google/gemma-4-flash"
+    And  the config file should contain small model "~anthropic/claude-haiku-latest:nitro"
     And  Bash should contain a Watn-managed completion block
     And  Zsh should contain a Watn-managed Ctrl-W block
