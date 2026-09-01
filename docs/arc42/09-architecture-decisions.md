@@ -31,6 +31,7 @@ options, the decision outcome, and consequences.
 | ADR-0023 | Canonical provider migration | [docs/adr/0023-canonical-provider-migration.md](../adr/0023-canonical-provider-migration.md) |
 | ADR-0024 | Atomic configuration replacement | [docs/adr/0024-atomic-config-replacement.md](../adr/0024-atomic-config-replacement.md) |
 | ADR-0025 | Repository-wide specification ownership | [docs/adr/0025-repository-wide-specification-ownership.md](../adr/0025-repository-wide-specification-ownership.md) |
+| ADR-0026 | Plain-line quick setup for first-run configuration | [docs/adr/0026-plain-line-quick-setup.md](../adr/0026-plain-line-quick-setup.md) |
 
 ## ADR-0011 summary (superseded where noted)
 
@@ -185,6 +186,19 @@ Chosen option and the governing details.
 
 How the decision is verified.
 -->
+
+## ADR-0026 summary
+
+ADR-0026 chooses a plain-line quick setup as the first-run configuration
+surface, triggered automatically when no configuration file exists and
+available as an explicit `watn quicksetup` command that may overwrite an
+existing configuration on confirmation. It asks endpoint, credential, three
+model strengths, and one shell multiple-choice question; an empty answer
+accepts the suggestion, no reasoning question is asked, and no network
+request is made. It saves through the existing provider-migration and
+atomic-snapshot seams and installs both managed shell blocks per selected
+shell. The full ratatui coordinator remains the surface for existing but
+incomplete configurations and for catalog, reasoning, and review refinement.
 
 ## ADR-0025: Repository-wide specification ownership
 

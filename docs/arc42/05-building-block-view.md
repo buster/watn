@@ -89,6 +89,18 @@ their own final confirmations. A selected arbitrary provider name migrates to
 `custom` in the same successful snapshot; shell target writes remain independent
 after config success.
 
+### Quick setup
+
+**Responsibility:** Configure a usable first-run configuration through a
+plain-line question flow without the ratatui coordinator.
+
+| Element | Responsibility |
+|---|---|
+| `quicksetup` module | Owns the five-question sequence (endpoint, credential, small/normal/thinking models), suggestion resolution, empty-accepts-suggestion input handling, local-only validation, and the closing config-path message |
+| Shell selection rows | One multiple-choice list over Bash/Zsh/Fish, pre-selected from PATH-based availability; a selected shell receives both managed blocks |
+| Persistence seam reuse | Builds the provider draft through the shared migration path, saves one atomic snapshot, then installs completion and Ctrl-W blocks per selected shell; nothing is written before the final confirm |
+
+
 ### Config
 
 **Responsibility:** Load, merge, expose configuration values, distinguish absent and malformed files, and write confirmed candidate snapshots without implicit template creation.

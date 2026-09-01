@@ -21,6 +21,7 @@
 | Partial output | Command content already flushed before a provider or output failure; it remains visible but is never treated as a successful executable result |
 | Model picker | The SetupWizard model-page search flow that updates suggestions as the user types and applies a stale-generation guard to remote results |
 | Setup coordinator | The ratatui keyboard-driven draft flow for provider, completion endpoint, credential, provider-local catalog, separate model/reasoning questions, shell desired state, and final review |
+| Quick setup | The plain-line first-run flow (automatic when no config file exists, or via `watn quicksetup`) asking endpoint, credential, three model strengths, and one shell multiple-choice question; an empty answer accepts the suggestion, no reasoning is asked, and no network request is made |
 | Reasoning effort | A non-empty per-level string controlling `reasoning_effort`; `off` sends no field and every other value is persisted and sent verbatim |
 | Guided sequence | The fixed provider → catalog → small model/reasoning → normal model/reasoning → thinking model/reasoning → shell desired-state → review walk, with back-navigation before confirmation |
 | Page navigation | Moving the selection through the model list by a full page at a time with PageUp/PageDown keys |
