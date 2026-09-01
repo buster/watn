@@ -231,6 +231,21 @@ The interruptible-completion decision has these durable consequences:
   join path the spinner and partial output still finish and the already-streamed
   prefix remains visible; the grace path exits 130 directly without cleanup.
 
+## ADR-0026 consequence coverage
+
+The plain-line quick setup decision has these durable consequences:
+
+- Dual setup surfaces: the quick setup and the ratatui coordinator both write
+  provider, tier, and shell state. Drift between them (suggestion defaults,
+  persistence semantics, shell behaviour) is a standing maintenance risk;
+  both must keep using the shared provider-migration and atomic-save seams.
+- Stale suggestions: the hardcoded OpenRouter model suggestion can fall out
+  of date; it needs periodic review and is not verified against the catalog
+  by design (the quick setup never contacts the network).
+- Reduced first-run configuration: quick-setup configurations carry no
+  catalog endpoint and no reasoning settings, so reasoning-sensitive users
+  must refine with `watn setup` afterwards.
+
 ## Cleanup boundary
 
 Repository cleanup is deliberately conservative:

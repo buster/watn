@@ -105,6 +105,8 @@ enum Commands {
     Provider,
     #[command(about = "Configure shell completion and Ctrl-W integrations")]
     Shell,
+    #[command(about = "Configure provider, models, and shell integrations with a minimal question flow")]
+    Quicksetup,
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"
     )]
@@ -169,6 +171,7 @@ fn main() {
             }
             Commands::Provider => run_provider_setup_command(),
             Commands::Shell => run_shell_setup_command(),
+            Commands::Quicksetup => run_quicksetup_command(),
             Commands::Completions { shell } => run_completions(shell),
         }
         return;
@@ -615,6 +618,24 @@ fn run_models_command(
             eprintln!("error: failed to configure models: {}", error);
             std::process::exit(exit_code(&error));
         }
+    }
+}
+
+fn run_quicksetup_command() {
+    if !std::io::stdin().is_terminal() {
+        eprintln!("Run `watn quicksetup` in a terminal to configure watn.");
+        std::process::exit(1);
+    }
+    let _config = match load_config() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("{}", error);
+            std::process::exit(exit_code(&error));
+        }
+    };
+    if let Err(error) = watn::quicksetup::run() {
+        eprintln!("{}", error);
+        std::process::exit(exit_code(&error));
     }
 }
 

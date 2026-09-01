@@ -11,11 +11,11 @@
 - Provider-derived catalog probing for model discovery and interactive tier selection
 - Four focused TTY setup commands plus a coordinated ratatui flow, with explicit OpenRouter, OpenAI, and Custom provider choices
 - Environment-backed API-key references persisted as `${VARIABLE}` and expanded only at request time
-- Implicit first-use onboarding opens the coordinator whenever provider or any required model role is incomplete, then stops before the original question
+- Implicit first-use onboarding opens the plain-line quick setup when no configuration file exists, the coordinator when a configuration exists but provider or any required model role is incomplete; both stop before the original question
 - Explicit provider selections retain existing unknown-provider and missing-key errors; non-TTY implicit first use prints guidance and exits 1
 - Confirmed config snapshots use same-directory atomic replacement and Unix mode `0600`; shell target writes remain independent
-- Interactive setup uses native Ratatui widget composition rather than paragraph-flattened or hand-positioned terminal output
-- Provider, model, shell, and coordinated onboarding share one draft/state-machine boundary; focused commands own only their domain persistence
+- Interactive setup uses native Ratatui widget composition rather than paragraph-flattened or hand-positioned terminal output; the first-run quick setup is the deliberate plain-line exception (five suggested questions, no probing)
+- Provider, model, shell, and coordinated onboarding share one draft/state-machine boundary; focused commands own only their domain persistence, and the quick setup reuses the same provider-migration and atomic-save seams
 - Test transport is a compile-time debug capability: only `test-support` plus `debug_assertions` can read the endpoint override; release-profile builds use configured endpoints even when the feature is enabled
 - Debug verification builds the default-feature and `test-support` binaries sequentially through Cargo's shared default target cache, copies them to unique temporary paths, and passes those absolute paths to the subprocess harness; release verification inspects the exact target artifact and its runtime libraries
 - Catalog source resolution is provider-local: the selected provider owns model listing, pagination, and search; legacy `[litellm]` configuration is retained but not contacted
@@ -61,7 +61,7 @@
 | Portability | Release artifacts are verified on the selected host and documented with their dynamic runtime-library requirements; static portability is not claimed |
 | Observability | Model name, tok/s, cost printed after `[DONE]`; buffered reasoning printed only under `-v` after success; exit codes 0/1/2/3/130 |
 | Recovery | Visible content survives network/truncation failures; output I/O failures retain the prefix, clean up progress, omit metadata and execution, and use status 1 |
-| First-run usability and credential safety | The setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page and green focused border explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
+| First-run usability and credential safety | The quick setup asks six plain-line questions with suggestions (endpoint, credential, three models, shell selection), stores a `${VARIABLE}` reference instead of a secret, and performs no network request; the setup wizard has an OpenRouter default, explains compatibility, masks literal input, preserves environment references, makes the active cursor/page and green focused border explicit, gates automatic setup on TTY, and stops after model selection when no implicit provider is ready |
 | Transport isolation | The configured endpoint remains the source for readiness, persistence, and display; only debug test-support outbound requests may use a non-empty override, with missing/whitespace values falling back |
 | Completion safety | The selector is closed, success writes only deterministic script bytes to stdout, stderr remains empty, shell parsing is verified for each supported shell, and no config/provider operation is entered |
 | Shortcut safety | Setup is opt-in, target markers are validated before writes, existing files are replaced atomically, every selected shell is attempted and reported, and widgets never evaluate their captured result |

@@ -516,6 +516,7 @@ provider credential environment variable and provider selection is implicit.
 sequenceDiagram
     participant User as User
     participant CLI as watn CLI
+    participant Quick as Quick Setup
     participant Setup as Setup Wizard
     participant Config as Config
     participant Twin as OpenAI-compatible endpoint
@@ -526,7 +527,13 @@ sequenceDiagram
     alt stdin is not a TTY
         CLI-->>User: actionable `watn provider` and config-path guidance
         CLI-->>User: exit 1; no ratatui and no network request
-    else stdin is a TTY
+    else stdin is a TTY and no config file exists
+        CLI->>Quick: open plain-line quick setup
+        User->>Quick: accept or edit endpoint, credential, models, and shells
+        Quick->>Config: write one atomic snapshot at confirm
+        CLI-->>User: setup complete; exit 0
+        Note over CLI: original question is not sent; user reruns it
+    else stdin is a TTY and a config file exists
         CLI->>Setup: open coordinated setup draft
         User->>Setup: enter provider, endpoint, and credential
         Setup->>Twin: GET provider-local /models
@@ -543,14 +550,57 @@ sequenceDiagram
    variables; do not use a network probe for readiness.
 2. If stdin is not a TTY, print actionable setup guidance and exit 1 without
    initializing ratatui.
-3. If stdin is a TTY, open the shared setup wizard when no implicit provider is
-   ready.
-4. Keep the endpoint and either the literal credential or the `${VARIABLE}`
+3. If stdin is a TTY and no configuration file exists, run the plain-line
+   quick setup (see next scenario).
+4. If stdin is a TTY and a configuration file exists, open the shared setup
+   wizard when no implicit provider is ready.
+5. Keep the endpoint and either the literal credential or the `${VARIABLE}`
    reference in the draft without printing the resolved secret.
-5. Probe the provider-local catalog and walk separate model and reasoning
+6. Probe the provider-local catalog and walk separate model and reasoning
    questions in the same process and terminal.
-6. Save one complete snapshot only after review confirmation. Do not send or resume the
+7. Save one complete snapshot only after review confirmation. Do not send or resume the
    original question.
+
+## Scenario: First-run quick setup
+
+**Trigger:** User runs `watn "hello"` with no configuration file in a terminal,
+or starts `watn quicksetup` explicitly (with or without an existing
+configuration, which is overwritten on confirmation).
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant CLI as watn CLI
+    participant Quick as Quick Setup
+    participant Config as Config
+    participant Shells as Shell startup files
+
+    User->>CLI: watn quicksetup (or first-run trigger)
+    CLI-->>User: "no configuration found; starting quick setup"
+    CLI->>User: endpoint question (suggestion: OpenRouter URL)
+    User-->>CLI: accept or enter endpoint
+    CLI->>User: credential question (suggestion: `${ENV}` reference when set)
+    User-->>CLI: accept or enter credential
+    CLI->>User: small model (suggestion: gemma on OpenRouter), then normal and thinking prefilled with the small answer
+    User-->>CLI: accept or enter models
+    CLI->>User: shell multiple-choice preselected from PATH availability
+    User-->>CLI: shell names to toggle rows, empty line to confirm
+    Quick->>Config: atomic snapshot (provider, tiers; no reasoning)
+    Quick->>Shells: install completion and Ctrl-W blocks per selected shell
+    CLI-->>User: config path and `watn setup` hint
+```
+
+**Steps:**
+1. Announce that no configuration was found and that the quick setup starts
+   (automatic first-run path).
+2. Ask each plain-line question in order; an empty answer accepts the
+   bracketed suggestion; invalid endpoints and empty required models re-ask.
+3. Never contact the network: no endpoint probe, no catalog request.
+4. On confirm, save the configuration atomically (reasoning stays unset),
+   then install both managed blocks for every selected shell.
+5. Print where the configuration lives and that `watn setup` changes it.
+   Do not send an original request; Ctrl-C before confirm writes nothing.
+
 
 ## Scenario: Explicit provider setup
 

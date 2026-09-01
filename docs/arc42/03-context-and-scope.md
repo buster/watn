@@ -24,6 +24,7 @@ graph TB
     CLI -->|"completion script on stdout"| CompletionCaller
     CompletionCaller -->|"install or source"| ShellParser
     User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab / Ctrl-R) in SetupWizard pages"| CLI
+    User -->|"plain-line quick setup answers (endpoint, credential, models, shell selection)"| CLI
     User -->|"optional shortcut selection after final setup confirmation"| CLI
     CLI -->|"write provider endpoint and credential representation"| Config
     CLI -->|"marked shortcut block and reload report"| ShellStartup
@@ -38,7 +39,7 @@ graph TB
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); `watn setup`, `watn provider`, `watn models`, and `watn shell`; one-question navigation and editing; typed model filter queries | Incrementally flushed shell command content on stdout, then final metadata on stderr; buffered reasoning on stderr only after successful completion with `-v`; focused setup flows with provider choices, credential source, catalog status, separate model/reasoning questions, review, shell desired state, and safe cancellation; saved provider/model setup; actionable non-TTY setup guidance; or confirmation prompt |
+| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`); `watn setup`, `watn provider`, `watn models`, `watn shell`, and `watn quicksetup`; one-question navigation and editing; typed model filter queries | Incrementally flushed shell command content on stdout, then final metadata on stderr; buffered reasoning on stderr only after successful completion with `-v`; focused setup flows with provider choices, credential source, catalog status, separate model/reasoning questions, review, shell desired state, and safe cancellation; plain-line first-run quick setup with suggested endpoint, credential reference, and models; saved provider/model setup; actionable non-TTY setup guidance; or confirmation prompt |
 | Shell user / completion caller | `watn completions <SHELL>` with one of `bash`, `elvish`, `fish`, `powershell`, or `zsh` | The selected shell's completion script on stdout only; the caller installs or sources it |
 | LLM provider and provider-local catalog | API key, completion endpoint, provider-local catalog endpoint, search query | HTTP POST to `/v1/chat/completions` and HTTP GET to `/models`, paginated `/models`, and `/models?search=...`; the same provider credential is used and catalog requests never receive chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |

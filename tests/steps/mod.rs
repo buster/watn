@@ -15,6 +15,7 @@ pub mod preserve_ctrl_w_requests_steps;
 pub mod provider_setup_layout_steps;
 pub mod provider_setup_steps;
 pub mod providers_steps;
+pub mod quicksetup_steps;
 pub mod reasoning_policy_steps;
 pub mod release_truth_e2e_steps;
 pub mod release_truth_steps;
