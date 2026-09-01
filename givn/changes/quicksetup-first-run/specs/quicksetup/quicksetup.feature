@@ -121,6 +121,12 @@ Feature: Quick setup first run
     And I answer the small model question with an empty input
     Then quick setup should still ask for the small model
     And no config file should exist
+    When I answer the small model with "my-small"
+    And I accept the pre-filled normal model
+    And I accept the pre-filled thinking model
+    And I keep the pre-selected shell integrations and confirm
+    Then quick setup should exit successfully
+    And the config file should contain small model "my-small"
 
   @givn.added
   Scenario: An invalid endpoint value re-asks for the endpoint
