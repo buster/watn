@@ -412,6 +412,23 @@ fn capitalize(name: &str) -> String {
     }
 }
 
+#[when("I type an unknown shell name")]
+fn type_unknown_shell(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Shell integrations");
+    pty_write(session, "tcsh\r");
+}
+
+#[then("the shell integration list should show an error for the unknown shell")]
+fn shell_list_unknown_shell_error(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "unknown shell");
+    assert!(
+        output.contains("unknown shell 'tcsh'"),
+        "unknown shell error missing: {output:?}"
+    );
+}
+
 #[when("I keep the pre-selected shell integrations and confirm")]
 fn keep_preselected_shells(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("quicksetup PTY session");
