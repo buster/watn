@@ -148,13 +148,17 @@ unimplemented steps: `unimplemented!()`.
 
 ### 9. A failed shell installation keeps the saved configuration
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): install-after-save with aggregated
-  nonzero report; fish target forced unwritable by step fixture.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): A failed shell installation keeps the saved configuration`
-  Hash:
+- [x] RED: removed `@wip`; targeted run → stub panics in the assertion steps,
+  non-zero.
+- [x] GREEN: production files: none (install-after-save with aggregated
+  nonzero report already in src/quicksetup.rs); tests/steps/quicksetup_steps.rs
+  implemented the nonzero-result, model, and shell-block assertions. Targeted
+  run → `1 scenario (1 passed)`, `9 steps (9 passed)`. The fish target is a
+  directory, forcing the install failure; bash and zsh installs succeeded and
+  the config stayed saved.
+- [x] REFACTOR: removed the duplicate stub of the nonzero-result step.
+- [x] COMMIT: `feat(quicksetup): A failed shell installation keeps the saved configuration`
+  Hash: 683bbbf
 
 ## @e2e scenarios (verify.e2e_command)
 

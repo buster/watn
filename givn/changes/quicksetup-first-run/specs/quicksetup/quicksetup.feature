@@ -8,7 +8,7 @@
 
 Feature: Quick setup first run
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: First run without a configuration starts the quick setup
     Given no watn configuration exists
     And provider requests are captured by a sentinel

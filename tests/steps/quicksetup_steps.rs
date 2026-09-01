@@ -227,18 +227,37 @@ fn output_does_not_mention_quicksetup(world: &mut WatnWorld) {
 // ---------------------------------------------------------------------------
 
 #[then("the quick setup should announce that no configuration was found")]
-fn announce_no_configuration(_world: &mut WatnWorld) {
-    unimplemented!("announce assertion")
+fn announce_no_configuration(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "Completion endpoint");
+    assert!(
+        output.to_ascii_lowercase().contains("no configuration"),
+        "announcement missing: {output:?}"
+    );
+    assert!(
+        output.to_ascii_lowercase().contains("quick setup"),
+        "quick setup announcement missing: {output:?}"
+    );
 }
 
 #[then("the quick setup should ask for the completion endpoint")]
-fn asks_for_endpoint(_world: &mut WatnWorld) {
-    unimplemented!("endpoint question assertion")
+fn asks_for_endpoint(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "Completion endpoint");
+    assert!(
+        output.contains("Completion endpoint"),
+        "endpoint question missing: {output:?}"
+    );
 }
 
 #[then(regex = r#"^the endpoint question should suggest \"([^\"]+)\"$"#)]
-fn endpoint_suggestion(_world: &mut WatnWorld, _suggestion: String) {
-    unimplemented!("endpoint suggestion assertion")
+fn endpoint_suggestion(world: &mut WatnWorld, suggestion: String) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "Completion endpoint");
+    assert!(
+        output.contains(&format!("[{suggestion}]")),
+        "endpoint suggestion {suggestion:?} missing: {output:?}"
+    );
 }
 
 #[when("I accept the suggested endpoint")]
