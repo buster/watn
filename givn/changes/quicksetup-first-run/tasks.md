@@ -164,13 +164,20 @@ unimplemented steps: `unimplemented!()`.
 
 ### 10. First run without a configuration starts the quick setup
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): announcement output; sentinel step
-  (httpmock via `WATN_TEST_ENDPOINT_OVERRIDE`, no `WATN_PROVIDER`).
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `test(e2e): First run without a configuration starts the quick setup`
-  Hash:
+- [x] RED: e2e runner (`./run-tests.sh --e2e --name ...`) → stub panic
+  `not implemented: announce assertion`, `1 scenario (1 failed)`, non-zero.
+- [x] GREEN: production files: `src/main.rs` (first-run branch inside the
+  implicit-selection gate: `config::config_file_exists()` false →
+  `watn::quicksetup::run()`; original request not sent), `src/config/mod.rs`
+  (`config_file_exists()`), tests/steps/quicksetup_steps.rs (announcement and
+  question Thens waiting on the live PTY snapshot). Targeted run →
+  `1 scenario (1 passed)`, `7 steps (7 passed)`. Sentinel proves zero
+  chat-completion requests.
+- [x] REFACTOR: announcement assertion moved to the live PTY snapshot
+  (world.output is empty until the session finishes); re-run →
+  `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: `test(e2e): First run without a configuration starts the quick setup`
+  Hash: ed48eef
 
 ### 11. Completing the quick setup stores the answers and installs the chosen integrations
 

@@ -18,7 +18,7 @@ Feature: Quick setup first run
     And the endpoint question should suggest "https://openrouter.ai/api/v1"
     And no original chat completion request should be sent
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Completing the quick setup stores the answers and installs the chosen integrations
     Given no watn configuration exists
     And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
