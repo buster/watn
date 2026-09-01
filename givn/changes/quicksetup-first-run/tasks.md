@@ -181,13 +181,16 @@ unimplemented steps: `unimplemented!()`.
 
 ### 11. Completing the quick setup stores the answers and installs the chosen integrations
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): shell install per selected shell
-  (completion + Ctrl-W blocks); full happy path through PTY.
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `test(e2e): Completing the quick setup stores the answers and installs the chosen integrations`
-  Hash:
+- [x] RED: e2e runner targeted → stub panic at
+  `I accept the pre-filled normal model`, `8 steps (7 passed, 1 failed)`.
+- [x] GREEN: production files: none beyond earlier tasks; the step file
+  implemented the pre-filled accepts, shell-list confirm, exit/location/hint
+  and credential assertions. Targeted run → `1 scenario (1 passed)`,
+  `25 steps (25 passed)`. Both managed blocks verified for Bash, Zsh, and
+  Fish; the secret itself absent from config.
+- [x] REFACTOR: no-op.
+- [x] COMMIT: `test(e2e): Completing the quick setup stores the answers and installs the chosen integrations`
+  Hash: 01eaecf
 
 ### 12. Explicit quick setup overwrites an existing configuration
 
