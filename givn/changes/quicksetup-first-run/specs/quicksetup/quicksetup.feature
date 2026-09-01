@@ -102,6 +102,17 @@ Feature: Quick setup first run
     And the shell integration list should mark Fish as not selected
 
   @givn.added
+  Scenario: An unknown shell name shows an error and keeps the list open
+    Given no watn configuration exists
+    And environment variable OPENROUTER_API_KEY is set to "sk-quick-key"
+    When I start `watn quicksetup` in a terminal
+    And I accept the suggested endpoint, credential, and models
+    And I type an unknown shell name
+    Then the shell integration list should show an error for the unknown shell
+    When I keep the pre-selected shell integrations and confirm
+    Then quick setup should exit successfully
+
+  @givn.added
   Scenario: A model question without a suggestion requires a non-empty answer
     Given no watn configuration exists
     When I start `watn quicksetup` in a terminal
