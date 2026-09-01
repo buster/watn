@@ -5,7 +5,7 @@ use cucumber::{given, then, when};
 use crate::WatnWorld;
 
 use super::{
-    finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write, run_binary_with_state,
+    finish_pty_session, pty_wait_for_label, pty_write, run_binary_with_state,
     start_pty_session,
 };
 
@@ -314,8 +314,32 @@ fn accept_prefilled_thinking_model(_world: &mut WatnWorld) {
 }
 
 #[when("I accept the suggested endpoint, credential, and models")]
-fn accept_suggestions_through_models(_world: &mut WatnWorld) {
-    unimplemented!("accept all text suggestions")
+fn accept_suggestions_through_models(world: &mut WatnWorld) {
+    answer_all_suggestions(world);
+}
+
+#[then(regex = r#"^the shell integration list should mark ([A-Za-z]+) as (selected|not selected)$"#)]
+fn shell_list_marks(world: &mut WatnWorld, shell: String, state: String) {
+    let session = world.pty_session.as_ref().expect("quicksetup PTY session");
+    let output = pty_wait_for_label(session, "Shell integrations");
+    let name = shell.to_ascii_lowercase();
+    let marker = match state.as_str() {
+        "selected" => "[x]",
+        _ => "[ ]",
+    };
+    let rendered = format!("{marker} {}", capitalize(&name));
+    assert!(
+        output.contains(&rendered),
+        "shell list does not show {rendered:?}: {output:?}"
+    );
+}
+
+fn capitalize(name: &str) -> String {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(first) => first.to_ascii_uppercase().to_string() + chars.as_str(),
+        None => String::new(),
+    }
 }
 
 #[when("I keep the pre-selected shell integrations and confirm")]
@@ -483,9 +507,4 @@ fn fish_has_ctrlw_block(_world: &mut WatnWorld) {
 #[then("no shell target file should change")]
 fn no_shell_target_changes(_world: &mut WatnWorld) {
     unimplemented!("shell target unchanged assertion")
-}
-
-#[then(regex = r#"^the shell integration list should mark ([A-Za-z]+) as (selected|not selected)$"#)]
-fn shell_list_marks(_world: &mut WatnWorld, _shell: String, _state: String) {
-    unimplemented!("shell list marking assertion")
 }

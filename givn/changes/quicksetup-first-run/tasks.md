@@ -74,13 +74,19 @@ unimplemented steps: `unimplemented!()`.
 
 ### 4. An OpenAI endpoint suggests the OpenAI credential and no model
 
-- [ ] RED: evidence:
-- [ ] GREEN: production files (list): endpoint-derived suggestion resolution
-  (openai endpoint → `${OPENAI_API_KEY}` suggestion, empty model suggestion).
-  Evidence:
-- [ ] REFACTOR: evidence:
-- [ ] COMMIT: `feat(quicksetup): An OpenAI endpoint suggests the OpenAI credential and no model`
-  Hash:
+- [x] RED: two genuine failures captured. (a) The scenario never answered
+  the credential question, so the small-model wait timed out
+  (`PTY did not render label "Small model"`); fixed the flow.
+  (b) `And I accept the suggested credential reference` after a `Then` is a
+  Then-keyword step and did not match the `#[when]` definition — explicit
+  `When` keyword added.
+- [x] GREEN: production files: none (suggestion logic already endpoint-derived
+  in src/quicksetup.rs); step text fix in the delta spec. Targeted run →
+  `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: no-op; passing state unchanged.
+- [x] COMMIT: `feat(quicksetup): An OpenAI endpoint suggests the OpenAI credential and no model`
+  Hash: 0f2ad86 (an earlier commit attempt 21ed020 on the failing state was
+  reset locally before pushing; the scenario commit contains the fixed spec).
 
 ### 5. Shell integrations are pre-selected only for shells available on the path
 
