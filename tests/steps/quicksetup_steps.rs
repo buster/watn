@@ -340,13 +340,17 @@ fn still_asks_small_model(world: &mut WatnWorld) {
 }
 
 #[when("I accept the pre-filled normal model")]
-fn accept_prefilled_normal_model(_world: &mut WatnWorld) {
-    unimplemented!("accept normal model")
+fn accept_prefilled_normal_model(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Normal model");
+    pty_write(session, "\r");
 }
 
 #[when("I accept the pre-filled thinking model")]
-fn accept_prefilled_thinking_model(_world: &mut WatnWorld) {
-    unimplemented!("accept thinking model")
+fn accept_prefilled_thinking_model(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Thinking model");
+    pty_write(session, "\r");
 }
 
 #[when("I accept the suggested endpoint, credential, and models")]
@@ -379,13 +383,25 @@ fn capitalize(name: &str) -> String {
 }
 
 #[when("I keep the pre-selected shell integrations and confirm")]
-fn keep_preselected_shells(_world: &mut WatnWorld) {
-    unimplemented!("confirm shell list")
+fn keep_preselected_shells(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Shell integrations");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("quicksetup PTY session");
+    finish_pty_session(world, session);
 }
 
 #[when("I deselect all shell integrations and confirm")]
-fn deselect_all_shells(_world: &mut WatnWorld) {
-    unimplemented!("deselect shell list")
+fn deselect_all_shells(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("quicksetup PTY session");
+    pty_wait_for_label(session, "Shell integrations");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    pty_write(session, "bash zsh fish\r");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("quicksetup PTY session");
+    finish_pty_session(world, session);
 }
 
 fn answer_all_suggestions(world: &mut WatnWorld) {
@@ -446,8 +462,8 @@ fn abort_quicksetup(world: &mut WatnWorld) {
 }
 
 #[then("quick setup should exit successfully")]
-fn quicksetup_exit_success(_world: &mut WatnWorld) {
-    unimplemented!("exit status assertion")
+fn quicksetup_exit_success(world: &mut WatnWorld) {
+    assert_eq!(world.exit_status, Some(0), "quicksetup should exit 0");
 }
 
 #[then("quick setup should report a configuration error")]
@@ -462,13 +478,27 @@ fn quicksetup_config_error(world: &mut WatnWorld) {
 }
 
 #[then("the output should state the configuration file location")]
-fn output_states_config_location(_world: &mut WatnWorld) {
-    unimplemented!("config location assertion")
+fn output_states_config_location(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    let path = quicksetup_config_path(world);
+    let file_name = path
+        .file_name()
+        .expect("config file name")
+        .to_string_lossy()
+        .to_string();
+    assert!(
+        output.contains("Configuration written to") && output.contains(&file_name),
+        "config location missing: {output:?}"
+    );
 }
 
 #[then(regex = r#"^the output should state that the configuration can be changed with `watn setup`$"#)]
-fn output_states_setup_hint(_world: &mut WatnWorld) {
-    unimplemented!("watn setup hint assertion")
+fn output_states_setup_hint(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    assert!(
+        output.contains("watn setup"),
+        "watn setup hint missing: {output:?}"
+    );
 }
 
 #[then("quick setup should report a nonzero result")]
@@ -539,8 +569,12 @@ fn config_contains_thinking_model_without_reasoning(world: &mut WatnWorld, model
 }
 
 #[then(regex = r#"^the config file should contain credential \"([^\"]+)\"$"#)]
-fn config_contains_credential(_world: &mut WatnWorld, _credential: String) {
-    unimplemented!("credential config assertion")
+fn config_contains_credential(world: &mut WatnWorld, credential: String) {
+    let content = quicksetup_config_content(world);
+    assert!(
+        content.contains(&format!("api_key = \"{credential}\"")),
+        "credential {credential:?} missing: {content:?}"
+    );
 }
 
 #[then("no reasoning question should have been shown")]
