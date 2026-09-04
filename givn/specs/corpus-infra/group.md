@@ -28,7 +28,10 @@ session behaviour, search concurrency, release truth, and the `ask` flow
 
 ## Extends
 
-- every other group (infrastructure is included, not invoked directly)
+- none
+
+(Use cases that include corpus-infra record the relationship on their
+own side; corpus-infra holds no outgoing dependency.)
 
 ## Out of scope
 

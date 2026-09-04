@@ -25,11 +25,13 @@ persistence and responsiveness they rely on.
 
 ## Includes
 
-- model-setup (model tier step), provider (provider step)
+- model-setup (model tier step)
+- provider (provider step)
+- corpus-infra (auto-init-config initialises config on first run)
 
 ## Extends
 
-- corpus-infra (auto-init-config initialises config on first run)
+- none
 
 ## Out of scope
 
