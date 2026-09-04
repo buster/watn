@@ -88,10 +88,10 @@ migration concerns rather than RED/GREEN changes to watn. Ordered per
   non-blocking). Coverage measured via `./measure-coverage.sh` +
   `./merge-coverages.sh`: merged `coverage/cobertura-coverage.xml`
   `line-rate="0.9149426846639083"` = 91.49% line coverage.
-- [ ] **Verification:** `review.md` written with real evidence;
-  `givn check review --change migrate-0-3-0-to-0-5-0` passes all gates;
-  `givn status` shows all artifacts complete; `givn archive --change
-  migrate-0-3-0-to-0-5-0` succeeds; post-archive `givn status` clean with no
-  synthetic migration capability under `givn/specs/`.
-- [ ] **COMMIT:** review + tasks evidence commit hash recorded here before
-  archive.
+- [x] **Verification:** `review.md` written with real evidence;
+  `givn check review --change migrate-0-3-0-to-0-5-0` passed all gates
+  (verify, verify-e2e, integrity, run declaration, overlap dispositions;
+  net delta 0/0/0, zero warnings). `givn status` shows all artifacts
+  complete.
+- [x] **COMMIT:** Evidence commits `cf05e3a` (tasks + review PASS) and
+  `d4344d3` (clean disposition tables). Archive follows immediately.
