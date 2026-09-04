@@ -178,7 +178,7 @@ Record an evidence table: `path`, `owner`, `current state`,
   (config scaffold, commands.yaml, generated skill/command targets,
   Givn-owned fenced blocks).
 - Confirm `givn_config_version` now identifies `0.5.0`.
-- Confirm the maintenance change `givn/changes/migrate-0.3.0-to-0.5.0/`
+- Confirm the maintenance change `givn/changes/migrate-0-3-0-to-0-5-0/`
   exists with proposal.md, design.md, and `.givn-skip` containing
   `specs`; confirm no product feature spec, no fabricated sign-off.
 - Re-run `givn skills sync` only if a generated file is stale.
@@ -280,7 +280,7 @@ verified, and never weaken a gate to make a check pass.
    fails loudly) and the effective manifest still contains `review`.
 6. Complete the maintenance change through design-review, tasks, and
    review with real evidence, then
-   `givn archive --change migrate-0.3.0-to-0.5.0`.
+   `givn archive --change migrate-0-3-0-to-0-5-0`.
 7. After archive: `givn status` clean, no synthetic migration feature
    under `givn/specs/`, and the final Git history shows the managed
    commit, the migration change commit, and project-specific commits with
