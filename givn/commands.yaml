@@ -8,3 +8,37 @@ coverage:
   non_e2e_path: "coverage/non-e2e-cobertura.xml"
   e2e_path: "coverage/e2e-cobertura.xml"
   output_path: "coverage/cobertura-coverage.xml"
+
+# --- Product start ------------------------------------------------------------
+# How the built product is started. givn NEVER runs this command as part of
+# validation — the declaration is validated, documented in the README, and
+# gates `givn archive` while it is unconfigured. `givn run` and automation
+# around givn (CI, a preview host) read it and start the product.
+#
+#   product_type: server   long-running process that listens on a port
+#   product_type: cli      one-shot command-line tool
+#   product_type: library  consumed as a dependency; nothing to start
+#
+# For `server`, set exactly one of `port` (fixed) or `port_env` (the caller
+# passes the port through this environment variable), plus `ready_path`.
+#
+# Examples:
+#   run:
+#     command: "./run.sh"
+#     product_type: server
+#     port_env: "PORT"
+#     ready_path: "/healthz"
+#     ready_timeout_s: 60
+#
+#   run:
+#     command: "cargo run --release -- --help"
+#     product_type: cli
+#
+# Overlay semantics match `verify:` — this block replaces the default as a
+# whole, so list every field you need.
+run:
+  command: "givn missing-run-command"   # replace with the real start command
+  # product_type: server
+  # port_env: "PORT"
+  # ready_path: "/healthz"
+  # ready_timeout_s: 60
