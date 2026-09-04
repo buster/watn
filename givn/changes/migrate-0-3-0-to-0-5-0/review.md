@@ -92,21 +92,14 @@ advisory only; it was not acted on and recommends nothing for this change's
 ## Overlap dispositions
 
 This change introduces no delta scenario, so it participates in no shape
-match. `givn lint` reports the pre-existing permanent-tree warnings
-([SUBSET]/[LONG] advisory notices) which involve no delta of this change.
-
-| Type | Involving this change | Decision |
-|---|---|---|
-| Shape matches | 0 | none required |
-| Removed + added pairs | 0 | none required |
+match and there are no finding pairs to disposition. Zero rows.
+`givn check review` reports `net delta: 0 added, 0 modified, 0 removed`.
 
 ## Split-or-keep
 
-No long-scenario finding involves this change (zero delta scenarios).
-
-| Long scenario | Involving this change | Decision |
-|---|---|---|
-| (permanent-tree [LONG] notices) | 0 | none required |
+No long-scenario finding involves this change (zero delta scenarios), so
+there are no rows to disposition. The permanent-tree [LONG] advisory notices
+pre-date this change and involve no delta of it.
 
 ## Sign-off checklist
 
