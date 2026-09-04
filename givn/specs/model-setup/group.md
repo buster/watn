@@ -19,10 +19,31 @@ draws from.
 
 ## Interactions
 
-- run the interactive model tier configuration (`watn models`)
-- browse catalogue sources and credentials behind them
-- pick models in the ratatui picker with autosuggest
-- configure reasoning levels and reasoning policy
+- Configured LiteLLM is used for model catalog requests
+- LiteLLM discovery does not replace the active chat provider
+- Interactive model discovery uses an OpenRouter environment credential
+- A literal saved credential is authoritative over environment fallback
+- Find a model outside the initial page while assigning tiers
+- Discover models and select tiers interactively
+- Model explorer without LiteLLM endpoint configured
+- Configure model and reasoning for all three levels in the dialog
+- Browse the model list with arrow keys and page keys
+- Type a filter and see the matching suggestions
+- Return to a previous level and change its selection before confirming
+- Configured per-level reasoning takes effect on a request
+- Minimal reasoning is persisted and sent
+- Thinking tier sends reasoning without printing it
+- Thinking tier with verbose flag prints reasoning to stderr
+- Verbose flag with small tier prints reasoning if present
+- Small tier without verbose flag does not print reasoning
+- Verbose flag with default tier does not alter existing model behavior
+- Help output includes verbose flag
+- Thinking tier with verbose and execute flags
+- Coordinated setup completes provider models reasoning and shell choices
+- Provider setup configures an OpenAI provider with an environment credential
+- Models setup configures all three roles from an available catalog
+- Shell setup independently configures completion and Ctrl-W integrations
+- Incomplete interactive request opens setup and does not send the original request
 
 ## Includes
 
@@ -30,7 +51,7 @@ draws from.
 
 ## Extends
 
-- interactive-setup (the models flow can run as part of full setup)
+- none
 
 ## Out of scope
 
