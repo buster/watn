@@ -16,8 +16,10 @@ watn behaves like a native shell citizen.
 
 ## Interactions
 
-- generate a completion script for the caller's shell
-- trigger the interactive shell shortcut (Ctrl-W) in a session
+- Generated Bash, Zsh, and Fish configurations pass shell syntax checks
+- The generated Bash widget keeps the request visible and does not evaluate the command
+- Fish replaces the buffer with the generated command after Ctrl-W
+- Built Bash completion generation emits the current command tree
 
 ## Includes
 

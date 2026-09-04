@@ -17,9 +17,13 @@ setup widgets that collect them.
 
 ## Interactions
 
-- configure a provider endpoint interactively (`watn provider`)
-- select a credential source for the provider
-- edit provider setup through the widget layout
+- Provider setup separates choices, details, and guidance
+- Model picker makes tiers and long model lists easy to scan
+- Configure OpenRouter with an environment-backed credential
+- First normal use starts provider setup and then model setup
+- Custom OpenAI-compatible provider from config
+- LiteLLM endpoint in config for model discovery
+- Provider API key from environment variable
 
 ## Includes
 
@@ -27,7 +31,7 @@ setup widgets that collect them.
 
 ## Extends
 
-- interactive-setup (provider setup is one leg of the full setup flow)
+- none
 
 ## Out of scope
 

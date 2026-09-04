@@ -18,9 +18,31 @@ session behaviour, search concurrency, release truth, and the `ask` flow
 
 ## Interactions
 
-- include config storage when persisting any setting
-- include SSE streaming/transport for live model traffic
-- include session handling for ask/cancel flows
+- Ask with default tier returns a copy-pasteable command
+- Explicit tier -1 uses the small/fast model
+- Tier -2 uses the normal model
+- Tier -3 uses the thinking/reasoning model
+- Execute flag prompts for confirmation
+- Execute flag with explicit "y" confirmation
+- Execute flag with "n" answer skips execution
+- Cost is displayed when pricing is configured
+- Tokens/second is displayed after response completes
+- Ask via stdin pipe
+- One Ctrl+C cancels a completion waiting for streamed output
+- One Ctrl+C cancels a completion waiting for a connection
+- Configure model tiers in config file
+- Environment variable overrides config file
+- CLI flag overrides environment variable
+- Model pricing configured for cost display
+- Command text appears before a delayed stream completes
+- Verbose streaming keeps reasoning on stderr and command text on stdout
+- A mid-stream failure preserves visible content and exits unsuccessfully
+- Raw terminal confirmation happens after the complete command arrives
+- Piped confirmation remains available after streamed output
+- Version flag reports the package version
+- Normal debug requests ignore test routing settings
+- Test-support requests use isolated routing without changing saved configuration
+- Missing or whitespace test overrides fall back to the configured provider
 
 ## Includes
 

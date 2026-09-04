@@ -18,10 +18,22 @@ persistence and responsiveness they rely on.
 
 ## Interactions
 
-- run the full interactive setup wizard (`watn setup`)
-- run the minimal-question quick setup (`watn quicksetup`)
-- observe active input highlighting and responsive model filtering
-- persist setup results for later runs
+- The initial provider input has a green border
+- The green border follows API key focus
+- The green border follows model focus
+- The green border follows optional shortcut focus
+- First run without a configuration starts the quick setup
+- Quick setup stores answers and installs integrations
+- Explicit quick setup overwrites an existing configuration
+- Aborting quick setup with Ctrl-C on the first run leaves no configuration
+- The terminal model filter stays responsive during a delayed search
+- Interactive model catalog failure before final confirmation persists nothing and sends no request
+- Cancelling before credential confirmation does not save a provider
+- Cancelling after credential confirmation preserves the provider
+- Assigning tiers does not replace the active provider or catalog settings
+- Setup wizard guides provider and model configuration page by page
+- Models command opens the shared wizard on Small Model
+- Escape asks whether to save or discard current setup
 
 ## Includes
 
