@@ -6,6 +6,40 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.3.2] - 2026-09-08
+
+### Documentation
+
+- **readme:** Document the quick setup flow
+
+- **specs:** Strict use-case relationship bullets in group.md files
+
+- **specs:** Strict relationship bullets and reconciled interaction inventories
+
+- **upgrade:** Record aggregate migration plan migrate-0-3-0-to-0-5-0
+
+- **migrate-0-3-0-to-0-5-0:** Arc42 assessment and design-review PASS
+
+- **migrate-0-3-0-to-0-5-0:** Tasks evidence and review PASS
+
+- **migrate-0-3-0-to-0-5-0:** Empty disposition tables removed for clean gate
+
+- **migrate-0-3-0-to-0-5-0:** Complete task evidence
+
+- Record Watn migration evidence
+
+- **upgrade:** Record aggregate migration plan migrate-0-5-0-to-0-6-0
+
+
+### Features
+
+- Migrate Watn specs to use cases
+
+
+### Refactoring
+
+- **specs:** Regroup the spec corpus into use-case groups
+
 ## [0.3.1] - 2026-09-01
 
 ### Bug Fixes
@@ -547,3 +581,5 @@ Bright fireant
 [0.3.0]: https://github.com/buster/watn/compare/v0.2.1...v0.3.0
 
 [0.3.1]: https://github.com/buster/watn/compare/v0.3.0...v0.3.1
+
+[0.3.2]: https://github.com/buster/watn/compare/v0.3.1...v0.3.2
