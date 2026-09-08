@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "before_entries": 228,
+  "after_entries": 228,
+  "before_e2e": 77,
+  "after_e2e": 77,
+  "before_interactions": 52,
+  "after_interactions": 52,
+  "missing_behavior": [],
+  "lost_e2e": [],
+  "lower_interaction_coverage": false,
+  "passed": true
+}

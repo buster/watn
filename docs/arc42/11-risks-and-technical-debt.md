@@ -64,6 +64,9 @@
 | R-062 | Consolidation removes a scenario whose unique production boundary was misunderstood | Medium | High | Require a retained-contract or boundary disposition for every removal, keep the full runner and E2E gates green, and archive removals atomically with rollback |
 | R-063 | A removed scenario leaves an orphaned binding or a surviving scenario loses its only step coverage | Medium | Medium | Search all active features and registered step modules before deleting support code; run the complete runner after each consolidation batch |
 | R-064 | Repository-wide overlap output is treated as an automatic semantic classification | Medium | Medium | Deterministic checks report candidates; the maintainer decides merge/delete/boundary in review.md, and retrieval remains advisory |
+| R-065 | A stable-ID migration can assign a capability to the wrong use-case or fragment | Medium | High | Require a complete ledger, exactly one declared owner per capability, strict schema validation, and explicit reasons for every semantic operation |
+| R-066 | Migration can lose behavior hashes, E2E mappings, interaction coverage, or source counters while the feature runner remains green | Medium | High | Capture before/after evidence, compare hashes and mappings, run coverage, and reject any unledgered difference |
+| R-067 | Old 0.5 group vocabulary or stale active paths can survive beside the canonical corpus | Medium | Medium | Audit active paths after migration, exclude only historical archives, and record remaining legacy vocabulary as follow-up debt |
 
 ## Technical debt
 
@@ -259,3 +262,7 @@ Repository cleanup is deliberately conservative:
   and external consumers of the public library modules are unknown.
 - Remove only `WatnWorld` fields proven write-only by repository-wide search
   after scenario migration. Any field used by a permanent feature step remains.
+
+The 0.5-to-0.6 corpus transition also carries residual vocabulary risk: active
+paths must use stable use-case and fragment ownership terms, while historical
+archive records remain readable but are intentionally excluded from cleanup.

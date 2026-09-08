@@ -1,0 +1,2285 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "First normal use starts provider setup and then model setup",
+      "behavior_hash": "0484df1ca5280fd8be16f6f227b8d4710ffd2d690003e19fcfb33d62aff4e68e",
+      "e2e": true,
+      "interaction": "provider-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Configure a custom endpoint with a pasted credential",
+      "behavior_hash": "0538fc9399f9c4a66dcacf5bcc08fe8d4fa36764c00678ff122dfeb75e3d9fcb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider migration is idempotent after the first conversion",
+      "behavior_hash": "054b5135f74467537aa1b0539ecd765cf57d54a315ce8ac593a7dcae99ccb60c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Verbose flag with default tier does not alter existing model behavior",
+      "behavior_hash": "061ae4795e1b91480b1f32fcf2d96c5c83ca4721feba0d60ac95839019888041",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Escape cancellation preserves the existing provider configuration",
+      "behavior_hash": "06b5d948762b6ff707ee6a6e7b6f24363652ba88dfe1894be707d5aaba058f4b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/highlight-active-setup-input.feature",
+      "usecase": "configure-interactive",
+      "capability": "highlight-active-setup-input",
+      "scenario": "The green border follows API key focus",
+      "behavior_hash": "071c1e9b129cd982066dbd816b50f5d8c04dd62b3eae393531b0f738a6571d5d",
+      "e2e": true,
+      "interaction": "highlight-active-setup-input",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Non-zero watn status discards partial stdout",
+      "behavior_hash": "082a264a2dcac86433b8b08ebb8c19a9879bb4bcdd1200c1ec8830ba64508da4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/unified-setup-wizard.feature",
+      "usecase": "configure-interactive",
+      "capability": "unified-setup-wizard",
+      "scenario": "Models command opens the shared wizard on Small Model",
+      "behavior_hash": "09f3ddd0d85223648225bee52563e824c04e39d23ee8ce52728fe6a067e4eb8a",
+      "e2e": true,
+      "interaction": "unified-setup-wizard",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "A failed edited catalog endpoint preserves the previous endpoint",
+      "behavior_hash": "0ad96ab422577b85978630ee45ed864e030b4812d0c1bd7c7981684096d5c63e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "A failed configuration write installs no shell integration",
+      "behavior_hash": "0ee6661d7bd2000f3a30d98755670cc17895de49a2495c319cdb8932acfa91ca",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Zsh and Fish widgets record the request in the shell history",
+      "behavior_hash": "0f16c51aca89efb54d254f9e5f84ff6ee3373fe49712a1159dcae89bdcf3e2a0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/setup-persistence.feature",
+      "usecase": "configure-interactive",
+      "capability": "setup-persistence",
+      "scenario": "Interactive model catalog failure before final confirmation persists nothing and sends no request",
+      "behavior_hash": "10a27ce65659a971652e4158d6bec254c65ab1fec4e59ab0bd1ba82f838e072b",
+      "e2e": true,
+      "interaction": "setup-persistence",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/highlight-active-setup-input.feature",
+      "usecase": "configure-interactive",
+      "capability": "highlight-active-setup-input",
+      "scenario": "The initial provider input has a green border",
+      "behavior_hash": "11dcb116e622a3dc8503deb84fd5f6e921a52a2aab023fe3cb345daf4efc1aed",
+      "e2e": true,
+      "interaction": "highlight-active-setup-input",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Empty credential remains in provider setup for correction",
+      "behavior_hash": "11fad51699a8a72c5d8475e7d5c992af2c24ff07dcfeaceb7a3c8ba06cc35876",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Selected provider migration moves an arbitrary provider to custom",
+      "behavior_hash": "1381c1450b58dc66fdf9c9008e6275d7bb104de3a71f719b59eddc09100df31c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/providers.feature",
+      "usecase": "configure-provider",
+      "capability": "providers",
+      "scenario": "Missing API key produces error",
+      "behavior_hash": "14b1909904824500f5d3992a8d04fe6aefb5e0827b59fbdbacf7beb215f52bcb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "config",
+      "scenario": "Configure model tiers in config file",
+      "behavior_hash": "14f90c2c5b6386cdf0ccac5212360d511708f897aa56ba3044e6c5dfda8677a4",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Empty input does not invoke watn or change the command line",
+      "behavior_hash": "152be69ad7e3d01bde220c50aae27a75619ebbfa4e5dc85960b74ed9d028c9b7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "The generated Bash widget keeps the request visible and does not evaluate the command",
+      "behavior_hash": "165b82f52d80b342fe996bd05b65329f7a1b925f2cf4dc8706c320f4e84d11fd",
+      "e2e": true,
+      "interaction": "interactive-shell-shortcut",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Generated shell blocks use the installed watn command and preserve shell syntax",
+      "behavior_hash": "173aadbd43bf68a2a600603055517587fabf3f1fb69532c25a139b1b988f0e46",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "An invalid endpoint is rejected before setup",
+      "behavior_hash": "1811445ea6ccba21f3493c46a4542d65be7c7700ef07271387f7415e3fa08b21",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/models.feature",
+      "usecase": "configure-model",
+      "capability": "models",
+      "scenario": "Model explorer with openrouter default and env var set",
+      "behavior_hash": "18310be69346404bf6e4e2a7ad99bbb456c4ee8e5ad61f36bfa0c999d9b8d068",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/release-truth.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "release-truth",
+      "scenario": "Active documentation distinguishes archived historical snapshots",
+      "behavior_hash": "18611ca502e1784db1cf5c8e4ee2b96a94f142a975346460fe390582d694cf79",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup-widget-layout.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup-widget-layout",
+      "scenario": "Provider setup separates choices, details, and guidance",
+      "behavior_hash": "18e2137243fc7c9e53af1629ec3f565614d1c0a0d10849beedd1b2ca4b5c43d7",
+      "e2e": true,
+      "interaction": "provider-setup-widget-layout",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "Mandatory reasoning excludes off",
+      "behavior_hash": "19499a251d39b277f465de823a02efe3744aa4da8babbc52f6efc8c3e59dc722",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Setup reports the exact reload instruction for every modified shell",
+      "behavior_hash": "19b60442aaad07a511b0afb2b7f0a5780f30dd45d1a014777c601a9866cc5a14",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/unified-setup-wizard.feature",
+      "usecase": "configure-interactive",
+      "capability": "unified-setup-wizard",
+      "scenario": "Setup wizard guides provider and model configuration page by page",
+      "behavior_hash": "1b08da0b7d89bbad53a20d4c7d7ada4f3fc45fd13bde6ceda3b07c78fa517c0b",
+      "e2e": true,
+      "interaction": "unified-setup-wizard",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "A saved provider with a default model skips automatic provider setup",
+      "behavior_hash": "1d91788e148fa85ed74103e581bdbec15e7a5e881b4a53aaee9904bfe96e3381",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Catalog failure does not persist an unconfirmed provider",
+      "behavior_hash": "204a0daf36b9c5b1828bbf097985968b15ab1c26dc195641eda1503309ca027e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Configure a custom provider with the generic environment variable",
+      "behavior_hash": "2163a0fac54c0205b905495567a60572d7d0b98245172602a21ccc2580784cfb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Shell setup independently configures completion and Ctrl-W integrations",
+      "behavior_hash": "217203db0a45b9f5883c7460b0b56ce66b67236c1e037d9fee00b5d20b8011c0",
+      "e2e": true,
+      "interaction": "streamlined-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/credential-sources.feature",
+      "usecase": "configure-model",
+      "capability": "credential-sources",
+      "scenario": "A missing saved environment credential fails before discovery",
+      "behavior_hash": "21bcba0b2279fdb99eb55243e8efee87d17c22a1224904da77081aa60ad3c6c5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/responsive-setup-model-filtering.feature",
+      "usecase": "configure-interactive",
+      "capability": "responsive-setup-model-filtering",
+      "scenario": "A newer model query remains authoritative",
+      "behavior_hash": "2361367c3dcb5a69440cc2574ce4ae62ca10f7bb2dfceaf417f071dac66268e4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "config",
+      "scenario": "Model pricing configured for cost display",
+      "behavior_hash": "23b9bb2d716effb70dd5ed74a45f37b7ad2a3c5b8c8b7971a741563530524b85",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup-widget-layout.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup-widget-layout",
+      "scenario": "Model picker makes tiers and long model lists easy to scan",
+      "behavior_hash": "24a3c85e6dfc9f634584aa1fdf2aa5d708a72442dc309fc04745960b1609ba15",
+      "e2e": true,
+      "interaction": "provider-setup-widget-layout",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Catalog metadata selects supported reasoning efforts for the chosen model",
+      "behavior_hash": "24cf26d5d46ab93e330be52a8ce80c99c93e90ec6991cea05f418452f8b3e22a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/catalog-source.feature",
+      "usecase": "configure-model",
+      "capability": "catalog-source",
+      "scenario": "Provider discovery is used when LiteLLM is absent",
+      "behavior_hash": "25d8e6bf202690f93ded7d333c6f142b1ba5d6b199d765c1fd147a20109de18b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Shell setup refuses malformed managed markers",
+      "behavior_hash": "277e97ac63a238daa246bc0d73b07cac750e1cbc296128d8c96fcd12fb0a4ea4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Available catalog restricts model choices",
+      "behavior_hash": "284adbe456e601296c4eca736f609228cd9746eaea455a3b181937c10251ecb7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Quick setup stores answers and installs integrations",
+      "behavior_hash": "28955f99b3d20e4f5ef29e194b2b121aeaf9c52ccea6f3d20a0c189b877729dd",
+      "e2e": true,
+      "interaction": "quicksetup",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Explicit tier -1 uses the small/fast model",
+      "behavior_hash": "28afb3bf558096002eb7dc98a8b780c2e20916f2cbd641784f5e80e9803f5bdf",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Ask with default tier returns a copy-pasteable command",
+      "behavior_hash": "29322854087898c683a1e51b934aed3c639c82803aaf359f35a4824d17813ec1",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "The complete command line is passed as one quoted question",
+      "behavior_hash": "299c15faec1e791e72e55da04d88842d940daa457e5fb711f253462e5ea1140e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Configured per-level reasoning takes effect on a request",
+      "behavior_hash": "29b434bc63e5097315e2c6859a056dc11ec8ddd4f3b05f54de7129a2bf63f7cc",
+      "e2e": true,
+      "interaction": "ratatui-model-picker",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Invalid marker layouts fail before any target write",
+      "behavior_hash": "2bdf391ee315a2c6107efb8d334f855dab5db9af33db8a006abb0571632d3dd1",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Missing parent directories are created only for selected shells",
+      "behavior_hash": "2c6c2b461a42f03a977dc158025b68337b424f31e0eb7cce756901cc7a1e8703",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Trailing slashes are normalized before persistence and requests",
+      "behavior_hash": "2cf78abe8ab04b44e206a70c05e59ddcb493596c52d25f7f9eae8ced5eb5cf1b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "A successful widget inserts one normalized command and moves the cursor to its end",
+      "behavior_hash": "2d2eb31e24489830e12f44e495af1924688c922b3f3616b355b87a26c67596ff",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Level with reasoning off never sends a reasoning request",
+      "behavior_hash": "31dfdcd1cfdbe8358a599b8d86669137bd66b8af17412d30005af77cf7bc33e4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Shell failure does not discard successful shell changes or configuration",
+      "behavior_hash": "342f698f8ca902c2dcfc2b959d6805bdf00d9b2fefb639129e7a51017f6d28ab",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Cancelling coordinated setup leaves an existing configuration unchanged",
+      "behavior_hash": "343e282ec86daa173198cc9a1148c838525d57d999f3334b7d35fd01eed43d5e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Only the generated command executes when the buffer is committed",
+      "behavior_hash": "358314e7b4911fd0ba6659652d421f28112fa653b6fdfefc961875474da20458",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Coordinated setup displays one separate reasoning question after each model",
+      "behavior_hash": "35e0229b68e571e911696443e043887ec0ecebe2430a823a494865493614be05",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Execute flag with explicit \"y\" confirmation",
+      "behavior_hash": "36a605ffab644b6d2e9a9999be87596aa8fdb10706491a3e811765f7f8e9ed75",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Aborting explicit quick setup leaves the previous configuration unchanged",
+      "behavior_hash": "38e3c8d08b2e15bc7301fedca997576ee382fbf98cf86038c5f8b6c78aa978fb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/models.feature",
+      "usecase": "configure-model",
+      "capability": "models",
+      "scenario": "Model explorer without LiteLLM endpoint configured",
+      "behavior_hash": "3a000cc8dc0ec378ca0dd7b51df03ce2fce5073b26f087bd5986a096c905a470",
+      "e2e": true,
+      "interaction": "models",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/setup-persistence.feature",
+      "usecase": "configure-interactive",
+      "capability": "setup-persistence",
+      "scenario": "Cancelling after credential confirmation preserves the provider",
+      "behavior_hash": "3ae843f629bb657f4ace7602ad7b1be9136b9d3bf2c497933e79f91c21be9146",
+      "e2e": true,
+      "interaction": "setup-persistence",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Default model used when no tiers configured",
+      "behavior_hash": "3cd38e840903b1eaf91380f1b2e5b227ff92fce70e3ab7495b179f94d366dbec",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/models.feature",
+      "usecase": "configure-model",
+      "capability": "models",
+      "scenario": "Discover models and select tiers interactively",
+      "behavior_hash": "3d12d8790f51c4810677fa1f96644a0f28b0e37b85986feab8331fd519341926",
+      "e2e": true,
+      "interaction": "models",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "The optional setup result includes only explicitly selected shells",
+      "behavior_hash": "3e5944abbdefc252cee3d4d7411444aa180fdf7880e4b51d4e2d0aedc2cac8ad",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/highlight-active-setup-input.feature",
+      "usecase": "configure-interactive",
+      "capability": "highlight-active-setup-input",
+      "scenario": "The green border follows model focus",
+      "behavior_hash": "3e74ad369be697be21da1b266d215c4f35b8e0e45676a833672aedd95d6531e4",
+      "e2e": true,
+      "interaction": "highlight-active-setup-input",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Ctrl-C cancellation preserves the existing provider configuration",
+      "behavior_hash": "3fb4f66a3288e66e17eebab8f58c5b2a1d27c7880806c3570b1ad9b841029db2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Quick setup without a terminal prints guidance instead of asking",
+      "behavior_hash": "402f7f226ab8ac7e9976bdd150e42be438ae997338bd2cd54fb27a25555331f5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Invalid endpoint remains in provider setup for correction",
+      "behavior_hash": "40f68d216e2eb96ad5d571ba6e209beec476cb79a761d224f7d9e2a90c5eb493",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider catalog pagination and search use the provider source",
+      "behavior_hash": "4244c35c7ae749d584ce421ece26a6fbd9d5bc387aaac1294fa0dd0df077b2e8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Models setup gives guidance when no provider is configured",
+      "behavior_hash": "433ec4f7db0f543ab1d396c78021d06d78262c219809588563f173a7b510067a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "The shell basename alone controls shortcut preselection",
+      "behavior_hash": "43d16d9ee7e12b53c7915bd62985b91119f186417a91df2f912849f234fb0cfe",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "A usage-only final event supplies cost and throughput metadata",
+      "behavior_hash": "44d415799f5b2ff4e06cb95c4619524716d730c9e50741e7136f2a1f8ac907c9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "Completion help documents the supported selector and output contract",
+      "behavior_hash": "453a9b1f4a1a0fe9aae1f660289ab5075a7a8d63e56838cebf814fc342705345",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Missing reasoning metadata provides generic efforts and free-form input",
+      "behavior_hash": "459c2b19e158be702956420abdf369de67487d99fa123a2834a289952a04d942",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Changing provider invalidates catalog-backed model choices",
+      "behavior_hash": "4658fdc05999bc53d7135c47d29b562345ade2dfeccf15e974b03597a859a8e3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Type a filter and see the matching suggestions",
+      "behavior_hash": "481fe5006b8c1afe92e605ce08a45db54a38ba09069ca13a9203d663d9a90027",
+      "e2e": true,
+      "interaction": "ratatui-model-picker",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "A failed final config write prevents shell operations",
+      "behavior_hash": "4951d1a26a2c77f11e42e6ad205e203bb6b4a923a82a84d8d74f9c14d8cae321",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "First run without a configuration starts the quick setup",
+      "behavior_hash": "49b10fcfcd648d217f75f17d69dd6bdba28bfbb3d60ffa2ddbce5fed1c5b48c1",
+      "e2e": true,
+      "interaction": "quicksetup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/responsive-setup-model-filtering.feature",
+      "usecase": "configure-interactive",
+      "capability": "responsive-setup-model-filtering",
+      "scenario": "A complete catalog is filtered locally",
+      "behavior_hash": "4a744622ac9476c68573f5d90b00b212d714308b7662287c5b7fcd8315770fad",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Quick setup does not ask reasoning questions and stores no reasoning",
+      "behavior_hash": "4b11ae78917a5b6fd5432f242ebcc4dc2a417e7c208e8d18c36264c9e2566ba9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "Minimal reasoning is persisted and sent",
+      "behavior_hash": "4b55e269cb3e45cc4b2e218c7ee9c34ceeb264507ba00ecbf26eddfcae10b312",
+      "e2e": true,
+      "interaction": "reasoning-policy",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "A recognized environment credential skips automatic provider setup",
+      "behavior_hash": "4c5effd343e69be9f8a01f3eb8df186cce5b5243e05a75b596eb45dd891e9585",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Catalog entries without unique non-empty identifiers are rejected",
+      "behavior_hash": "4caf8d2f2803c002b0965d6f0a066efe0989b12cb47bacc2c47543cda090e8f2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/credential-sources.feature",
+      "usecase": "configure-model",
+      "capability": "credential-sources",
+      "scenario": "A literal saved credential is authoritative over environment fallback",
+      "behavior_hash": "4d4421fc7044ca2bb8990e4dc0b3db8b769c8dca2b65f29785693ce4fe484c4d",
+      "e2e": true,
+      "interaction": "credential-sources",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/transport.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "transport",
+      "scenario": "Normal debug requests ignore test routing settings",
+      "behavior_hash": "4e60f32a8347fdb23f38c0183bcd7848a76e5d8049c4253b7d9d9c8d137a1c50",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/models.feature",
+      "usecase": "configure-model",
+      "capability": "models",
+      "scenario": "Model picker shows model IDs when no metadata available",
+      "behavior_hash": "4ff5c578654563a4a6dcc8b49f7a767df40ed921afa8781192a42e622c39e920",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Missing model roles trigger implicit setup even with a usable provider",
+      "behavior_hash": "5104af1017b1855cf753977f943437c690b439665e222d5e69ada7e39bdb934b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/release-truth.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "release-truth",
+      "scenario": "Version flag reports the package version",
+      "behavior_hash": "53f2e70d97814834c4b5135d6ab3b18b9fb438f163fb2b462bdede8f5a78b28a",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Thinking tier with verbose flag prints reasoning to stderr",
+      "behavior_hash": "550d21f5b50b28efc1bc651312de192e83318381be2eb94a10f1bc2ba37cdb1b",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Rerunning coordinated setup prefills current values and preserves a masked literal credential",
+      "behavior_hash": "5557c827f2aab70aa50d2eb829fd4322ca7b8208ef0c1d8921538f23524d3586",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/models.feature",
+      "usecase": "configure-model",
+      "capability": "models",
+      "scenario": "Model explorer api call fails",
+      "behavior_hash": "55aa93d282e89f069898255a3b57a40b19120fa82bd108c0643481c9e5e29425",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Embedded multiline output remains buffer text without evaluation",
+      "behavior_hash": "55bf5bbc8128ea1da172e4899ac81c83ae4c467a66d70643c2a1d372bdb049b9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/models.feature",
+      "usecase": "configure-model",
+      "capability": "models",
+      "scenario": "Model picker shows metadata when available",
+      "behavior_hash": "57a8471a597a2edfd35294bcce9025fa0800e0f41b13624e047f490dded19133",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/setup-persistence.feature",
+      "usecase": "configure-interactive",
+      "capability": "setup-persistence",
+      "scenario": "Cancelling before credential confirmation does not save a provider",
+      "behavior_hash": "59eb9ef7b6b3872a9f7210888565947f9b1dd90c421ec693be69d3ed8933e96c",
+      "e2e": true,
+      "interaction": "setup-persistence",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Unavailable catalog allows manual model identifiers",
+      "behavior_hash": "5eb447f997fc6c0f5e2e65b68b0ba430fdfa75df93952ef8aabbda4f1ad0c23e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Raw terminal confirmation happens after the complete command arrives",
+      "behavior_hash": "5f39292ed53c553244a782484eed562cceec59325bddbb6189148651d6cb17c7",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Aborting quick setup with Ctrl-C on the first run leaves no configuration",
+      "behavior_hash": "60b4f48dcdd48578b9317bfe78f63ec6c67c72918a9c660a9fadd93d7c82c118",
+      "e2e": true,
+      "interaction": "quicksetup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Saving provider configuration secures a world-readable file",
+      "behavior_hash": "625689ae5d5113f3eb5748adaae3695de9b94717e1fe2e6062558b8abf643aca",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Back navigation preserves draft values across model and reasoning questions",
+      "behavior_hash": "62c97eb7fd0a6c5280c0af53c97cb6adea3d1635cf436edce2e6faf97c0ec25c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Model catalog failure after provider setup preserves the provider and sends no request",
+      "behavior_hash": "63d18d61274f32f4a28fecdedc1344421793b159f270d13562e318b1a821635c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "The final review shows all draft domains without exposing a secret",
+      "behavior_hash": "63f331d060ddd883303cf4e82cc1e772ddfc94a6468d9eb19a7d889eac487506",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Cancelling after provider and credential validation does not create a config file",
+      "behavior_hash": "63fcb1166cd045c6c5dda037472828b016c4947ac966502f480e4738fdfb4344",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "A disabled model default selects off even when a default effort is present",
+      "behavior_hash": "6490e6aff7194db28687a5ef21eb16002d745a1e4bcba1803589f3e0e69e3b4b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Generated Bash, Zsh, and Fish configurations pass shell syntax checks",
+      "behavior_hash": "6987f19046efc05de093832a266d95da4b2aea5ee57136b3b0d7a92dce283539",
+      "e2e": true,
+      "interaction": "interactive-shell-shortcut",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "Shell completion exposes the authoritative command tree",
+      "behavior_hash": "6a803cc0d3f712c5f5543b1797b9015fa2930c1cc9e04cc4f1605e39e69c7ad0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "Setup installs shell completion loaders in selected shell files",
+      "behavior_hash": "6a9010a99b85de59ca728b4086f0263c7f00ff49b0d82665f08280a31c9b2ce4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Non-TTY first use prints setup guidance instead of starting ratatui",
+      "behavior_hash": "6acd4c68a98f3c2b61a84c5cb358f93e3e373f1b5df95e1cb47db518f376a5e2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Shell removal preserves bytes outside the managed block",
+      "behavior_hash": "6d1f1348ec1a85b2fac30ac1ea81e694d328a5175d59454ae8b8b992cbb44dce",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Non-interactive incomplete request prints setup guidance without probing",
+      "behavior_hash": "6e10688ece7ce035f1422a7c4848b4d1c36cce6c92d43dafc83e1d665f3cafa3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Tier -2 uses the normal model",
+      "behavior_hash": "6f34b8ef85aeff75455da305379171ac163ce9fcff9badac102b0801a913e0b6",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Multiple selected shells are installed independently",
+      "behavior_hash": "7090144b8348fad450bbc55902c32b2ad2a0708767def4c0f85b17aae951de10",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/providers.feature",
+      "usecase": "configure-provider",
+      "capability": "providers",
+      "scenario": "Unknown provider produces error",
+      "behavior_hash": "7214060453d42b2fe27f267a098185f9172f3338902d722449756e4c1b1100b8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Rerunning provider setup preserves unrelated configuration",
+      "behavior_hash": "73cb65b7a6e21069c6ff2905dfaaaab4e7df6c1de07fdfeb28949bd743d0fac9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "Non-TTY model assignment never persists empty reasoning values",
+      "behavior_hash": "74890d66f624975ec5bb55e5bd246614d7348bd68a97bc243a689987778ea128",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider setup requires a custom endpoint",
+      "behavior_hash": "74a120af3ad98224c8ed8a447f31b55c9086aac0a21c8668230bcf33098c22bc",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Return to a previous level and change its selection before confirming",
+      "behavior_hash": "752647f616596d956cf8568118de027eed24cab11a40f3166c2d305df5cfbdca",
+      "e2e": true,
+      "interaction": "ratatui-model-picker",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Tier -3 uses the thinking/reasoning model",
+      "behavior_hash": "7561eb06f3d44ade02095d3609d311cfa87b8edddf5602a0ef8bf15fa490203f",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/responsive-setup-model-filtering.feature",
+      "usecase": "configure-interactive",
+      "capability": "responsive-setup-model-filtering",
+      "scenario": "A catalog requiring more data uses provider-backed filtering",
+      "behavior_hash": "75b11e16d1beb4d915656422fe40d542c4f274ed87f214041c578286829b2c62",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/transport.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "transport",
+      "scenario": "Provider readiness ignores the test routing setting",
+      "behavior_hash": "76c8ab55221d09edbdfbc443c71d3abc0d44b0e4083b409ba0230120801da42c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Verbose streaming keeps reasoning on stderr and command text on stdout",
+      "behavior_hash": "76df1316a88b10a8b0fc6af0b087411ee6d7236e03ff3f02d0fcf8f77d6a2645",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Malformed configuration is reported without modification",
+      "behavior_hash": "782b5bd19817a42e01cc1ebcececd3b627101b0672ccd02f10a8ccba6a87c22c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider setup configures an OpenAI provider with an environment credential",
+      "behavior_hash": "79183e7a6d12c753f77899dff1da7f617c06c519a677ab1fd3b9957792b38b1d",
+      "e2e": true,
+      "interaction": "streamlined-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "An explicitly named environment variable is persisted and expanded at use time",
+      "behavior_hash": "793f2ffd5aa47f17f1c940867fd7e3f9ed10be267bd18d7c0965b9007f6495a5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Coordinated setup completes provider models reasoning and shell choices",
+      "behavior_hash": "7b1dc0cf8828bad6a053339eb4aa3092a735a881c5f71ca1c55c43834c229d99",
+      "e2e": true,
+      "interaction": "streamlined-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Incomplete interactive request opens setup and does not send the original request",
+      "behavior_hash": "7b316cca69607bc49274f4ecab83d10286a98f3c6629893bf04ef6089b6e068e",
+      "e2e": true,
+      "interaction": "streamlined-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Malformed nonessential events do not discard valid content",
+      "behavior_hash": "7c5a3d51cce129a9be93beb8f261dd8ce41f2f8807512378524d357b4c38ddb9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "Unsupported shell returns actionable guidance",
+      "behavior_hash": "817e220a7a3d535eaf05aafb29cceefff356c848a2de90ceeaa01393d9556b20",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider migration preserves the destination default model on collision",
+      "behavior_hash": "8239d62da3b869ee3ffc0e15d4cbffe96bac61d7ca60a4dc94e1b99bdcc11a42",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "The explicit provider command ends without model setup",
+      "behavior_hash": "827ed33d33a708b9d7b9ab0845fdee443a61a03afa7ea361618df08674b201ab",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Off reasoning omits the reasoning setting from a request",
+      "behavior_hash": "8457f42949bd9ab42f020541aafaf18005894801a8aecc5ed3232e6435371afc",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/auto-init-config.feature",
+      "usecase": "configure-interactive",
+      "capability": "auto-init-config",
+      "scenario": "Existing config file is not overwritten",
+      "behavior_hash": "85453f0949665e1c91a2920792ec5584ca0a7638172e4eda3587ac264abdf65e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "A DONE event completes a stream successfully",
+      "behavior_hash": "858520db501ea638bca9a6c0533109e015a4fd812b013e14c16443783e186197",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/release-truth.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "release-truth",
+      "scenario": "Release artifact reports target-dependent runtime libraries",
+      "behavior_hash": "88215b98bc403536244bb9b9d66e2015c97d84ad3cd71e4714e48b06b7ed649d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Installing again replaces the generated block without disturbing user content",
+      "behavior_hash": "88508748db1a388d4c4f6ff86df26e7831c7966872868b909ef78aa18c7147bb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/model-autosuggest.feature",
+      "usecase": "configure-model",
+      "capability": "model-autosuggest",
+      "scenario": "Find a model outside the initial page while assigning tiers",
+      "behavior_hash": "89c8f01b95a63df0df7260822a9c2938cdf579b5c04c30eb1b48a0b97fe5323e",
+      "e2e": true,
+      "interaction": "model-autosuggest",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Whitespace-only custom reasoning is rejected",
+      "behavior_hash": "8ab1f6e45249ebd5c501d203dfc400dfefdb5f10ec6d571c6ce50bfbe9f7978a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "Completion generation does not load configuration or contact a provider",
+      "behavior_hash": "8abb7f1f9687bf168dc55c25e40742d528dd318517b3ce3957c48fbd7dbab339",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/catalog-source.feature",
+      "usecase": "configure-model",
+      "capability": "catalog-source",
+      "scenario": "Catalog pagination and search use the configured catalog source",
+      "behavior_hash": "8ad96840bdf183105c2ea62028ccefd4e87603a11ce31005b417f242fb5ba6a8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Non-zero exit code on API authentication failure",
+      "behavior_hash": "8bacf29603af2ff59832f76f059ff4d9fcd9810523ad37b41bbc678ce15ae43a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/cancel-running-completion.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "cancel-running-completion",
+      "scenario": "One Ctrl+C cancels a completion waiting for streamed output",
+      "behavior_hash": "8bf57795f6cbdcebdb46f376eca98a8098d0d1236e5a036f43f7a07ad9e088f6",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Piped confirmation remains available after streamed output",
+      "behavior_hash": "8c2e9f2a09a594d5448f52bd55caf4fc66286fd92c6af4b7cd942b969951129b",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/providers.feature",
+      "usecase": "configure-provider",
+      "capability": "providers",
+      "scenario": "Provider API key from environment variable",
+      "behavior_hash": "8e31fcb915937fd60dc1208609ad68088fe8bf176daabd19c684ff1e332b9b15",
+      "e2e": true,
+      "interaction": "providers",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "Unknown persisted reasoning remains active and is sent",
+      "behavior_hash": "8e7fad940176944c47856fabab34904f1ebb8fd3a465b19f41ced3bbf74b5b10",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/release-truth.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "release-truth",
+      "scenario": "Active documentation describes current command streaming",
+      "behavior_hash": "8fd431b1cda5ac32e76dc6c8e888fe8bb9624cdfa5dd947ca8338ba34e437295",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "config",
+      "scenario": "Environment variable overrides config file",
+      "behavior_hash": "9105c8b1c33f6c1692cd33a246fa581e03609bb4658566f08330c9ad45b80a55",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Verbose flag with small tier prints reasoning if present",
+      "behavior_hash": "91c8229c8a3a549f4c2dfc4d0b57e950b01210ec552638517c22c5aa52c88eef",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/auto-init-config.feature",
+      "usecase": "configure-interactive",
+      "capability": "auto-init-config",
+      "scenario": "First non-TTY run does not create a config file",
+      "behavior_hash": "928bccea4c5fa3181e31cd0ff9f31824ab6121fa12b70a6a786ebe9361679b53",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "Built Bash completion generation emits the current command tree",
+      "behavior_hash": "93a1dcff2d7d4e80c8c5e9533487b1a1f1dba3ef3d265fdb64ba959964a13586",
+      "e2e": true,
+      "interaction": "shell-completions",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Command text appears before a delayed stream completes",
+      "behavior_hash": "93efae16ab661672e88b61a41e02f4ac1c09f6df4e25ca3f149ab110f4367661",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Selecting no shells leaves shell configuration unchanged",
+      "behavior_hash": "94450abaf4c2ba28dcd782fb662feebf80f988f48cd1bdea0adc80dfcfef44b3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Free-form reasoning survives persistence and request construction",
+      "behavior_hash": "94b9e5ef5c208fd5966fa5d8212e7aaeb2c3278d63923c2fdf036c54d2d6995b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Existing unknown reasoning remains active after rerunning setup",
+      "behavior_hash": "9a2afcd9bc8222f164550e8806eef4e71163dac4e6471962cf8a8ac2c2af2c3d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "A failed shell installation keeps the saved configuration",
+      "behavior_hash": "9bebbfadf00d4885d2b26286a7cd7051d76c9644faa2fba7eaaf9318d92674c7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/catalog-source.feature",
+      "usecase": "configure-model",
+      "capability": "catalog-source",
+      "scenario": "LiteLLM discovery does not replace the active chat provider",
+      "behavior_hash": "9e81085000f15ec65bcfee842396a6a755fd09fc766537bbec23f6145cbb4fd5",
+      "e2e": true,
+      "interaction": "catalog-source",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Explicit model flag overrides tier dispatch",
+      "behavior_hash": "a02da5537d7897bf5e0cb871bd7196b8cbd145bc1be687749c2f6da824c7599b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/search-concurrency.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "search-concurrency",
+      "scenario": "The terminal model picker displays the newest overlapping search result",
+      "behavior_hash": "a219c9bb59758fffd972bc577ca6fccf8b06732f697eab4eac2c33b0c7490b32",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Invalid catalog data switches to manual model selection",
+      "behavior_hash": "a40a7d99fefd7022ea78f8323c3ea9404d2b56213bcb213ef444a9ec06acd944",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "A successful edited catalog endpoint is promoted only at final confirmation",
+      "behavior_hash": "a502b130775edeae2c9176245301b43e73ac7ea1f1d5ff6f8510a0ddcc19979a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/credential-sources.feature",
+      "usecase": "configure-model",
+      "capability": "credential-sources",
+      "scenario": "Interactive model discovery uses an OpenRouter environment credential",
+      "behavior_hash": "a6e1f01207d7bcddeff700fea74fa62312bd2fc7b5a41c9e22314106e00449d5",
+      "e2e": true,
+      "interaction": "credential-sources",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Version flag prints logo and version",
+      "behavior_hash": "a708117e1fbfe315d6b7ec44ada54d32b27bf46f63a6c0232a9fb1aebba84b53",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider setup does not probe the catalog",
+      "behavior_hash": "aad2d83121ce30901a8b09218dfd104eb67d9783d152fd9fca473facf2e36e97",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "Mandatory reasoning with no usable metadata returns a policy error",
+      "behavior_hash": "ab3d8091eb3d4bb530464cf8f89d24a4c20533f102268cb613a265de449d18bf",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Ask via stdin pipe",
+      "behavior_hash": "ab4ac4931852421698ff7bc357cc325fb93d23945948ed99b959025b35eca01c",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "No arguments and no stdin prints help and exits with error",
+      "behavior_hash": "b064f81d9373692cc065a16dfedb1c2e06853efb79d50a6491d1a059ea28260f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/cancel-running-completion.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "cancel-running-completion",
+      "scenario": "One Ctrl+C cancels a completion waiting for a connection",
+      "behavior_hash": "b071d1b22a3f03c54d10f662604c6caee72af6dd49657905961342d65b7e8021",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/setup-persistence.feature",
+      "usecase": "configure-interactive",
+      "capability": "setup-persistence",
+      "scenario": "Assigning tiers does not replace the active provider or catalog settings",
+      "behavior_hash": "b2c7509a40143f9aa3e19d2a3a4859ac2e8b7df6aee82604243049de2214f409",
+      "e2e": true,
+      "interaction": "setup-persistence",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Output failure preserves the visible prefix in the renderer",
+      "behavior_hash": "b8b7ca704ef72c51ba10e5242195ae2377e86b43e3e7460f61797e83475c5541",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Browse the model list with arrow keys and page keys",
+      "behavior_hash": "baf702de9b766175ffc872ced4f5330eba191945b7db87883448a22ad8067ac2",
+      "e2e": true,
+      "interaction": "ratatui-model-picker",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Catalog reasoning choices still permit a custom non-empty value",
+      "behavior_hash": "bbe62704cd8ac9ac19f8d3b9ff140b04b273992c132f9f2000386e8857a4e933",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "An OpenAI endpoint suggests the OpenAI credential and no model",
+      "behavior_hash": "bd85280e683b52db16b456c225977213bfe6de28df75c3474bfc29bfe3ea91da",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/model-autosuggest.feature",
+      "usecase": "configure-model",
+      "capability": "model-autosuggest",
+      "scenario": "Suggestions update as the search text changes",
+      "behavior_hash": "bdb35005e55ec023b3c30696e6080e0767da8c9331d92c95c157f2fe6ebae26f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Configure OpenRouter with an environment-backed credential",
+      "behavior_hash": "bebfeba1b4c99c5e7bc7bb76273c48ded07ee73f5f697cf06422c67bedd9c85f",
+      "e2e": true,
+      "interaction": "provider-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/responsive-setup-model-filtering.feature",
+      "usecase": "configure-interactive",
+      "capability": "responsive-setup-model-filtering",
+      "scenario": "The terminal model filter stays responsive during a delayed search",
+      "behavior_hash": "bf50b8696f7b994180d6b71eb1b6efa794c4108d8e9c266fc7ed3aa7e8931fc2",
+      "e2e": true,
+      "interaction": "responsive-setup-model-filtering",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Leading-option and reserved-token questions remain one argument",
+      "behavior_hash": "bfe65720931d2d73649c0ed429b4bf401e1161b7d51c87a51e6d6f79285aed17",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "A missing saved environment reference fails authentication without a request",
+      "behavior_hash": "c23d990897ce1cc1c8d4a5919ced276a62f55858fb6d835e55331a60748a539b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "config",
+      "scenario": "Config file with syntax error produces diagnostic",
+      "behavior_hash": "c51378c5cb448b9e00452e35d1b71bebb44139c1f4e34b7326b948dec0b17f26",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Manual model identifiers are persisted exactly after catalog failure",
+      "behavior_hash": "c57f64dc65701bf9bfb5c776774fc44a89bf8f85a058faa7922f5811a4cd07f4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/shell-completions.feature",
+      "usecase": "use-shell",
+      "capability": "shell-completions",
+      "scenario": "The reserved completion token can remain question text after `--`",
+      "behavior_hash": "c67dc49e38b7fea7959e5eff764ce6563f49e9fa907f716e1601fec8dbfe4fe5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Thinking tier with verbose and execute flags",
+      "behavior_hash": "c93d299a40d15e8acb9350d0ff68a4a5ec9a6772b9d34e6c4c3f22512f1a3037",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Fish replaces the buffer with the generated command after Ctrl-W",
+      "behavior_hash": "c9fa36ff2206f5970a26931a95c9823d7caa0b722dcdbae5b759fd51a2543533",
+      "e2e": true,
+      "interaction": "interactive-shell-shortcut",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/transport.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "transport",
+      "scenario": "Missing or whitespace test overrides fall back to the configured provider",
+      "behavior_hash": "c9fa8098038d49ccf3ec56eeb9f5dd897c518931e54a5d0e5ab067126dfd7dc3",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Empty filter result produces a clear empty state",
+      "behavior_hash": "cb0571002b643cf057ff3d066c6412fe9096dc468b3e696cfb05e7c1d9df7c82",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "A partial multi-shell failure reports every result without rollback",
+      "behavior_hash": "cb10559d2d5d74c5b27725c2192b25cbb60593eae95defb5955e26ef6b7c285c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/catalog-source.feature",
+      "usecase": "configure-model",
+      "capability": "catalog-source",
+      "scenario": "LiteLLM discovery without a key sends no authorization header",
+      "behavior_hash": "cb54c5d455d0c50b5bdd60beabb502e705a90c24a4a037d03e73a81fd719ae6d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider catalog takes precedence over a conflicting legacy LiteLLM source",
+      "behavior_hash": "cbbeb0a7b348814bd47b743887b4b430325303a3d4ee8e81ea6418abba107dea",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Small tier without verbose flag does not print reasoning",
+      "behavior_hash": "cc05622ce03bead535a3cf31d34d813a8db2ea85d1df2c1c90ad4b4eb5b64c9d",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Execute flag with \"n\" answer skips execution",
+      "behavior_hash": "cc08681b12978b1c13c8b9e0849724c0029635d1be4d2edc5faa570fa182178a",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Enter accepts the default decline for shortcut setup",
+      "behavior_hash": "cc2e846b23c03cee51be8c76e9be6e08fae572e091272ece90637188cb019af4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "EOF without DONE is a truncated stream",
+      "behavior_hash": "cdc62e9eccde96fc69a8e1d10e97cc200fc380038f8d11459149edfbcbd9fa85",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider setup preserves unrelated settings",
+      "behavior_hash": "cf4180ba6903cbf032239eeb4df264ceedcb60fd3aca702c7cbd4fc7c6532762",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Tokens/second is displayed after response completes",
+      "behavior_hash": "d039d6fe6f684d7c5b3e4e959aa415e590ab2a309ad95b73b853b78fedb00c8c",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "An empty model answer is rejected before configuration",
+      "behavior_hash": "d058cc66972d016d50873c60255da2cb230e9006f5118b1a869947923a39708b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning-policy.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning-policy",
+      "scenario": "Existing reasoning survives selection without a valid replacement",
+      "behavior_hash": "d111e587ee18e27702fde23875b555cfed4c41c8b33a829812175c50c8416e7f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Failed or empty output preserves the original command line",
+      "behavior_hash": "d1f7441dc481b08c62e785686d3433382f1c423693f702f2f787052d9e15a0a3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Shell integrations are pre-selected only for shells available on the path",
+      "behavior_hash": "d32680dda2773d3d2badaf4644be6f0662b512008440dfbeccfbe8f19f0b6018",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/highlight-active-setup-input.feature",
+      "usecase": "configure-interactive",
+      "capability": "highlight-active-setup-input",
+      "scenario": "The green border follows optional shortcut focus",
+      "behavior_hash": "d593b4d9589aed495f37c94f8ee820d59525007b10ce8c7cc0af2588ff8c993c",
+      "e2e": true,
+      "interaction": "highlight-active-setup-input",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "A successful generation records the request as a history comment",
+      "behavior_hash": "d6ef6f1056d020fdcb0dfc5633eb57c51e4e246ddce68de946b1f9ee6e5bc166",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Configure model and reasoning for all three levels in the dialog",
+      "behavior_hash": "d93431daa3358c0e4ffbfe23aaab4607dd34868419df2e7d3b7f0d4fd04fdd2c",
+      "e2e": true,
+      "interaction": "ratatui-model-picker",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/catalog-source.feature",
+      "usecase": "configure-model",
+      "capability": "catalog-source",
+      "scenario": "Configured LiteLLM is used for model catalog requests",
+      "behavior_hash": "dc72fa7a54df9fc349b306116da0f1afc367e0d18963f10cd5b41bd5f2dd23b5",
+      "e2e": true,
+      "interaction": "catalog-source",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Explicit quick setup overwrites an existing configuration",
+      "behavior_hash": "dd3e8897d886d1bfc6d673af101ee7cd2fae937f10739a4668eacb876ffab4f3",
+      "e2e": true,
+      "interaction": "quicksetup",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Per-word order-independent filter matches any identifier word",
+      "behavior_hash": "de829322fd7c3cbc697b0c8698ff1f9677b9494e87c57450e5e884681a5f181b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "Partial network reads are reassembled into complete events",
+      "behavior_hash": "dfef4fe6a01aa35b292bfd1b5ff3e2439bf51db09058df05708235c6d7463186",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "Explicit provider selection from the environment preserves missing-key errors",
+      "behavior_hash": "e0ab386353967952d63553fdea866c42775a4e632414e76bdd405983e4ff5549",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "config",
+      "scenario": "CLI flag overrides environment variable",
+      "behavior_hash": "e0dbfbf541b77622decd4b44fde83bc09d97a0ded5959ed37c508293227447ce",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "An unknown shell name shows an error and keeps the list open",
+      "behavior_hash": "e20680fff9e8802d1fd1e074a691e9a93f91845bf06e524feb79e3665caf7af1",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Final confirmation is blocked while a required draft value is invalid",
+      "behavior_hash": "e29dc6071410a6cbcdec0d230fec60ef221a85e314f0336bbff7c3d7d1c85ef0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "Requests with metacharacters and embedded newlines remain one comment line",
+      "behavior_hash": "e2cad1af38cc4035f90839e5e1c1e95938fd85c87d8d5fb230750f8217cdc4f6",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Model entry shows additional metadata when available",
+      "behavior_hash": "e38ba62677d3b6ac17b123d4fcef94d024ede10aa33350864de5f15ebe55444b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "A failed new catalog endpoint remains unset",
+      "behavior_hash": "e457422f72d213f17ea3a85d705e8165a44ae4f2bd62834c23980fdb073f94d2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/model-autosuggest.feature",
+      "usecase": "configure-model",
+      "capability": "model-autosuggest",
+      "scenario": "An endpoint without search support reports a usable error",
+      "behavior_hash": "e4a73fbed52137253b9e935340ce7d61b4980503515aa8959ae44ff3308c8c38",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "A shell configuration failure reports the exact target and reason",
+      "behavior_hash": "e5c4f1b6eecb66efc90c66dfb673117d891efdfcd9643f2b31fd362ee6fd58bf",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/providers.feature",
+      "usecase": "configure-provider",
+      "capability": "providers",
+      "scenario": "Custom OpenAI-compatible provider from config",
+      "behavior_hash": "e8fe59d45caadf5988582662dcee6a223a452547a0e01cb86421aacefb96b4b7",
+      "e2e": true,
+      "interaction": "providers",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/quicksetup.feature",
+      "usecase": "configure-interactive",
+      "capability": "quicksetup",
+      "scenario": "Explicit provider selection skips the first-run quick setup",
+      "behavior_hash": "e916ee4e634565802f0fb0e4a4d114e407f476fe182063669d42e39501680e1b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/ratatui-model-picker.feature",
+      "usecase": "configure-model",
+      "capability": "ratatui-model-picker",
+      "scenario": "Remote search failure falls back to local matching",
+      "behavior_hash": "eaeedb433d3fb7eedc4fa7756aab460bf8750333a170ad65d69d2e9137869d39",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Help output includes verbose flag",
+      "behavior_hash": "eaf6ea81952f97f72edd26824d7b6ad2f4c2f9bd7a661442e7aad0833245c101",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Models setup configures all three roles from an available catalog",
+      "behavior_hash": "eb0594c833dbf5f78276cf354742ec66225af27e2acd961948090ee9467b92f0",
+      "e2e": true,
+      "interaction": "streamlined-setup",
+      "personas": []
+    },
+    {
+      "feature_path": "use-shell/interactive-shell-shortcut.feature",
+      "usecase": "use-shell",
+      "capability": "interactive-shell-shortcut",
+      "scenario": "A symlinked shell target is updated without replacing the link",
+      "behavior_hash": "eb340ce03fdc452b76f1915e897d395505334a9292783672e622fe21998f158a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/transport.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "transport",
+      "scenario": "Test-support requests use isolated routing without changing saved configuration",
+      "behavior_hash": "ebe83c43275e7aa01669d5c32063b0d8894b6232cc6c8819f087a092eeb2d727",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/credential-sources.feature",
+      "usecase": "configure-model",
+      "capability": "credential-sources",
+      "scenario": "Provider-specific environment fallback precedes generic fallback",
+      "behavior_hash": "ed3e307e85b525a8c850138c492e20997bd42aac0bf12f225aa13fe9328f1fe3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/providers.feature",
+      "usecase": "configure-provider",
+      "capability": "providers",
+      "scenario": "LiteLLM endpoint in config for model discovery",
+      "behavior_hash": "ef5f2527c1cea13b7f743b023ce0be00a32c778e83238c01573149ebf1d5526d",
+      "e2e": true,
+      "interaction": "providers",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Provider setup refuses an unresolved environment credential",
+      "behavior_hash": "efc3004a8dace9880be507e5aaa9d5453c61a20a1da22074ef6d17e8a1ca47c5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Declining shell setup performs no target inspection or write",
+      "behavior_hash": "f1d5d350fde2094e02ea6a39221cf00fc35144c009f7902a7978948406178896",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/model-autosuggest.feature",
+      "usecase": "configure-model",
+      "capability": "model-autosuggest",
+      "scenario": "The newest search result stays visible when an older result arrives later",
+      "behavior_hash": "f2e88bd7fb69b69244839b38c3e4e5d9daa0279f58ba3ec8ec3f0e25508ee577",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-provider/provider-setup.feature",
+      "usecase": "configure-provider",
+      "capability": "provider-setup",
+      "scenario": "A saved OpenRouter endpoint takes precedence over the built-in endpoint",
+      "behavior_hash": "f368107929465be9822d4ca54f2e043e2c51f0f895b8fe408c175f9d6c3cf575",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-interactive/unified-setup-wizard.feature",
+      "usecase": "configure-interactive",
+      "capability": "unified-setup-wizard",
+      "scenario": "Escape asks whether to save or discard current setup",
+      "behavior_hash": "f46cf76e922f6a29725cb174b53f6d96cd8f323bdd9452395dfff5e114f792b8",
+      "e2e": true,
+      "interaction": "unified-setup-wizard",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/reasoning.feature",
+      "usecase": "configure-model",
+      "capability": "reasoning",
+      "scenario": "Thinking tier sends reasoning without printing it",
+      "behavior_hash": "f57ad1f4f0f2153ff4a57eabdb6548beeff21ddbfeaab3517fd94fdb209205fe",
+      "e2e": true,
+      "interaction": "reasoning",
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Cancelling after a successful catalog probe leaves the baseline unchanged",
+      "behavior_hash": "f804aefebafc026606b45ee84a24287afdd1d8cbc388595d59e2e45088784d2a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Execute flag prompts for confirmation",
+      "behavior_hash": "f9f6a1ab77a17d43b4b9dbc846eee167a98f27402e421a2b1776f9d9c89c52fa",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/incremental-sse-rendering.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "incremental-sse-rendering",
+      "scenario": "A mid-stream failure preserves visible content and exits unsuccessfully",
+      "behavior_hash": "fad8e185a1b338263728dd2c6533a1b40fc53b842c6a86fe4d4a20c6079b70e5",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ask.feature",
+      "usecase": "fragment:corpus-infra",
+      "capability": "ask",
+      "scenario": "Cost is displayed when pricing is configured",
+      "behavior_hash": "faf6615b5852c9521c0f50d52611095ad3826642fde7418443cdc4db9513c46f",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Focused model setup preserves provider-owned and unrelated fields",
+      "behavior_hash": "fdfa90f090dfc26d4c3ebc206ed8bbe3b4f3f8711c2ac0f29931c1c7ff347db7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "configure-model/streamlined-setup.feature",
+      "usecase": "configure-model",
+      "capability": "streamlined-setup",
+      "scenario": "Shell setup prefills installed integrations and removes only managed blocks when deselected",
+      "behavior_hash": "ffa2f9ebb943e1c62472e0fa1a399ae224da8c54f2dcaa4a3b1ac2a82b4d55fc",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    }
+  ]
+}

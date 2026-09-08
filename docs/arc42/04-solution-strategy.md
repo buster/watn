@@ -33,6 +33,9 @@
   weaker contracts instead of adding another scenario beside a stronger one
 - Preserve distinct production boundaries explicitly in titles and review
   evidence; do not use embedding scores or scenario length as blocking policy
+- Treat stable use-case IDs as the permanent ownership roots for user-goal
+  behavior and classify reusable infrastructure under the shared fragment root;
+  verify the layout and evidence before and after any migration
 
 ## Technology choices
 

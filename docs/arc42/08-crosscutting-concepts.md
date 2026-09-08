@@ -420,3 +420,20 @@ Archive applies removals and additions atomically and runs the full Watn
 runner afterward. The review disposition is the human audit trail: it names
 the retained contract and prevents a consolidation from being justified only
 by a green test count.
+
+## Specification migration integrity
+
+The active corpus has one stable owner for every capability. Use-case documents
+represent independent user goals; fragment documents represent reusable
+infrastructure. A migration records the old owner, semantic operation, new
+owner, capability, E2E mapping, behavior-change status, and reason in one
+ledger. File moves alone are not evidence of a correct migration.
+
+Before mutation, the migration captures the Givn version/configuration, active
+changes, ideation state, scenario behavior hashes, E2E mappings, interaction
+coverage, and source/branch coverage. After mutation it validates strict
+use-case/fragment schemas, exact capability ownership, typed relationship
+resolution, interaction mapping, unchanged evidence, and coverage counters.
+An absent ideation topic or Persona is recorded as absent; neither is invented
+or promoted. Historical `givn/archive/` paths are excluded from active audits
+and remain unchanged.

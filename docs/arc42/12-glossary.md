@@ -88,3 +88,13 @@
 | Consolidation disposition | A human review decision recording whether an overlap is removed, retained as a boundary, or replaced by a stronger scenario |
 | Canonical scenario | The retained scenario whose observable contract owns a behavior after consolidation |
 | Net delta | The archive receipt counting added, modified, and removed scenarios in a change |
+| Use-case ID | The stable kebab-case identity of one independent user-goal specification root under `givn/specs/` |
+| Capability | A named observable behavior owned by exactly one active use-case or fragment document |
+| Fragment | A reusable specification boundary for infrastructure behavior without an independent user goal |
+| Typed relationship | A declared include or extension from one use-case to another use-case or fragment that must resolve under the active schema |
+| Migration ledger | The one-entry-per-old-entry record of semantic operations, ownership, evidence, and reasons used to verify a corpus migration |
+| Behavior hash | The recorded identity of a scenario's observable contract used to detect unintentional text or behavior changes during migration |
+| Interaction mapping | The association between a capability's consumer action and its executable E2E scenario |
+| Ideation topic | A preserved exploratory topic that may be mapped to a stable use-case ID but is not silently promoted during migration |
+| Persona | A confirmed user perspective associated with ideation or a use case; absence is recorded rather than invented |
+| Handoff | An explicit decision to promote an ideation topic into a permanent use-case change |

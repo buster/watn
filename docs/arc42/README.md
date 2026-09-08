@@ -53,6 +53,12 @@ ownership, overlap dispositions, and consolidation receipts are recorded by
 the givn workflow; see [ADR-0025](../adr/0025-repository-wide-specification-ownership.md).
 This changes repository evidence only, not the Watn runtime or release artifact.
 
+The active specification corpus uses stable use-case IDs and a reusable fragment
+collection. Each capability is declared by exactly one use-case or fragment;
+typed relationships, interaction mappings, behavior hashes, and coverage
+evidence are preserved during migrations. Historical archives remain immutable
+for active-corpus audits.
+
 ## Archive Status
 
 The files in this directory describe the current architecture. Archived givn

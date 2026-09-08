@@ -157,3 +157,20 @@ The cleanup keeps architectural and consumer boundaries explicit:
 - Remove only `WatnWorld` fields proven write-only by repository-wide search
   after the active scenarios are migrated. Fields read or written by permanent
   feature steps remain.
+
+## Specification corpus
+
+The active Gherkin corpus is decomposed into stable use-case roots and a shared
+fragment root:
+
+| Building block | Responsibility |
+|---|---|
+| Use-case document | Names one durable user goal, its actors and guarantees, and the capabilities and interactions it owns. |
+| Fragment document | Owns reusable infrastructure capabilities that do not represent an independent user goal. |
+| Capability feature | Defines the observable behavior for one capability without changing ownership through filename placement alone. |
+| Migration ledger | Records every old entry once, its semantic operation, new owner, capability, E2E mapping, behavior-change status, and reason. |
+
+The active tree is validated as one inventory. Relationship resolution, unique
+capability ownership, interaction-to-`@e2e` mapping, and evidence comparison are
+checked before the migrated corpus is accepted. Historical archive paths are
+evidence, not active ownership roots.

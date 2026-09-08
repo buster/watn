@@ -48,3 +48,5 @@
 | Credential source is authoritative | A literal saved key or complete saved `${VARIABLE}` reference cannot be replaced by environment fallback; only an absent source may use fallback discovery |
 | Reasoning values are open non-empty strings | `off` is the only omission sentinel; every other non-empty value is persisted and sent verbatim, while whitespace-only custom values are rejected |
 | Reserved completion token is explicit | The unquoted first token `completions` dispatches to the completion subcommand; question text beginning with that token must be quoted or passed after `--` |
+| Stable specification ownership | Active behavior is stored under `givn/specs/<usecase-id>/` or `givn/specs/fragments/`; each capability has exactly one declared owner and historical `givn/archive/` content is not rewritten by active migrations |
+| Migration evidence is preserved | A specification migration must retain scenario identity, behavior hashes, E2E mappings, interaction coverage, and source/branch coverage unless an explicit ledger entry records retirement |
