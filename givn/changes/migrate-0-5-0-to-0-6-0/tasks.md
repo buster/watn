@@ -7,7 +7,10 @@
   runner or step files are needed for this verification-only migration. Evidence:
   `tests/features_runner.rs` calls `.fail_on_skipped()`, collects permanent
   `givn/specs/**/*.feature`, and `givn/commands.yaml` configures `./run-tests.sh`
-  plus `./run-tests.sh --e2e`.
+  plus `./run-tests.sh --e2e`. Strictness proof: a temporary undefined-step
+  scenario run with `./run-tests.sh --name 'Strict runner rejects an undefined
+  step'` exited `101` with `1 scenario (1 failed)`, `1 step (1 failed)`, and
+  `1 step failed`; the temporary feature was removed afterward.
 - [x] Record the Givn version/configuration, active changes, active use-case and
   fragment roots, ideation topics, confirmed Personas, and archived migration
   baseline before verification. Evidence: `givn/config.yaml` declares 0.6.0;
@@ -33,7 +36,8 @@ archives are not rewritten; absent Personas and ideation topics remain absent.
   product source changed; keep only canonical use-case/fragment paths. Evidence:
   `git status --short -- givn/specs givn/archive` is empty and the active
   feature tree remains unchanged.
-- [ ] COMMIT: Record the implementation commit hash here.
+- [x] COMMIT: `b4a9ea7` — verification implementation, migration ledger,
+  evidence, and Arc42 updates; no product source was changed by design.
 
 ## Verification: behavior and coverage evidence
 
@@ -58,12 +62,15 @@ explicit ledger retirement records a difference.
   producer, and historical evidence remains untouched. Evidence: source
   coverage changed from 13487/14743 to 13489/14743 covered/valid lines, both
   runs report 0/0 branches, and no active spec or archive diff exists.
-- [ ] COMMIT: Record the implementation commit hash here.
+- [x] COMMIT: `b4a9ea7` — verification implementation, migration ledger,
+  evidence, and Arc42 updates; no product source was changed by design.
 
 ## Final gates
 
-- [ ] Run `givn lint`.
-- [ ] Run `givn check arc42-docs --change migrate-0-5-0-to-0-6-0`.
-- [ ] Run `givn check review --change migrate-0-5-0-to-0-6-0` after review is
-  written; do not use the nonexistent `givn check migration` command.
-- [ ] Record `REVIEW: PASS` only after every evidence file and gate is complete.
+- [x] Run `givn lint`; 26 active feature files checked and clean.
+- [x] Run `givn check arc42-docs --change migrate-0-5-0-to-0-6-0`; passed.
+- [x] Run `givn check review --change migrate-0-5-0-to-0-6-0` after review is
+  written; verify, verify-e2e, integrity, run declaration, and net delta 0
+  passed. Do not use the nonexistent `givn check migration` command.
+- [x] Record `REVIEW: PASS` only after every evidence file and gate is complete;
+  `review.md` ends with `REVIEW: PASS`.
