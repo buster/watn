@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "before": {
+    "lines_covered": 13487,
+    "lines_valid": 14743,
+    "branches_covered": 0,
+    "branches_valid": 0
+  },
+  "after": {
+    "lines_covered": 13489,
+    "lines_valid": 14743,
+    "branches_covered": 0,
+    "branches_valid": 0
+  },
+  "passed": true
+}

@@ -122,6 +122,12 @@ regions are bucket 3, legitimately hard to test for this change: adding
 duplicate runtime scenarios would not exercise migration behavior and would
 violate the repository's Gherkin-as-source-of-truth boundary.
 
+The archive gate reran the configured coverage hook and observed
+`13,488/14,743` covered lines. This remains above the pre-verification baseline
+of `13,487/14,743`; the generated README and Cobertura reports reflect that
+latest hook run. The archived JSON comparison records the earlier explicit
+before/after verification run and is valid JSON.
+
 ## Verification Evidence
 
 | Command | Result |
