@@ -4,5 +4,6 @@
 .claude/
 .agents/
 .opencode/
+.githooks/
 /givn/.spec-index.json
 /givn/.spec-pair-cache.json
