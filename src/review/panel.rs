@@ -121,6 +121,7 @@ impl InlineLayout {
 pub struct ReviewPanelState {
     pub context: ReviewContext,
     pub candidates: Vec<ReviewCandidate>,
+    candidate_contexts: Vec<ReviewContext>,
     pub selected_candidate: usize,
     pub focus: FocusRegion,
     pub flow_stage: usize,
@@ -138,10 +139,12 @@ pub struct ReviewPanelState {
 
 impl ReviewPanelState {
     pub fn new(context: ReviewContext, candidate: ReviewCandidate) -> Self {
+        let candidate_contexts = vec![context.clone()];
         Self {
             configured_model: context.model.clone(),
             context,
             candidates: vec![candidate],
+            candidate_contexts,
             selected_candidate: 0,
             // Actions is the release gate and the initial decision point.
             focus: FocusRegion::Actions,
@@ -210,6 +213,7 @@ impl ReviewPanelState {
     /// Regeneration and escalation replace the current candidate by default.
     pub fn replace_current(&mut self, candidate: ReviewCandidate) {
         self.candidates[self.selected_candidate] = candidate;
+        self.candidate_contexts[self.selected_candidate] = self.context.clone();
         self.flow_stage = 0;
         self.candidate_cursor = self.selected_candidate;
     }
@@ -224,7 +228,9 @@ impl ReviewPanelState {
     /// Explicit comparison retention keeps the current candidate in history.
     pub fn retain_current(&mut self) {
         let retained = self.candidate().clone();
+        let retained_context = self.context.clone();
         self.candidates.push(retained);
+        self.candidate_contexts.push(retained_context);
     }
 
     pub fn select_candidate(&mut self, index: usize) {
@@ -597,6 +603,24 @@ pub fn render_lines(state: &ReviewPanelState, layout: InlineLayout) -> Vec<Strin
         state.selected_candidate + 1,
         state.candidates.len()
     ));
+    if state.candidates.len() > 1 {
+        for (index, compared) in state.candidates.iter().enumerate() {
+            let context = &state.candidate_contexts[index];
+            let marker = if index == state.selected_candidate {
+                ">"
+            } else {
+                " "
+            };
+            lines.push(format!(
+                "{marker} {}. {} | tier {} | {}/{}",
+                index + 1,
+                sanitize_terminal_text(&compared.command),
+                sanitize_terminal_text(&context.tier),
+                sanitize_terminal_text(&context.provider),
+                sanitize_terminal_text(&context.model)
+            ));
+        }
+    }
     if state.input_mode == PanelInputMode::CommandEditor {
         lines.push(format!(
             "Edit command: {}",

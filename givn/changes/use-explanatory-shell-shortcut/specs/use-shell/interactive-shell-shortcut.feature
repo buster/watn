@@ -254,7 +254,7 @@ Feature: Explanatory interactive shell shortcut
     And the current intent should remain "show disk usage"
     And the review should offer regeneration or rephrasing
 
-  @givn.added @wip
+  @givn.added
   Scenario: Retained candidates can be compared and one selected
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with current input "show disk usage"

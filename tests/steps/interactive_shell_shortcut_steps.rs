@@ -2339,3 +2339,60 @@ fn review_offer_regeneration(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "Accept candidate");
     assert_review_rendered_contains(world, "Cancel review");
 }
+
+#[when("I retain the current candidate for comparison")]
+fn review_retain_candidate(world: &mut WatnWorld) {
+    panel_mut(world).retain_current();
+    render_surface(world);
+}
+
+#[then("both candidates should be available in the current review only")]
+fn review_both_candidates_available(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidates.len(),
+        2,
+        "retention keeps both candidates in the current review"
+    );
+    assert_eq!(panel.candidate().command, REVIEW_REGENERATED_COMMAND);
+    assert_eq!(panel.candidates[1].command, REVIEW_FIXTURE_COMMAND);
+}
+
+#[then("each candidate should show its tier and provider/model context")]
+fn review_candidates_show_context(world: &mut WatnWorld) {
+    assert_review_rendered_contains(
+        world,
+        &format!("1. {REVIEW_REGENERATED_COMMAND} | tier 1 | loopback/review-model"),
+    );
+    assert_review_rendered_contains(
+        world,
+        &format!("2. {REVIEW_FIXTURE_COMMAND} | tier 1 | loopback/review-model"),
+    );
+}
+
+#[when("I select the retained candidate")]
+fn review_select_retained(world: &mut WatnWorld) {
+    panel_mut(world).select_candidate(1);
+    render_surface(world);
+}
+
+#[then("it should become the selected candidate for final acceptance")]
+fn review_retained_selected(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.selected_candidate, 1);
+    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+}
+
+#[then("only the selected candidate should be eligible for acceptance")]
+fn review_only_selected_accept(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    match panel
+        .clone()
+        .handle_key(key(crossterm::event::KeyCode::Enter))
+    {
+        watn::review::PanelOutcome::Accepted(candidate) => {
+            assert_eq!(candidate.command, REVIEW_FIXTURE_COMMAND);
+        }
+        outcome => panic!("only the selected candidate may be accepted, got {outcome:?}"),
+    }
+}
