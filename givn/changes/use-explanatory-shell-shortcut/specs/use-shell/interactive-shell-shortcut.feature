@@ -234,7 +234,7 @@ Feature: Explanatory interactive shell shortcut
     And its tier and provider/model context should be visible
     And the current intent should remain unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Highest-tier review opens explicit provider catalog model selection
     Given an installed Bash shortcut and a candidate generated at the highest configured tier
     And the provider catalog contains "model-a" and "model-b"

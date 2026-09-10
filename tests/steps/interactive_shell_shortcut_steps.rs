@@ -1087,12 +1087,16 @@ pub struct ReviewState {
     pub review_ineligible: bool,
     pub confirmation_shown: bool,
     pub executed: bool,
+    pub tier: String,
+    pub highest_tier: bool,
+    pub catalog_models: Vec<String>,
 }
 
-fn review_context(intent: &str) -> watn::review::ReviewContext {
+fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
+    let tier = if tier.is_empty() { "1" } else { tier };
     watn::review::ReviewContext {
         intent: intent.to_string(),
-        tier: "1".to_string(),
+        tier: tier.to_string(),
         provider: "loopback".to_string(),
         model: "review-model".to_string(),
     }
@@ -1267,7 +1271,8 @@ fn build_review_panel(world: &mut WatnWorld) {
         );
     }
     let intent = world.review.intent.clone();
-    let context = review_context(&intent);
+    let tier = world.review.tier.clone();
+    let context = review_context(&intent, &tier);
     world.review.context = Some(context.clone());
     world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
     render_surface(world);
@@ -2198,6 +2203,8 @@ fn review_prior_not_retained(world: &mut WatnWorld) {
 
 const REVIEW_ESCALATED_COMMAND: &str = "git log --oneline --graph | head -5";
 
+const REVIEW_SELECTED_MODEL_COMMAND: &str = "git log --oneline --graph --decorate | head -5";
+
 #[given("an installed Bash shortcut and a candidate generated at the small tier")]
 fn review_small_tier_candidate(world: &mut WatnWorld) {
     review_candidate_for_intent(world, "inspect recent log changes".to_string());
@@ -2205,6 +2212,12 @@ fn review_small_tier_candidate(world: &mut WatnWorld) {
 
 #[when("I request a higher tier")]
 fn review_request_higher_tier(world: &mut WatnWorld) {
+    if world.review.highest_tier {
+        let models = world.review.catalog_models.clone();
+        panel_mut(world).open_model_selection(models);
+        render_surface(world);
+        return;
+    }
     let panel = panel_mut(world);
     assert_eq!(panel.context.tier, "1", "small tier is the starting tier");
     let context = watn::review::ReviewContext {
@@ -2235,4 +2248,53 @@ fn review_intent_unchanged(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.context.intent, "inspect recent log changes");
     assert_review_rendered_contains(world, "intent: inspect recent log changes");
+}
+
+#[given("an installed Bash shortcut and a candidate generated at the highest configured tier")]
+fn review_highest_tier_candidate(world: &mut WatnWorld) {
+    review_candidate_for_intent(world, "inspect recent log changes".to_string());
+    world.review.tier = "3".to_string();
+    world.review.highest_tier = true;
+}
+
+#[given(expr = "the provider catalog contains {string} and {string}")]
+fn review_catalog_contains(world: &mut WatnWorld, first: String, second: String) {
+    world.review.catalog_models = vec![first, second];
+}
+
+#[then("the provider catalog model selection should open")]
+fn review_model_selection_open(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.model_selection(),
+        Some(["model-a".to_string(), "model-b".to_string()].as_slice())
+    );
+    assert_review_rendered_contains(world, "model-a");
+    assert_review_rendered_contains(world, "model-b");
+}
+
+#[when(expr = "I select {string}")]
+fn review_select_model(world: &mut WatnWorld, model: String) {
+    let candidate = watn::review::ReviewCandidate::from_command(REVIEW_SELECTED_MODEL_COMMAND);
+    panel_mut(world).select_model(model, candidate);
+    render_surface(world);
+}
+
+#[then(expr = "the next candidate should use {string}")]
+fn review_next_candidate_model(world: &mut WatnWorld, model: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.model, model);
+    assert_review_rendered_contains(world, &format!("loopback/{model}"));
+}
+
+#[then("the selected model should apply only to the next candidate")]
+fn review_model_oneshot(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.complete_model_selection();
+    assert_eq!(
+        panel.context.model,
+        panel.configured_model(),
+        "the configured model is restored after the next candidate cycle"
+    );
+    assert!(panel.model_selection().is_none(), "selection is closed");
 }

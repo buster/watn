@@ -128,6 +128,10 @@ pub struct ReviewPanelState {
     pub action_cursor: usize,
     pub input_mode: PanelInputMode,
     intent_history: Vec<String>,
+    configured_model: String,
+    model_selection: Option<Vec<String>>,
+    model_cursor: usize,
+    pending_model: Option<String>,
     editor_buffer: String,
     editor_original: String,
 }
@@ -135,6 +139,7 @@ pub struct ReviewPanelState {
 impl ReviewPanelState {
     pub fn new(context: ReviewContext, candidate: ReviewCandidate) -> Self {
         Self {
+            configured_model: context.model.clone(),
             context,
             candidates: vec![candidate],
             selected_candidate: 0,
@@ -145,8 +150,42 @@ impl ReviewPanelState {
             action_cursor: 0,
             input_mode: PanelInputMode::Review,
             intent_history: Vec::new(),
+            model_selection: None,
+            model_cursor: 0,
+            pending_model: None,
             editor_buffer: String::new(),
             editor_original: String::new(),
+        }
+    }
+
+    pub fn configured_model(&self) -> &str {
+        &self.configured_model
+    }
+
+    pub fn model_selection(&self) -> Option<&[String]> {
+        self.model_selection.as_deref()
+    }
+
+    /// At the highest configured tier, a higher-tier request opens the explicit
+    /// provider catalog selection instead of generating.
+    pub fn open_model_selection(&mut self, models: Vec<String>) {
+        self.model_cursor = 0;
+        self.model_selection = Some(models);
+    }
+
+    /// Applies the selected model to the next candidate only. The configured
+    /// model is restored once that candidate cycle completes.
+    pub fn select_model(&mut self, model: impl Into<String>, candidate: ReviewCandidate) {
+        let model = model.into();
+        self.pending_model = Some(model.clone());
+        self.context.model = model;
+        self.model_selection = None;
+        self.replace_current(candidate);
+    }
+
+    pub fn complete_model_selection(&mut self) {
+        if self.pending_model.take().is_some() {
+            self.context.model = self.configured_model.clone();
         }
     }
 
@@ -575,6 +614,23 @@ pub fn render_lines(state: &ReviewPanelState, layout: InlineLayout) -> Vec<Strin
                         format!("[{}]", action.label())
                     } else {
                         action.label().to_string()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" | ")
+        ));
+    }
+    if let Some(models) = &state.model_selection {
+        lines.push(format!(
+            "Models: {}",
+            models
+                .iter()
+                .enumerate()
+                .map(|(index, model)| {
+                    if index == state.model_cursor {
+                        format!("[{model}]")
+                    } else {
+                        model.clone()
                     }
                 })
                 .collect::<Vec<_>>()
