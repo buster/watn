@@ -115,6 +115,13 @@ added during review (`chooser_query_editing_and_suggestion_selection_are_covered
 `a_long_stage_wraps_to_a_continuation_row`) raised panel coverage from 85.5% to
 95.9% and card coverage to 99.8%.
 
+## README impact decision
+
+README-IMPACT: none
+
+The README does not document the review card's key bindings, and no CLI flag,
+configuration key, or output contract changed in this capability.
+
 ## Verification runs
 
 - `./run-tests.sh` (instrumented) → exit 0; 21 features, 209 scenarios, 1262 steps passed
