@@ -54,38 +54,26 @@ command request.
 
 ## Rules
 
-- The review surface is small, transient, and inline; it does not switch to a
-  full-screen alternate-screen interface.
+- The review surface is small, transient, and inline; it does not switch to a full-screen alternate-screen interface.
 - The existing progress line appears before the review surface.
-- The review surface is enabled by default, configurable persistently,
-  overridable per invocation, and may select an enhanced presentation adapter
-  automatically.
+- The review surface is enabled by default, configurable persistently, overridable per invocation, and may select an enhanced presentation adapter automatically.
 - Eligible review output is buffered until final acceptance.
-- Review-surface text is rendered through the controlling-terminal channel;
-  accepted command text remains the only command-output channel content.
-- Direct command editing preserves the original intent and refreshes explanation
-  state; it never evaluates the edited candidate.
+- Review-surface text is rendered through the controlling-terminal channel; accepted command text remains the only command-output channel content.
+- Direct command editing preserves the original intent and refreshes explanation state; it never evaluates the edited candidate.
 - Every candidate requires explicit final acceptance.
 - Review never evaluates generated or edited text.
-- Purpose loading is shown only for a structured response that supports delayed
-  purpose completion; otherwise purpose-unavailable is shown.
+- Purpose loading is shown only for a structured response that supports delayed purpose completion; otherwise purpose-unavailable is shown.
 
 ## Examples
 
-- Ctrl-W records the original request as a history comment and replaces the
-  buffer with the accepted candidate.
-- A complex `git log | xargs git show && printf` candidate shows its stages and
-  purposes in the review surface.
+- Ctrl-W records the original request as a history comment and replaces the buffer with the accepted candidate.
+- A complex `git log | xargs git show && printf` candidate shows its stages and purposes in the review surface.
 - A cancelled review preserves the original buffer and history.
-- Rephrasing replaces the visible active intent and starts a new candidate cycle;
-  the prior intent remains only in current-review history.
-- Regeneration replaces the current candidate by default; explicit retention is
-  required for comparison.
-- A higher-tier request uses the next configured tier. At the highest tier it
-  opens the existing provider catalog picker for one explicit model selection.
+- Rephrasing replaces the visible active intent and starts a new candidate cycle; the prior intent remains only in current-review history.
+- Regeneration replaces the current candidate by default; explicit retention is required for comparison.
+- A higher-tier request uses the next configured tier. At the highest tier it opens the existing provider catalog picker for one explicit model selection.
 - Rejection releases no candidate and returns to the active intent.
-- An interrupted generation, purpose operation, or model selection preserves the
-  selected candidate and review state.
+- An interrupted generation, purpose operation, or model selection preserves the selected candidate and review state.
 
 ## Minimal guarantee
 
