@@ -626,47 +626,51 @@ fn run_review_path(
 
     {
         use std::io::Write as _;
+        if verbose {
+            if let Some(reasoning) = &response.reasoning_content {
+                if !reasoning.trim().is_empty() {
+                    let _ = render::print_reasoning(reasoning);
+                }
+            }
+        }
+
+        let cost = config.pricing.get(&response.model).map(|p| {
+            let input_cost = p.input
+                * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
+                / 1_000_000.0;
+            let output_cost = p.output
+                * response
+                    .final_usage
+                    .as_ref()
+                    .map_or(0, |u| u.completion_tokens) as f64
+                / 1_000_000.0;
+            input_cost + output_cost
+        });
+        let elapsed = response.elapsed_secs;
+        let tok_s = if elapsed > 0.0 {
+            response
+                .final_usage
+                .as_ref()
+                .map_or(0.0, |u| u.completion_tokens as f64)
+                / elapsed
+        } else {
+            0.0
+        };
+        let _ = render::print_metadata(&response.model, tok_s, cost, elapsed);
+
+        // Eligible `-x`: final acceptance is the sole execution authorization.
+        // The accepted candidate is not printed to the command-output channel
+        // on this path; the execution output is the observable result.
+        if execute {
+            watn::exec::execute(&accepted.command);
+        }
+
         let mut stdout = io::stdout();
         if writeln!(stdout, "{}", accepted.command).is_err() || stdout.flush().is_err() {
             std::process::exit(1);
         }
     }
 
-    if verbose {
-        if let Some(reasoning) = &response.reasoning_content {
-            if !reasoning.trim().is_empty() {
-                let _ = render::print_reasoning(reasoning);
-            }
-        }
-    }
-
-    let cost = config.pricing.get(&response.model).map(|p| {
-        let input_cost = p.input
-            * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
-            / 1_000_000.0;
-        let output_cost = p.output
-            * response
-                .final_usage
-                .as_ref()
-                .map_or(0, |u| u.completion_tokens) as f64
-            / 1_000_000.0;
-        input_cost + output_cost
-    });
-    let elapsed = response.elapsed_secs;
-    let tok_s = if elapsed > 0.0 {
-        response
-            .final_usage
-            .as_ref()
-            .map_or(0.0, |u| u.completion_tokens as f64)
-            / elapsed
-    } else {
-        0.0
-    };
-    let _ = render::print_metadata(&response.model, tok_s, cost, elapsed);
-
-    if execute {
-        watn::exec::execute(&accepted.command);
-    }
     std::process::exit(0);
 }
 
