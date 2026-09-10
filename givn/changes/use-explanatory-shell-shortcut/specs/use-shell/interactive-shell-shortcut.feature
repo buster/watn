@@ -155,7 +155,7 @@ Feature: Explanatory interactive shell shortcut
     And the review surface should show purpose-unavailable or generation failure
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabled review preserves direct Ctrl-W replacement
     Given an installed Bash shortcut with the explanatory review surface disabled
     And a provider candidate "df -h"

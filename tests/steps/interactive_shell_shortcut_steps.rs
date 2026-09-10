@@ -1083,6 +1083,8 @@ pub struct ReviewState {
     pub adapter: Option<watn::review::PresentationSelection>,
     pub bash_command_line: String,
     pub bash_history: Vec<String>,
+    pub review_disabled: bool,
+    pub executed: bool,
 }
 
 fn review_context(intent: &str) -> watn::review::ReviewContext {
@@ -1211,11 +1213,28 @@ fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
     world.review.intent = input.clone();
     world.review.progress_line = Some(format!("Generating command for {input}"));
     match world.review.driver.clone() {
+        ReviewDriver::Structured if world.review.review_disabled => {
+            review_invoke_disabled_ctrl_w(world, &input);
+        }
         ReviewDriver::Structured => review_invoke_structured(world, input),
         ReviewDriver::Streaming { chunks, done } => {
             review_invoke_streaming(world, &chunks, done);
         }
     }
+}
+
+fn review_invoke_disabled_ctrl_w(world: &mut WatnWorld, input: &str) {
+    assert_eq!(
+        watn::review::request_route(false, false),
+        watn::review::RequestRoute::DirectCommandOutput,
+        "disabled Ctrl-W must route to the existing direct replacement path"
+    );
+    world.review.bash_command_line = world.review.candidate_command.clone();
+    world.review.command_output = world.review.candidate_command.clone();
+    world.review.bash_history.push(format!("# {input}"));
+    world.review.surface_open = false;
+    world.review.panel = None;
+    world.review.rendered.clear();
 }
 
 fn build_review_panel(world: &mut WatnWorld) {
@@ -1902,4 +1921,62 @@ fn review_purpose_unavailable_or_generation_failure(world: &mut WatnWorld) {
         watn::review::PurposeStatus::Unavailable
     );
     assert_review_rendered_contains(world, "purpose-unavailable");
+}
+
+#[given("an installed Bash shortcut with the explanatory review surface disabled")]
+fn review_disabled_shortcut(world: &mut WatnWorld) {
+    install_bash_shortcut(world);
+    let config = watn::config::types::Config {
+        review: watn::config::types::ReviewConfig { panel: false },
+        ..watn::config::types::Config::default()
+    };
+    assert!(
+        !watn::review::resolve_review_enabled(
+            &config,
+            watn::config::types::ReviewPanelOverride::Unset,
+            true
+        ),
+        "persisted panel = false must disable review"
+    );
+    world.review = ReviewState {
+        review_disabled: true,
+        ..ReviewState::default()
+    };
+}
+
+#[given(expr = "a provider candidate {string}")]
+fn review_provider_candidate(world: &mut WatnWorld, command: String) {
+    world.review.candidate_command = command;
+}
+
+#[then(expr = "the Bash command line should contain {string}")]
+fn review_bash_line_contains(world: &mut WatnWorld, expected: String) {
+    assert!(
+        world.review.bash_command_line.contains(&expected),
+        "Bash command line {:?} should contain {expected:?}",
+        world.review.bash_command_line
+    );
+}
+
+#[then("no command-flow review should open")]
+fn review_no_surface(world: &mut WatnWorld) {
+    assert!(!world.review.surface_open, "review surface must not open");
+    assert!(world.review.panel.is_none(), "no review panel may exist");
+    assert!(
+        world.review.rendered.is_empty(),
+        "no review surface may be rendered"
+    );
+}
+
+#[then("the existing Ctrl-W history and no-evaluation behavior should be unchanged")]
+fn review_history_no_evaluation_unchanged(world: &mut WatnWorld) {
+    assert_eq!(
+        world.review.bash_history,
+        vec!["# show available diskspace".to_string()],
+        "disabled Ctrl-W records exactly the existing history comment"
+    );
+    assert!(
+        !world.review.executed,
+        "disabled review must not evaluate the command"
+    );
 }

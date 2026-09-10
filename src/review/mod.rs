@@ -3,6 +3,7 @@ mod buffer;
 mod flow;
 mod panel;
 mod response;
+mod routing;
 
 pub use adapter::{PresentationAdapter, PresentationSelection};
 pub use buffer::ReviewBuffer;
@@ -16,3 +17,4 @@ pub use response::{
     parse_structured_review_response, CandidateIdentity, PurposeStatus, ReviewCandidate,
     ReviewParseResult, ReviewResponse, ReviewResponseError, ReviewStage, REVIEW_VERSION,
 };
+pub use routing::{request_route, resolve_review_enabled, RequestRoute};

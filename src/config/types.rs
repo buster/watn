@@ -27,6 +27,8 @@ pub struct Config {
     pub pricing: HashMap<String, ModelPricing>,
     #[serde(default)]
     pub litellm: Option<LiteLLMConfig>,
+    #[serde(default)]
+    pub review: ReviewConfig,
 }
 
 impl Config {
@@ -81,6 +83,7 @@ impl Config {
                 m
             },
             litellm: None,
+            review: ReviewConfig::default(),
         };
         let raw = toml::to_string_pretty(&example).unwrap_or_default();
         format!(
@@ -91,6 +94,54 @@ impl Config {
             comment_toml(&raw)
         )
     }
+}
+
+fn default_review_panel() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub struct ReviewConfig {
+    #[serde(default = "default_review_panel")]
+    pub panel: bool,
+}
+
+impl Default for ReviewConfig {
+    fn default() -> Self {
+        Self { panel: true }
+    }
+}
+
+/// Per-invocation review-panel override. `Unset` leaves persisted configuration intact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ReviewPanelOverride {
+    #[default]
+    Unset,
+    Enabled,
+    Disabled,
+}
+
+impl ReviewPanelOverride {
+    pub fn from_flags(review_panel: bool, no_review_panel: bool) -> Result<Self, &'static str> {
+        match (review_panel, no_review_panel) {
+            (true, true) => Err("--review-panel and --no-review-panel are mutually exclusive"),
+            (true, false) => Ok(Self::Enabled),
+            (false, true) => Ok(Self::Disabled),
+            (false, false) => Ok(Self::Unset),
+        }
+    }
+
+    pub fn resolve(self, persisted: bool) -> bool {
+        match self {
+            Self::Unset => persisted,
+            Self::Enabled => true,
+            Self::Disabled => false,
+        }
+    }
+}
+
+pub fn review_panel_enabled(config: &Config, override_value: ReviewPanelOverride) -> bool {
+    override_value.resolve(config.review.panel)
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -178,10 +229,40 @@ pub struct LiteLLMConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::Config;
+    use super::{review_panel_enabled, Config, ReviewConfig, ReviewPanelOverride};
 
     #[test]
     fn template_does_not_include_schema_version() {
         assert!(!Config::template_content().contains("schema_version"));
+    }
+
+    #[test]
+    fn review_panel_defaults_to_enabled_and_is_persisted() {
+        let config = Config::default();
+        assert!(config.review.panel);
+
+        let parsed: Config = toml::from_str("[review]\npanel = false\n").unwrap();
+        assert!(!parsed.review.panel);
+        assert!(Config::template_content().contains("[review]"));
+        assert!(Config::template_content().contains("panel = true"));
+    }
+
+    #[test]
+    fn review_panel_override_is_tri_state_and_has_precedence() {
+        let config = Config {
+            review: ReviewConfig { panel: false },
+            ..Config::default()
+        };
+
+        assert!(!review_panel_enabled(&config, ReviewPanelOverride::Unset));
+        assert!(review_panel_enabled(&config, ReviewPanelOverride::Enabled));
+        assert!(!review_panel_enabled(
+            &config,
+            ReviewPanelOverride::Disabled
+        ));
+        assert_eq!(
+            ReviewPanelOverride::from_flags(true, true),
+            Err("--review-panel and --no-review-panel are mutually exclusive")
+        );
     }
 }
