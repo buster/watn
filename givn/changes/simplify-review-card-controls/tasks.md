@@ -163,25 +163,25 @@ Domain constraints:
 
 - `c` cancels like Escape and releases nothing.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The cancel shortcut cancels the review'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the shortcut stub panicked.
   ```
-- [ ] GREEN: Handle `c`/`C` in review mode. Compile and run the exact targeted
+- [x] GREEN: Handle `c`/`C` in review mode. Compile and run the exact targeted
   command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (`c`/`C` routes to cancellation), `tests/steps/interactive_shell_shortcut_steps.rs` (shortcut binding).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The cancel shortcut cancels the review'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed); full regular 199/199, e2e 81/81.
   ```
-- [ ] REFACTOR: Keep one cancellation path. Rerun the exact targeted command.
+- [x] REFACTOR: Keep one cancellation path. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'The cancel shortcut cancels the review'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The cancel shortcut cancels the review
+- [x] COMMIT: `b486614138a0f76f65ad89eec87dcf318840fb73` - feat(interactive-shell-shortcut): The cancel shortcut cancels the review
 
 ### Rejecting a candidate opens the model chooser
 
