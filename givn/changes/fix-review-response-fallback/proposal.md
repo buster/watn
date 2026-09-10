@@ -39,7 +39,7 @@ When the review surface is enabled and eligible:
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| Structured review response recovery and inline rendering safety | EXTEND interactive-shell-shortcut | `EXTEND interactive-shell-shortcut` | No new interaction exists; this extends the already-owned review capability in `use-shell`. |
+| `interactive-shell-shortcut` | `EXTEND interactive-shell-shortcut` | `EXTEND interactive-shell-shortcut` | No new interaction exists; this extends the already-owned review capability in `use-shell`. |
 
 ## Out of Scope
 
