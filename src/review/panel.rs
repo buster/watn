@@ -1016,7 +1016,7 @@ mod tests {
         assert!(panel.model_selection().is_some());
         let lines =
             crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
-        assert!(lines.iter().any(|line| line.contains("Matches")));
+        assert!(lines.iter().any(|line| line.contains("Picks")));
         panel.select_model("model-b", ReviewCandidate::from_command("ls -la"));
         assert_eq!(panel.candidate().command, "ls -la");
         assert!(panel.model_selection().is_none());

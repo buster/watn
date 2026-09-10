@@ -14,6 +14,7 @@ categories = ["command-line-utilities"]
 exclude = [
     "coverage/",
     "ctrlw.gif",
+    "preview.gif",
     "givn/",
     "docs/",
     ".agents/",
@@ -31,6 +32,7 @@ exclude = [
     "run-tests.sh",
     "setuprefactoring.md",
     "rust-toolchain.toml",
+    "watn-logo-ascii.txt",
     "watncmd.gif",
     "watnsetup.png",
 ]

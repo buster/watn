@@ -3021,7 +3021,7 @@ fn review_editor_keys_emphasized(world: &mut WatnWorld) {
 
 #[then("the chooser keys should be shown colored and bold")]
 fn review_chooser_keys_emphasized(world: &mut WatnWorld) {
-    assert_review_keys_bold(world, &["1-3", "⏎", "esc"]);
+    assert_review_keys_bold(world, &["1/2/3", "↑↓", "⏎", "esc"]);
 }
 
 fn drive_review_key(
@@ -3174,10 +3174,11 @@ fn review_model_chooser_field(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
     let plain = strip_ansi(&rendered);
     assert!(
-        plain.contains("Model"),
-        "the chooser must offer a model field, got:\n{rendered}"
+        plain.contains("Search") && plain.contains("type a model name"),
+        "the chooser must offer a labelled search field, got:\n{rendered}"
     );
-    assert_review_rendered_contains(world, "esc close");
+    assert_review_rendered_contains(world, "esc");
+    assert_review_rendered_contains(world, "back");
 }
 
 const REVIEW_TIER_RESPONSE: &str = r#"{"review_version":1,"command":"df -h --all","stages":[{"stage_text":"df -h --all","purpose":"Show all disk usage."}],"purpose_status":"ready"}"#;
@@ -3622,4 +3623,37 @@ fn review_explain_card_remains_open(world: &mut WatnWorld) {
     assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
     assert!(world.review.surface_open, "the explanation must stay open");
     assert_review_rendered_contains(world, "close");
+}
+
+#[then("the model chooser should explain its keys and input")]
+fn review_chooser_explains(world: &mut WatnWorld) {
+    for needle in [
+        "1/2/3",
+        "switch tier",
+        "type to filter",
+        "↑↓",
+        "pick",
+        "⏎",
+        "use",
+        "esc",
+        "back",
+        "Search",
+        "type a model name",
+    ] {
+        assert_review_rendered_contains(world, needle);
+    }
+}
+
+#[then("the current model should be marked")]
+fn review_current_model_marked(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let chooser = panel.chooser().expect("chooser state");
+    assert!(
+        chooser
+            .tiers
+            .iter()
+            .any(|choice| choice.model == panel.context.model),
+        "the current model must be among the tiers"
+    );
+    assert_review_rendered_contains(world, "●");
 }

@@ -390,12 +390,17 @@ pub fn render_card_lines(
                 .iter()
                 .enumerate()
                 .map(|(index, choice)| {
-                    let label = format!("[{} {} · {}]", index + 1, choice.label, choice.model);
-                    if index == 0 {
-                        ink.reverse(&ink.white(&label))
+                    let marker = if choice.model == state.context.model {
+                        format!(" {}", ink.green("●"))
                     } else {
-                        ink.white(&label)
-                    }
+                        String::new()
+                    };
+                    format!(
+                        "{} {} · {}{marker}",
+                        ink.key(&(index + 1).to_string()),
+                        choice.label,
+                        choice.model
+                    )
                 })
                 .collect::<Vec<_>>()
                 .join("  ");
@@ -422,7 +427,7 @@ pub fn render_card_lines(
                 70,
                 format!(
                     "{}   {}",
-                    ink.label(&pad_to("Matches", label_width)),
+                    ink.label(&pad_to("Picks", label_width)),
                     ink.dim("loading suggestions…")
                 ),
             ));
@@ -431,20 +436,21 @@ pub fn render_card_lines(
                 70,
                 format!(
                     "{}   {}",
-                    ink.label(&pad_to("Matches", label_width)),
+                    ink.label(&pad_to("Picks", label_width)),
                     suggestions.join("  ")
                 ),
             ));
         }
-        let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
-        let (before, after) = chooser.query.split_at(cursor);
+        let search = if chooser.query.is_empty() {
+            format!("{}▏", ink.dim("type a model name…"))
+        } else {
+            let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
+            let (before, after) = chooser.query.split_at(cursor);
+            ink.white(&format!("{before}▏{after}"))
+        };
         content.push((
             85,
-            format!(
-                "{}   {}",
-                ink.label(&pad_to("Model", label_width)),
-                ink.white(&format!("{before}▏{after}"))
-            ),
+            format!("{}   {search}", ink.label(&pad_to("Search", label_width))),
         ));
     }
 
@@ -468,10 +474,12 @@ pub fn render_card_lines(
         format!("{} · {}", keyed("⏎", " commit"), keyed("esc", " discard"))
     } else if state.input_mode == super::panel::PanelInputMode::ModelChooser {
         format!(
-            "{} · {} · {}",
-            keyed("1-3", " tier"),
-            keyed("⏎", " choose"),
-            keyed("esc", " close")
+            "{} · {} · {} · {} · {}",
+            keyed("1/2/3", " switch tier"),
+            ink.dim("type to filter"),
+            keyed("↑↓", " pick"),
+            keyed("⏎", " use"),
+            keyed("esc", " back")
         )
     } else if state.explain_only {
         ink.dim("esc close")
@@ -641,9 +649,10 @@ mod tests {
         chooser.handle_key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
         let lines = render_card_lines(&chooser, InlineLayout::for_dimensions(80, 24), true);
         let joined = lines.join("\n");
-        assert!(joined.contains("Matches"));
+        assert!(joined.contains("Picks"));
+        assert!(joined.contains("Search"));
         assert!(joined.contains("\u{1b}[7m"), "the highlight is reversed");
-        assert!(joined.contains("\u{1b}[1;38;5;81m1-3\u{1b}[0m\u{1b}[2m tier\u{1b}[0m"));
+        assert!(joined.contains("\u{1b}[1;38;5;81m1/2/3\u{1b}[0m\u{1b}[2m switch tier\u{1b}[0m"));
 
         chooser.apply_regeneration_failure("provider exploded");
         let lines = render_card_lines(&chooser, InlineLayout::for_dimensions(80, 24), true);

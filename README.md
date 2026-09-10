@@ -1,241 +1,164 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
+```text
+__      __ __ _ | |_  _ __   ___
+\ \ /\ / // _` || __|| '_ \ |__ \
+ \ V  V /| (_| || |_ | | | |  / /
+  \_/\_/  \__,_| \__||_| |_| |_|
+                              (_)
+```
+
 <!-- givn:begin:coverage-badge -->
 [![Line Coverage: 92%](https://img.shields.io/badge/line%20coverage-92%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
-
 [![Crates.io Version](https://img.shields.io/crates/v/watn)](https://crates.io/crates/watn)
 
-You know what you want. watn knows how to type it.
-Ask in plain language. Get a command for command requests, or an answer for
-questions. Response content is streamed to stdout; use `-x` to confirm execution,
-or pipe the output anywhere.
+watn sends a plain-language question to a configured OpenAI-compatible endpoint
+and prints the answer: a shell command for command requests, text otherwise. In
+an interactive terminal, generated commands open in the review surface before
+anything reaches stdout; nothing is executed without confirmation.
 
 ## Demo
 
-*Ctrl-W shell shortcut to ask watn directly from the current terminal prompt.*
-![shell shortcut](https://raw.githubusercontent.com/buster/watn/main/ctrlw.gif)
+*Ctrl-W with the review surface disabled: the current prompt is sent to watn, and
+the generated command replaces the shell buffer without executing it.*
 
-## Quick start
+![Ctrl-W without the review surface](https://raw.githubusercontent.com/buster/watn/main/ctrlw.gif)
 
-- Rust 1.97.1 (the repository pins this in `rust-toolchain.toml`)
-- An OpenAI-compatible API endpoint and a usable API key
+*`watn "query"` with the review surface: the command flow and model-written stage
+purposes; accepting prints the command.*
+
+![Review surface for a direct question](https://raw.githubusercontent.com/buster/watn/main/preview.gif)
+
+## Installation
 
 ```sh
 cargo install watn
-export OPENROUTER_API_KEY=your-key
+```
+
+Requires a Rust toolchain and an OpenAI-compatible endpoint with a usable API
+key. Releases are source-only: the crate is published to crates.io and a GitHub
+release is created with the changelog; no prebuilt executables are attached.
+
+## Quick setup
+
+On first use without a configuration file, watn starts quick setup. Run it
+explicitly with:
+
+```sh
+watn quicksetup
+```
+
+It asks for the completion endpoint, the credential, one model for each of the
+small, normal, and thinking tiers, and which shell integrations to install. An
+empty answer accepts the suggestion shown. Everything is validated locally; no
+network request is made. Ctrl-C leaves an existing configuration unchanged;
+completing an explicit quick setup overwrites it.
+
+## Setup
+
+```sh
 watn setup
-watn "find all files modified in the last day"
 ```
 
-Use `watn provider` for only the endpoint and credential; use `watn setup` for
-the full wizard. Setup also assigns model tiers and can install shell
-completion or the optional Ctrl-W shortcut. Ctrl-W turns the current shell
-prompt into a command.
+The full wizard covers provider choice, endpoint, credential source (literal
+value or `${ENV_VAR}` reference), the provider's model catalog, the model and
+reasoning value for each tier, and shell integration, then shows a final review.
+Configuration is written only at final confirmation.
 
-### Quick setup
-
-If no configuration exists, watn starts the quick setup automatically; you can
-also run it explicitly at any time with `watn quicksetup`. It asks for the
-completion endpoint, credential, and the small, normal, and thinking models,
-then offers shell integrations. An empty answer accepts the suggestion.
-Everything is validated locally; no network request is made. Aborting with
-Ctrl-C leaves the existing configuration unchanged; completing an explicit
-quick setup overwrites it.
-
-```text
-$ watn quicksetup
-No configuration file found — starting quick setup.
-Completion endpoint [https://openrouter.ai/api/v1]:
-API key [${OPENROUTER_API_KEY}]:
-Small model [~anthropic/claude-haiku-latest:nitro]:
-Normal model [~anthropic/claude-haiku-latest:nitro]:
-Thinking model [~anthropic/claude-haiku-latest:nitro]:
-Shell integrations (type shell names to toggle, Enter to confirm):
-  [x] Bash
-  [x] Zsh
-  [x] Fish
-Shell integrations:
-Configuration written to /home/you/.config/watn/config.toml.
-Run `watn setup` to change the configuration later.
-```
+The focused commands `watn provider`, `watn models`, and `watn shell` configure
+one area each; `watn completions <SHELL>` prints a completion script for `bash`,
+`elvish`, `fish`, `powershell`, or `zsh`.
 
 ## Usage
 
-Pass a question as a positional argument or via stdin. Response content is
-streamed incrementally to stdout. Completion metadata (model, tokens/s, elapsed
-time, and cost when configured) is written to stderr. With `-v`, nonblank
-provider reasoning is printed to stderr after successful completion.
-
-In an interactive terminal, the explanatory review surface opens after the
-candidate is complete. It is a small inline panel on the controlling terminal
-that shows the command flow, model-written stage purposes, and the review
-actions. Nothing reaches stdout until you explicitly accept the candidate.
-Disable it per invocation with `--no-review-panel` or persistently with
-`[review] panel = false`.
-
-The surface is a framed review card: the command is syntax colored, one stage
-with its purpose is selected at a time, a compact position shows the stages,
-and the actions and key hints are laid out separately. Terminals without color
-render the same card in monochrome. Press `d` in the card to disable the review
-surface permanently; enable it again with `--review-panel` or
-`[review] panel = true`.
-
-With `-x` in a terminal where the card is disabled, the execution confirmation
-also accepts `?` to open the card as an explanation for the generated command
-before you decide.
+```sh
+watn "find all files modified in the last day"
+printf "find all rust source files" | watn
+watn -x "remove all .bak files"
+```
 
 ```text
-$ watn find all files modified in the last day
-find . -type f -mtime -1
-$ printf "find all rust source files" | watn
-find . -type f -name "*.rs"
+$ watn --help
+Ask in plain language. Get one command.
+
+Usage: watn [OPTIONS] [QUESTION]... [COMMAND]
+
+Commands:
+  setup        Configure provider, models, reasoning, and shell integrations interactively
+  models       Configure model tiers and reasoning settings interactively
+  provider     Configure a provider endpoint and credential
+  shell        Configure shell completion and Ctrl-W integrations
+  quicksetup   Configure provider, models, and shell integrations with a minimal question flow
+  completions  Generate a shell completion script on stdout for the caller to install or source
+  help         Print this message or the help of the given subcommand(s)
+
+Arguments:
+  [QUESTION]...  Natural-language question to turn into a command
+
+Options:
+  -1, --small                 Use the small/fast model tier
+  -2, --normal                Use the balanced model tier
+  -3, --thinking              Use the thinking/reasoning model tier
+      --model <MODEL>         Use an explicit model instead of a tier
+  -x, --execute               Prompt before executing the generated command
+      --review-panel          Force the explanatory review surface on for this invocation
+      --no-review-panel       Disable the explanatory review surface for this invocation
+  -v, --verbose               Print provider reasoning to stderr when available
+      --provider <PROVIDER>   Select a configured provider
+      --set-small <MODEL>     Set the small-tier model non-interactively
+      --set-normal <MODEL>    Set the normal-tier model non-interactively
+      --set-thinking <MODEL>  Set the thinking-tier model non-interactively
+  -h, --help                  Print help
+  -V, --version               Print version
 ```
+
+Response content goes to stdout; model, tokens/second, elapsed time, and cost
+(when pricing is configured) go to stderr. `-x` executes with `sh -c` after
+confirmation; when the review surface is active, final acceptance is that
+confirmation.
 
 ### Review surface
 
-The review surface has three focus regions: `Flow`, `Candidates`, and
-`Actions`. `Tab` and `Shift-Tab` move focus, arrow keys navigate within a
-region, `Enter` activates the selected action, and `Escape` cancels the
-review without releasing anything. The separate command editor commits with
-`Enter` and discards with `Escape`, and never evaluates the edited text.
-Direct command edits preserve the original intent.
+The review surface opens on the controlling terminal after a complete candidate:
+the command flow with exact stage text and a model-written purpose per stage,
+plus the review actions. Nothing reaches stdout unless you accept. Arrow keys
+move the selected stage; `Enter` or `a` accepts, `e` opens the command editor,
+`r` rejects and opens the model chooser, `c` cancels, `d` disables the surface
+permanently, and `Escape` closes without releasing anything. `--review-panel`
+and `--no-review-panel` persist the choice they set. Direct edits commit with
+`Enter`, discard with `Escape`, and still require final acceptance.
 
-### Model tiers
+### Shell shortcut
 
-```text
-$ watn -2 "list pods with the most memory usage"
-$ watn -3 "debug this strace"
-$ watn --model <provider>/<model> "convert flac to mp3 recursively"
-$ watn --set-small <small> --set-normal <normal> --set-thinking <thinking> models
-```
-
-Use `watn models` to choose identifiers from the provider catalog. The
-`--set-*` options must appear before `models`.
-
-### Execute mode
-
-```text
-$ watn -x "remove all .bak files"
-  rm *.bak
-  Execute now? [Y/n]
-```
-
-Press Enter, `y`, or `yes` to execute. Any other text cancels; Ctrl-C
-interrupts.
-Execution uses `sh -c` with the generated command.
-
-In an eligible interactive terminal, `-x` is executed from the review surface:
-final acceptance is the only authorization, and no second confirmation is
-shown. Redirected, disabled, and otherwise non-review `-x` requests keep the
-`Execute now?` confirmation.
-
-### Options and commands
-
-| Option | Description |
-|---|---|
-| `-1`, `--small` | Small/fast model tier (default) |
-| `-2`, `--normal` | Balanced model tier |
-| `-3`, `--thinking` | Thinking/reasoning model tier |
-| `--model <NAME>` | Explicit model override |
-| `-x`, `--execute` | Prompt for confirmation before executing the command |
-| `-v`, `--verbose` | Print provider reasoning to stderr after successful completion when available |
-| `--provider <NAME>` | Select a configured provider |
-| `--review-panel` | Force the explanatory review surface on for this invocation |
-| `--no-review-panel` | Disable the explanatory review surface for this invocation |
-| `--set-small <NAME>` | Set the small-tier model non-interactively |
-| `--set-normal <NAME>` | Set the normal-tier model non-interactively |
-| `--set-thinking <NAME>` | Set the thinking-tier model non-interactively |
-| `-V`, `--version` | Print version and exit |
-| `-h`, `--help` | Print help and exit |
-
-Subcommands are `setup`, `provider`, `models`, `quicksetup`, `completions <SHELL>`, and `help`.
-Completion scripts are supported for `bash`, `elvish`, `fish`, `powershell`,
-and `zsh`.
-
-For Bash, generate and load a completion script with:
-
-```sh
-watn completions bash > watn.bash
-source watn.bash
-```
-
-## Media
-
-*Illustrative `watn setup` wizard screenshot. The current wizard has seven
-pages; this screenshot predates that flow.*
-![watn setup page](https://raw.githubusercontent.com/buster/watn/main/watnsetup.png)
-
-*Illustrative command-generation flow.*
-![command generation](https://raw.githubusercontent.com/buster/watn/main/watncmd.gif)
+Setup can install an optional Ctrl-W widget for Bash, Zsh, and Fish. It reads
+the current shell buffer, calls `watn -- "$question"`, records the question in
+shell history as a `#` comment, and replaces the buffer with the accepted
+command without evaluating it.
 
 ## Configuration
 
-Config is TOML at `$XDG_CONFIG_HOME/watn/config.toml` (normally
-`~/.config/watn/config.toml`). Resolution is per setting:
-leftmost value wins.
-
-| Setting | Resolution order |
-|---|---|
-| Provider | `--provider` > `WATN_PROVIDER` > `[defaults].provider` > `openrouter` |
-| Model | `--model` > selected tier > `WATN_MODEL`/`[defaults].model` > provider default |
-| Endpoint | Saved provider entry > built-in `openrouter`/`openai` endpoint; custom providers require an entry |
-| API key | Saved literal/reference > provider-specific env var > `WATN_API_KEY` |
-| Review surface | `--review-panel`/`--no-review-panel` (also persisted to `[review].panel`) > `[review].panel` > enabled |
-
-The review surface applies only when stdin, stderr, and the controlling
-terminal are available; redirected and non-terminal requests keep their
-existing behavior. `[review] panel = false` disables the surface for Ctrl-W,
-direct requests, interactive stdin, and `-x`. The card's `d` decision writes
-the same setting, and a `--review-panel` or `--no-review-panel` invocation
-persists the chosen setting so the last choice survives.
-
-The default request uses the small tier. `WATN_MODEL` changes only the default
-model, not a configured tier. Provider-specific key variables are
-`OPENROUTER_API_KEY` or `WATN_<PROVIDER>_API_KEY`. A missing file is created as
-a commented template; Unix saves use mode `0600`. The wizard can save
-`${ENV_NAME}` instead of a literal credential.
-
-`watn setup` visits `URL`, `API key`, `Small Model`, `Middle Model`, `Large
-Model`, `Shell Completion`, and `Shell Shortcut`. `watn provider` covers the
-first two; `watn models` covers the model pages. `Ctrl-R` switches model-page
-focus between the table and reasoning strength.
-
-## Release artifacts
-
-`cargo build --locked --release --bin watn` produces
-`target/release/watn` for the selected target. For version tags, the release
-workflow publishes the source crate to crates.io and creates a GitHub release;
-it does not publish the executable to crates.io. Runtime library requirements
-depend on the target, and the project does not provide a universal static
-binary.
+`$XDG_CONFIG_HOME/watn/config.toml`, normally `~/.config/watn/config.toml`.
+Per setting, the leftmost source wins: CLI flag, environment variable, config
+value, built-in default. Credentials can be stored literally or as
+`${ENV_NAME}`; the file is created as a commented template and saved with mode
+`0600` on Unix.
 
 ## Development
 
-From a repository checkout, the acceptance runner uses separate default and
-`test-support` binaries, mocks, and loopback services, so no live provider or
-API key is needed. The
-pinned Rust toolchain plus Bash, Fish, and Zsh are required for all checks.
-
 ```sh
-./run-tests.sh
+./run-tests.sh          # not @e2e
+./run-tests.sh --e2e    # @e2e
 ```
 
-The command above runs non-E2E scenarios (`not @wip and not @e2e`). Run E2E
-scenarios (`@e2e and not @wip`) with:
-
-```sh
-./run-tests.sh --e2e
-```
-
-Coverage additionally requires `cargo-llvm-cov` and Python 3.
+The pinned Rust toolchain plus Bash, Fish, and Zsh are required for all checks.
+The runner uses mocks and loopback services, so no provider or API key is
+needed. Coverage additionally requires `cargo-llvm-cov` and Python 3.
 
 ## License
 
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue)](LICENSE)
-
-GPL-3.0-or-later
+GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 <!-- givn:begin:coverage -->
 ## Coverage
@@ -243,6 +166,7 @@ GPL-3.0-or-later
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
 Line coverage: 92% (18031/19568)
+
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
@@ -252,8 +176,3 @@ Reproduce the result:
 ./merge-coverages.sh
 ```
 <!-- givn:end:coverage -->
-
-Branch coverage is reported as `n/a (0/0)` because the stable
-`cargo llvm-cov` Cobertura export contains no branch counters. The current
-`cargo llvm-cov` branch-coverage mode is unstable, so the source reports are
-merged without inventing a branch percentage.
