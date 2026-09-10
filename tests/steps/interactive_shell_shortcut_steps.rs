@@ -3047,12 +3047,9 @@ fn drive_review_key(
     panel.finish().expect("restore the controlling terminal");
     let bytes = panel.terminal().writer().clone();
     world.review.cleanup = String::from_utf8(bytes).expect("cleanup bytes are UTF-8");
-    match &outcome {
-        watn::review::PanelOutcome::Accepted(candidate) => {
-            world.review.released = Some(candidate.command.clone());
-            world.review.bash_command_line = candidate.command.clone();
-        }
-        _ => {}
+    if let watn::review::PanelOutcome::Accepted(candidate) = &outcome {
+        world.review.released = Some(candidate.command.clone());
+        world.review.bash_command_line = candidate.command.clone();
     }
     if matches!(
         outcome,

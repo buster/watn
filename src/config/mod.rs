@@ -260,7 +260,7 @@ pub fn save_config_at(config: &Config, config_path: &std::path::Path) -> Result<
             .map_err(|error| Error::ConfigError(format!("cannot write config: {}", error)))?;
         file.sync_all()
             .map_err(|error| Error::ConfigError(format!("cannot sync config: {}", error)))?;
-        std::fs::rename(&temporary_path, &config_path)
+        std::fs::rename(&temporary_path, config_path)
             .map_err(|error| Error::ConfigError(format!("cannot replace config: {}", error)))
     })();
     if write_result.is_err() {
