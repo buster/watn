@@ -2648,3 +2648,32 @@ fn review_unknown_status_matching_purposes(world: &mut WatnWorld) {
 fn review_shows_stage_purpose(world: &mut WatnWorld, purpose: String) {
     assert_review_rendered_contains(world, &purpose);
 }
+
+#[given("the provider returns a review response whose command spans several lines with matching stage purposes")]
+fn review_multiline_command_response(world: &mut WatnWorld) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": "git rev-list --all |\nxargs -n1 git ls-tree -r |\nhead -5",
+        "stages": [
+            {"stage_text": "git rev-list --all", "purpose": "List every commit."},
+            {"stage_text": "xargs -n1", "purpose": "Pass every commit to the file listing."},
+            {"stage_text": "git ls-tree -r", "purpose": "List the files in each commit."},
+            {"stage_text": "head -5", "purpose": "Keep the first five files."}
+        ],
+        "purpose_status": "ready"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}
+
+#[then("the reviewed candidate command should be a single line")]
+fn review_candidate_command_single_line(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(
+        !panel.candidate().command.contains('\n')
+            && !panel.candidate().command.contains('\r')
+            && !panel.candidate().command.contains('\t'),
+        "candidate command must be normalized to one line, got {:?}",
+        panel.candidate().command
+    );
+}

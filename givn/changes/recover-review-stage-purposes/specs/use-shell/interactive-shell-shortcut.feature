@@ -11,7 +11,7 @@ Feature: Review purpose recovery
     And the review surface should show the stage purpose "Keep the first five files."
     And the review surface should not claim that purposes are loading
 
-  @givn.added @wip
+  @givn.added
   Scenario: A command broken across lines is explained on one row per stage
     Given an installed Bash shortcut and a provider candidate for "find the biggest committed files"
     And the provider returns a review response whose command spans several lines with matching stage purposes

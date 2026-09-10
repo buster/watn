@@ -173,7 +173,8 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
         return None;
     }
     if let Ok(parsed) = parse_structured_review_response(trimmed) {
-        let mut candidate = ReviewCandidate::from_command(parsed.command.clone());
+        let command = normalize_command(&parsed.command);
+        let mut candidate = ReviewCandidate::from_command(&command);
         if matches!(
             candidate.apply_response(trimmed),
             ReviewParseResult::Ready | ReviewParseResult::Loading
@@ -533,5 +534,30 @@ mod tests {
                 Some("Keep the first five files."),
             ]
         );
+    }
+
+    #[test]
+    fn line_broken_commands_are_normalized_before_flow_derivation() {
+        let raw = serde_json::json!({
+            "review_version": 1,
+            "command": "git rev-list --all |\nxargs -n1 git ls-tree -r |\nhead -5",
+            "stages": [
+                {"stage_text": "git rev-list --all", "purpose": "List every commit."},
+                {"stage_text": "xargs -n1", "purpose": "Pass every commit to the file listing."},
+                {"stage_text": "git ls-tree -r", "purpose": "List the files in each commit."},
+                {"stage_text": "head -5", "purpose": "Keep the first five files."}
+            ],
+            "purpose_status": "ready"
+        })
+        .to_string();
+
+        let candidate = candidate_from_provider_response(&raw).unwrap();
+        assert_eq!(
+            candidate.command,
+            "git rev-list --all | xargs -n1 git ls-tree -r | head -5"
+        );
+        assert!(!candidate.command.contains('\n'));
+        assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
+        assert_eq!(candidate.stage_purposes().count(), 4);
     }
 }
