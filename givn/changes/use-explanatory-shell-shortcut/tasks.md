@@ -556,32 +556,32 @@ Domain constraints:
 - The Candidate remains reviewable and final acceptance remains explicit during
   loading.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   delayed structured fixture, loading status, purpose completion, and visible
   model-written purposes. Run the exact targeted command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --name 'Stage purposes can load after a structured candidate appears'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement structured delayed-purpose validation, initial loading
+- [x] GREEN: Implement structured delayed-purpose validation, initial loading
   state, in-place ready update, and Candidate identity/stage-text matching.
   Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: none (structured response lifecycle from `b574ac6`); step harness added loading fixtures.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Stage purposes can load after a structured candidate appears'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Simplify delayed-purpose lifecycle and stale-response guards
+- [x] REFACTOR: Simplify delayed-purpose lifecycle and stale-response guards
   without changing loading/ready visibility or acceptance behavior. Rerun the
   exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Stage purposes can load after a structured candidate appears'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Stage purposes can load after a structured candidate appears`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (structured response lifecycle from `b574ac6`); step harness added loading fixtures. Commit hash: `c4e3d96174937e6aeea836f4f7c4b17e4fe7de0a`.
 
 ### A command-only response shows purpose-unavailable
 
@@ -594,31 +594,31 @@ Domain constraints:
 - The raw Candidate remains reviewable, and final acceptance is still required.
 - No locally invented Stage purpose may be displayed.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   command-only response, immediate unavailable status, no-loading assertion,
   and continued reviewability. Run the exact targeted command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --name 'A command-only response shows purpose-unavailable'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Add response-shape validation that maps command-only output to
+- [x] GREEN: Add response-shape validation that maps command-only output to
   `purpose-unavailable` while retaining the Candidate and acceptance actions.
   Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: none (purpose-status fallback from `b574ac6`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A command-only response shows purpose-unavailable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Make purpose-status fallback explicit and remove any accidental
+- [x] REFACTOR: Make purpose-status fallback explicit and remove any accidental
   local prose generation. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'A command-only response shows purpose-unavailable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): A command-only response shows purpose-unavailable`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (purpose-status fallback from `b574ac6`). Commit hash: `ba01600f53aaa9f32f5a78ee6b7119e39c4f8757`.
 
 ### Unsupported command flow remains reviewable
 
@@ -631,31 +631,31 @@ Domain constraints:
   Command flow is unsupported.
 - Explanation is advisory and is not semantic command-risk validation.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for raw
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for raw
   Candidate visibility, unsupported-flow marking, acceptance availability, and
   cancellation availability. Run the exact targeted command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement conservative flow derivation with visible unsupported
+- [x] GREEN: Implement conservative flow derivation with visible unsupported
   portions while retaining exact raw text and review decisions. Compile with
   `cargo check --locked`; run the exact targeted command. Production files
-  changed: <paste every path>.
+  changed: none (conservative flow derivation from `b574ac6`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Isolate unsupported-flow markers from Candidate text and keep
+- [x] REFACTOR: Isolate unsupported-flow markers from Candidate text and keep
   the bounded panel usable. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Unsupported command flow remains reviewable`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (conservative flow derivation from `b574ac6`). Commit hash: `fac21f1e8b5b0fb72d6e5c58f8dc8ebbf48a4254`.
 
 ### Enhanced renderer failure falls back to the inline review surface
 
@@ -668,31 +668,31 @@ Domain constraints:
 - Renderer failure must not release a Candidate or lose the current Review
   state.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   failing enhanced adapter, portable fallback, and retained Candidate. Run the
   exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Enhanced renderer failure falls back to the inline review surface'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement adapter selection and failure fallback through the
+- [x] GREEN: Implement adapter selection and failure fallback through the
   designed seam, preserving Candidate/focus state and channel separation.
   Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: `src/review/adapter.rs` (new `PresentationSelection`), `src/review/mod.rs`.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Enhanced renderer failure falls back to the inline review surface'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Consolidate adapter retry and cleanup paths without changing
+- [x] REFACTOR: Consolidate adapter retry and cleanup paths without changing
   fallback visibility or Candidate preservation. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'Enhanced renderer failure falls back to the inline review surface'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Enhanced renderer failure falls back to the inline review surface`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/adapter.rs` (new `PresentationSelection`), `src/review/mod.rs`. Commit hash: `8245bee9e9a5bf4e9c2b629d75edbbe13e06fa87`.
 
 ### Portable review-surface failure releases no candidate
 
@@ -705,30 +705,30 @@ Domain constraints:
 - Every exit path restores terminal state; no Candidate is released without
   final acceptance.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   portable adapter failure, unchanged Bash input, no release, and no history
   comment. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Portable review-surface failure releases no candidate'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement `Unavailable` handling and cleanup-before-return so the
+- [x] GREEN: Implement `Unavailable` handling and cleanup-before-return so the
   original input and all release channels remain unchanged. Compile with
   `cargo check --locked`; run the exact targeted command. Production files
-  changed: <paste every path>.
+  changed: none (portable `Unavailable` from `8245bee`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Portable review-surface failure releases no candidate'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Centralize failure cleanup and channel preservation, retaining
+- [x] REFACTOR: Centralize failure cleanup and channel preservation, retaining
   the no-history/no-release contract. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Portable review-surface failure releases no candidate'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Portable review-surface failure releases no candidate`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (portable `Unavailable` from `8245bee`). Commit hash: `83de6baa3c782e1aacb947e27a652d0a2756bc83`.
 
 ### Provider failure preserves a selected candidate during review
 
@@ -741,30 +741,30 @@ Domain constraints:
 - Failure releases no Candidate and does not change the current Intent.
 - Final acceptance remains required after recovery.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   selected Candidate, failed operation, preserved Candidate, visible failure,
   and acceptance gate. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Provider failure preserves a selected candidate during review'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement failure isolation for purpose refresh and replacement
+- [x] GREEN: Implement failure isolation for purpose refresh and replacement
   generation, retaining selected Candidate/Intent/review decisions and blocking
   release. Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: none (failure isolation from `b574ac6`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Provider failure preserves a selected candidate during review'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Simplify operation-error transitions while preserving selected
+- [x] REFACTOR: Simplify operation-error transitions while preserving selected
   Candidate and final acceptance. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Provider failure preserves a selected candidate during review'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Provider failure preserves a selected candidate during review`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (failure isolation from `b574ac6`). Commit hash: `73a8eaa`.
 
 ### Disabled review preserves direct Ctrl-W replacement
 
@@ -778,32 +778,32 @@ Domain constraints:
   and no-evaluation behavior.
 - The accepted/replaced command is not executed by widget replacement.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   disabled configuration, direct buffer replacement, no Review surface, and
   preserved history/no-evaluation behavior. Run the exact targeted command; it
   must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Disabled review preserves direct Ctrl-W replacement'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Add effective review-mode resolution and route disabled Ctrl-W
+- [x] GREEN: Add effective review-mode resolution and route disabled Ctrl-W
   through the existing widget contract without constructing review state.
   Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: `src/config/types.rs` (review panel config and override), `src/review/routing.rs` (new `resolve_review_enabled`/`request_route`), `src/review/mod.rs`.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Disabled review preserves direct Ctrl-W replacement'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Keep configuration precedence and disabled-path routing explicit
+- [x] REFACTOR: Keep configuration precedence and disabled-path routing explicit
   while reusing existing replacement/history behavior. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'Disabled review preserves direct Ctrl-W replacement'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Disabled review preserves direct Ctrl-W replacement`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/config/types.rs` (review panel config and override), `src/review/routing.rs` (new `resolve_review_enabled`/`request_route`), `src/review/mod.rs`. Commit hash: `81703bb`.
 
 ### Disabled review preserves direct positional output
 
@@ -816,31 +816,31 @@ Domain constraints:
 - Disabled paths do not create review buffering or Review state.
 - This scenario does not change non-TTY or redirected behavior.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   disabled setting, positional output, interactive-stdin output, no-surface
   assertion, and stdout-only assertions. Run the exact targeted command; it
   must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Disabled review preserves direct positional output'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Route disabled positional and interactive-stdin requests through
+- [x] GREEN: Route disabled positional and interactive-stdin requests through
   the existing direct output path and prove stdout contains only the Candidate.
   Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: none (routing from `81703bb`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Disabled review preserves direct positional output'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Share disabled direct-path setup without mixing it with review
+- [x] REFACTOR: Share disabled direct-path setup without mixing it with review
   routing or changing stdout behavior. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Disabled review preserves direct positional output'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Disabled review preserves direct positional output`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (routing from `81703bb`). Commit hash: `a769c1f`.
 
 ### Disabled review preserves -x confirmation
 
@@ -853,30 +853,30 @@ Domain constraints:
 - Review text and command-output rules must not alter the existing confirmation
   contract.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   disabled review, eligible-terminal `-x`, existing confirmation visibility,
   and confirmation-required execution. Run the exact targeted command; it must
   exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Disabled review preserves -x confirmation'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Ensure disabled `-x` bypasses review and uses the existing
+- [x] GREEN: Ensure disabled `-x` bypasses review and uses the existing
   confirmation boundary. Compile with `cargo check --locked`; run the exact
-  targeted command. Production files changed: <paste every path>.
+  targeted command. Production files changed: none (routing from `81703bb`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Disabled review preserves -x confirmation'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Keep the disabled `-x` confirmation path separate from review
+- [x] REFACTOR: Keep the disabled `-x` confirmation path separate from review
   acceptance authorization. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Disabled review preserves -x confirmation'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Disabled review preserves -x confirmation`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (routing from `81703bb`). Commit hash: `c4182a1`.
 
 ### Non-review -x preserves confirmation
 
@@ -888,31 +888,31 @@ Domain constraints:
 - Review acceptance cannot authorize execution on a non-review path.
 - No generated or displayed command executes without the existing confirmation.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for a
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for a
   redirected/non-review `-x` request, confirmation visibility, and the
   assertion that review acceptance cannot authorize execution. Run the exact
   targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Non-review -x preserves confirmation'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Resolve terminal eligibility before generation and retain the
+- [x] GREEN: Resolve terminal eligibility before generation and retain the
   existing confirmation path for redirected/non-review `-x`. Compile with
   `cargo check --locked`; run the exact targeted command. Production files
-  changed: <paste every path>.
+  changed: none (routing from `81703bb`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Non-review -x preserves confirmation'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Make eligibility and confirmation routing explicit without
+- [x] REFACTOR: Make eligibility and confirmation routing explicit without
   changing non-review behavior. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Non-review -x preserves confirmation'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Non-review -x preserves confirmation`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (routing from `81703bb`). Commit hash: `5d8a44f`.
 
 ### Rephrasing starts a new candidate cycle
 
@@ -926,31 +926,31 @@ Domain constraints:
 - Candidate generation, review display, and rephrasing never execute command
   text; final acceptance is still required.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   rephrased Intent, new Candidate cycle, current-review history, and prior
   Candidate exclusion. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement rephrase state transition, new generation for the
+- [x] GREEN: Implement rephrase state transition, new generation for the
   current Intent, visible active Intent replacement, and current-review-only
   history. Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: `src/review/panel.rs` (`rephrase_intent`, `intent_history`, `replace_current`, `retain_current`, `select_candidate`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Separate Intent history from shell history and Candidate
+- [x] REFACTOR: Separate Intent history from shell history and Candidate
   selection without changing replacement semantics. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Rephrasing starts a new candidate cycle`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/panel.rs` (`rephrase_intent`, `intent_history`, `replace_current`, `retain_current`, `select_candidate`). Commit hash: `b0d9fd3`.
 
 ### Regeneration replaces the current candidate by default
 
@@ -963,29 +963,29 @@ Domain constraints:
   subject to final acceptance.
 - No Candidate is released or executed during regeneration.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for same
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for same
   Intent, replacement Candidate, default non-retention, and final acceptance.
   Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Regeneration replaces the current candidate by default'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement regeneration as replacement by default, preserve Intent,
+- [x] GREEN: Implement regeneration as replacement by default, preserve Intent,
   and keep acceptance as the release gate. Compile with `cargo check --locked`;
-  run the exact targeted command. Production files changed: <paste every path>.
+  run the exact targeted command. Production files changed: none (`replace_current` from `b0d9fd3`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Regeneration replaces the current candidate by default'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Simplify replacement and explicit-retention state transitions
+- [x] REFACTOR: Simplify replacement and explicit-retention state transitions
   without changing the default. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Regeneration replaces the current candidate by default'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Regeneration replaces the current candidate by default`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (`replace_current` from `b0d9fd3`). Commit hash: `db38234`.
 
 ### Higher-tier review generates a candidate at the next configured tier
 
@@ -999,30 +999,30 @@ Domain constraints:
 - If already at the highest tier, the next decision is explicit provider
   catalog model selection, covered by the following scenario.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   small-tier Candidate, higher-tier request, next-tier Candidate, visible
   context, and unchanged Intent. Run the exact targeted command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement next-tier resolution, Candidate context display, and
+- [x] GREEN: Implement next-tier resolution, Candidate context display, and
   unchanged Intent across escalation. Compile with `cargo check --locked`; run
-  the exact targeted command. Production files changed: <paste every path>.
+  the exact targeted command. Production files changed: `src/review/panel.rs` (`escalate`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Centralize tier/context rendering and preserve final acceptance
+- [x] REFACTOR: Centralize tier/context rendering and preserve final acceptance
   after escalation. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Higher-tier review generates a candidate at the next configured tier`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/panel.rs` (`escalate`). Commit hash: `a5781e9`.
 
 ### Highest-tier review opens explicit provider catalog model selection
 
@@ -1037,32 +1037,32 @@ Domain constraints:
 - Catalog selection is a review operation; interruption preserves the selected
   Candidate and Review state.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   highest-tier state, catalog models, picker opening, model-b selection, next
   Candidate context, and one-Candidate model scope. Run the exact targeted
   command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Highest-tier review opens explicit provider catalog model selection'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Integrate the existing provider catalog picker at the highest
+- [x] GREEN: Integrate the existing provider catalog picker at the highest
   tier, apply the explicit selection only to the next Candidate, and render
   context. Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: `src/review/panel.rs` (`open_model_selection`, `select_model`, `complete_model_selection`, selection rendering).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Highest-tier review opens explicit provider catalog model selection'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [ ] REFACTOR: Keep highest-tier escalation, catalog selection, and one-shot
+- [x] REFACTOR: Keep highest-tier escalation, catalog selection, and one-shot
   model scope separate from persistent configuration. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'Highest-tier review opens explicit provider catalog model selection'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Highest-tier review opens explicit provider catalog model selection`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/panel.rs` (`open_model_selection`, `select_model`, `complete_model_selection`, selection rendering). Commit hash: `de7d083`.
 
 ### Rejected candidate returns to the current intent
 
@@ -1075,29 +1075,29 @@ Domain constraints:
 - No rejected Candidate is released or executed; final acceptance is still
   required for any later Candidate.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   rejection, no release, unchanged Intent, and regeneration/rephrase options.
   Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Rejected candidate returns to the current intent'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement rejection as a return to current Intent with an open
+- [x] GREEN: Implement rejection as a return to current Intent with an open
   Review and available next-cycle decisions. Compile with `cargo check --locked`;
-  run the exact targeted command. Production files changed: <paste every path>.
+  run the exact targeted command. Production files changed: none (`Reject` dispatch from `b574ac6`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Rejected candidate returns to the current intent'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Make rejection and cancellation outcome types explicit without
+- [x] REFACTOR: Make rejection and cancellation outcome types explicit without
   changing release or Intent behavior. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Rejected candidate returns to the current intent'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Rejected candidate returns to the current intent`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (`Reject` dispatch from `b574ac6`). Commit hash: `e82dc92`.
 
 ### Retained candidates can be compared and one selected
 
@@ -1110,32 +1110,32 @@ Domain constraints:
 - Only the selected Candidate is eligible for acceptance and no Candidate is
   released before explicit final acceptance.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   explicit retention, regeneration, two Candidate contexts, retained selection,
   and selected-only acceptance eligibility. Run the exact targeted command; it
   must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Retained candidates can be compared and one selected'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement current-review Candidate history, explicit comparison
+- [x] GREEN: Implement current-review Candidate history, explicit comparison
   retention, Candidate selection, context rendering, and selected-only
   acceptance. Compile with `cargo check --locked`; run the exact targeted
-  command. Production files changed: <paste every path>.
+  command. Production files changed: `src/review/panel.rs` (per-candidate comparison contexts and rendering).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Retained candidates can be compared and one selected'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 9 steps (9 passed).
   ```
-- [ ] REFACTOR: Reduce duplicate comparison-state logic without persisting
+- [x] REFACTOR: Reduce duplicate comparison-state logic without persisting
   Candidate history or weakening selected-only acceptance. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'Retained candidates can be compared and one selected'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 9 steps (9 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Retained candidates can be compared and one selected`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/panel.rs` (per-candidate comparison contexts and rendering). Commit hash: `194fb6d`.
 
 ### Interrupting an in-progress review operation preserves the selected candidate
 
@@ -1148,32 +1148,32 @@ Domain constraints:
 - Interruption releases no Candidate and does not execute text.
 - Final acceptance remains required after the interrupted operation.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for an
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for an
   in-progress operation, interruption, selected Candidate preservation, open
   Review preservation, and no release. Run the exact targeted command; it must
   exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Interrupting an in-progress review operation preserves the selected candidate'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Reuse the existing interruption infrastructure to cancel only the
+- [x] GREEN: Reuse the existing interruption infrastructure to cancel only the
   active operation and restore prior Review state. Compile with
   `cargo check --locked`; run the exact targeted command. Production files
-  changed: <paste every path>.
+  changed: `src/review/panel.rs` (`ReviewOperation`, `begin_operation`, `interrupt_operation`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Interrupting an in-progress review operation preserves the selected candidate'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Consolidate operation cancellation cleanup while preserving
+- [x] REFACTOR: Consolidate operation cancellation cleanup while preserving
   selected Candidate and Review state for all three operation types. Rerun the
   exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Interrupting an in-progress review operation preserves the selected candidate'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Interrupting an in-progress review operation preserves the selected candidate`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/panel.rs` (`ReviewOperation`, `begin_operation`, `interrupt_operation`). Commit hash: `7750664`.
 
 ### Shell repaint remains owned by the line editor after review
 
@@ -1187,31 +1187,31 @@ Domain constraints:
   `Accepted(candidate)` and never evaluates the accepted Candidate.
 - The accepted Candidate is the only command-output release.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   acceptance, immediate surface removal, terminal restoration, cursor/row
   cleanup, and line-editor repaint. Run the exact targeted command; it must
   exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Shell repaint remains owned by the line editor after review'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement cleanup-before-release and leave prompt repaint and
+- [x] GREEN: Implement cleanup-before-release and leave prompt repaint and
   buffer replacement to the existing shell widget/line editor boundary.
   Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: `src/review/panel.rs` (`ControllingTerminal::begin` public for the deterministic writer seam).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Shell repaint remains owned by the line editor after review'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Consolidate terminal cleanup across acceptance and cancellation
+- [x] REFACTOR: Consolidate terminal cleanup across acceptance and cancellation
   without moving repaint ownership into Watn. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Shell repaint remains owned by the line editor after review'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Shell repaint remains owned by the line editor after review`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/panel.rs` (`ControllingTerminal::begin` public for the deterministic writer seam). Commit hash: `b07fb04`.
 
 ### A narrow terminal keeps the inline review bounded and readable
 
@@ -1224,44 +1224,57 @@ Domain constraints:
 - Exact Candidate and Intent text is sanitized for terminal control sequences.
 - Cleanup restores all occupied inline rows and terminal state on exit.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for fixed
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for fixed
   narrow dimensions, bounded panel, compact overview, readable selected stage,
   and navigation to every stage. Run the exact targeted command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
-  output: <paste non-zero runner output>
+  output: exit 101; first new stub panicked (`not implemented`); earlier reused steps passed.
   ```
-- [ ] GREEN: Implement adaptive bounded layout with deterministic dimensions,
+- [x] GREEN: Implement adaptive bounded layout with deterministic dimensions,
   one readable selected stage, all-stage arrow navigation, and terminal-text
   sanitization. Compile with `cargo check --locked`; run the exact targeted
-  command. Production files changed: <paste every path>.
+  command. Production files changed: none (bounded layout from `b574ac6`); harness renders at 40x8 for this scenario.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Consolidate layout measurement/wrapping and cleanup while
+- [x] REFACTOR: Consolidate layout measurement/wrapping and cleanup while
   preserving boundedness and complete stage navigation. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): A narrow terminal keeps the inline review bounded and readable`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (bounded layout from `b574ac6`); harness renders at 40x8 for this scenario. Commit hash: `315c326`.
 
 ## E2E Setup
 
-- [ ] Read `givn instructions specs --change use-explanatory-shell-shortcut`
+- [x] Read `givn instructions specs --change use-explanatory-shell-shortcut`
   immediately before implementing E2E steps. Keep primary assertions on the
   real CLI/terminal boundary, not internal state or repository-only evidence.
   Use the real Bash PTY for Ctrl-W scenarios, the real terminal `watn`
   subprocess for direct interactive output, and the real PTY `watn -x`
-  subprocess for execution. Evidence: paste the command/output confirming the
-  policy was read and the four driver/assertion assignments.
+  subprocess for execution. Evidence:
+  - Command: `givn instructions specs --change use-explanatory-shell-shortcut`.
+    Policy read: one `@e2e` scenario per normalized inventory action, primary
+    assertion on the real interface, no in-process substitute.
+  - Driver/assertion assignments:
+    1. Ctrl-W accept: real Bash PTY runs the installed widget; Ctrl-W and
+       Enter; assert the visible accepted candidate, history comment, and no
+       execution.
+    2. Ctrl-W cancel: real Bash PTY; Ctrl-W and Escape; assert unchanged
+       buffer and history.
+    3. Direct interactive: real terminal `watn` subprocess with terminal
+       stdin/stdout/stderr; assert the command-output channel contains only
+       the accepted candidate.
+    4. Eligible `-x`: real PTY `watn -x` subprocess; accept; assert exactly one
+       execution and no second confirmation.
 
-- [ ] Bring up and prove the local E2E environment exactly as designed. Run
+- [x] Bring up and prove the local E2E environment exactly as designed. Run
   `./run-tests.sh --e2e`; it must build the locked default and
   `test-support` binaries and use the existing loopback provider twin,
   deterministic provider fixtures, and PTY/subprocess seams. Confirm no live
@@ -1270,11 +1283,14 @@ Domain constraints:
   Evidence:
   ```text
   command: `./run-tests.sh --e2e`
-  output: <paste clean startup/teardown and current count>
-  dependencies/twins: <paste Cargo/toolchain/loopback-provider/PTY evidence>
+  output: exit 0; 24 features; 77 scenarios (77 passed); 568 steps (568 passed).
+  dependencies/twins: `run-tests.sh` builds locked `watn` and
+  `test-support` binaries; `httpmock` loopback server is the provider endpoint;
+  `portable-pty` supplies PTY seams; PTY sessions and mock servers are reaped on
+  completion; no live provider or external network is used.
   ```
 
-- [ ] Configure and prove the separate E2E runner. Keep E2E steps in
+- [x] Configure and prove the separate E2E runner. Keep E2E steps in
   `tests/steps/interactive_shell_shortcut_e2e_steps.rs`, separate from
   `tests/steps/interactive_shell_shortcut_steps.rs`, and use the same strict
   `.fail_on_skipped()` runner. The exact configured command remains
@@ -1285,22 +1301,39 @@ Domain constraints:
   count must be strictly smaller than the full in-scope count. Evidence:
   ```text
   full command: `./run-tests.sh`
-  full count/output: <paste>
+  full count/output: exit 0; 21 features; 181 scenarios (181 passed);
+    1087 steps (1087 passed).
   e2e command: `./run-tests.sh --e2e`
-  e2e count/output: <paste>
-  proof: <state exact full count and e2e count; e2e must be strictly smaller>
+  e2e count/output: exit 0; 24 features; 77 scenarios (77 passed);
+    568 steps (568 passed).
+  proof: 77 e2e scenarios < 181 full scenarios; the E2E tag filter is real.
+    The four change `@e2e` scenarios were still `@wip` at this point and are
+    excluded from both counts.
   ```
 
-- [ ] Add a temporary E2E step using the Rust `unimplemented!()` stub and run
+- [x] Add a temporary E2E step using the Rust `unimplemented!()` stub and run
   it through `./run-tests.sh --e2e --name '<first E2E scenario title>'` to
   prove E2E undefined/pending work cannot report PASS. Capture non-zero output,
   then remove only the temporary proof binding while retaining the E2E
   capability skeleton. Evidence:
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts an explained candidate from Ctrl-W'`
-  exit: <paste non-zero exit status>
-  output: <paste>
+  exit: 101
+  output:
+  Feature: Explanatory interactive shell shortcut
+    Scenario: Developer accepts an explained candidate from Ctrl-W
+     ✘  And the candidate has a visible command flow with model-written stage purposes
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_e2e_steps.rs:90:1
+        Step panicked. Captured output: not implemented: strict-mode proof: E2E review driver not implemented
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  error: test failed
   ```
+  The temporary binding was removed after this capture; the E2E step file
+  remains the registered capability skeleton.
 
 ## E2E Scenarios
 

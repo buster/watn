@@ -105,7 +105,7 @@ fn hanging_provider(world: &mut WatnWorld) {
 
 #[when(regex = r##"^I start watn with the invocation `watn "([^"]*)"` in a terminal$"##)]
 fn start_cancel_invocation(world: &mut WatnWorld, question: String) {
-    let session = start_pty_session(world, &[&question]);
+    let session = start_pty_session(world, &["--no-review-panel", &question]);
     world.pty_session = Some(session);
 }
 

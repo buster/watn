@@ -1,7 +1,7 @@
 @givn.delta @interactive-shell-shortcut
 Feature: Explanatory interactive shell shortcut
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer accepts an explained candidate from Ctrl-W
     Given an installed Bash shortcut and a provider candidate for "inspect recent log changes"
     And the candidate has a visible command flow with model-written stage purposes

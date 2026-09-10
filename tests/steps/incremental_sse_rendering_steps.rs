@@ -610,7 +610,7 @@ fn done_provider(world: &mut WatnWorld, content: String) {
 
 #[when(regex = r##"^I start the streaming command `watn "([^"]*)"`$"##)]
 fn start_streaming_command(world: &mut WatnWorld, question: String) {
-    let session = start_pty_session(world, &[&question]);
+    let session = start_pty_session(world, &["--no-review-panel", &question]);
     world.pty_session = Some(session);
 }
 

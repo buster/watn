@@ -125,7 +125,7 @@ fn delayed_provider(world: &mut WatnWorld, first: String, second: String) {
 
 #[when(regex = r##"^I start the delayed streaming command `watn "([^"]*)"` in a terminal$"##)]
 fn start_delayed_stream(world: &mut WatnWorld, question: String) {
-    let session = start_pty_session(world, &[&question]);
+    let session = start_pty_session(world, &["--no-review-panel", &question]);
     world.pty_session = Some(session);
 }
 
@@ -270,7 +270,7 @@ fn failure_provider(world: &mut WatnWorld, content: String) {
 
 #[when(regex = r##"^I start the failing streaming command `watn "([^"]*)"` in a terminal$"##)]
 fn start_failure_stream(world: &mut WatnWorld, question: String) {
-    let session = start_pty_session(world, &[&question]);
+    let session = start_pty_session(world, &["--no-review-panel", &question]);
     world.pty_session = Some(session);
 }
 
@@ -338,7 +338,7 @@ fn command_provider(world: &mut WatnWorld, content: String) {
 
 #[when(regex = r##"^I start the executable streaming command `watn -x "([^"]*)"` in a terminal$"##)]
 fn start_executable_stream(world: &mut WatnWorld, question: String) {
-    let session = start_pty_session(world, &["-x", &question]);
+    let session = start_pty_session(world, &["--no-review-panel", "-x", &question]);
     world.pty_session = Some(session);
 }
 
