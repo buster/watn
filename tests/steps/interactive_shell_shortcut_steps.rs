@@ -3221,3 +3221,48 @@ fn review_provider_model_visible(world: &mut WatnWorld) {
     assert_eq!(panel.context.model, "review-model-2");
     assert_review_rendered_contains(world, "loopback/review-model-2");
 }
+
+#[when(expr = "I reject the candidate and type {string}")]
+fn review_reject_and_type(world: &mut WatnWorld, query: String) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('r')));
+    assert_eq!(outcome, watn::review::PanelOutcome::RejectRequested);
+    let catalog = world.review.catalog_models.clone();
+    panel_mut(world).open_model_chooser(chooser_tier_choices(), catalog);
+    for character in query.chars() {
+        panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char(character)));
+    }
+    render_surface(world);
+}
+
+#[then(expr = "the model chooser should suggest {string}")]
+fn review_chooser_suggests(world: &mut WatnWorld, model: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let chooser = panel.chooser().expect("chooser state");
+    assert!(
+        chooser
+            .filtered()
+            .iter()
+            .any(|candidate| **candidate == model),
+        "the chooser should suggest {model:?}, got {:?}",
+        chooser.filtered()
+    );
+    assert_review_rendered_contains(world, &model);
+}
+
+#[when("I choose the suggested model")]
+fn review_choose_suggested_model(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
+    let watn::review::PanelOutcome::RegenerateWith { tier, model } = outcome else {
+        panic!("choosing a suggestion must request regeneration, got {outcome:?}");
+    };
+    assert_eq!(model, "model-b", "the highlighted suggestion must be used");
+    regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
+    render_surface(world);
+}
+
+#[then(expr = "a new candidate should use {string}")]
+fn review_candidate_uses_model(world: &mut WatnWorld, model: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.model, model);
+    assert_review_rendered_contains(world, &format!("loopback/{model}"));
+}

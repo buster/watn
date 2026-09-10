@@ -91,7 +91,7 @@ Feature: Simplified review card controls
     And its provider and model should be visible
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: A model name is suggested from the provider catalog while typing
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider catalog contains "model-a" and "model-b"
