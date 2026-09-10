@@ -1694,3 +1694,40 @@ fn review_surface_updated_purposes(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "List recent commits.");
     assert_review_rendered_contains(world, "Keep only the first five.");
 }
+
+#[given("the provider returns command text without a structured review response")]
+fn review_command_only_response(world: &mut WatnWorld) {
+    world.review.structured_response = None;
+    assert_eq!(
+        world.review.candidate_command, REVIEW_FIXTURE_COMMAND,
+        "command-only response must still provide a candidate command"
+    );
+}
+
+#[then("the review surface should show purpose-unavailable immediately")]
+fn review_purpose_unavailable_immediately(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().purpose_status,
+        watn::review::PurposeStatus::Unavailable
+    );
+    assert_review_rendered_contains(world, "purpose-unavailable");
+}
+
+#[then("the review surface should not claim that purposes are loading")]
+fn review_no_loading_claim(world: &mut WatnWorld) {
+    assert!(
+        !review_rendered_text(world).contains("loading"),
+        "command-only response must not claim purposes are loading"
+    );
+}
+
+#[then("the candidate should remain reviewable")]
+fn review_candidate_reviewable(world: &mut WatnWorld) {
+    assert!(world.review.surface_open, "review surface must remain open");
+    assert!(
+        world.review.released.is_none(),
+        "candidate must not be released without acceptance"
+    );
+    assert_review_rendered_contains(world, "Accept candidate");
+}

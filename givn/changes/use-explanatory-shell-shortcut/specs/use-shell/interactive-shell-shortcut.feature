@@ -113,7 +113,7 @@ Feature: Explanatory interactive shell shortcut
     When stage purposes become available
     Then the review surface should update with the model-written stage purposes
 
-  @givn.added @wip
+  @givn.added
   Scenario: A command-only response shows purpose-unavailable
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider returns command text without a structured review response
