@@ -111,23 +111,23 @@ Domain constraints:
 
 ## Final verification
 
-- [ ] Run `givn lint --change clarify-review-card-guidance`
+- [x] Run `givn lint --change clarify-review-card-guidance`
   ```text
-  output: <paste>
+  output: exit 0; `givn lint: 1 file(s) checked — clean`; two advisory subset notices for the default-selection scenario are dispositioned in the coverage review.
   ```
-- [ ] Run the full regular suite `./run-tests.sh`
+- [x] Run the full regular suite `./run-tests.sh`
   ```text
-  output: <paste>
+  output: exit 0; 21 features; 212 scenarios (212 passed); 1541 steps (1541 passed).
   ```
-- [ ] Run the full E2E suite `./run-tests.sh --e2e`
+- [x] Run the full E2E suite `./run-tests.sh --e2e`
   ```text
-  output: <paste>
+  output: exit 0; 24 features; 82 scenarios (82 passed); 605 steps (605 passed).
   ```
-- [ ] Run `cargo test --locked --lib`
+- [x] Run `cargo test --locked --lib`
   ```text
-  output: <paste>
+  output: 78 passed; 0 failed.
   ```
-- [ ] Run `givn status --change clarify-review-card-guidance`
+- [x] Run `givn status --change clarify-review-card-guidance`
   ```text
-  output: <paste>
+  output: all tasks checked; artifacts proposal, specs, design, arc42-docs, design-review, tasks complete; next required artifact is `review`.
   ```
