@@ -10,7 +10,7 @@ Feature: Persisted review panel setting
     And the output should contain "df -h"
     And the review surface should be enabled in the configuration
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabling the review panel from the command line persists it
     Given a configured provider with candidate "df -h"
     And the persisted review surface is enabled
