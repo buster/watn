@@ -40,7 +40,7 @@ Feature: Enhanced review card
     And unsupported command-flow portions should be marked
     And the card should mark the unsupported stage
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabling the enhanced card preserves the plain review surface
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the enhanced review card is disabled

@@ -2939,3 +2939,65 @@ fn review_card_marks_unsupported(world: &mut WatnWorld) {
         "unsupported marker should be amber, got:\n{rendered}"
     );
 }
+
+#[given("the enhanced review card is disabled")]
+fn review_card_disabled(world: &mut WatnWorld) {
+    let config = watn::config::types::Config {
+        review: watn::config::types::ReviewConfig {
+            panel: true,
+            enhanced: false,
+        },
+        ..watn::config::types::Config::default()
+    };
+    assert!(
+        !watn::config::types::review_enhanced(
+            &config,
+            watn::config::types::ReviewPanelOverride::Unset
+        ),
+        "persisted enhanced = false must disable the card"
+    );
+    assert!(
+        !watn::config::types::review_enhanced(
+            &config,
+            watn::config::types::ReviewPanelOverride::Disabled
+        ),
+        "the no-enhanced override must disable the card"
+    );
+    world.review.plain_panel = true;
+}
+
+#[then("the plain review surface should open")]
+fn review_plain_surface_open(world: &mut WatnWorld) {
+    assert!(!review_uses_card(world), "plain renderer must be active");
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    assert!(
+        !plain.contains('┌') && !plain.contains('┘'),
+        "plain panel must not draw the card frame, got:\n{rendered}"
+    );
+    assert!(
+        !contains_sgr(&rendered),
+        "plain panel must not emit SGR color escapes, got:\n{rendered}"
+    );
+    assert_review_rendered_contains(world, "Accept candidate");
+}
+
+fn contains_sgr(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let mut index = 0;
+    while index + 1 < bytes.len() {
+        if bytes[index] == 0x1b && bytes[index + 1] == b'[' {
+            let mut end = index + 2;
+            while end < bytes.len() && !bytes[end].is_ascii_alphabetic() {
+                end += 1;
+            }
+            if end < bytes.len() && bytes[end] == b'm' {
+                return true;
+            }
+            index = end;
+        } else {
+            index += 1;
+        }
+    }
+    false
+}
