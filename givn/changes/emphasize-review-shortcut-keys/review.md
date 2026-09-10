@@ -39,13 +39,10 @@ UBIQUITOUS LANGUAGE: CLEAN
 
 ## Overlap dispositions
 
-| Scenario A | Scenario B | Disposition |
-|---|---|---|
-| The review card exposes the direct decision shortcuts | The review card exposes the decision shortcuts | variant |
-
-The old permanent scenario asserted the removed `a accept`/`e edit` tokens; the
-delta removes it and adds the reworded scenario asserting the same decisions
-with the letter-in-word hints. The new behavior is covered by that scenario and
+No deterministic shape match remains after the removed old-title scenario is
+excluded. The old permanent scenario asserted the removed `a accept`/`e edit`
+tokens; the delta removes it and adds the reworded scenario asserting the same
+decisions with the letter-in-word hints, and the new behavior is also covered
 by "The review card emphasizes the decision shortcut keys".
 
 ## Split-or-keep
