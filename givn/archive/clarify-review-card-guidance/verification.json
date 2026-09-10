@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "clarify-review-card-guidance",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1789066692,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_commit": "968972a6f3a5f818020a0bcf209ea96e4219fb93",
+  "tested_commit": "968972a6f3a5f818020a0bcf209ea96e4219fb93",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 82,
+      "passed": 82,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 53.552009225
+    },
+    "regular": {
+      "status": "passed",
+      "total": 212,
+      "passed": 212,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 34.21246438
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 18106,
+    "line_valid": 19641,
+    "line_percent": 92
+  },
+  "started_at_unix": 1789066953,
+  "finished_at_unix": 1789067193
 }

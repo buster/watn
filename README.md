@@ -1,5 +1,10 @@
 # Watn? ¯\\\_(ツ)\_/¯
 
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: 92%](https://img.shields.io/badge/line%20coverage-92%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
+
 ```text
 __      __ __ _ | |_  _ __   ___
 \ \ /\ / // _` || __|| '_ \ |__ \
@@ -7,11 +12,6 @@ __      __ __ _ | |_  _ __   ___
   \_/\_/  \__,_| \__||_| |_| |_|
                               (_)
 ```
-
-<!-- givn:begin:coverage-badge -->
-[![Line Coverage: 92%](https://img.shields.io/badge/line%20coverage-92%25-brightgreen)](coverage/cobertura-coverage.xml)
-[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
-<!-- givn:end:coverage-badge -->
 [![Crates.io Version](https://img.shields.io/crates/v/watn)](https://crates.io/crates/watn)
 
 watn sends a plain-language question to a configured OpenAI-compatible endpoint
@@ -165,8 +165,7 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 92% (18031/19568)
-
+Line coverage: 92% (18106/19641)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
