@@ -2195,3 +2195,44 @@ fn review_prior_not_retained(world: &mut WatnWorld) {
     );
     assert_ne!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
 }
+
+const REVIEW_ESCALATED_COMMAND: &str = "git log --oneline --graph | head -5";
+
+#[given("an installed Bash shortcut and a candidate generated at the small tier")]
+fn review_small_tier_candidate(world: &mut WatnWorld) {
+    review_candidate_for_intent(world, "inspect recent log changes".to_string());
+}
+
+#[when("I request a higher tier")]
+fn review_request_higher_tier(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    assert_eq!(panel.context.tier, "1", "small tier is the starting tier");
+    let context = watn::review::ReviewContext {
+        tier: "2".to_string(),
+        model: "review-model-2".to_string(),
+        ..panel.context.clone()
+    };
+    let replacement = watn::review::ReviewCandidate::from_command(REVIEW_ESCALATED_COMMAND);
+    panel.escalate(context, replacement);
+    render_surface(world);
+}
+
+#[then("a new candidate should be generated at the next configured tier")]
+fn review_next_tier_candidate(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.tier, "2");
+    assert_eq!(panel.candidate().command, REVIEW_ESCALATED_COMMAND);
+}
+
+#[then("its tier and provider/model context should be visible")]
+fn review_tier_context_visible(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "tier 2");
+    assert_review_rendered_contains(world, "loopback/review-model-2");
+}
+
+#[then("the current intent should remain unchanged")]
+fn review_intent_unchanged(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.intent, "inspect recent log changes");
+    assert_review_rendered_contains(world, "intent: inspect recent log changes");
+}

@@ -175,6 +175,13 @@ impl ReviewPanelState {
         self.candidate_cursor = self.selected_candidate;
     }
 
+    /// Higher-tier escalation generates a candidate in the next tier context
+    /// while preserving the current intent.
+    pub fn escalate(&mut self, context: ReviewContext, candidate: ReviewCandidate) {
+        self.context = context;
+        self.replace_current(candidate);
+    }
+
     /// Explicit comparison retention keeps the current candidate in history.
     pub fn retain_current(&mut self) {
         let retained = self.candidate().clone();

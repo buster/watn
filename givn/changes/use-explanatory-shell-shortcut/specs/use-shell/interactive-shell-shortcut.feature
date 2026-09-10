@@ -225,7 +225,7 @@ Feature: Explanatory interactive shell shortcut
     And the prior candidate should not be retained unless comparison was requested
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: Higher-tier review generates a candidate at the next configured tier
     Given an installed Bash shortcut and a candidate generated at the small tier
     When I invoke Ctrl-W with current input "inspect recent log changes"
