@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::flow::{derive_command_flow, CommandFlow};
+use super::flow::{command_stage, derive_command_flow, CommandFlow};
 
 pub const REVIEW_VERSION: u32 = 1;
 
@@ -158,6 +158,57 @@ fn recovered_purposes(command: &str, value: &serde_json::Value) -> Option<Vec<Re
     Some(recovered)
 }
 
+/// Recover a provider stage split that provably covers the command. Every
+/// stage text must appear verbatim in the command, in order, without overlap;
+/// gaps may contain only whitespace or shell separators; the remainder after
+/// the last stage must be whitespace. Every stage needs a non-empty purpose.
+fn provider_stage_split(
+    command: &str,
+    value: &serde_json::Value,
+) -> Option<(CommandFlow, Vec<ReviewStage>)> {
+    let stages = value.get("stages")?.as_array()?;
+    if stages.is_empty() {
+        return None;
+    }
+    let mut cursor = 0usize;
+    let mut flow_stages = Vec::with_capacity(stages.len());
+    let mut review_stages = Vec::with_capacity(stages.len());
+    for stage in stages {
+        let stage_text = stage.get("stage_text")?.as_str()?.trim();
+        if stage_text.is_empty() {
+            return None;
+        }
+        let purpose = stage.get("purpose")?.as_str()?.trim();
+        if purpose.is_empty() {
+            return None;
+        }
+        let start = cursor + command[cursor..].find(stage_text)?;
+        let gap = &command[cursor..start];
+        if !gap
+            .chars()
+            .all(|character| character.is_whitespace() || matches!(character, '|' | '&' | ';'))
+        {
+            return None;
+        }
+        let end = start + stage_text.len();
+        flow_stages.push(command_stage(command, start, end));
+        review_stages.push(ReviewStage {
+            stage_text: stage_text.to_string(),
+            purpose: Some(purpose.to_string()),
+        });
+        cursor = end;
+    }
+    if !command[cursor..].chars().all(char::is_whitespace) {
+        return None;
+    }
+    Some((
+        CommandFlow {
+            stages: flow_stages,
+        },
+        review_stages,
+    ))
+}
+
 /// Build a reviewable candidate from a provider payload.
 ///
 /// - A valid structured response keeps its command and model-written purposes.
@@ -193,6 +244,13 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
                     .and_then(|command| command.as_str())
                     .map(normalize_command)
                     .filter(|command| !command.is_empty())?;
+                if let Some((flow, stages)) = provider_stage_split(&command, &value) {
+                    let mut candidate = ReviewCandidate::from_command(&command);
+                    candidate.flow = flow;
+                    candidate.stages = stages;
+                    candidate.purpose_status = PurposeStatus::Ready;
+                    return Some(candidate);
+                }
                 if let Some(stages) = recovered_purposes(&command, &value) {
                     let mut candidate = ReviewCandidate::from_command(&command);
                     candidate.stages = stages;
@@ -574,5 +632,52 @@ mod tests {
         assert_eq!(candidate.command, "df -h");
         assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
         assert!(candidate.stage_purposes().all(|purpose| purpose.is_none()));
+    }
+
+    #[test]
+    fn provider_splits_that_cover_the_command_are_accepted() {
+        let raw = serde_json::json!({
+            "review_version": 1,
+            "command": "git rev-list --all | while read commit; do git ls-tree -r $commit | awk '{print $4, $3}'; done | sort | uniq | sort -k2 -rn | head -5",
+            "stages": [
+                {"stage_text": "git rev-list --all", "purpose": "List all commit hashes in the git repository"},
+                {"stage_text": "while read commit; do git ls-tree -r $commit | awk '{print $4, $3}'; done", "purpose": "For each commit, recursively list all files with their object hashes and extract filename and object hash"},
+                {"stage_text": "sort | uniq", "purpose": "Sort the file entries and remove duplicates"},
+                {"stage_text": "sort -k2 -rn", "purpose": "Sort by file size (second column) in descending numerical order"},
+                {"stage_text": "head -5", "purpose": "Display only the top 5 largest files"}
+            ],
+            "purpose_status": "ready"
+        })
+        .to_string();
+
+        let candidate = candidate_from_provider_response(&raw).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
+        assert_eq!(
+            candidate.flow.stage_texts().collect::<Vec<_>>(),
+            vec![
+                "git rev-list --all",
+                "while read commit; do git ls-tree -r $commit | awk '{print $4, $3}'; done",
+                "sort | uniq",
+                "sort -k2 -rn",
+                "head -5",
+            ]
+        );
+        assert_eq!(candidate.stage_purposes().count(), 5);
+    }
+
+    #[test]
+    fn untrusted_provider_splits_fall_back_to_unavailable() {
+        let fabricated = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"not part of the command","purpose":"x"}],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(fabricated).unwrap();
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+
+        let gap_with_text = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"-h","purpose":"x"}],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(gap_with_text).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+
+        let trailing_text = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df","purpose":"x"}],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(trailing_text).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
     }
 }

@@ -42,6 +42,21 @@ impl CommandFlow {
     }
 }
 
+/// Build a stage from a validated byte range of the command, with local
+/// unsupported-syntax marking.
+pub fn command_stage(command: &str, start: usize, end: usize) -> CommandStage {
+    let unsupported_spans = unsupported_spans(command, start, end);
+    CommandStage {
+        stage_text: command[start..end].to_string(),
+        support: if unsupported_spans.is_empty() {
+            StageSupport::Supported
+        } else {
+            StageSupport::Unsupported
+        },
+        unsupported_spans,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Segment {
     start: usize,

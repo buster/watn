@@ -1192,8 +1192,9 @@ fn review_rendered_text(world: &WatnWorld) -> String {
 
 fn assert_review_rendered_contains(world: &WatnWorld, needle: &str) {
     let rendered = review_rendered_text(world);
+    let flattened = rendered.replace("\r\n", "");
     assert!(
-        rendered.contains(needle),
+        rendered.contains(needle) || flattened.contains(needle),
         "review surface should show {needle:?}, got:\n{rendered}"
     );
 }
@@ -2688,4 +2689,33 @@ fn review_mismatched_stage_text(world: &mut WatnWorld) {
     })
     .to_string();
     world.review.structured_response = Some(response);
+}
+
+#[given("the provider returns a review response whose stage split covers the command")]
+fn review_provider_stage_split(world: &mut WatnWorld) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": "git rev-list --all | while read commit; do git ls-tree -r $commit | awk '{print $4, $3}'; done | sort | uniq | sort -k2 -rn | head -5",
+        "stages": [
+            {"stage_text": "git rev-list --all", "purpose": "List all commit hashes in the git repository"},
+            {"stage_text": "while read commit; do git ls-tree -r $commit | awk '{print $4, $3}'; done", "purpose": "For each commit, recursively list all files with their object hashes and extract filename and object hash"},
+            {"stage_text": "sort | uniq", "purpose": "Sort the file entries and remove duplicates"},
+            {"stage_text": "sort -k2 -rn", "purpose": "Sort by file size (second column) in descending numerical order"},
+            {"stage_text": "head -5", "purpose": "Display only the top 5 largest files"}
+        ],
+        "purpose_status": "ready"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}
+
+#[then(expr = "the review surface should show the stage {string}")]
+fn review_shows_stage(world: &mut WatnWorld, stage: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let stage_texts: Vec<&str> = panel.candidate().flow.stage_texts().collect();
+    assert!(
+        stage_texts.contains(&stage.as_str()),
+        "derived stages {stage_texts:?} should contain {stage:?}"
+    );
+    assert_review_rendered_contains(world, &stage);
 }
