@@ -1090,6 +1090,8 @@ pub struct ReviewState {
     pub highest_tier: bool,
     pub catalog_models: Vec<String>,
     pub regeneration_fails: bool,
+    pub editor_before: Option<String>,
+    pub editor_cursor_before: Option<usize>,
     pub cleanup: String,
     pub narrow: bool,
     pub e2e: bool,
@@ -3476,4 +3478,85 @@ fn editor_cursor_before_last(world: &mut WatnWorld) {
         len,
         "Left must place the insertion point before the last character"
     );
+}
+
+fn editor_without_char(text: &str, index: usize) -> String {
+    text.chars()
+        .enumerate()
+        .filter(|(position, _)| *position != index)
+        .map(|(_, character)| character)
+        .collect()
+}
+
+#[when("I press Backspace")]
+fn editor_press_backspace(world: &mut WatnWorld) {
+    let (before, cursor) = {
+        let panel = world.review.panel.as_ref().expect("review panel state");
+        (
+            panel.editor_buffer().expect("editor is open").to_string(),
+            panel.editor_cursor(),
+        )
+    };
+    world.review.editor_before = Some(before);
+    world.review.editor_cursor_before = Some(cursor);
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Backspace));
+}
+
+#[then("the text before the insertion point should be removed")]
+fn editor_text_before_removed(world: &mut WatnWorld) {
+    let before = world
+        .review
+        .editor_before
+        .clone()
+        .expect("captured editor state");
+    let cursor = world
+        .review
+        .editor_cursor_before
+        .expect("captured editor cursor");
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(cursor > 0, "Backspace requires text before the cursor");
+    assert_eq!(
+        panel.editor_buffer().expect("editor is open"),
+        editor_without_char(&before, cursor - 1),
+        "Backspace must remove the character before the insertion point"
+    );
+    assert_eq!(panel.editor_cursor(), cursor - 1);
+}
+
+#[when("I press Delete")]
+fn editor_press_delete(world: &mut WatnWorld) {
+    let (before, cursor) = {
+        let panel = world.review.panel.as_ref().expect("review panel state");
+        (
+            panel.editor_buffer().expect("editor is open").to_string(),
+            panel.editor_cursor(),
+        )
+    };
+    world.review.editor_before = Some(before);
+    world.review.editor_cursor_before = Some(cursor);
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Delete));
+}
+
+#[then("the text at the insertion point should be removed")]
+fn editor_text_at_removed(world: &mut WatnWorld) {
+    let before = world
+        .review
+        .editor_before
+        .clone()
+        .expect("captured editor state");
+    let cursor = world
+        .review
+        .editor_cursor_before
+        .expect("captured editor cursor");
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(
+        cursor < before.chars().count(),
+        "Delete requires text at the cursor"
+    );
+    assert_eq!(
+        panel.editor_buffer().expect("editor is open"),
+        editor_without_char(&before, cursor),
+        "Delete must remove the character at the insertion point"
+    );
+    assert_eq!(panel.editor_cursor(), cursor);
 }

@@ -155,7 +155,7 @@ Feature: Simplified review card controls
     When I move the insertion point one character left with the arrow key
     Then the insertion point should be before the last character
 
-  @givn.added @wip
+  @givn.added
   Scenario: Backspace and Delete remove text at the insertion point
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface
