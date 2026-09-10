@@ -33,12 +33,14 @@ not new interactions, so they are regular scenarios.
 
 ## Overlap dispositions
 
-`givn lint` reports one informational subset finding, dispositioned here.
+`givn lint` reports two informational shape matches, dispositioned here:
+each pair is an input or precondition variant of the same invariant, not a
+duplicate.
 
-| Finding pair | Decision |
-|---|---|
-| New "A markdown-fenced structured response is still explained" vs permanent "The review surface explains a complex command flow" | `variant` — same explanation invariant, provider payload-format variation (markdown fence plus surrounding prose) |
-| New "A provider payload without a usable command releases nothing" vs permanent "Portable review-surface failure releases no candidate" | `variant` — same no-release outcome, different precondition (response without a usable command versus portable surface that cannot open); both remain as distinct invariants |
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| The review surface explains a complex command flow | A markdown-fenced structured response is still explained | variant |
+| Portable review-surface failure releases no candidate | A provider payload without a usable command releases nothing | variant |
 
 ## Split-or-keep
 
