@@ -3293,3 +3293,43 @@ fn review_choose_typed_model(world: &mut WatnWorld) {
     regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
     render_surface(world);
 }
+
+#[when("I press the reject shortcut without a thinking tier")]
+fn review_reject_without_thinking(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('r')));
+    assert_eq!(outcome, watn::review::PanelOutcome::RejectRequested);
+    let tiers: Vec<watn::review::TierChoice> = chooser_tier_choices().into_iter().take(2).collect();
+    panel_mut(world).open_model_chooser(tiers, Vec::new());
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('3')));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::Continue,
+        "a tier number with no configured tier must be ignored"
+    );
+    render_surface(world);
+}
+
+#[then("the model chooser should remain open")]
+fn review_chooser_remains_open(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::ModelChooser);
+    assert!(panel.chooser().is_some(), "the chooser must stay open");
+}
+
+#[when("I press Enter without a model choice")]
+fn review_enter_without_choice(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::Continue,
+        "Enter with no highlight and an empty query must be ignored"
+    );
+    render_surface(world);
+}
+
+#[then("the previous candidate should remain visible")]
+fn review_previous_candidate_visible(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+    assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
+}

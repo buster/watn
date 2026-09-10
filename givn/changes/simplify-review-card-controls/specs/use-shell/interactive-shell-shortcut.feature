@@ -112,12 +112,11 @@ Feature: Simplified review card controls
     Then a new candidate should use "custom/model-9"
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: The model chooser ignores incomplete choices
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface
-    And I press the reject shortcut
-    And I press the number 9
+    And I press the reject shortcut without a thinking tier
     Then the model chooser should remain open
     When I press Enter without a model choice
     Then the model chooser should remain open
