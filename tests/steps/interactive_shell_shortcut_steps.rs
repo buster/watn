@@ -3266,3 +3266,30 @@ fn review_candidate_uses_model(world: &mut WatnWorld, model: String) {
     assert_eq!(panel.context.model, model);
     assert_review_rendered_contains(world, &format!("loopback/{model}"));
 }
+
+#[given("the provider catalog is unavailable")]
+fn review_catalog_unavailable(world: &mut WatnWorld) {
+    // The blocking catalog client owns an internal runtime; run and drop it on
+    // a dedicated thread so the test runtime never drops it in an async context.
+    let models = std::thread::spawn(|| {
+        watn::review::session::fetch_catalog("http://127.0.0.1:9", None, None)
+    })
+    .join()
+    .expect("catalog thread panicked");
+    assert!(
+        models.is_empty(),
+        "an unreachable catalog must degrade to no suggestions"
+    );
+    world.review.catalog_models = models;
+}
+
+#[when("I choose the typed model")]
+fn review_choose_typed_model(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
+    let watn::review::PanelOutcome::RegenerateWith { tier, model } = outcome else {
+        panic!("a typed model must request regeneration, got {outcome:?}");
+    };
+    assert_eq!(model, "custom/model-9");
+    regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
+    render_surface(world);
+}

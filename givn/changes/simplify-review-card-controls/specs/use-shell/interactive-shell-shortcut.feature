@@ -102,7 +102,7 @@ Feature: Simplified review card controls
     Then a new candidate should use "model-b"
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: A typed model name works when the catalog is unavailable
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider catalog is unavailable
