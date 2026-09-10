@@ -361,26 +361,26 @@ Domain constraints:
 
 - Escape closes the chooser without changing the candidate or the review.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Leaving the model chooser preserves the candidate'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed); the leave-chooser stub panicked.
   ```
-- [ ] GREEN: Escape returns from `ModelChooser` to review unchanged. Compile and
+- [x] GREEN: Escape returns from `ModelChooser` to review unchanged. Compile and
   run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `tests/steps/interactive_shell_shortcut_steps.rs` only; Escape closes the chooser in `src/review/panel.rs` from the chooser scenario.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Leaving the model chooser preserves the candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed); full regular 206/206.
   ```
-- [ ] REFACTOR: Keep the chooser close path free of candidate mutation. Rerun
+- [x] REFACTOR: Keep the chooser close path free of candidate mutation. Rerun
   the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Leaving the model chooser preserves the candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): Leaving the model chooser preserves the candidate
+- [x] COMMIT: `c0f4e5d0839d953a5bf9e7ccb66acc221a3f8235` - feat(interactive-shell-shortcut): Leaving the model chooser preserves the candidate
 
 ### The command editor moves the insertion point with arrows and Home and End
 
