@@ -2,6 +2,7 @@ use super::panel::{sanitize_terminal_text, wrap_text, InlineLayout, ReviewPanelS
 
 const MAX_CARD_ROWS: u16 = 18;
 const NARROW_WIDTH: u16 = 60;
+const NESTED_SYNTAX_MARKER: &str = "⚠ nested syntax";
 
 /// Pure color-capability decision so tests can exercise every combination
 /// without touching the process environment.
@@ -337,7 +338,7 @@ pub fn render_card_lines(
                 ink.white(row)
             );
             if unsupported_stage {
-                let marker = format!("  {}", ink.amber("⚠ unsupported"));
+                let marker = format!("  {}", ink.amber(NESTED_SYNTAX_MARKER));
                 if visible_len(&line) + visible_len(&marker) <= inner.saturating_sub(2) {
                     line.push_str(&marker);
                 } else {
@@ -358,7 +359,7 @@ pub fn render_card_lines(
             format!(
                 "{}   {}",
                 " ".repeat(label_width),
-                ink.amber("⚠ unsupported")
+                ink.amber(NESTED_SYNTAX_MARKER)
             ),
         ));
     }
@@ -670,7 +671,7 @@ mod tests {
         let lines = render_card_lines(&unsupported, layout, true);
 
         assert!(lines.len() <= 7, "card rows: {}", lines.len());
-        assert!(lines.iter().any(|line| line.contains("unsupported")));
+        assert!(lines.iter().any(|line| line.contains("nested syntax")));
         assert!(!lines.iter().any(|line| line.contains('\n')));
     }
 

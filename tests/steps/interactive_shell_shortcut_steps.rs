@@ -1778,7 +1778,7 @@ fn review_unsupported_marked(world: &mut WatnWorld) {
         panel.candidate().flow.has_unsupported(),
         "unsupported syntax must be marked in the derived flow"
     );
-    assert_review_rendered_contains(world, "unsupported");
+    assert_review_rendered_contains(world, "nested syntax");
 }
 
 #[then("the review surface should still offer final acceptance and cancellation")]
@@ -2658,16 +2658,16 @@ fn review_previous_stage(world: &mut WatnWorld) {
     render_current_surface(world);
 }
 
-#[then("the card should mark the unsupported stage")]
-fn review_card_marks_unsupported(world: &mut WatnWorld) {
+#[then("the card should mark the nested syntax")]
+fn review_card_marks_nested_syntax(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
     assert!(
-        rendered.contains("⚠ unsupported") || strip_ansi(&rendered).contains("⚠ unsupported"),
-        "card should mark the unsupported stage, got:\n{rendered}"
+        rendered.contains("⚠ nested syntax") || strip_ansi(&rendered).contains("⚠ nested syntax"),
+        "card should mark the nested syntax, got:\n{rendered}"
     );
     assert!(
         rendered.contains("\u{1b}[38;5;214m"),
-        "unsupported marker should be amber, got:\n{rendered}"
+        "the nested-syntax marker should be amber, got:\n{rendered}"
     );
 }
 

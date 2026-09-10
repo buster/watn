@@ -989,7 +989,7 @@ mod tests {
 
         assert!(layout.is_bounded());
         assert!(lines.len() <= layout.max_rows as usize);
-        assert!(lines.iter().any(|line| line.contains("unsupported")));
+        assert!(lines.iter().any(|line| line.contains("nested syntax")));
         assert!(lines.iter().any(|line| line.contains("cat < input")));
     }
 

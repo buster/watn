@@ -24,7 +24,7 @@ Feature: Clearer review card guidance
   Scenario: The card marks unsupported stage syntax
     Given this scenario was removed by clarify-review-card-guidance
 
-  @givn.added @wip
+  @givn.added
   Scenario: The card marks nested shell syntax
     Given an installed Bash shortcut and a provider candidate containing unsupported shell syntax
     When I invoke Ctrl-W with the current input
