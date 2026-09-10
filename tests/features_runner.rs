@@ -42,6 +42,8 @@ pub struct WatnWorld {
     pub exit_status: Option<i32>,
     pub pending_mock_model: Option<String>,
     pub pending_mock_output: Option<String>,
+    pub pending_tiers: Option<(String, String, String)>,
+    pub pending_mock_replacements: Vec<(String, String)>,
     pub pending_mock_usage: Option<bool>,
     pub pending_mock_auth_fail: bool,
     pub pending_mock_returned_models: Vec<String>,

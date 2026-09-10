@@ -245,9 +245,15 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
         if auth_fail {
             setup_auth_fail_mock(server);
+            let pending_tiers = world
+                .pending_tiers
+                .as_ref()
+                .map(|(small, normal, thinking)| {
+                    (small.as_str(), normal.as_str(), thinking.as_str())
+                });
             config_content = build_config(
                 "test",
-                None,
+                pending_tiers,
                 Some(vec![("test", &base_url, "test-key", &model)]),
                 None,
                 None,
@@ -276,6 +282,18 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 .and_then(|_| world.env_vars.get("WATN_CUSTOM_API_KEY"))
                 .or_else(|| world.env_vars.get("WATN_OPENAI_API_KEY"))
                 .map(|key| format!("Bearer {}", key));
+            for (replacement_model, replacement_output) in world.pending_mock_replacements.clone() {
+                setup_chat_completion_mock(
+                    server,
+                    &replacement_output,
+                    false,
+                    0,
+                    &None,
+                    None,
+                    Some(format!("\"model\":\"{replacement_model}\"")),
+                );
+            }
+
             if !world.pending_config.contains_key("expect_custom_auth") {
                 let mock_id = setup_chat_completion_mock(
                     server,
@@ -321,9 +339,16 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 }
                 let non_default = lines.join("\n").trim().to_string();
 
+                let pending_tiers =
+                    world
+                        .pending_tiers
+                        .as_ref()
+                        .map(|(small, normal, thinking)| {
+                            (small.as_str(), normal.as_str(), thinking.as_str())
+                        });
                 let mock_cfg = build_config(
                     "test",
-                    None,
+                    pending_tiers,
                     Some(vec![("test", &base_url, "test-key", &model)]),
                     None,
                     None,

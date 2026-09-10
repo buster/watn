@@ -1793,6 +1793,7 @@ fn review_current_candidate_available(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
     assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
+    assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
 }
 
 #[then("the original Bash command line should remain unchanged")]
@@ -1832,7 +1833,6 @@ const REVIEW_FAILED_RESPONSE: &str = "{\"review_version\":1,";
 fn review_selected_candidate(world: &mut WatnWorld, intent: String) {
     review_candidate_for_intent(world, intent);
     build_review_panel(world);
-    let panel = world.review.panel.as_ref().expect("review panel state");
 }
 
 #[when("a purpose refresh or replacement generation fails")]

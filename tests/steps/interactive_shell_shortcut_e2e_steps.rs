@@ -1,4 +1,4 @@
-use cucumber::{then, when};
+use cucumber::{given, then, when};
 use std::io::ErrorKind;
 use std::path::Path;
 use std::process::Command;
@@ -362,5 +362,48 @@ fn e2e_no_second_confirmation(world: &mut WatnWorld) {
     assert!(
         !terminal.contains("Execute now?"),
         "eligible review -x must not show a second confirmation: {terminal:?}"
+    );
+}
+
+#[given(expr = "the configured provider can return a replacement candidate {string}")]
+fn e2e_replacement_candidate(world: &mut WatnWorld, command: String) {
+    world.pending_tiers = Some((
+        "small-model".to_string(),
+        "normal-model".to_string(),
+        "thinking-model".to_string(),
+    ));
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": command,
+        "stages": [{"stage_text": command, "purpose": "Replacement candidate."}],
+        "purpose_status": "ready"
+    })
+    .to_string();
+    world
+        .pending_mock_replacements
+        .push(("normal-model".to_string(), response));
+}
+
+#[when("I reject the candidate and choose the normal tier in the review surface")]
+fn e2e_reject_and_choose_tier(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("e2e direct PTY session");
+    pty_wait_for_label(session, "accept ·");
+    pty_write(session, "r");
+    pty_wait_for_label(session, "Models");
+    pty_write(session, "2");
+    pty_wait_for_label(session, "Replacement candidate.");
+}
+
+#[then("the replacement candidate should be visible")]
+fn e2e_replacement_visible(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("e2e direct PTY session");
+    let output = super::pty_snapshot(session);
+    assert!(
+        output.contains("du -sh ."),
+        "the replacement candidate must be visible, got: {output:?}"
+    );
+    assert!(
+        output.contains("normal-model"),
+        "the chosen tier model must be visible, got: {output:?}"
     );
 }

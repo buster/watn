@@ -13,12 +13,6 @@ use watn::provider::registry::ProviderRegistry;
 use watn::provider::{Message, RequestOptions, StreamEvent, StreamingResponse};
 use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
 
-type StreamOutcome = (
-    Result<StreamingResponse, watn::error::Error>,
-    Option<watn::output::spinner::Spinner>,
-    CommandSink,
-);
-
 enum CommandSink {
     Stream(render::StreamRenderer<io::Stdout>),
     Review(watn::review::ReviewBuffer),

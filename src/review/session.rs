@@ -39,13 +39,12 @@ pub fn generate_candidate(
             let mut buffer = ReviewBuffer::new();
             let result = {
                 let mut emit_content = |event: StreamEvent| -> Result<(), Error> {
-                    if let StreamEvent::Content(content) = event {
-                        if !content.is_empty() {
-                            if let Some(active) = spinner.take() {
-                                active.finish();
-                            }
-                            buffer.receive(&content);
+                    let StreamEvent::Content(content) = event;
+                    if !content.is_empty() {
+                        if let Some(active) = spinner.take() {
+                            active.finish();
                         }
+                        buffer.receive(&content);
                     }
                     Ok(())
                 };

@@ -178,7 +178,7 @@ Feature: Simplified review card controls
     Then the existing "Execute now?" confirmation should be shown
     And execution should require the existing confirmation response
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer rejects a candidate and regenerates with another model
     Given a configured provider candidate "df -h"
     And the configured provider can return a replacement candidate "du -sh ."
