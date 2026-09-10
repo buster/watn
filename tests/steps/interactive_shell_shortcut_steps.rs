@@ -1078,6 +1078,11 @@ pub struct ReviewState {
     pub released: Option<String>,
     pub panel_outcome: Option<watn::review::PanelOutcome>,
     pub delayed_purposes: bool,
+    pub enhanced_adapter: Option<bool>,
+    pub portable_adapter_fails: bool,
+    pub adapter: Option<watn::review::PresentationSelection>,
+    pub bash_command_line: String,
+    pub bash_history: Vec<String>,
 }
 
 fn review_context(intent: &str) -> watn::review::ReviewContext {
@@ -1214,6 +1219,20 @@ fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
 }
 
 fn build_review_panel(world: &mut WatnWorld) {
+    let selection = watn::review::PresentationSelection::open(
+        world.review.enhanced_adapter,
+        !world.review.portable_adapter_fails,
+    );
+    world.review.adapter = Some(selection);
+    if world
+        .review
+        .adapter
+        .as_ref()
+        .is_some_and(|selection| selection.is_unavailable())
+    {
+        world.review.surface_open = false;
+        return;
+    }
     let command = world.review.candidate_command.clone();
     let mut candidate = watn::review::ReviewCandidate::from_command(command);
     if let Some(raw) = world.review.structured_response.clone() {
@@ -1385,6 +1404,7 @@ fn review_candidate_for_intent(world: &mut WatnWorld, intent: String) {
     install_bash_shortcut(world);
     world.review = ReviewState {
         candidate_command: REVIEW_FIXTURE_COMMAND.to_string(),
+        bash_command_line: intent.clone(),
         intent,
         ..ReviewState::default()
     };
@@ -1764,4 +1784,40 @@ fn review_acceptance_and_cancellation_offered(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "Accept candidate");
     assert_review_rendered_contains(world, "Cancel review");
     assert!(world.review.released.is_none());
+}
+
+#[given("the selected enhanced presentation adapter cannot open")]
+fn review_enhanced_adapter_cannot_open(world: &mut WatnWorld) {
+    world.review.enhanced_adapter = Some(false);
+}
+
+#[then("the portable inline review surface should open")]
+fn review_portable_surface_open(world: &mut WatnWorld) {
+    let selection = world.review.adapter.as_ref().expect("adapter selection");
+    assert_eq!(
+        selection.active(),
+        Some(watn::review::PresentationAdapter::Portable)
+    );
+    assert_eq!(
+        selection.attempts(),
+        &[
+            watn::review::PresentationAdapter::Enhanced,
+            watn::review::PresentationAdapter::Portable
+        ]
+    );
+    assert!(
+        world.review.surface_open,
+        "portable review surface did not open"
+    );
+    assert!(
+        !world.review.rendered.is_empty(),
+        "portable review surface rendered nothing"
+    );
+}
+
+#[then("the current candidate should remain available")]
+fn review_current_candidate_available(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+    assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
 }

@@ -1,8 +1,10 @@
+mod adapter;
 mod buffer;
 mod flow;
 mod panel;
 mod response;
 
+pub use adapter::{PresentationAdapter, PresentationSelection};
 pub use buffer::ReviewBuffer;
 pub use flow::{derive_command_flow, CommandFlow, CommandStage, StageSupport, UnsupportedSpan};
 pub use panel::{

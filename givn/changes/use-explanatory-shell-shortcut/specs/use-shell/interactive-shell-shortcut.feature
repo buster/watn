@@ -130,7 +130,7 @@ Feature: Explanatory interactive shell shortcut
     And unsupported command-flow portions should be marked
     And the review surface should still offer final acceptance and cancellation
 
-  @givn.added @wip
+  @givn.added
   Scenario: Enhanced renderer failure falls back to the inline review surface
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the selected enhanced presentation adapter cannot open
