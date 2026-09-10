@@ -69,16 +69,19 @@ UBIQUITOUS LANGUAGE: CLEAN
 
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
-| Developer rejects a candidate and regenerates with another model | Developer accepts a candidate from an interactive terminal request | variant |
-| Review actions use Enter and Escape | The cancel shortcut cancels the review | variant |
+| Enter accepts the current candidate | The accept shortcut accepts the current candidate | variant |
+| A model name is suggested from the provider catalog while typing | A typed model name works when the catalog is unavailable | variant |
+| Disabled review preserves -x confirmation | The explanation card ignores review decisions | variant |
+| The -x confirmation offers to explain the command | The explanation card ignores review decisions | variant |
 
-The reject E2E is a distinct action: it opens the model chooser, issues a second
-provider request, and asserts the replacement candidate and chosen model before
-acceptance; the accept E2E has no chooser and no regeneration. The removed
+Enter and `a` are two triggers for one acceptance rule, asserted separately so a
+regression in either key fails. The catalog scenarios differ in the state under
+test (suggestions available versus unavailable). The explanation-card scenario
+reuses the confirmation and explanation shapes but adds the ignored-decision
+invariant, so it is a variant of both. The new reject E2E is a distinct action
+(opening the chooser and issuing a second provider request) and the removed
 "Review actions use Enter and Escape" scenario is superseded by the flow-first
-key map: Enter acceptance remains covered by "Enter accepts the current
-candidate", and cancellation is covered by "The cancel shortcut cancels the
-review".
+key map; those two earlier dispositions no longer match a current shape.
 
 ## Split-or-keep
 
