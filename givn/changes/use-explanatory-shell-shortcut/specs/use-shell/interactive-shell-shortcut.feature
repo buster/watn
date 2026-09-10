@@ -35,7 +35,7 @@ Feature: Explanatory interactive shell shortcut
     And the review surface should show the success branch
     And the review surface should show each model-written stage purpose
 
-  @givn.added @wip
+  @givn.added
   Scenario: A complete candidate is buffered before review
     Given an installed Bash shortcut and a provider that streams a candidate in multiple events
     And the provider has not sent [DONE]

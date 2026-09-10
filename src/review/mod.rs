@@ -1,7 +1,9 @@
+mod buffer;
 mod flow;
 mod panel;
 mod response;
 
+pub use buffer::ReviewBuffer;
 pub use flow::{derive_command_flow, CommandFlow, CommandStage, StageSupport, UnsupportedSpan};
 pub use panel::{
     controlling_terminal_is_usable, render_lines, sanitize_terminal_text, ControllingTerminal,

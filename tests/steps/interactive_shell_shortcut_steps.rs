@@ -1051,15 +1051,30 @@ fn all_bindings(world: &mut WatnWorld) {
     assert!(fish.contains("bind \\cw"));
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum ReviewDriver {
+    #[default]
+    Structured,
+    Streaming {
+        chunks: Vec<String>,
+        done: bool,
+    },
+}
+
 #[derive(Debug, Default)]
 pub struct ReviewState {
+    pub driver: ReviewDriver,
     pub candidate_command: String,
     pub structured_response: Option<String>,
     pub intent: String,
     pub context: Option<watn::review::ReviewContext>,
     pub candidate: Option<watn::review::ReviewCandidate>,
+    pub buffer: watn::review::ReviewBuffer,
     pub rendered: Vec<String>,
+    pub surface_open: bool,
+    pub progress_line: Option<String>,
     pub command_output: String,
+    pub released: Option<String>,
 }
 
 fn install_bash_shortcut(world: &mut WatnWorld) {
@@ -1127,6 +1142,16 @@ fn review_structured_response(world: &mut WatnWorld, step: &cucumber::gherkin::S
 #[when(expr = "I invoke Ctrl-W with current input {string}")]
 fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
     world.review.intent = input.clone();
+    world.review.progress_line = Some(format!("Generating command for {input}"));
+    match world.review.driver.clone() {
+        ReviewDriver::Structured => review_invoke_structured(world, input),
+        ReviewDriver::Streaming { chunks, done } => {
+            review_invoke_streaming(world, &chunks, done);
+        }
+    }
+}
+
+fn review_invoke_structured(world: &mut WatnWorld, input: String) {
     let command = world.review.candidate_command.clone();
     let mut candidate = watn::review::ReviewCandidate::from_command(command);
     if let Some(raw) = world.review.structured_response.clone() {
@@ -1159,7 +1184,25 @@ fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
 
     world.review.rendered = rendered;
     world.review.candidate = Some(candidate);
+    world.review.surface_open = true;
     world.review.command_output.clear();
+}
+
+fn open_review_surface(world: &mut WatnWorld, command: &str) {
+    world.review.candidate = Some(watn::review::ReviewCandidate::from_command(command));
+    world.review.surface_open = true;
+}
+
+fn review_invoke_streaming(world: &mut WatnWorld, chunks: &[String], done: bool) {
+    for chunk in chunks {
+        world.review.buffer.receive(chunk);
+    }
+    if done {
+        world.review.buffer.complete();
+    }
+    if let Some(command) = world.review.buffer.candidate().map(str::to_string) {
+        open_review_surface(world, &command);
+    }
 }
 
 #[then("the review surface should show the git log stage")]
@@ -1190,5 +1233,93 @@ fn review_shows_stage_purposes(world: &mut WatnWorld) {
     assert!(
         world.review.command_output.is_empty(),
         "review bytes must not reach the command-output channel"
+    );
+}
+
+#[given("an installed Bash shortcut and a provider that streams a candidate in multiple events")]
+fn review_streaming_provider(world: &mut WatnWorld) {
+    install_bash_shortcut(world);
+    world.review = ReviewState {
+        driver: ReviewDriver::Streaming {
+            chunks: vec!["df ".to_string(), "-h".to_string()],
+            done: false,
+        },
+        ..ReviewState::default()
+    };
+}
+
+#[given("the provider has not sent [DONE]")]
+fn review_provider_not_done(world: &mut WatnWorld) {
+    match &mut world.review.driver {
+        ReviewDriver::Streaming { done, .. } => *done = false,
+        _ => panic!("provider driver is not streaming"),
+    }
+    assert!(!world.review.buffer.is_complete());
+}
+
+#[then("the review surface should not open before [DONE]")]
+fn review_surface_not_open(world: &mut WatnWorld) {
+    assert!(
+        !world.review.surface_open,
+        "review surface opened before [DONE]"
+    );
+    assert!(!world.review.buffer.is_complete());
+    assert!(world.review.buffer.candidate().is_none());
+}
+
+#[then("the existing progress line should remain the first feedback")]
+fn review_progress_first(world: &mut WatnWorld) {
+    assert!(
+        world.review.progress_line.is_some(),
+        "existing progress line was not shown first"
+    );
+    assert!(
+        world.review.rendered.is_empty(),
+        "review surface rendered before the progress line"
+    );
+    assert!(
+        world.review.command_output.is_empty(),
+        "command output appeared before the review surface"
+    );
+}
+
+#[then("no candidate text should be released before final acceptance")]
+fn review_no_release_before_acceptance(world: &mut WatnWorld) {
+    assert!(
+        world.review.released.is_none(),
+        "candidate was released before final acceptance"
+    );
+    assert!(
+        world.review.command_output.is_empty(),
+        "command-output channel is not empty before acceptance"
+    );
+}
+
+#[when("the provider sends [DONE]")]
+fn review_provider_sends_done(world: &mut WatnWorld) {
+    if let ReviewDriver::Streaming { done, .. } = &mut world.review.driver {
+        *done = true;
+    }
+    world.review.buffer.complete();
+    if let Some(command) = world.review.buffer.candidate().map(str::to_string) {
+        open_review_surface(world, &command);
+    }
+}
+
+#[then("the review surface should open with the complete candidate")]
+fn review_surface_opens_complete(world: &mut WatnWorld) {
+    assert!(
+        world.review.surface_open,
+        "review surface did not open after [DONE]"
+    );
+    let candidate = world
+        .review
+        .candidate
+        .as_ref()
+        .expect("complete candidate after [DONE]");
+    assert_eq!(candidate.command, "df -h");
+    assert!(
+        world.review.released.is_none(),
+        "complete candidate was released without final acceptance"
     );
 }
