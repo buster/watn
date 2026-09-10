@@ -306,26 +306,26 @@ Domain constraints:
 - Invalid tier numbers and Enter with no choice leave the chooser and candidate
   unchanged.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The model chooser ignores incomplete choices'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the reject-without-thinking stub panicked.
   ```
-- [ ] GREEN: Ignore out-of-range numbers and an empty Enter. Compile and run the
+- [x] GREEN: Ignore out-of-range numbers and an empty Enter. Compile and run the
   exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `tests/steps/interactive_shell_shortcut_steps.rs` only; the chooser branches already ignore an unconfigured tier number and an empty Enter in `src/review/panel.rs`.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The model chooser ignores incomplete choices'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed); full regular 204/204.
   ```
-- [ ] REFACTOR: Keep the chooser branch table exhaustive. Rerun the exact
+- [x] REFACTOR: Keep the chooser branch table exhaustive. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'The model chooser ignores incomplete choices'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The model chooser ignores incomplete choices
+- [x] COMMIT: `5a23edc36e25c3fc9808a12d30290ae4a7d8907c` - feat(interactive-shell-shortcut): The model chooser ignores incomplete choices
 
 ### A failed regeneration preserves the previous candidate
 
