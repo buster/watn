@@ -121,6 +121,41 @@ Config is merged in order (later overrides earlier):
 3. **Environment variables** — `WATN_*` (e.g. `WATN_PROVIDER`, `WATN_MODEL`)
 4. **CLI flags** — `-1`/`-2`/`-3`, `--model`, `--provider` (highest priority)
 
+Review surface preference follows the same direction: per-invocation review flags
+override the persisted `[review]` panel setting, which overrides the built-in
+enabled default. A disabled panel follows the existing direct output, history,
+buffer, and `-x` confirmation paths.
+
+## Inline review surface safety
+
+The review surface is a small transient inline region rendered through the
+controlling-terminal channel with ordinary ANSI cursor movement. It does not
+switch to the alternate screen. The complete Candidate is buffered until
+`[DONE]` and final acceptance; review-surface text is never written to stdout,
+because the shell widget captures stdout as the command-output channel. The
+surface restores cursor visibility, raw input mode, and occupied rows before
+returning control to the shell line editor.
+
+Review decisions are explicit. Direct edits preserve the original Intent and
+refresh Command flow and Purpose status; cancellation, rejection, and failure
+preserve input; review display and buffer replacement never evaluate a
+Candidate. An enhanced Presentation adapter can fail without losing the review
+because the portable inline adapter is retried. A portable-panel failure
+returns `Unavailable` and releases no Candidate.
+
+The review-mode provider response is structured and contains a version, a
+complete Candidate command, exact Stage text, model-written Stage purposes, and
+Purpose status. A valid structured response can show `loading` for delayed
+purposes. A command-only, invalid, stale, or mismatched response shows
+`purpose-unavailable` without replacing the Candidate with locally authored
+purpose text. A purpose failure keeps the Candidate reviewable.
+
+The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
+`Actions`. Tab cycles forward, Shift-Tab cycles backward, arrows navigate within
+the focused region, and Enter activates. Escape cancels the review. A separate
+command editor uses Enter to commit and Escape to discard; those editor keys do
+not accept or cancel the review.
+
 Provider readiness is a separate local check. An absent config file is not
 created as a template during readiness; a provider is ready only when its
 endpoint and literal or resolved credential are available. OpenRouter has a built-in endpoint fallback only when
@@ -233,12 +268,13 @@ tok/s = completion_tokens / elapsed_seconds. Displayed after response completion
 
 ## Execution mode (`-x`)
 
-When `-x` is passed, the command has already been rendered incrementally to
-stdout exactly once before the user is prompted on stderr: `Execute now? [Y/n]`.
-The final aggregate is used for the confirmation command but is not printed
-again. Empty line or `y`/`Y` runs the command via `sh -c <cmd>` with inherited
-stdout/stderr. `n`/`N` exits 0. A stream or output failure never reaches the
-prompt.
+When review is disabled or not eligible and `-x` is passed, the command retains
+the existing incremental stdout and `Execute now? [Y/n]` confirmation. When
+review is enabled and eligible, the complete Candidate is buffered until
+`[DONE]`; final review acceptance is the sole execution authorization and no
+second confirmation is shown. In both modes, accepted execution uses the
+existing `sh -c <cmd>` boundary with inherited stdout/stderr. A stream,
+Candidate, panel, or output failure never reaches execution.
 
 ## Reasoning and verbose mode
 

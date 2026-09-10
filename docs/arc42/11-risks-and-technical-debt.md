@@ -67,6 +67,14 @@
 | R-065 | A stable-ID migration can assign a capability to the wrong use-case or fragment | Medium | High | Require a complete ledger, exactly one declared owner per capability, strict schema validation, and explicit reasons for every semantic operation |
 | R-066 | Migration can lose behavior hashes, E2E mappings, interaction coverage, or source counters while the feature runner remains green | Medium | High | Capture before/after evidence, compare hashes and mappings, run coverage, and reject any unledgered difference |
 | R-067 | Old 0.5 group vocabulary or stale active paths can survive beside the canonical corpus | Medium | Medium | Audit active paths after migration, exclude only historical archives, and record remaining legacy vocabulary as follow-up debt |
+| R-068 | Inline panel redraw can corrupt a wrapped prompt or leave terminal state behind | Medium | High | Use controlling-terminal cleanup on every outcome, preserve the line-editor-owned repaint boundary, and cover Bash PTY acceptance/cancellation at a fixed terminal size |
+| R-069 | Panel bytes can contaminate stdout captured by the shell widget | Medium | High | Render only through the controlling terminal, buffer candidate output until acceptance, and assert stdout contains only the accepted candidate |
+| R-070 | A provider or explanation failure can leave a stale candidate or stale purpose visible | Medium | Medium | Bind refresh state to the current candidate, show loading/unavailable status, preserve the candidate for review, and reject stale updates |
+| R-071 | Enhanced renderer availability differs across terminals and multiplexers | Medium | Medium | Treat the portable inline panel as mandatory, use enhanced renderers only as adapters, and retry inline on enhanced failure |
+| R-072 | A structured review response may contain invalid, stale, or mismatched Stage purposes | Medium | Medium | Validate response version, complete Candidate command, exact Stage text, purpose status, and current Candidate identity; show purpose-unavailable and retain reviewability on failure |
+| R-073 | Buffering review-eligible output until `[DONE]` may make generation feel slower or leak output through an alternate path | Medium | High | Preserve the existing progress line first, use the existing synchronous callback with a review-only buffered sink, release only after final acceptance, and assert stdout/controlling-terminal separation |
+| R-074 | Inline review cleanup may leave terminal state or conflict with shell repaint | Medium | High | Restore cursor, raw mode, and occupied rows on every outcome; leave final prompt repaint to the shell line editor; cover acceptance, cancellation, interruption, and failure in a fixed-size Bash PTY |
+| R-075 | Direct, Ctrl-W, and `-x` consumers may accidentally share the wrong output or authorization boundary | Medium | High | Keep the consumer routing matrix explicit, resolve review eligibility before generation, and assert direct stdout, Ctrl-W history/buffer, disabled paths, and eligible/non-review `-x` separately |
 
 ## Technical debt
 
@@ -79,6 +87,7 @@
 | TD-005 | E2E tests need a non-persisted endpoint override to exercise configured-provider paths without live network access | Medium | Keep the override behind the debug-plus-feature guard; use reachable loopback twins and explicit binary paths; assert the exact persisted configured URL before and after routing |
 | TD-009 | Cancellation uses a fixed 500 ms grace heuristic because the blocking reqwest client cannot split connect and read timeouts | Low | Migrate to an async client with `tokio::select!` if a future change makes the grace heuristic or partial-bytes truncation unacceptable |
 | TD-010 | Historical feature families contain overlapping scenario ownership and helper mechanics | Medium | Repay through the `watn-consolidation` change, then require repository-wide ownership review before future scenario additions |
+| TD-011 | Provider support for structured review responses may differ in adoption and delayed-purpose capability | Medium | Keep the versioned response contract and purpose-unavailable fallback in the design; add provider-specific extensions only through a later change |
 
 ## ADR-0011 bad-consequence coverage
 
@@ -152,6 +161,27 @@ The following consequences are accepted and mitigated explicitly:
 - Exact-once output: content chunks are written once and the final aggregate is
   never reprinted; raw-terminal and piped scenarios count generated and execution
   lines separately.
+
+## Review-mode consequence coverage
+
+- Structured review response: version, complete Candidate command, exact Stage
+  text, and model-written Stage purposes are validated together. Invalid, stale,
+  or mismatched purpose data becomes `purpose-unavailable`; the Candidate stays
+  reviewable and no locally authored purpose text is substituted.
+- Review buffering amendment to ADR-0015: the synchronous callback remains the
+  provider boundary, but eligible review requests use an in-memory buffered sink
+  until `[DONE]`. The progress line remains first; final acceptance is the only
+  release gate. R-072 and R-073 cover response drift and perceived latency.
+- Channel separation: review-surface bytes use the controlling-terminal channel,
+  while stdout remains the command-output channel. R-073, R-075, and R-069 cover
+  contamination and incorrect consumer routing.
+- Terminal restoration: the portable inline Presentation adapter restores raw
+  input, cursor, and occupied rows before returning control to the shell line
+  editor, which owns the final repaint. R-074 covers cleanup and wrapping.
+- Consumer boundaries: Ctrl-W records history only after acceptance, direct paths
+  release only the accepted Candidate, eligible `-x` treats acceptance as its
+  sole authorization, and disabled/non-review `-x` retains confirmation. R-075
+  covers accidental boundary sharing.
 
 ## ADR-0017 consequence coverage
 

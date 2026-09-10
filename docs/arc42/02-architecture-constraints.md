@@ -25,6 +25,9 @@
 | Completion generation is side-effect free | Successful generation writes only the selected script to stdout, writes nothing to stderr, does not load or create config, contacts no provider, and changes no shell configuration |
 | Shell startup targets are user-owned | Bash and Zsh use `$HOME/.bashrc` and `$HOME/.zshrc`; Fish uses `$XDG_CONFIG_HOME/fish/config.fish` or `$HOME/.config/fish/config.fish`; only an explicitly selected target may be created or changed |
 | Shell widget invocation is non-evaluating | Generated widgets use native line-editor APIs, invoke `command watn -- "$question"` through `PATH`, preserve stderr diagnostics, and never evaluate captured stdout |
+| Review surface is inline and controlling-terminal bound | The explanatory review surface must be small and transient, must not switch to the alternate screen, must render through the controlling-terminal channel, and must keep stdout reserved for the accepted Candidate |
+| Review output is explicit | Review-eligible Candidates are buffered until `[DONE]` and explicit final acceptance; cancellation or failure releases no Candidate, and eligible `-x` requires both the flag and review acceptance |
+| Structured review response is validated | Review mode accepts the structured provider response only when its version, complete command, exact stage text, and model-written purpose data match the current Candidate; otherwise purpose status is `purpose-unavailable` |
 | Shortcut writes are atomic and marker-owned | A target must have zero markers or exactly one ordered marker pair; valid replacements use a same-directory temporary file and rename, while malformed targets are unchanged |
 | Permanent scenario titles are repository-wide unique | A behavior has one canonical owner in the active Gherkin tree; overlap findings are reviewed before archive rather than silently accumulated |
 

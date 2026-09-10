@@ -59,6 +59,19 @@ typed relationships, interaction mappings, behavior hashes, and coverage
 evidence are preserved during migrations. Historical archives remain immutable
 for active-corpus audits.
 
+## Interactive Review
+
+Interactive shell review can optionally add a small transient inline review
+surface after the existing progress line and a complete Candidate reaches
+`[DONE]`. It renders through the controlling-terminal channel, keeps the
+command-output channel separate, shows Command flow, exact Stage text, and
+model-written Stage purposes, and returns only after explicit acceptance. Ctrl-W
+still records the original Intent only on acceptance and replaces the shell
+line-editor buffer without evaluating it. Direct positional and interactive
+stdin requests retain the existing command-output behavior; eligible `-x`
+acceptance is the sole execution authorization, while disabled or non-review
+`-x` retains the existing confirmation.
+
 ## Archive Status
 
 The files in this directory describe the current architecture. Archived givn

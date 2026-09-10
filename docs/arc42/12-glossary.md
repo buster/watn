@@ -98,3 +98,18 @@
 | Ideation topic | A preserved exploratory topic that may be mapped to a stable use-case ID but is not silently promoted during migration |
 | Persona | A confirmed user perspective associated with ideation or a use case; absence is recorded rather than invented |
 | Handoff | An explicit decision to promote an ideation topic into a permanent use-case change |
+| Candidate | A selectable generated or directly edited command in the current review; not a generic result or answer |
+| Command flow | The visible syntactic structure of a candidate, including command stages and control-flow operators; not a pipeline map or semantic safety verdict |
+| Review surface | A transient terminal presentation for examining a proposal and its candidates; an overlay is only one possible presentation, not the domain boundary |
+| Review decision | An explicit developer action during review, such as accept, edit, reject, cancel, rephrase, or escalate; not a generic action |
+| Presentation adapter | A terminal-specific renderer that presents the review surface; not a generic handler |
+| Intent | The current natural-language request that produces a Candidate; a rephrase replaces the visible active Intent and direct command editing does not change it |
+| Stage text | The exact command text assigned to one visible Command flow stage; it is not a paraphrase or a generated explanation |
+| Stage purpose | Concise model-written advisory text explaining why one stage is present and what it contributes to the Intent; it is not a semantic safety verdict or locally invented text |
+| Purpose status | The review state `ready`, `loading`, or `purpose-unavailable` for model-written Stage purposes; `loading` is valid only for a structured response that supports delayed purposes |
+| Structured review response | The review-mode provider response containing `review_version`, a complete `command`, exact `stage_text` entries, model-written purposes or a supported delayed-purpose state, and `purpose_status` |
+| Command-output channel | The existing stdout channel carrying only the accepted Candidate for a review-eligible accepted direct path; it is not the controlling-terminal channel |
+| Controlling-terminal channel | The terminal descriptor used for the transient Review surface and ANSI cleanup; it never carries review text through stdout |
+| Shell line-editor buffer | The current editable command line owned by Bash Readline, Zsh ZLE, or Fish `commandline`; Watn changes it only after accepted Ctrl-W review |
+| Review outcome | The typed result `Accepted(candidate)`, `Cancelled`, or `Unavailable` returned by review; it is not shell execution authorization except for eligible `-x` after acceptance |
+| Review history | Candidate and prior-Intent state retained only during one current review; it is not persisted shell history |

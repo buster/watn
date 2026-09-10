@@ -38,6 +38,8 @@ graph TB
     CLI --> Shortcut
     Shortcut --> LineEditor
     LineEditor --> CLI
+    CLI --> Review[Review surface<br/>(Candidate state + panel)]
+    Review --> Output
 ```
 
 | Building block | Responsibility |
@@ -49,12 +51,16 @@ graph TB
 | Provider Setup | Guide explicit provider identity, endpoint, and credential selection in a TTY, validate input, return a typed result, migrate the selected provider to its canonical name at final confirmation, and restore the terminal on every exit |
 | Setup Wizard | Own the coordinated draft, focused provider/model/shell ranges, separate model/reasoning questions, catalog status, review, back-navigation, and shell desired state; no coordinated field is saved before final confirmation |
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
+| Review surface | Own review eligibility, buffered Candidate state, Command flow derivation, Purpose status, focus regions, acceptance/cancellation outcomes, and transient inline terminal rendering; never execute or write review-surface text to stdout |
+| Command flow | Split a Candidate conservatively into visible stages and operators, preserve exact Stage text, and mark unsupported portions without claiming semantic safety |
+| Structured review response | Validate the review-mode provider response, retain model-written Stage purposes, reject stale or mismatched purpose data, and expose `ready`, `loading`, or `purpose-unavailable` status |
 | Models | Resolve a provider-local catalog source; query list, page, and search endpoints with the provider credential; choose local filtering for complete catalogs and provider search for incomplete catalogs; offer catalog suggestions plus custom reasoning; return a typed setup result and persist roles without replacing provider-owned fields |
 | Exec | Use the already rendered aggregate command for confirmation and invoke `sh -c` only after successful stream completion; never reprint the command |
 | Completion | Parse the closed `CompletionShell` selector, derive scripts from the authoritative Clap command definition, render Bash/Elvish/Fish/PowerShell/Zsh, and write only successful script bytes to stdout |
 | Shell parser boundary | Consume an installed completion script; parser acceptance is verified separately for Bash, Elvish, Fish, PowerShell, and Zsh when the executable is available and is not a provider or configuration dependency |
 | Shell Shortcut | Resolve selected Bash/Zsh/Fish targets, generate native marked blocks, validate marker counts, replace existing blocks atomically, attempt targets independently, return per-target reports plus aggregate failure, and emit widgets that record the request as a `#`-prefixed history comment and leave only the generated command in the buffer without evaluation |
 | Line editor boundary | Bind Ctrl-W, read the complete current buffer, strip one leading `# ` comment prefix, call `command watn -- "$question"`, record the flattened request in the shell history, replace the buffer with the generated command using native line-editor APIs, and never evaluate the captured text |
+| Review preference | Resolve the per-invocation review override over persisted `[review]` configuration and the built-in enabled default; disabled or ineligible mode follows the existing output path |
 | Specification ownership | Treat active `.feature` files as one permanent behavior inventory; surface duplicate titles, shape matches, subsets, and long-scenario dispositions before archive. |
 
 ## Level 2 — Key building blocks

@@ -33,7 +33,10 @@ Top requirements:
 24. The Ctrl-W widget must record the original request as a `#`-prefixed history comment and replace the buffer with only the generated command while never evaluating the command
 25. The permanent Gherkin tree must have one canonical owner for each scenario
     behavior; redundant scenarios are removed only with an auditable retained
-    contract and the complete runner remains green
+     contract and the complete runner remains green
+37. An enabled interactive request may open a small transient inline review surface after a complete candidate reaches `[DONE]`; the surface shows command flow, exact stage text, and model-written advisory stage purposes, supports refinement, and releases a command only after explicit acceptance
+38. Ctrl-W review preserves the original request in shell history, replaces the shell line-editor buffer only with the accepted Candidate, and never evaluates review output
+39. Review-mode output is buffered until `[DONE]`; review-surface bytes use the controlling-terminal channel and never stdout, while direct positional, interactive-stdin, and eligible `-x` consumers retain their existing output boundaries
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 
@@ -52,6 +55,7 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | 9 | Completion fidelity and script safety | Completion output must match the authoritative command tree, remain byte-for-byte deterministic, parse in its target shell, and never initialise configuration or contact a provider |
 | 10 | Shell integration safety | Shortcut installation must preserve user startup files, be idempotent, report independent target failures, and insert generated text without evaluation |
 | 11 | Specification maintainability | Repository-wide scenario ownership, explicit consolidation dispositions, and a green post-archive suite prevent additive redundancy |
+| 12 | Interactive command comprehension | A compact review surface makes complex command structure and Candidate choice visible without changing the existing shell shortcut safety boundary |
 
 ## Stakeholders
 
@@ -63,3 +67,4 @@ See `givn/specs/` for the permanent executable Gherkin specifications.
 | Test maintainer | Run deterministic local-provider scenarios without changing release-binary behavior or persisted user configuration |
 | Release maintainer | Verify package version output and target-dependent runtime-library requirements before distribution |
 | Shell user | Install or source a generated completion script, or opt into a Bash, Zsh, or Fish Ctrl-W widget that inserts a command without executing it |
+| Terminal developer | Review a generated candidate inline, refine or compare it, and accept it into the shell without leaving terminal context |

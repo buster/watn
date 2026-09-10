@@ -59,6 +59,24 @@ Elapsed time starts at the first non-DONE data event, before JSON decoding, and
 ends when `[DONE]` is observed. A client may complete and drop the response
 without waiting for the server to close its connection after `[DONE]`.
 
+## Review-mode amendment
+
+Review-eligible requests use the same synchronous provider callback and the
+same `[DONE]` completion boundary with a mode-specific buffered sink. The sink
+assembles the complete Candidate without writing Candidate text to stdout. The
+existing progress line remains the first feedback, and the review surface opens
+only after `[DONE]` and Candidate validation. The review surface uses the
+controlling-terminal channel, never stdout.
+
+Only explicit final review acceptance releases the selected Candidate. Ctrl-W
+then records the original Intent and replaces the shell line-editor buffer
+through the existing widget; direct positional and interactive-stdin requests
+write only the accepted Candidate through the existing command-output channel;
+eligible `-x` uses review acceptance as its sole execution authorization. A
+cancelled, rejected, failed, empty, or unavailable review releases no Candidate.
+Disabled and non-review requests retain the incremental output and existing
+`Execute now?` confirmation behavior described above.
+
 ## Consequences
 
 - Good: users see command content and spinner cleanup before a slow response ends
@@ -66,10 +84,14 @@ without waiting for the server to close its connection after `[DONE]`.
 - Good: malformed nonessential events do not erase valid content
 - Good: partial output remains available for diagnosis without being executed
 - Good: one CLI owner avoids channel lifecycle and cross-thread stderr races
+- Good: review-surface bytes cannot contaminate stdout, and final acceptance is
+  a single release and execution gate for eligible review paths
 - Bad: providers that omit `[DONE]` now produce a non-zero truncation error
 - Bad: verbose reasoning is delayed until successful completion rather than shown progressively
 - Bad: one blocking consumer couples provider read progress to stdout write speed
 - Bad: callback and terminal failures require careful cleanup and exact-once tests
+- Bad: review-eligible requests do not expose Candidate bytes incrementally and
+  therefore depend on the existing progress line for generation feedback
 
 ## Confirmation
 
@@ -78,4 +100,7 @@ buffered reasoning absence before completion, completion before a held connectio
 closes, EOF-without-DONE status 3, mid-stream cleanup and no execution, usage-only
 response-model accounting, exact-once command/execution lines, and controlled
 I/O failure status 1. Direct parser and spinner lifecycle tests supplement the
-real CLI scenarios.
+real CLI scenarios. Review-mode scenarios additionally verify that the buffered
+sink releases no Candidate before `[DONE]` or final acceptance, that the
+controlling-terminal channel remains separate from stdout, and that disabled and
+non-review paths retain the incremental output and confirmation contracts.

@@ -94,7 +94,13 @@ printed only under `-v`, and the final aggregate is not printed again. `[DONE]`
 is mandatory; truncation and read failures preserve visible content but skip
 metadata and execution, while output write/flush failures use the existing I/O
 status. Completion timing begins at the first non-DONE data event and does not
-wait for a post-DONE connection close.
+wait for a post-DONE connection close. The `use-explanatory-shell-shortcut`
+change amends this record: review-eligible requests use the same synchronous
+callback and `[DONE]` boundary with a buffered Candidate sink, keep the progress
+line first, render the review surface through the controlling-terminal channel,
+and release exactly one Candidate only after explicit final acceptance.
+Disabled and non-review paths retain the original incremental output and
+`Execute now?` confirmation. This is an amendment to ADR-0015, not a new ADR.
 
 ## ADR-0016 summary
 

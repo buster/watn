@@ -52,7 +52,14 @@
   - QS-051: The widget preserves the buffer on empty, failed, or empty results
    - QS-052: The widget inserts successful output without evaluating it
    - QS-055: The widget records the original request as a `#`-prefixed history comment, leaves only the generated command in the buffer, and only the generated command runs on Enter
-   - QS-056: Recalled history comments can be edited and re-asked because the widget strips one leading `# ` comment prefix
+    - QS-056: Recalled history comments can be edited and re-asked because the widget strips one leading `# ` comment prefix
+   - QS-067: Eligible review displays a small inline review surface after the existing progress line and a complete Candidate reaches `[DONE]`, without entering the alternate screen
+   - QS-068: Review-surface text remains outside stdout and accepted output is released only after explicit acceptance
+   - QS-069: Cancelled, rejected, failed, or unavailable review preserves the original shell/input state and releases no Candidate
+   - QS-070: Review focus cycles Flow, Candidates, and Actions; direct editing commits with Enter and discards with Escape
+   - QS-071: Enhanced Presentation adapter failure falls back to the portable inline panel
+   - QS-072: Structured review responses retain model-written Stage purposes and show purpose-unavailable for unsupported or invalid responses
+   - QS-073: Eligible `-x` review acceptance is the sole execution authorization; disabled and non-review `-x` retains confirmation
 
 ## Quality scenarios
 
@@ -124,3 +131,10 @@
 | QS-064 | Specification correctness | A consolidation archives removed and added scenarios | The permanent tree has no duplicate scenario titles, the full runner remains green, and no runtime CLI behavior changes |
 | QS-065 | Specification ownership | A weaker scenario is subsumed by a stronger scenario | The weaker scenario is absent after archive, the retained scenario remains executable, and the review records the retained contract |
 | QS-066 | Specification migration integrity | The active corpus is migrated or verified under the current Givn contract | Every capability has one resolvable use-case/fragment owner; behavior hashes and E2E/interaction mappings are unchanged, and source line/branch coverage does not regress unless an explicit ledger retirement records the difference |
+| QS-067 | Shell integration / Usability | User invokes eligible Ctrl-W review with the panel enabled | Existing progress appears first; after `[DONE]` a small transient inline review surface follows without alternate-screen sequences |
+| QS-068 | Shell integration / Safety | User accepts or cancels a reviewed Candidate | Review-surface text is absent from stdout; acceptance releases one Candidate only after cleanup and cancellation releases none |
+| QS-069 | Shell integration / Recovery | Provider, purpose, flow, or renderer fails during review | Initial generation failure releases none; selected Candidate survives purpose failure; enhanced failure retries inline; portable failure preserves input and releases none |
+| QS-070 | Shell integration / Usability | User navigates and edits the review surface | Tab cycles Flow, Candidates, Actions; Shift-Tab reverses; arrows navigate; review Enter activates; editor Enter commits and editor Escape discards; review Escape cancels |
+| QS-071 | Shell integration / Portability | Enhanced Presentation adapter is unavailable | The portable inline review surface opens with the same Candidate and review outcomes |
+| QS-072 | Shell integration / Correctness | Provider returns ready, delayed, command-only, invalid, or stale review response data | Ready data displays exact Stage text and model-written purposes; valid delayed data displays loading then purposes; other cases display purpose-unavailable without inventing purpose text |
+| QS-073 | Shell integration / Safety | User accepts eligible `-x`, disables review, or uses non-review `-x` | Eligible acceptance executes once without a second confirmation; disabled and non-review paths retain the existing `Execute now?` confirmation |

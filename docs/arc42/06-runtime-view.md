@@ -88,6 +88,119 @@ sequenceDiagram
 7. Print metadata: response model, tokens/sec, cost (if pricing configured)
 8. Exit 0; the command is not printed again from the final aggregate
 
+## Scenario: Review and accept an interactive Candidate
+
+**Trigger:** The user invokes an eligible interactive request or presses Ctrl-W
+with the explanatory review surface enabled.
+
+```mermaid
+sequenceDiagram
+    participant User as Terminal developer
+    participant Editor as Shell line editor
+    participant CLI as watn
+    participant Provider
+    participant Panel as Inline review surface
+    participant Output as Command output
+
+    User->>Editor: Ctrl-W or submit interactive question
+    Editor->>CLI: question plus review context
+    CLI->>Provider: stream Candidate
+    CLI-->>User: existing progress line
+    Provider-->>CLI: complete structured response at [DONE]
+    CLI->>CLI: validate response and derive Command flow
+    CLI->>Panel: show Candidate and Command flow
+    Panel-->>User: exact Stage text, purposes/status, focus regions, actions
+    opt structured response supports delayed purposes
+        Panel-->>User: loading status, then updated model-written purposes
+    else command-only or invalid structured response
+        Panel-->>User: purpose-unavailable status
+    end
+    User->>Panel: navigate, edit, rephrase, compare, or escalate
+    Panel-->>Panel: refresh current candidate state
+    User->>Panel: final acceptance
+    Panel->>Output: accepted Candidate only after cleanup
+    Panel-->>Editor: restore prompt and return candidate
+    Editor-->>User: history comment and accepted buffer
+```
+
+Cancellation, portable-panel failure, empty output, generation failure, and
+rejection release no Candidate. A structured-response or purpose failure keeps
+the selected Candidate reviewable with `purpose-unavailable`; incomplete flow
+keeps raw text and marks unsupported portions. An enhanced Presentation adapter
+failure retries the portable inline panel. Active eligible `-x` consumes
+acceptance as its sole execution authorization; disabled or non-review `-x`
+retains the existing confirmation prompt.
+
+## Scenario: Review Candidate lifecycle
+
+The review surface owns one selected Candidate and process-local current-review
+history. Regeneration replaces the Candidate unless comparison retention was
+explicit. Rephrase replaces the visible Intent and starts a new Candidate cycle;
+the prior Intent remains only in current-review history. Rejection returns to the
+current Intent without releasing a Candidate. A higher-tier request uses the
+next configured tier; at the highest tier it opens the existing provider catalog
+picker and applies one explicit model to the next Candidate only. Interrupting
+generation, purpose refresh, or model selection cancels only that operation and
+preserves the selected Candidate and review state.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Generating
+    Generating --> Buffered: [DONE] and complete Candidate
+    Generating --> [*]: provider failure or empty Candidate
+    Buffered --> Reviewing: structured response validated
+    Buffered --> Reviewing: command-only or invalid response / purpose-unavailable
+    Reviewing --> Editing: Edit command + Enter
+    Editing --> Reviewing: Enter commits refreshed Candidate
+    Editing --> Reviewing: Escape discards edit
+    Reviewing --> Generating: Rephrase, regenerate, or higher tier
+    Reviewing --> ModelSelection: highest tier + higher tier
+    ModelSelection --> Generating: explicit provider model selected
+    Reviewing --> Reviewing: retain, compare, select, reject, or purpose update
+    Reviewing --> Accepted: final acceptance
+    Reviewing --> Cancelled: Escape or portable panel failure
+    Generating --> Reviewing: interrupted operation with selected Candidate
+    ModelSelection --> Reviewing: interrupted operation with selected Candidate
+    Accepted --> [*]: route one Candidate after cleanup
+    Cancelled --> [*]: preserve original input and release none
+```
+
+Final acceptance is the only transition that releases a Candidate. The
+controlling-terminal surface is removed and the terminal restored before
+routing to stdout, the shell line-editor buffer, or the execution boundary.
+
+## Scenario: Review channel routing and failure outcomes
+
+```mermaid
+sequenceDiagram
+    participant Editor as Shell line editor
+    participant CLI as Watn
+    participant TTY as Controlling-terminal channel
+    participant Out as Command-output channel
+    participant Exec as Existing execution boundary
+
+    Editor->>CLI: Intent plus review context
+    CLI->>TTY: Progress line first
+    CLI->>TTY: Review surface after [DONE]
+    alt Cancel, reject, or unavailable
+        CLI-->>Editor: Preserve original input; release none
+    else Ctrl-W accepted
+        CLI->>TTY: Remove surface and restore terminal
+        CLI->>Out: Accepted Candidate only
+        Out-->>Editor: Candidate for shell line-editor buffer
+        Editor->>Editor: Record history after acceptance and repaint
+    else Direct positional or interactive stdin accepted
+        CLI->>TTY: Remove surface and restore terminal
+        CLI->>Out: Accepted Candidate only
+    else Eligible -x accepted
+        CLI->>TTY: Remove surface and restore terminal
+        CLI->>Exec: Authorize exactly one execution
+    end
+```
+
+Review-surface bytes never use stdout. Disabled or non-review paths bypass this
+routing and retain the existing incremental output or `Execute now?` confirmation.
+
 ## Scenario: Generate a shell completion script
 
 **Trigger:** A caller runs `watn completions <SHELL>` for `bash`, `zsh`, or
