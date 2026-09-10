@@ -4,6 +4,7 @@ mod flow;
 mod panel;
 mod response;
 mod routing;
+pub mod session;
 
 pub use buffer::ReviewBuffer;
 pub use card::{color_terminal_supports_card, render_card_lines, terminal_supports_color};

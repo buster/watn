@@ -3136,3 +3136,88 @@ fn review_model_chooser_field(world: &mut WatnWorld) {
     );
     assert_review_rendered_contains(world, "esc close");
 }
+
+const REVIEW_TIER_RESPONSE: &str = r#"{"review_version":1,"command":"df -h --all","stages":[{"stage_text":"df -h --all","purpose":"Show all disk usage."}],"purpose_status":"ready"}"#;
+
+fn regenerate_through_session(
+    world: &mut WatnWorld,
+    tier: &str,
+    model: &str,
+    response: &str,
+) -> watn::review::ReviewCandidate {
+    world.pending_mock_output = Some(response.to_string());
+    world.pending_mock_model = Some(model.to_string());
+    world.pending_mock_usage = Some(false);
+    if world.mock_server.0.is_none() {
+        super::ensure_test_env(world);
+    }
+    let server = world.mock_server.0.as_ref().expect("mock provider twin");
+    let endpoint = format!("http://127.0.0.1:{}", server.port());
+    let intent = world.review.intent.clone();
+    let model_owned = model.to_string();
+    // The blocking provider owns an internal runtime; run and drop it on a
+    // dedicated thread so the test runtime never drops it in an async context.
+    let candidate = std::thread::spawn(move || {
+        let interrupt = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let provider = watn::provider::openai_compat::OpenAICompatibleProvider::new(
+            endpoint,
+            "test-key".to_string(),
+            std::sync::Arc::clone(&interrupt),
+        );
+        let messages = vec![
+            watn::provider::Message {
+                role: "system".to_string(),
+                content: "review engine".to_string(),
+            },
+            watn::provider::Message {
+                role: "user".to_string(),
+                content: intent,
+            },
+        ];
+        let options = watn::provider::RequestOptions {
+            model: model_owned,
+            temperature: None,
+            max_tokens: None,
+            reasoning_effort: None,
+        };
+        let generation = watn::review::session::generate_candidate(
+            &provider, &messages, &options, &interrupt, None,
+        )
+        .expect("regeneration must reach the provider twin");
+        watn::review::session::parse_generated_candidate(&generation)
+            .expect("regenerated response must parse into a candidate")
+    })
+    .join()
+    .expect("regeneration thread panicked");
+    panel_mut(world).apply_regeneration(tier.to_string(), model.to_string(), candidate.clone());
+    candidate
+}
+
+#[when("I reject the candidate and choose the normal tier")]
+fn review_reject_and_choose_normal_tier(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('r')));
+    assert_eq!(outcome, watn::review::PanelOutcome::RejectRequested);
+    panel_mut(world).open_model_chooser(chooser_tier_choices(), Vec::new());
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('2')));
+    let watn::review::PanelOutcome::RegenerateWith { tier, model } = outcome else {
+        panic!("the normal tier key must request regeneration, got {outcome:?}");
+    };
+    assert_eq!((tier.as_str(), model.as_str()), ("2", "review-model-2"));
+    regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
+    render_surface(world);
+}
+
+#[then("a new candidate should be generated at the normal tier")]
+fn review_new_candidate_normal_tier(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.tier, "2");
+    assert_eq!(panel.candidate().command, "df -h --all");
+    assert_review_rendered_contains(world, "df -h --all");
+}
+
+#[then("its provider and model should be visible")]
+fn review_provider_model_visible(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.model, "review-model-2");
+    assert_review_rendered_contains(world, "loopback/review-model-2");
+}

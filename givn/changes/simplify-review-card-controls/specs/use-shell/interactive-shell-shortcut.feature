@@ -82,7 +82,7 @@ Feature: Simplified review card controls
     And no candidate should be released
     And the current intent should remain "show disk usage"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A configured tier can be chosen with its number
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

@@ -390,43 +390,68 @@ fn main() {
         CommandSink::Stream(render::StreamRenderer::new(io::stdout()))
     };
 
-    let (stream_result, mut spinner, mut sink) = {
+    let (stream_result, mut spinner, mut sink) = if review_enabled {
+        let provider = registry
+            .get(provider_name)
+            .expect("the active provider is registered");
+        let generation = watn::review::session::generate_candidate(
+            provider,
+            &messages,
+            &options,
+            &interrupt,
+            spinner.take(),
+        );
+        match generation {
+            Ok(generation) => (
+                Ok(generation.response),
+                None,
+                CommandSink::Review(generation.buffer),
+            ),
+            Err(error) => (
+                Err(error),
+                None,
+                CommandSink::Review(watn::review::ReviewBuffer::new()),
+            ),
+        }
+    } else {
         let worker_provider_name = provider_name.to_string();
         let worker_messages = messages;
         let worker_options = options;
-        let stream_handle = std::thread::spawn(move || {
-            let provider = registry.get(&worker_provider_name).unwrap();
-            let result = {
-                let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
-                    match event {
-                        StreamEvent::Content(content) if !content.is_empty() => {
-                            if let Some(active_spinner) = spinner.take() {
-                                active_spinner.finish();
-                            }
-
-                            match &mut sink {
-                                CommandSink::Stream(output) => {
-                                    output
-                                        .write_content(&content)
-                                        .map_err(watn::error::Error::IoError)?;
+        std::thread::scope(|scope| {
+            let stream_handle = scope.spawn(|| {
+                let provider = registry.get(&worker_provider_name).unwrap();
+                let result = {
+                    let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
+                        match event {
+                            StreamEvent::Content(content) if !content.is_empty() => {
+                                if let Some(active_spinner) = spinner.take() {
+                                    active_spinner.finish();
                                 }
-                                CommandSink::Review(buffer) => buffer.receive(&content),
-                            }
-                        }
-                        StreamEvent::Content(_) => {}
-                    }
-                    Ok(())
-                };
 
-                provider.chat_completions_streaming(
-                    &worker_messages,
-                    &worker_options,
-                    &mut emit_content,
-                )
-            };
-            (result, spinner, sink)
-        });
-        wait_for_stream_result(stream_handle, &interrupt)
+                                match &mut sink {
+                                    CommandSink::Stream(output) => {
+                                        output
+                                            .write_content(&content)
+                                            .map_err(watn::error::Error::IoError)?;
+                                    }
+                                    CommandSink::Review(buffer) => buffer.receive(&content),
+                                }
+                            }
+                            StreamEvent::Content(_) => {}
+                        }
+                        Ok(())
+                    };
+
+                    provider.chat_completions_streaming(
+                        &worker_messages,
+                        &worker_options,
+                        &mut emit_content,
+                    )
+                };
+                (result, spinner, sink)
+            });
+            wait_for_scoped_result(stream_handle, &interrupt)
+        })
     };
 
     match stream_result {
@@ -440,6 +465,12 @@ fn main() {
                 CommandSink::Review(mut buffer) => {
                     buffer.complete();
                     run_review_path(
+                        &registry,
+                        provider_name,
+                        &provider_config.endpoint,
+                        provider_config.catalog_endpoint.as_deref(),
+                        Some(api_key.as_str()),
+                        &interrupt,
                         &response,
                         &buffer,
                         &intent,
@@ -629,6 +660,12 @@ fn run_explanation_card(
 
 #[allow(clippy::too_many_arguments)]
 fn run_review_path(
+    registry: &ProviderRegistry,
+    provider_name: &str,
+    endpoint: &str,
+    catalog_endpoint: Option<&str>,
+    api_key: Option<&str>,
+    interrupt: &Arc<AtomicBool>,
     response: &StreamingResponse,
     buffer: &watn::review::ReviewBuffer,
     intent: &str,
@@ -681,7 +718,45 @@ fn run_review_path(
         std::process::exit(1);
     }
 
+    let mut accepted_response = response.clone();
+    let review_messages = vec![
+        Message {
+            role: "system".to_string(),
+            content: review_system_prompt(),
+        },
+        Message {
+            role: "user".to_string(),
+            content: intent.to_string(),
+        },
+    ];
+    let mut catalog_receiver: Option<std::sync::mpsc::Receiver<(u64, Vec<String>)>> = None;
+    let mut catalog_request: u64 = 0;
+
     let accepted = loop {
+        if let Some(receiver) = &catalog_receiver {
+            match receiver.try_recv() {
+                Ok((request_id, models)) => {
+                    panel.state.set_catalog(request_id, models);
+                    catalog_receiver = None;
+                    if let Err(error) = panel.render() {
+                        eprintln!("review unavailable: {error}");
+                        std::process::exit(1);
+                    }
+                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => catalog_receiver = None,
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            }
+        }
+        let ready = match crossterm::event::poll(std::time::Duration::from_millis(50)) {
+            Ok(ready) => ready,
+            Err(error) => {
+                eprintln!("review unavailable: {error}");
+                std::process::exit(1);
+            }
+        };
+        if !ready {
+            continue;
+        }
         let key = match crossterm::event::read() {
             Ok(crossterm::event::Event::Key(key)) => key,
             Ok(_) => continue,
@@ -711,6 +786,79 @@ fn run_review_path(
                     }
                 }
             }
+            Ok(watn::review::PanelOutcome::RejectRequested) => {
+                let tiers = watn::review::session::chooser_tiers(config);
+                panel.state.open_model_chooser(tiers, Vec::new());
+                catalog_request += 1;
+                let request_id = catalog_request;
+                panel.state.begin_catalog_load(request_id);
+                if let Err(error) = panel.render() {
+                    eprintln!("review unavailable: {error}");
+                    std::process::exit(1);
+                }
+                let (sender, receiver) = std::sync::mpsc::channel();
+                catalog_receiver = Some(receiver);
+                let endpoint = endpoint.to_string();
+                let catalog_endpoint = catalog_endpoint.map(str::to_string);
+                let api_key = api_key.map(str::to_string);
+                std::thread::spawn(move || {
+                    let models = watn::review::session::fetch_catalog(
+                        &endpoint,
+                        catalog_endpoint.as_deref(),
+                        api_key.as_deref(),
+                    );
+                    let _ = sender.send((request_id, models));
+                });
+            }
+            Ok(watn::review::PanelOutcome::RegenerateWith { tier, model }) => {
+                let provider = match registry.get(provider_name) {
+                    Ok(provider) => provider,
+                    Err(error) => {
+                        panel.state.set_regeneration_error(error.to_string());
+                        let _ = panel.render();
+                        continue;
+                    }
+                };
+                let options = RequestOptions {
+                    model: model.clone(),
+                    temperature: None,
+                    max_tokens: None,
+                    reasoning_effort: config.tiers.reasoning.effort(Some(&tier)),
+                };
+                panel
+                    .state
+                    .begin_operation(watn::review::ReviewOperation::Regeneration);
+                let spinner = Some(watn::output::spinner::Spinner::start(&model));
+                match watn::review::session::generate_candidate(
+                    provider,
+                    &review_messages,
+                    &options,
+                    interrupt,
+                    spinner,
+                ) {
+                    Ok(generation) => {
+                        match watn::review::session::parse_generated_candidate(&generation) {
+                            Some(candidate) => {
+                                panel.state.apply_regeneration(
+                                    tier.clone(),
+                                    model.clone(),
+                                    candidate,
+                                );
+                                accepted_response = generation.response;
+                            }
+                            None => panel
+                                .state
+                                .set_regeneration_error("no complete command candidate"),
+                        }
+                    }
+                    Err(error) => panel.state.set_regeneration_error(error.to_string()),
+                }
+                panel.state.interrupt_operation();
+                if let Err(error) = panel.render() {
+                    eprintln!("review unavailable: {error}");
+                    std::process::exit(1);
+                }
+            }
             Ok(_) => {}
             Err(error) => {
                 eprintln!("review unavailable: {error}");
@@ -726,28 +874,31 @@ fn run_review_path(
     {
         use std::io::Write as _;
         if verbose {
-            if let Some(reasoning) = &response.reasoning_content {
+            if let Some(reasoning) = &accepted_response.reasoning_content {
                 if !reasoning.trim().is_empty() {
                     let _ = render::print_reasoning(reasoning);
                 }
             }
         }
 
-        let cost = config.pricing.get(&response.model).map(|p| {
+        let cost = config.pricing.get(&accepted_response.model).map(|p| {
             let input_cost = p.input
-                * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
+                * accepted_response
+                    .final_usage
+                    .as_ref()
+                    .map_or(0, |u| u.prompt_tokens) as f64
                 / 1_000_000.0;
             let output_cost = p.output
-                * response
+                * accepted_response
                     .final_usage
                     .as_ref()
                     .map_or(0, |u| u.completion_tokens) as f64
                 / 1_000_000.0;
             input_cost + output_cost
         });
-        let elapsed = response.elapsed_secs;
+        let elapsed = accepted_response.elapsed_secs;
         let tok_s = if elapsed > 0.0 {
-            response
+            accepted_response
                 .final_usage
                 .as_ref()
                 .map_or(0.0, |u| u.completion_tokens as f64)
@@ -755,7 +906,7 @@ fn run_review_path(
         } else {
             0.0
         };
-        let _ = render::print_metadata(&response.model, tok_s, cost, elapsed);
+        let _ = render::print_metadata(&accepted_response.model, tok_s, cost, elapsed);
 
         // Eligible `-x`: final acceptance is the sole execution authorization.
         // The accepted candidate is not printed to the command-output channel
@@ -773,10 +924,10 @@ fn run_review_path(
     std::process::exit(0);
 }
 
-fn wait_for_stream_result(
-    handle: std::thread::JoinHandle<StreamOutcome>,
+fn wait_for_scoped_result<T>(
+    handle: std::thread::ScopedJoinHandle<'_, T>,
     interrupt: &AtomicBool,
-) -> StreamOutcome {
+) -> T {
     const GRACE: std::time::Duration = std::time::Duration::from_millis(500);
     const POLL: std::time::Duration = std::time::Duration::from_millis(20);
 
@@ -790,7 +941,6 @@ fn wait_for_stream_result(
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
             if !handle.is_finished() {
-                drop(handle);
                 std::process::exit(130);
             }
             return handle.join().expect("stream worker panicked");
