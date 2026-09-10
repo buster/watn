@@ -245,7 +245,7 @@ Feature: Explanatory interactive shell shortcut
     Then the next candidate should use "model-b"
     And the selected model should apply only to the next candidate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rejected candidate returns to the current intent
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with current input "show disk usage"

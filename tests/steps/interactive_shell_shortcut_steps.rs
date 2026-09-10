@@ -2298,3 +2298,44 @@ fn review_model_oneshot(world: &mut WatnWorld) {
     );
     assert!(panel.model_selection().is_none(), "selection is closed");
 }
+
+#[when("I reject the selected candidate")]
+fn review_reject_candidate(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.focus = watn::review::FocusRegion::Actions;
+    panel.action_cursor = 2;
+    assert_eq!(panel.selected_action(), watn::review::PanelAction::Reject);
+    let outcome = panel.handle_key(key(crossterm::event::KeyCode::Enter));
+    assert_eq!(outcome, watn::review::PanelOutcome::Rejected);
+    world.review.panel_outcome = Some(outcome);
+    render_surface(world);
+}
+
+#[then("no candidate should be released")]
+fn review_nothing_released(world: &mut WatnWorld) {
+    assert!(
+        world.review.released.is_none(),
+        "rejection must release no candidate"
+    );
+    assert!(
+        world.review.command_output.is_empty(),
+        "command-output channel must stay empty"
+    );
+}
+
+#[then(expr = "the current intent should remain {string}")]
+fn review_current_intent_remains(world: &mut WatnWorld, intent: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.intent, intent);
+    assert_review_rendered_contains(world, &format!("intent: {intent}"));
+}
+
+#[then("the review should offer regeneration or rephrasing")]
+fn review_offer_regeneration(world: &mut WatnWorld) {
+    assert!(world.review.surface_open, "review must stay available");
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+    assert_eq!(panel.focus, watn::review::FocusRegion::Actions);
+    assert_review_rendered_contains(world, "Accept candidate");
+    assert_review_rendered_contains(world, "Cancel review");
+}
