@@ -216,7 +216,7 @@ Feature: Explanatory interactive shell shortcut
     And the prior intent should remain only in current-review history
     And the prior candidate should not be accepted by the new cycle
 
-  @givn.added @wip
+  @givn.added
   Scenario: Regeneration replaces the current candidate by default
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with current input "show disk usage"

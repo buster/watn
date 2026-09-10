@@ -2166,3 +2166,32 @@ fn review_prior_candidate_not_accepted(world: &mut WatnWorld) {
         outcome => panic!("the new cycle must accept only its own candidate, got {outcome:?}"),
     }
 }
+
+const REVIEW_REGENERATED_COMMAND: &str = "df -h --all";
+
+#[when("I regenerate the candidate")]
+fn review_regenerate_candidate(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    let replacement = watn::review::ReviewCandidate::from_command(REVIEW_REGENERATED_COMMAND);
+    panel.replace_current(replacement);
+    render_surface(world);
+}
+
+#[then("a replacement candidate should be shown for the same intent")]
+fn review_replacement_for_intent(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, REVIEW_REGENERATED_COMMAND);
+    assert_eq!(panel.context.intent, "show disk usage");
+    assert_review_rendered_contains(world, REVIEW_REGENERATED_COMMAND);
+}
+
+#[then("the prior candidate should not be retained unless comparison was requested")]
+fn review_prior_not_retained(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidates.len(),
+        1,
+        "default regeneration replaces the prior candidate"
+    );
+    assert_ne!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+}
