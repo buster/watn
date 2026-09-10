@@ -388,26 +388,26 @@ Domain constraints:
 
 - The editor keeps the original intent; navigation clamps at the boundaries.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The command editor moves the insertion point with arrows and Home and End'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 5 steps (4 passed, 1 failed); the insertion-point stub panicked.
   ```
-- [ ] GREEN: Add `editor_cursor` and the move/insert helpers; render the caret
+- [x] GREEN: Add `editor_cursor` and the move/insert helpers; render the caret
   at the insertion point. Compile and run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (`editor_cursor`, move/insert/delete helpers, shared `char_index_to_byte`), `src/review/card.rs` (caret at the insertion point), `tests/steps/interactive_shell_shortcut_steps.rs` (bindings).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The command editor moves the insertion point with arrows and Home and End'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 11 steps (11 passed); full regular 207/207; lib 71 passed.
   ```
-- [ ] REFACTOR: Keep one char-indexed editing helper set. Rerun the exact
+- [x] REFACTOR: Keep one char-indexed editing helper set. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'The command editor moves the insertion point with arrows and Home and End'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 11 steps (11 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The command editor moves the insertion point with arrows and Home and End
+- [x] COMMIT: `69ec4221e4dad5791e3cf033d1406a23537b046a` - feat(interactive-shell-shortcut): The command editor moves the insertion point with arrows and Home and End
 
 ### Backspace and Delete remove text at the insertion point
 
