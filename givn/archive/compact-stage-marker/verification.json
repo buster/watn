@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "compact-stage-marker",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_commit": "8121fe925ecd94d3e445ec422d5c1b7e92eea289",
+  "tested_commit": "8121fe925ecd94d3e445ec422d5c1b7e92eea289",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 82,
+      "passed": 82,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 53.728880567
+    },
+    "regular": {
+      "status": "passed",
+      "total": 212,
+      "passed": 212,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 42.046333016
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 18121,
+    "line_valid": 19664,
+    "line_percent": 92
+  },
   "started_at_unix": 1789068140,
-  "finished_at_unix": null
+  "finished_at_unix": 1789068386
 }
