@@ -398,13 +398,17 @@ pub fn render_card_lines(
 
     content.push((10, String::new()));
     let hints = if state.input_mode == super::panel::PanelInputMode::CommandEditor {
-        "⏎ commit · esc discard".to_string()
+        ink.dim("⏎ commit · esc discard")
     } else if state.explain_only {
-        "esc close".to_string()
+        ink.dim("esc close")
     } else {
-        "◂▸ stages · ⏎ accept · e edit · d disable · esc cancel".to_string()
+        format!(
+            "{} · {}",
+            ink.green("⏎/a accept"),
+            ink.dim("e edit · r reject · c cancel · d disable · esc cancel")
+        )
     };
-    content.push((30, ink.dim(&hints)));
+    content.push((30, hints));
 
     let available = max_rows.saturating_sub(2).max(3);
     while content.len() > available {

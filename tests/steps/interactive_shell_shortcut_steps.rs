@@ -2955,3 +2955,28 @@ fn review_no_focus_region(world: &mut WatnWorld) {
         );
     }
 }
+
+#[then(expr = "the review surface should show {string}")]
+fn review_surface_shows(world: &mut WatnWorld, needle: String) {
+    assert_review_rendered_contains(world, &needle);
+}
+
+#[then("accept should be shown as the default decision")]
+fn review_accept_is_default(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    let green = "\u{1b}[38;5;114m";
+    let mut found = false;
+    let mut rest = rendered.as_str();
+    while let Some(index) = rest.find(green) {
+        let tail = &rest[index + green.len()..];
+        if tail.starts_with("⏎/a accept") {
+            found = true;
+            break;
+        }
+        rest = tail;
+    }
+    assert!(
+        found,
+        "the accept hint should be painted as the default decision, got:\n{rendered}"
+    );
+}

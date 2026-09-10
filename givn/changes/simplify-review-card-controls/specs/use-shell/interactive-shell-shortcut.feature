@@ -37,7 +37,7 @@ Feature: Simplified review card controls
     And its stage purpose should be visible
     And no focus region should be shown
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review card exposes the direct decision shortcuts
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

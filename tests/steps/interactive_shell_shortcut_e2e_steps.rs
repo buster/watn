@@ -197,7 +197,7 @@ fn marker_value_last(output: &str, marker: &str) -> String {
 #[when("I accept the selected candidate in the review surface")]
 fn e2e_accept_candidate(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("e2e bash PTY session");
-    pty_wait_for_label(session, "⏎ accept");
+    pty_wait_for_label(session, "accept ·");
     pty_write(session, "\r");
     let output = pty_wait_for_label(session, "HIST<<");
     let line = marker_value_first(&output, "LINE<<");
@@ -243,7 +243,7 @@ fn e2e_current_command_line(world: &mut WatnWorld, line: String) {
 #[when("I cancel the review surface")]
 fn e2e_cancel_review(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("e2e bash PTY session");
-    pty_wait_for_label(session, "⏎ accept");
+    pty_wait_for_label(session, "accept ·");
     pty_write(session, "\x1b");
     let output = pty_wait_for_label(session, "HIST<<");
     let line = marker_value_first(&output, "LINE<<");
@@ -319,7 +319,7 @@ pub(crate) fn run_eligible_x_review(world: &mut WatnWorld, question: String) {
 #[when("I accept the candidate in the review surface")]
 fn e2e_accept_direct_candidate(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("e2e direct PTY session");
-    pty_wait_for_label(session, "⏎ accept");
+    pty_wait_for_label(session, "accept ·");
     pty_write(session, "\r");
     let session = world.pty_session.take().expect("e2e direct PTY session");
     let _ = finish_pty_session(world, session);
