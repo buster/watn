@@ -1,4 +1,3 @@
-<!-- givn:base-sha256:4b6d900ba6c894cfcbbf3713fa1f4bcadedee5814ebc8b490db094fcf4ce78ac -->
 # Use case: use-shell
 
 ## Level
@@ -96,15 +95,20 @@ evaluation.
 ## Capabilities
 
 - interactive-shell-shortcut
+- shell-completions
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
+| interactive-shell-shortcut | validate generated shell configuration | Generated Bash, Zsh, and Fish configurations pass shell syntax checks |
+| interactive-shell-shortcut | inspect generated Bash widget | The generated Bash widget keeps the request visible and does not evaluate the command |
+| interactive-shell-shortcut | use Fish Ctrl-W shortcut | Fish replaces the buffer with the generated command after Ctrl-W |
 | interactive-shell-shortcut | review and accept a generated candidate from Ctrl-W | Developer accepts an explained candidate from Ctrl-W |
 | interactive-shell-shortcut | cancel a candidate review from Ctrl-W | Developer cancels a review without changing the shell buffer |
 | interactive-shell-shortcut | review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request |
-| interactive-shell-shortcut | review and execute an accepted eligible `-x` candidate | Developer accepts an eligible `-x` candidate and it executes once |
+| interactive-shell-shortcut | review and execute an accepted eligible -x candidate | Developer accepts an eligible -x candidate and it executes once |
+| shell-completions | generate Bash completions | Built Bash completion generation emits the current command tree |
 
 ## Includes
 
@@ -119,6 +123,7 @@ evaluation.
 - Semantic command-risk validation.
 - Non-TTY review surfaces.
 - Persistent candidate history across reviews or sessions.
+- Provider and model configuration.
 
 ## Diagram
 
