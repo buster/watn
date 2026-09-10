@@ -24,13 +24,14 @@ Feature: Review panel controls
     Then the review surface should show a framed card
     And the review surface should not use color
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabling the review panel preserves the original command handling
     Given an installed Bash shortcut with the explanatory review surface disabled
     And a provider candidate "df -h"
     When I invoke Ctrl-W with current input "show available diskspace"
     Then the Bash command line should contain "df -h"
     And no command-flow review should open
+    And no review surface should open
 
   @givn.added @wip
   Scenario: The panel can permanently disable the review
