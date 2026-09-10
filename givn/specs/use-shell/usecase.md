@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:4b6d900ba6c894cfcbbf3713fa1f4bcadedee5814ebc8b490db094fcf4ce78ac -->
 # Use case: use-shell
 
 ## Level
@@ -7,62 +8,103 @@
 ## Actors
 
 - Shell user
+- Terminal developer
+- Shell line editor
 
 ## Goal
 
-Use Watn as a native shell tool with completions and an interactive shortcut.
+Use Watn as a native shell tool with an interactive shortcut that can explain
+and refine generated commands before returning them.
 
 ## Trigger
 
-The user installs shell integrations or invokes the shortcut.
+The terminal developer invokes the shortcut or submits an eligible interactive
+command request.
 
 ## Preconditions
 
 - Watn is installed.
+- A provider and usable model are configured for generation.
+- The shell shortcut is installed when the user invokes Ctrl-W.
 
 ## Main flow
 
-1. Generate shell completions.
-2. Install or source the shortcut integration.
-3. Use the shell interaction without evaluating an unintended command.
+1. Invoke the shell shortcut or submit an eligible interactive command request.
+2. Preserve the existing progress line while a candidate is generated.
+3. Buffer the complete candidate until `[DONE]` and open the optional small
+   transient review surface after the candidate exists.
+4. Show the candidate's command flow, exact stage text, and model-written stage
+   purposes or purpose-unavailable status.
+5. Let the developer inspect, edit, rephrase, regenerate, compare, reject,
+   cancel, escalate, select a catalog model, or interrupt an in-progress
+   operation.
+6. Require explicit final acceptance before releasing a candidate.
+7. Route the accepted candidate to the existing consumer: replace the shell
+   buffer for Ctrl-W, use the existing command-output channel for direct paths,
+   or authorize execution for eligible `-x`.
 
 ## Extensions
 
-- A shell-specific syntax check rejects invalid generated configuration.
+- Disabled review-surface behavior preserves the existing direct replacement, output, and execution-confirmation contracts.
+- Enhanced Presentation adapter failure falls back to the portable inline review surface.
+- Portable review-surface failure preserves the original input and releases no command.
+- Provider or explanation failure preserves review state when a selected candidate exists; initial generation failure releases no command.
+- An unsupported command-flow portion remains visible and reviewable.
+- Non-TTY and redirected requests retain raw or existing confirmation behavior.
+- Active eligible `-x` requires `-x` and review acceptance, without a second prompt; disabled or non-review `-x` retains the existing confirmation.
 
 ## Rules
 
-- The shortcut preserves the request and replaces the buffer only when intended.
+- The review surface is small, transient, and inline; it does not switch to a full-screen alternate-screen interface.
+- The existing progress line appears before the review surface.
+- The review surface is enabled by default, configurable persistently, overridable per invocation, and may select an enhanced presentation adapter automatically.
+- Eligible review output is buffered until final acceptance.
+- Review-surface text is rendered through the controlling-terminal channel; accepted command text remains the only command-output channel content.
+- Direct command editing preserves the original intent and refreshes explanation state; it never evaluates the edited candidate.
+- Every candidate requires explicit final acceptance.
+- Review never evaluates generated or edited text.
+- Purpose loading is shown only for a structured response that supports delayed purpose completion; otherwise purpose-unavailable is shown.
 
 ## Examples
 
-- Fish replaces the buffer after Ctrl-W.
+- Ctrl-W records the original request as a history comment and replaces the buffer with the accepted candidate.
+- A complex `git log | xargs git show && printf` candidate shows its stages and purposes in the review surface.
+- A cancelled review preserves the original buffer and history.
+- Rephrasing replaces the visible active intent and starts a new candidate cycle; the prior intent remains only in current-review history.
+- Regeneration replaces the current candidate by default; explicit retention is required for comparison.
+- A higher-tier request uses the next configured tier. At the highest tier it opens the existing provider catalog picker for one explicit model selection.
+- Rejection releases no candidate and returns to the active intent.
+- An interrupted generation, purpose operation, or model selection preserves the selected candidate and review state.
 
 ## Minimal guarantee
 
-Shell integration never executes a command merely while generating it.
+When the review surface is enabled and eligible, the shell shortcut never
+changes or executes a Candidate without explicit final acceptance. Cancellation
+and failure preserve the original input. Disabled review retains the existing
+Ctrl-W replacement contract.
 
 ## Success guarantee
 
-The user receives valid completions and predictable shortcut behavior.
+The developer can understand and refine a generated command in the terminal,
+then place exactly the accepted candidate into the shell buffer without
+evaluation.
 
 ## Personas
 
-- none
+- terminal-developer--interactive
 
 ## Capabilities
 
 - interactive-shell-shortcut
-- shell-completions
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| interactive-shell-shortcut | validate generated shell configuration | Generated Bash, Zsh, and Fish configurations pass shell syntax checks |
-| interactive-shell-shortcut | inspect generated Bash widget | The generated Bash widget keeps the request visible and does not evaluate the command |
-| interactive-shell-shortcut | use Fish Ctrl-W shortcut | Fish replaces the buffer with the generated command after Ctrl-W |
-| shell-completions | generate Bash completions | Built Bash completion generation emits the current command tree |
+| interactive-shell-shortcut | review and accept a generated candidate from Ctrl-W | Developer accepts an explained candidate from Ctrl-W |
+| interactive-shell-shortcut | cancel a candidate review from Ctrl-W | Developer cancels a review without changing the shell buffer |
+| interactive-shell-shortcut | review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request |
+| interactive-shell-shortcut | review and execute an accepted eligible `-x` candidate | Developer accepts an eligible `-x` candidate and it executes once |
 
 ## Includes
 
@@ -74,12 +116,19 @@ The user receives valid completions and predictable shortcut behavior.
 
 ## Out of scope
 
-Provider and model configuration.
+- Semantic command-risk validation.
+- Non-TTY review surfaces.
+- Persistent candidate history across reviews or sessions.
 
 ## Diagram
 
 ```mermaid
 flowchart LR
-  User((Shell user)) --> Complete[[Generate completions]]
-  User --> Shortcut[[Use shortcut]]
+  User((Terminal developer)) --> Shortcut[[Invoke Ctrl-W]]
+  User --> Ask[[Ask interactively]]
+  Shortcut --> Review[[Review candidate]]
+  Ask --> Review
+  Review -->|accept| Result[[Return candidate]]
+  Review -->|cancel| Preserve[[Preserve input]]
+  Result --> Buffer[[Replace shell buffer]]
 ```
