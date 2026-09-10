@@ -133,7 +133,10 @@ otherwise shows `Unavailable` without opening the surface. When the payload's
 trimmed stage text agrees with the locally derived stages and every stage has a
 non-empty purpose, those provider-written purposes stay visible even if the
 status word is outside the contract; provider-written commands with line breaks
-are normalized to one line before the flow is derived. An enhanced Presentation adapter
+are normalized to one line before the flow is derived. A provider stage split
+is trusted when every stage text appears verbatim in the command, in order,
+without overlap and with only whitespace or shell separators between; that
+split then becomes the displayed Command flow. An enhanced Presentation adapter
 failure retries the portable inline panel. Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.

@@ -153,8 +153,9 @@ prose-wrapped structured response is recognized, and a JSON-shaped payload with
 a complete command keeps that provider-written command reviewable as
 `purpose-unavailable`. Rendered review values flatten line breaks and tabs so
 they occupy one inline row. Provider-written stage purposes are kept only when
-their stage text trims to the locally derived stage text and every purpose is
-non-empty; missing or mismatched purposes show `purpose-unavailable` and Watn
+their stage text provably covers the command verbatim, in order, without
+overlap, with every purpose non-empty — either as an exact provider split or as
+the derived stage text; missing or mismatched purposes show `purpose-unavailable` and Watn
 never authors substitute text.
 
 The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
