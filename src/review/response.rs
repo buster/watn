@@ -131,33 +131,6 @@ fn normalize_command(command: &str) -> String {
         .to_string()
 }
 
-/// Recover model-written purposes from a non-canonical response. Purposes are
-/// accepted only when the trimmed stage text equals the derived stage text in
-/// order and every stage carries a non-empty purpose.
-fn recovered_purposes(command: &str, value: &serde_json::Value) -> Option<Vec<ReviewStage>> {
-    let stages = value.get("stages")?.as_array()?;
-    let flow = derive_command_flow(command);
-    if stages.len() != flow.stages.len() {
-        return None;
-    }
-    let mut recovered = Vec::with_capacity(stages.len());
-    for (stage, derived) in stages.iter().zip(flow.stages.iter()) {
-        let stage_text = stage.get("stage_text")?.as_str()?.trim();
-        if stage_text != derived.stage_text {
-            return None;
-        }
-        let purpose = stage.get("purpose")?.as_str()?.trim();
-        if purpose.is_empty() {
-            return None;
-        }
-        recovered.push(ReviewStage {
-            stage_text: derived.stage_text.clone(),
-            purpose: Some(purpose.to_string()),
-        });
-    }
-    Some(recovered)
-}
-
 /// Recover a provider stage split that provably covers the command. Every
 /// stage text must appear verbatim in the command, in order, without overlap;
 /// gaps may contain only whitespace or shell separators; the remainder after
@@ -247,12 +220,6 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
                 if let Some((flow, stages)) = provider_stage_split(&command, &value) {
                     let mut candidate = ReviewCandidate::from_command(&command);
                     candidate.flow = flow;
-                    candidate.stages = stages;
-                    candidate.purpose_status = PurposeStatus::Ready;
-                    return Some(candidate);
-                }
-                if let Some(stages) = recovered_purposes(&command, &value) {
-                    let mut candidate = ReviewCandidate::from_command(&command);
                     candidate.stages = stages;
                     candidate.purpose_status = PurposeStatus::Ready;
                     return Some(candidate);
@@ -663,6 +630,22 @@ mod tests {
             ]
         );
         assert_eq!(candidate.stage_purposes().count(), 5);
+    }
+
+    #[test]
+    fn incomplete_provider_splits_are_not_trusted() {
+        let empty_stages =
+            r#"{"review_version":1,"command":"df -h","stages":[],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(empty_stages).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+
+        let empty_text = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"   ","purpose":"x"}],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(empty_text).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+
+        let blank_purpose = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"   "}],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(blank_purpose).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
     }
 
     #[test]
