@@ -11,7 +11,7 @@ Feature: Explanatory interactive shell shortcut
     And the Bash history should contain the original request comment "# inspect recent log changes"
     And the accepted candidate should not have executed
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer cancels a review without changing the shell buffer
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the current Bash command line is "show disk usage"

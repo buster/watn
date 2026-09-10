@@ -92,9 +92,7 @@ fn bash_process_records_request(world: &mut WatnWorld, comment: String) {
         "the shell history should contain the request comment {comment:?}, got: {history:?}"
     );
 }
-
-#[cucumber::given("the candidate has a visible command flow with model-written stage purposes")]
-fn e2e_visible_command_flow(world: &mut WatnWorld) {
+fn configure_e2e_review(world: &mut WatnWorld) {
     world.review.e2e = true;
     let response = serde_json::json!({
         "review_version": 1,
@@ -150,6 +148,11 @@ fn e2e_visible_command_flow(world: &mut WatnWorld) {
     world.path_override = Some(format!("{}:{}", bin_dir.display(), current_path));
 
     let _ = std::fs::remove_file("/tmp/watn-shortcut-should-not-run");
+}
+
+#[cucumber::given("the candidate has a visible command flow with model-written stage purposes")]
+fn e2e_visible_command_flow(world: &mut WatnWorld) {
+    configure_e2e_review(world);
 }
 
 pub(crate) fn invoke_review_widget_pty(world: &mut WatnWorld) {
@@ -228,5 +231,43 @@ fn e2e_candidate_not_executed(_world: &mut WatnWorld) {
     assert!(
         !std::path::Path::new("/tmp/watn-shortcut-should-not-run").exists(),
         "the accepted candidate must not execute"
+    );
+}
+
+#[cucumber::given(expr = "the current Bash command line is {string}")]
+fn e2e_current_command_line(world: &mut WatnWorld, line: String) {
+    configure_e2e_review(world);
+    world.review.bash_command_line = line;
+}
+
+#[when("I cancel the review surface")]
+fn e2e_cancel_review(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("e2e bash PTY session");
+    pty_wait_for_label(session, "Accept candidate");
+    pty_write(session, "\x1b");
+    let output = pty_wait_for_label(session, "HIST<<");
+    let line = marker_value_first(&output, "LINE<<");
+    let history = marker_value_last(&output, "HIST<<");
+    world.review.bash_command_line = line;
+    world.review.bash_history = history.lines().map(str::to_string).collect();
+    let session = world.pty_session.take().expect("e2e bash PTY session");
+    let _ = finish_pty_session(world, session);
+}
+
+#[then(expr = "the Bash command line should remain {string}")]
+fn e2e_bash_line_remains(world: &mut WatnWorld, line: String) {
+    assert_eq!(
+        world.review.bash_command_line.trim_end(),
+        line,
+        "cancellation must leave the Bash command line unchanged"
+    );
+}
+
+#[then(expr = "the Bash history should not contain a new request comment for {string}")]
+fn e2e_history_no_comment(world: &mut WatnWorld, request: String) {
+    let history = world.review.bash_history.join("\n");
+    assert!(
+        !history.contains(&format!("# {request}")),
+        "cancellation must not record a request comment, history: {history:?}"
     );
 }
