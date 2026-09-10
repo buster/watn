@@ -2677,3 +2677,15 @@ fn review_candidate_command_single_line(world: &mut WatnWorld) {
         panel.candidate().command
     );
 }
+
+#[given("the provider returns a review response with mismatched stage text")]
+fn review_mismatched_stage_text(world: &mut WatnWorld) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": "df -h",
+        "stages": [{"stage_text": "not the derived stage", "purpose": "Wrong stage text."}],
+        "purpose_status": "incomplete"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}

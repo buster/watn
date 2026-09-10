@@ -560,4 +560,19 @@ mod tests {
         assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
         assert_eq!(candidate.stage_purposes().count(), 4);
     }
+
+    #[test]
+    fn mismatched_or_missing_stage_purposes_fall_back_to_unavailable() {
+        let mismatched = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"wrong","purpose":"x"}],"purpose_status":"incomplete"}"#;
+        let candidate = candidate_from_provider_response(mismatched).unwrap();
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+        assert!(candidate.stage_purposes().all(|purpose| purpose.is_none()));
+
+        let missing = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h"}],"purpose_status":"incomplete"}"#;
+        let candidate = candidate_from_provider_response(missing).unwrap();
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+        assert!(candidate.stage_purposes().all(|purpose| purpose.is_none()));
+    }
 }

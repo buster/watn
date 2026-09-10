@@ -20,7 +20,7 @@ Feature: Review purpose recovery
     And the review surface should show the stage purpose "List every commit."
     And every rendered review value should stay on one inline row
 
-  @givn.added @wip
+  @givn.added
   Scenario: Mismatched stage text still shows purpose-unavailable
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider returns a review response with mismatched stage text
