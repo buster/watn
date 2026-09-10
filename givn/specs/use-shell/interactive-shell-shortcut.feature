@@ -570,15 +570,6 @@ Feature: Interactive shell shortcut for watn
     And  its stage purpose should be visible
     And  no focus region should be shown
 
-  Scenario: The review card exposes the direct decision shortcuts
-    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
-    When  I open the review surface
-    Then  the review surface should show "a accept"
-    And  the review surface should show "e edit"
-    And  the review surface should show "r reject"
-    And  the review surface should show "c cancel"
-    And  accept should be shown as the default decision
-
   Scenario: Enter accepts the current candidate
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     When  I open the review surface
@@ -706,3 +697,22 @@ Feature: Interactive shell shortcut for watn
     Then  the replacement candidate should be visible
     When  I accept the candidate in the review surface
     Then  normal command output should contain only "du -sh ."
+  Scenario: The review card emphasizes the decision shortcut keys
+    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
+    When  I open the review surface
+    Then  the decision keys should be shown colored and bold
+    When  I press the edit shortcut
+    Then  the editor keys should be shown colored and bold
+    When  I press Escape in the command editor
+    And  I press the reject shortcut
+    Then  the chooser keys should be shown colored and bold
+
+  Scenario: The review card exposes the decision shortcuts
+    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
+    When  I open the review surface
+    Then  the review surface should show "accept"
+    And  the review surface should show "edit"
+    And  the review surface should show "reject"
+    And  the review surface should show "cancel"
+    And  the review surface should show "disable"
+    And  accept should be shown as the default decision
