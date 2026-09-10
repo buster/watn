@@ -8,17 +8,28 @@ scenario is GREEN and committed. Do not remove an `@e2e` tag.
 
 ## Setup
 
-- [ ] Confirm the hardened contract before implementation. The permanent owner
+- [x] Confirm the hardened contract before implementation. The permanent owner
   is `use-shell`; the changed capability is `interactive-shell-shortcut`.
   `review-command-candidate` and `route-reviewed-command` remain design
   subfunctions, not new capability roots. The confirmed Persona
   `terminal-developer--interactive` is a review lens, not a Gherkin actor;
   use `Terminal developer` and `Shell line editor` as the interaction actors.
-  Evidence: paste the command/output or artifact references confirming the
-  proposal, change use case, permanent `use-shell` use case, design, design
-  review, ideation seed, and Persona were read.
+  Evidence:
+  - Read: `proposal.md`, `specs/use-shell/usecase.md`,
+    `specs/use-shell/interactive-shell-shortcut.feature`, `design.md`,
+    `design-review.md` (DESIGN-REVIEW: PASS),
+    `givn/ideation/terminal-wow-factor/handoff.md`,
+    `givn/personas/terminal-developer--interactive.md`.
+  - Permanent owner `use-shell` confirmed in `givn/specs/use-shell/usecase.md`
+    (Capabilities: `interactive-shell-shortcut`, `shell-completions`); changed
+    capability `interactive-shell-shortcut`; subfunctions preserved per
+    `design.md` "Scope And Ownership".
+  - Actors `Terminal developer` and `Shell line editor` in
+    `specs/use-shell/usecase.md`; Persona
+    `terminal-developer--interactive` is a review lens only.
+  - Artifacts committed at `5c04333` and `9fc1378`.
 
-- [ ] Verify the User Interaction Inventory against the Interactive Coverage
+- [x] Verify the User Interaction Inventory against the Interactive Coverage
   Matrix before implementing any scenario. The owning change use case declares
   exactly these four normalized interactions, and each must have exactly one
   matching `@e2e` scenario title in
@@ -33,11 +44,75 @@ scenario is GREEN and committed. Do not remove an `@e2e` tag.
   Bash PTY for the two Ctrl-W interactions, a real terminal `watn` subprocess
   for the direct interactive request, and a real PTY `watn -x` subprocess for
   eligible execution. Confirm shell completions are absent from this change's
-  inventory and matrix. Evidence: paste the inventory table, matrix table,
-  exact title comparison, and `givn lint --change
-  use-explanatory-shell-shortcut` output.
+  inventory and matrix. Evidence:
 
-- [ ] Verify the executable-spec runner and configure it exactly as designed.
+  Inventory (`specs/use-shell/usecase.md`):
+
+  | Capability | Consumer action | E2E scenario |
+  |---|---|---|
+  | interactive-shell-shortcut | review and accept a generated candidate from Ctrl-W | Developer accepts an explained candidate from Ctrl-W |
+  | interactive-shell-shortcut | cancel a candidate review from Ctrl-W | Developer cancels a review without changing the shell buffer |
+  | interactive-shell-shortcut | review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request |
+  | interactive-shell-shortcut | review and execute an accepted eligible `-x` candidate | Developer accepts an eligible `-x` candidate and it executes once |
+
+  Matrix (`design.md` Interaction Coverage Matrix): four rows with real
+  interfaces — Bash PTY `Ctrl-W and Enter`; Bash PTY `Ctrl-W and Escape`; real
+  `watn` subprocess with terminal stdin/stdout/stderr; real PTY `watn -x`
+  subprocess.
+
+  Exact title comparison (`rg -n "Scenario:"` on the delta feature):
+
+  ```text
+  5:  Scenario: Developer accepts an explained candidate from Ctrl-W
+  15:  Scenario: Developer cancels a review without changing the shell buffer
+  194:  Scenario: Developer accepts a candidate from an interactive terminal request
+  202:  Scenario: Developer accepts an eligible -x candidate and it executes once
+  ```
+
+  All four are tagged `@e2e` (feature lines 4, 14, 193, 201). Shell
+  completions are absent: the inventory above contains only
+  `interactive-shell-shortcut` rows, and the design matrix states "Shell
+  completions are intentionally absent from this change".
+
+  `givn lint --change use-explanatory-shell-shortcut` (exit 2 at setup time;
+  the 29 `[WIP]` findings are the deliberately unimplemented scenarios, and
+  scenario `The review surface explains a complex command flow` is already
+  de-`@wip` for the first task):
+
+  ```text
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Developer accepts an explained candidate from Ctrl-W' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Developer cancels a review without changing the shell buffer' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'A complete candidate is buffered before review' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Direct command editing preserves the original intent' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Escape discards a direct command edit' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Edited candidate purpose refresh failure remains reviewable' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'The compact review surface cycles three focus regions' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Review actions use Enter and Escape' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Stage purposes can load after a structured candidate appears' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'A command-only response shows purpose-unavailable' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Unsupported command flow remains reviewable' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Enhanced renderer failure falls back to the inline review surface' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Portable review-surface failure releases no candidate' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Provider failure preserves a selected candidate during review' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Disabled review preserves direct Ctrl-W replacement' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Disabled review preserves direct positional output' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Disabled review preserves -x confirmation' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Non-review -x preserves confirmation' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Developer accepts a candidate from an interactive terminal request' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Developer accepts an eligible -x candidate and it executes once' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Rephrasing starts a new candidate cycle' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Regeneration replaces the current candidate by default' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Higher-tier review generates a candidate at the next configured tier' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Highest-tier review opens explicit provider catalog model selection' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Rejected candidate returns to the current intent' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Retained candidates can be compared and one selected' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Interrupting an in-progress review operation preserves the selected candidate' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'Shell repaint remains owned by the line editor after review' is tagged @wip
+  [WIP  ] .../interactive-shell-shortcut.feature  scenario 'A narrow terminal keeps the inline review bounded and readable' is tagged @wip
+  givn lint: 1 file(s) checked, 29 finding(s)
+  ```
+
+- [x] Verify the executable-spec runner and configure it exactly as designed.
   `tests/features_runner.rs` must collect features under `givn/specs/` and the
   active change `specs/` tree, and `tests/steps/mod.rs` must register the step
   modules. Preserve or configure `.fail_on_skipped()` on the
@@ -47,10 +122,28 @@ scenario is GREEN and committed. Do not remove an `@e2e` tag.
   `not @wip and not @e2e` tag filter; the E2E runner uses `@e2e and not @wip`.
   The exact targeted commands are `./run-tests.sh --name '<scenario title>'`
   for non-E2E scenarios and `./run-tests.sh --e2e --name '<scenario title>'`
-  for E2E scenarios. Evidence: paste the relevant runner/config paths,
-  commands, and captured output.
+  for E2E scenarios. Evidence:
+  - `tests/features_runner.rs:17` `pub mod steps;`;
+    `:158` `feature_files.extend(collect_features(&root.join("specs")));`;
+    `:162-169` collects each change `specs/` tree unless `GIVN_ARCHIVE_ONLY`;
+    `:183` `.fail_on_skipped()`.
+  - `givn/commands.yaml`:
 
-- [ ] Create or extend one normal step-definition file for this capability at
+    ```yaml
+    verify:
+      command: "./run-tests.sh"
+      e2e_command: "./run-tests.sh --e2e"
+    ```
+
+  - `run-tests.sh:24-27` selects `@e2e and not @wip` for E2E and
+    `not @wip and not @e2e` for the regular runner; `:30-37` implements the
+    exact targeted commands, including `--e2e --name '<scenario title>'`.
+  - Captured output: regular full run baseline (task 6) reports
+    `21 features / 156 scenarios`; E2E full run baseline reports
+    `24 features / 77 scenarios`. Targeted single-scenario invocation captured
+    in task 5 exits non-zero from the stub panic.
+
+- [x] Create or extend one normal step-definition file for this capability at
   `tests/steps/interactive_shell_shortcut_steps.rs` and one separate E2E
   step-definition file at
   `tests/steps/interactive_shell_shortcut_e2e_steps.rs`. Do not put all new
@@ -58,10 +151,18 @@ scenario is GREEN and committed. Do not remove an `@e2e` tag.
   `pass`, or bare `return`, and do not place E2E driver steps in the normal
   file. New RED steps in Rust use `unimplemented!()` or `todo!()` until GREEN.
   Reuse an existing step only when its observable contract is identical.
-  Evidence: paste the two registered module paths and the step-to-capability
-  mapping.
+  Evidence: both files already exist and are registered for this capability:
+  - `tests/steps/mod.rs:11` `pub mod interactive_shell_shortcut_steps;` — normal
+    step definitions for capability `interactive-shell-shortcut` (shortcut
+    installation, widget behavior, and the new review-surface steps).
+  - `tests/steps/mod.rs:10` `pub mod interactive_shell_shortcut_e2e_steps;` —
+    E2E driver steps for the same capability (Bash PTY, real terminal `watn`
+    subprocess, PTY `watn -x`).
+  - Mapping: every non-`@e2e` review scenario binds in the normal file; the
+    four `@e2e` scenarios bind in the E2E file. Each scenario adds its own
+    non-empty RED stubs during its RED task; no empty bodies are permitted.
 
-- [ ] Prove strict mode before scenario work. Add one temporary step binding
+- [x] Prove strict mode before scenario work. Add one temporary step binding
   for a new step in the first non-E2E scenario using `unimplemented!()`, remove
   `@wip` from that scenario only, and run
   `./run-tests.sh --name 'The review surface explains a complex command flow'`.
@@ -71,20 +172,41 @@ scenario is GREEN and committed. Do not remove an `@e2e` tag.
   the capability skeleton available for the scenario RED task. Evidence:
   ```text
   command: `./run-tests.sh --name 'The review surface explains a complex command flow'`
-  exit: <paste non-zero exit status>
+  exit: 101
   output:
-  <paste the complete relevant cucumber-rs output showing the stub failed>
-  ```
+  Feature: Explanatory interactive shell shortcut
+    Scenario: The review surface explains a complex command flow
+     ✘  Given an installed Bash shortcut and a provider candidate "git log --format='%H' --since='7 days ago' | xargs -n1 git show --stat --oneline && printf 'done'"
+        Step failed:
+        Defined: .../interactive-shell-shortcut.feature:26:5
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:1054:1
+        Step panicked. Captured output: not implemented: strict-mode proof: review surface not implemented
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
 
-- [ ] Record the baseline before scenario implementation. Run `./run-tests.sh`
+  thread 'main' panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+  1 step failed
+  error: test failed, to rerun pass `--test features_runner`
+  ```
+  The temporary binding was removed after this capture; the scenario RED task
+  re-adds real stubs.
+
+- [x] Record the baseline before scenario implementation. Run `./run-tests.sh`
   and `./run-tests.sh --e2e` with the current WIP state, and record both exit
   status and scenario counts. These commands are distinct even if the current
   counts are zero for the new WIP scenarios. Evidence:
   ```text
   regular command: `./run-tests.sh`
-  regular output/count: <paste>
+  regular output/count: exit 101; 21 features; 156 scenarios (155 passed,
+    1 failed); 914 steps (913 passed, 1 failed). The single failure is
+    `The review surface explains a complex command flow` with
+    `Step doesn't match any function` (no bindings yet for this scenario).
   e2e command: `./run-tests.sh --e2e`
-  e2e output/count: <paste>
+  e2e output/count: exit 0; 24 features; 77 scenarios (77 passed); 568 steps
+    (568 passed). The four change `@e2e` scenarios are still `@wip` and are
+    intentionally excluded.
   ```
 
 ## Non-E2E Scenarios
