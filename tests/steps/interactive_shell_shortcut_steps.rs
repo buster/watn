@@ -1076,6 +1076,7 @@ pub struct ReviewState {
     pub progress_line: Option<String>,
     pub command_output: String,
     pub released: Option<String>,
+    pub panel_outcome: Option<watn::review::PanelOutcome>,
 }
 
 fn review_context(intent: &str) -> watn::review::ReviewContext {
@@ -1584,4 +1585,47 @@ fn review_shift_tab_in_actions(world: &mut WatnWorld) {
         crossterm::event::KeyModifiers::SHIFT,
     ));
     render_surface(world);
+}
+
+#[when("I press Enter on the selected action")]
+fn review_enter_selected_action(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
+    world.review.panel_outcome = Some(outcome);
+}
+
+#[then("the selected action should activate")]
+fn review_selected_action_activates(world: &mut WatnWorld) {
+    assert!(
+        matches!(
+            world.review.panel_outcome,
+            Some(watn::review::PanelOutcome::Accepted(_))
+        ),
+        "Enter should activate the selected Accept action, got {:?}",
+        world.review.panel_outcome
+    );
+}
+
+#[when("I press Escape in the review surface")]
+fn review_escape_surface(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Esc));
+    world.review.panel_outcome = Some(outcome.clone());
+    if outcome == watn::review::PanelOutcome::Cancelled {
+        world.review.surface_open = false;
+    }
+}
+
+#[then("the review should be cancelled")]
+fn review_cancelled(world: &mut WatnWorld) {
+    assert_eq!(
+        world.review.panel_outcome,
+        Some(watn::review::PanelOutcome::Cancelled)
+    );
+    assert!(
+        !world.review.surface_open,
+        "cancellation should close the review surface"
+    );
+    assert!(
+        world.review.released.is_none(),
+        "cancellation must release no candidate"
+    );
 }

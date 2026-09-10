@@ -94,7 +94,7 @@ Feature: Explanatory interactive shell shortcut
     When I press Shift-Tab within the Actions region
     Then focus should move to Candidates
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review actions use Enter and Escape
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface
