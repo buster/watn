@@ -75,6 +75,13 @@ actions. Nothing reaches stdout until you explicitly accept the candidate.
 Disable it per invocation with `--no-review-panel` or persistently with
 `[review] panel = false`.
 
+When the terminal supports color, the surface renders as a framed review card:
+the command is syntax colored, one stage with its purpose is selected at a
+time, a compact position shows the stages, and the actions and key hints are
+laid out separately. Use `--no-enhanced-review-panel` or `[review]
+enhanced = false` for the plain panel; terminals without color fall back
+automatically.
+
 ```text
 $ watn find all files modified in the last day
 find . -type f -mtime -1
@@ -133,6 +140,8 @@ shown. Redirected, disabled, and otherwise non-review `-x` requests keep the
 | `--provider <NAME>` | Select a configured provider |
 | `--review-panel` | Force the explanatory review surface on for this invocation |
 | `--no-review-panel` | Disable the explanatory review surface for this invocation |
+| `--enhanced-review-panel` | Force the enhanced review card on for this invocation |
+| `--no-enhanced-review-panel` | Use the plain review panel for this invocation |
 | `--set-small <NAME>` | Set the small-tier model non-interactively |
 | `--set-normal <NAME>` | Set the normal-tier model non-interactively |
 | `--set-thinking <NAME>` | Set the thinking-tier model non-interactively |
@@ -172,11 +181,13 @@ leftmost value wins.
 | Endpoint | Saved provider entry > built-in `openrouter`/`openai` endpoint; custom providers require an entry |
 | API key | Saved literal/reference > provider-specific env var > `WATN_API_KEY` |
 | Review surface | `--review-panel`/`--no-review-panel` > `[review].panel` > enabled |
+| Enhanced review card | `--enhanced-review-panel`/`--no-enhanced-review-panel` > `[review].enhanced` > enabled when the terminal supports color (`NO_COLOR` unset, `TERM` not `dumb`) |
 
 The review surface applies only when stdin, stderr, and the controlling
 terminal are available; redirected and non-terminal requests keep their
 existing behavior. `[review] panel = false` disables the surface for Ctrl-W,
-direct requests, interactive stdin, and `-x`.
+direct requests, interactive stdin, and `-x`. `[review] enhanced = false` keeps
+the surface but uses the plain panel instead of the card.
 
 The default request uses the small tier. `WATN_MODEL` changes only the default
 model, not a configured tier. Provider-specific key variables are
