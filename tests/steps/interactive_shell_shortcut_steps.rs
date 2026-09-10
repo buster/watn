@@ -1778,7 +1778,15 @@ fn review_unsupported_marked(world: &mut WatnWorld) {
         panel.candidate().flow.has_unsupported(),
         "unsupported syntax must be marked in the derived flow"
     );
-    assert_review_rendered_contains(world, "nested syntax");
+    let rendered = review_rendered_text(world);
+    assert!(
+        rendered.contains("\u{1b}[38;5;214m…"),
+        "the stage must carry the amber ellipsis, got:\n{rendered}"
+    );
+    assert!(
+        !rendered.contains("nested syntax") && !rendered.contains("unsupported"),
+        "the worded note must be gone, got:\n{rendered}"
+    );
 }
 
 #[then("the review surface should still offer final acceptance and cancellation")]
@@ -2658,16 +2666,17 @@ fn review_previous_stage(world: &mut WatnWorld) {
     render_current_surface(world);
 }
 
-#[then("the card should mark the nested syntax")]
-fn review_card_marks_nested_syntax(world: &mut WatnWorld) {
+#[then("the card should mark the stage as not decomposed")]
+fn review_card_marks_undecomposed(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
     assert!(
-        rendered.contains("⚠ nested syntax") || strip_ansi(&rendered).contains("⚠ nested syntax"),
-        "card should mark the nested syntax, got:\n{rendered}"
+        rendered.contains("\u{1b}[38;5;214m…"),
+        "card should mark the stage with an amber ellipsis, got:\n{rendered}"
     );
     assert!(
-        rendered.contains("\u{1b}[38;5;214m"),
-        "the nested-syntax marker should be amber, got:\n{rendered}"
+        !plain.contains("unsupported") && !plain.contains("nested syntax"),
+        "the worded note must be gone, got:\n{rendered}"
     );
 }
 

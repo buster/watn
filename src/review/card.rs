@@ -2,7 +2,7 @@ use super::panel::{sanitize_terminal_text, wrap_text, InlineLayout, ReviewPanelS
 
 const MAX_CARD_ROWS: u16 = 18;
 const NARROW_WIDTH: u16 = 60;
-const NESTED_SYNTAX_MARKER: &str = "⚠ nested syntax";
+const UNDECOMPOSED_STAGE_MARKER: &str = "…";
 
 /// Pure color-capability decision so tests can exercise every combination
 /// without touching the process environment.
@@ -338,7 +338,7 @@ pub fn render_card_lines(
                 ink.white(row)
             );
             if unsupported_stage {
-                let marker = format!("  {}", ink.amber(NESTED_SYNTAX_MARKER));
+                let marker = format!("  {}", ink.amber(UNDECOMPOSED_STAGE_MARKER));
                 if visible_len(&line) + visible_len(&marker) <= inner.saturating_sub(2) {
                     line.push_str(&marker);
                 } else {
@@ -359,7 +359,7 @@ pub fn render_card_lines(
             format!(
                 "{}   {}",
                 " ".repeat(label_width),
-                ink.amber(NESTED_SYNTAX_MARKER)
+                ink.amber(UNDECOMPOSED_STAGE_MARKER)
             ),
         ));
     }
@@ -671,7 +671,7 @@ mod tests {
         let lines = render_card_lines(&unsupported, layout, true);
 
         assert!(lines.len() <= 7, "card rows: {}", lines.len());
-        assert!(lines.iter().any(|line| line.contains("nested syntax")));
+        assert!(lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
         assert!(!lines.iter().any(|line| line.contains('\n')));
     }
 
@@ -680,5 +680,28 @@ mod tests {
         let layout = InlineLayout::for_dimensions(100, 40);
         let lines = render_card_lines(&state(), layout, false);
         assert!(lines.iter().all(|line| !line.contains('\u{1b}')));
+
+        let mut unsupported = state();
+        unsupported.candidate = ReviewCandidate::from_command("printf one; cat < input");
+        unsupported.flow_stage = 1;
+        let lines = render_card_lines(&unsupported, layout, false);
+        assert!(lines.iter().all(|line| !line.contains('\u{1b}')));
+        assert!(lines.iter().any(|line| line.contains('…')));
+    }
+
+    #[test]
+    fn a_full_stage_row_moves_the_marker_to_its_own_row() {
+        let mut unsupported = state();
+        unsupported.candidate =
+            ReviewCandidate::from_command("while read commit; do git ls-tree -r $commit; done");
+        unsupported.flow_stage = 1;
+        let lines = render_card_lines(&unsupported, InlineLayout::for_dimensions(40, 24), true);
+        assert!(
+            lines
+                .iter()
+                .any(|line| { line.contains("\u{1b}[38;5;214m…") && !line.contains("ls-tree") }),
+            "the marker should move to its own row, got:\n{}",
+            lines.join("\n")
+        );
     }
 }
