@@ -137,7 +137,7 @@ are normalized to one line before the flow is derived. A provider stage split
 is trusted when every stage text appears verbatim in the command, in order,
 without overlap and with only whitespace or shell separators between; that
 split then becomes the displayed Command flow. The review surface presents
-through the review card, rendered monochrome when the terminal lacks color. A `d` decision inside the card persists the review disable; an interactive `-x` confirmation accepts `?` to open the card as an explanation and close back to the confirmation.
+through the review card, rendered monochrome when the terminal lacks color. A set `--review-panel`/`--no-review-panel` override persists the preference before generation; a `d` decision inside the card persists the review disable; an interactive `-x` confirmation accepts `?` to open the card as an explanation and close back to the confirmation.
 failure retries the portable inline panel. Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.

@@ -141,7 +141,10 @@ refresh Command flow and Purpose status; cancellation, rejection, and failure
 preserve input; review display and buffer replacement never evaluate a
 Candidate. A card that cannot open returns `Unavailable` and releases no
 Candidate. A `d` decision inside the card writes `[review] panel = false`
-through the atomic configuration save path.
+through the atomic configuration save path. A set `--review-panel` or
+`--no-review-panel` override records the same setting before generation, so the
+last chosen preference survives; a failed write warns without changing the
+current invocation.
 
 The review-mode provider response is structured and contains a version, a
 complete Candidate command, exact Stage text, model-written Stage purposes, and

@@ -28,7 +28,7 @@
 - Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, a `#`-prefixed request comment recorded in the shell history, a buffer holding only the generated command, and no evaluation
 - Keep the existing progress line first, then use a small transient inline review surface on the controlling-terminal channel; buffer the complete Candidate until `[DONE]` and explicit acceptance and keep review-surface bytes out of stdout
 - Derive a conservative local Command flow with exact Stage text and visible unsupported portions; obtain model-written Stage purposes through the structured review response and preserve reviewability with `loading` or `purpose-unavailable` status
-- Resolve review preference as per-invocation override over persisted configuration over default-on; the card is the only review surface, rendered monochrome when the terminal lacks color, and the in-panel `d` decision persists the disable
+- Resolve review preference as per-invocation override over persisted configuration over default-on; a set `--review-panel`/`--no-review-panel` override persists the choice, the in-panel `d` decision persists the disable, the card is the only review surface, and it renders monochrome when the terminal lacks color
 - Own startup-file edits through exact marker pairs, atomic same-directory replacement, and independent per-shell result aggregation rather than a multi-file transaction
 - Use the existing SetupWizard focus state to color only the active widget border green, preserving the existing layout, selection styles, and cursor contract
 - Treat the permanent Gherkin tree as one behavior inventory: deterministic
