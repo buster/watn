@@ -80,28 +80,28 @@ Domain constraints:
 
 - Decisions are direct keys; accept is the emphasized default.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the direct decision shortcuts'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the first Then stub panicked.
   ```
-- [ ] GREEN: Render the hint line with `a accept`, `e edit`, `r reject`,
+- [x] GREEN: Render the hint line with `a accept`, `e edit`, `r reject`,
   `c cancel`, `d disable`; paint the accept hint green in color mode; add the
   styled-substring assertion helper. Compile and run the exact targeted
   command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/card.rs` (decision hint row with `⏎/a accept` emphasized green), `tests/steps/interactive_shell_shortcut_steps.rs` (generic show binding and emphasis assertion), `tests/steps/interactive_shell_shortcut_e2e_steps.rs` (card wait label).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The review card exposes the direct decision shortcuts'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed); full suites green: regular 196/196, e2e 81/81, lib 71 passed.
   ```
-- [ ] REFACTOR: Keep the hint assembly in one place. Rerun the exact targeted
+- [x] REFACTOR: Keep the hint assembly in one place. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the direct decision shortcuts'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The review card exposes the direct decision shortcuts
+- [x] COMMIT: `5d90d2ed86736731c3510c8d0841a93cacf38b35` - feat(interactive-shell-shortcut): The review card exposes the direct decision shortcuts
 
 ### Enter accepts the current candidate
 
