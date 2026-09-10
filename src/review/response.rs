@@ -132,9 +132,7 @@ impl ReviewCandidate {
 
     pub fn apply_response(&mut self, raw: &str) -> ReviewParseResult {
         self.apply_response_for(self.generation, raw)
-            .unwrap_or_else(|| {
-                ReviewParseResult::PurposeUnavailable(ReviewResponseError::CommandMismatch)
-            })
+            .expect("the current candidate generation always matches")
     }
 
     /// Apply a response only to the candidate generation that requested it.
@@ -346,5 +344,20 @@ mod tests {
         ] {
             assert!(!error.to_string().is_empty());
         }
+    }
+
+    #[test]
+    fn purpose_labels_and_valid_unavailable_responses_are_covered() {
+        assert_eq!(PurposeStatus::Ready.label(), "ready");
+        assert_eq!(PurposeStatus::Loading.label(), "loading");
+        assert_eq!(PurposeStatus::Unavailable.label(), "purpose-unavailable");
+
+        let mut candidate = ReviewCandidate::from_command("df -h");
+        let raw = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h"}],"purpose_status":"purpose-unavailable"}"#;
+        assert!(matches!(
+            candidate.apply_response(raw),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::InvalidLoadingResponse)
+        ));
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
     }
 }

@@ -1031,4 +1031,61 @@ mod tests {
         let outcome = panel.handle_key(key(KeyCode::Enter)).unwrap();
         assert!(matches!(outcome, PanelOutcome::Accepted(_)));
     }
+
+    #[test]
+    fn focus_reverse_navigation_and_action_arrows_are_covered() {
+        let mut panel = state();
+        panel.focus = FocusRegion::Flow;
+        panel.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::SHIFT));
+        assert_eq!(panel.focus, FocusRegion::Actions);
+
+        panel.action_cursor = 0;
+        panel.handle_key(key(KeyCode::Down));
+        assert_eq!(panel.action_cursor, 1);
+        panel.handle_key(key(KeyCode::Up));
+        assert_eq!(panel.action_cursor, 0);
+        panel.handle_key(key(KeyCode::Up));
+        assert_eq!(panel.action_cursor, 0);
+    }
+
+    #[test]
+    fn empty_candidate_flow_renders_the_overview_placeholder() {
+        let panel = ReviewPanelState::new(
+            ReviewContext {
+                intent: "no command".to_string(),
+                tier: "1".to_string(),
+                provider: "loopback".to_string(),
+                model: "model".to_string(),
+            },
+            ReviewCandidate::from_command(""),
+        );
+        let lines = render_lines(&panel, InlineLayout::for_dimensions(80, 24));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("no supported flow stages")));
+    }
+
+    #[test]
+    fn terminal_sanitization_handles_escape_terminator_variants() {
+        assert_eq!(sanitize_terminal_text("ok\u{1b}Xdone"), "okdone");
+        assert_eq!(sanitize_terminal_text("ok\u{1b}]0;t\u{1b}\\done"), "okdone");
+        assert_eq!(
+            sanitize_terminal_text("ok\u{1b}]0;t\u{1b}X\u{7}done"),
+            "okdone"
+        );
+    }
+
+    #[test]
+    fn command_editor_rendering_and_reverse_focus_cycle_are_covered() {
+        let mut panel = state();
+        panel.input_mode = PanelInputMode::CommandEditor;
+        let lines = render_lines(&panel, InlineLayout::for_dimensions(80, 24));
+        assert!(lines.iter().any(|line| line.contains("Edit command:")));
+        assert!(!lines.iter().any(|line| line.contains("Focus:")));
+
+        panel.input_mode = PanelInputMode::Review;
+        panel.focus = FocusRegion::Candidates;
+        panel.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::SHIFT));
+        assert_eq!(panel.focus, FocusRegion::Flow);
+    }
 }

@@ -398,4 +398,26 @@ mod tests {
         assert_eq!(simple.stage_texts().collect::<Vec<_>>(), vec!["true"]);
         assert!(!simple.has_unsupported());
     }
+
+    #[test]
+    fn xargs_without_command_escaped_tokens_and_subshells_are_covered() {
+        let options_only = derive_command_flow("xargs -0 --");
+        assert_eq!(
+            options_only.stage_texts().collect::<Vec<_>>(),
+            vec!["xargs -0 --"]
+        );
+
+        let escaped_start = derive_command_flow(r"\ echo | cat");
+        assert_eq!(
+            escaped_start.stage_texts().collect::<Vec<_>>(),
+            vec![r"\ echo", "cat"]
+        );
+
+        let subshell = derive_command_flow("echo $(date)");
+        assert!(subshell.has_unsupported());
+        assert!(subshell.stages[0]
+            .unsupported_spans
+            .iter()
+            .any(|span| span.text == "$("));
+    }
 }
