@@ -2952,3 +2952,60 @@ fn review_surface_without_color(world: &mut WatnWorld) {
         "monochrome card must not emit SGR colors, got:\n{rendered}"
     );
 }
+
+#[when("I choose to disable the review permanently")]
+fn review_disable_permanently(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('d')));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::DisableReviewPermanently,
+        "the d decision must disable the review permanently"
+    );
+
+    let path = world
+        .temp_dir
+        .as_ref()
+        .expect("review temp dir")
+        .path()
+        .join("watn")
+        .join("config.toml");
+    std::fs::create_dir_all(path.parent().expect("config dir")).expect("create config dir");
+    std::fs::write(&path, "[review]\npanel = true\n").expect("write config");
+    watn::config::persist_review_disabled_at(&path).expect("persist review disable");
+    world.review.config_path = Some(path);
+
+    world.review.surface_open = false;
+    world.review.panel = None;
+    world.review.rendered.clear();
+}
+
+#[then("the review should be disabled in the configuration")]
+fn review_disabled_in_configuration(world: &mut WatnWorld) {
+    let path = world
+        .review
+        .config_path
+        .as_ref()
+        .expect("persisted config path");
+    let content = std::fs::read_to_string(path).expect("read persisted config");
+    let config: watn::config::types::Config =
+        toml::from_str(&content).expect("parse persisted config");
+    assert!(
+        !config.review.panel,
+        "review must be disabled in the config"
+    );
+    assert!(!watn::config::types::review_panel_enabled(
+        &config,
+        watn::config::types::ReviewPanelOverride::Unset
+    ));
+}
+
+#[then("the review surface should close and preserve the original input")]
+fn review_closed_preserved_input(world: &mut WatnWorld) {
+    assert!(!world.review.surface_open, "review surface must close");
+    assert!(world.review.panel.is_none(), "no panel may remain");
+    assert!(world.review.released.is_none(), "nothing may be released");
+    assert_eq!(
+        world.review.bash_command_line, "show disk usage",
+        "the original input must be preserved"
+    );
+}

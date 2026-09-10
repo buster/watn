@@ -33,7 +33,7 @@ Feature: Review panel controls
     And no command-flow review should open
     And no review surface should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: The panel can permanently disable the review
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with the current input
