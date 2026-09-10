@@ -117,9 +117,52 @@ pub fn parse_structured_review_response(raw: &str) -> Result<ReviewResponse, Rev
         .map_err(|error| ReviewResponseError::InvalidJson(error.to_string()))
 }
 
+/// Normalize a provider-written command to a single line. Line breaks and tabs
+/// become spaces; no other character changes.
+fn normalize_command(command: &str) -> String {
+    command
+        .chars()
+        .map(|character| match character {
+            '\n' | '\r' | '\t' => ' ',
+            other => other,
+        })
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
+/// Recover model-written purposes from a non-canonical response. Purposes are
+/// accepted only when the trimmed stage text equals the derived stage text in
+/// order and every stage carries a non-empty purpose.
+fn recovered_purposes(command: &str, value: &serde_json::Value) -> Option<Vec<ReviewStage>> {
+    let stages = value.get("stages")?.as_array()?;
+    let flow = derive_command_flow(command);
+    if stages.len() != flow.stages.len() {
+        return None;
+    }
+    let mut recovered = Vec::with_capacity(stages.len());
+    for (stage, derived) in stages.iter().zip(flow.stages.iter()) {
+        let stage_text = stage.get("stage_text")?.as_str()?.trim();
+        if stage_text != derived.stage_text {
+            return None;
+        }
+        let purpose = stage.get("purpose")?.as_str()?.trim();
+        if purpose.is_empty() {
+            return None;
+        }
+        recovered.push(ReviewStage {
+            stage_text: derived.stage_text.clone(),
+            purpose: Some(purpose.to_string()),
+        });
+    }
+    Some(recovered)
+}
+
 /// Build a reviewable candidate from a provider payload.
 ///
 /// - A valid structured response keeps its command and model-written purposes.
+/// - A non-canonical response keeps model-written purposes when their stage
+///   text matches the derived stages and every purpose is non-empty.
 /// - A JSON-shaped payload that fails strict validation contributes only its
 ///   provider-written command; purposes stay unavailable.
 /// - A non-JSON payload is treated as command text.
@@ -147,9 +190,15 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
                 let command = value
                     .get("command")
                     .and_then(|command| command.as_str())
-                    .map(str::trim)
-                    .filter(|command| !command.is_empty());
-                return command.map(ReviewCandidate::from_command);
+                    .map(normalize_command)
+                    .filter(|command| !command.is_empty())?;
+                if let Some(stages) = recovered_purposes(&command, &value) {
+                    let mut candidate = ReviewCandidate::from_command(&command);
+                    candidate.stages = stages;
+                    candidate.purpose_status = PurposeStatus::Ready;
+                    return Some(candidate);
+                }
+                return Some(ReviewCandidate::from_command(command));
             }
         }
     }
@@ -441,14 +490,17 @@ mod tests {
     }
 
     #[test]
-    fn invalid_structured_payloads_recover_only_the_provider_command() {
+    fn invalid_status_with_matching_purposes_keeps_the_provider_purpose() {
         let raw = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show disks."}],"purpose_status":"incomplete"}"#;
         assert!(parse_structured_review_response(raw).is_err());
 
         let candidate = candidate_from_provider_response(raw).unwrap();
         assert_eq!(candidate.command, "df -h");
-        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
-        assert!(candidate.stage_purposes().all(|purpose| purpose.is_none()));
+        assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
+        assert_eq!(
+            candidate.stage_purposes().collect::<Vec<_>>(),
+            vec![Some("Show disks.")]
+        );
     }
 
     #[test]
@@ -465,5 +517,21 @@ mod tests {
 
         let empty = r#"{"review_version":1,"command":"   ","stages":[],"purpose_status":"ready"}"#;
         assert!(candidate_from_provider_response(empty).is_none());
+    }
+
+    #[test]
+    fn unknown_status_with_matching_purposes_keeps_provider_purposes() {
+        let raw = r#"{"review_version":1,"command":"git rev-list --all | xargs -n1 git ls-tree -r | head -5","stages":[{"stage_text":"git rev-list --all","purpose":"List every commit."},{"stage_text":"xargs -n1","purpose":"Pass every commit to the file listing."},{"stage_text":"git ls-tree -r","purpose":"List the files in each commit."},{"stage_text":"head -5","purpose":"Keep the first five files."}],"purpose_status":"incomplete"}"#;
+        let candidate = candidate_from_provider_response(raw).unwrap();
+        assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
+        assert_eq!(
+            candidate.stage_purposes().collect::<Vec<_>>(),
+            vec![
+                Some("List every commit."),
+                Some("Pass every commit to the file listing."),
+                Some("List the files in each commit."),
+                Some("Keep the first five files."),
+            ]
+        );
     }
 }

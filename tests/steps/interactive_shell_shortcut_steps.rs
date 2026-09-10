@@ -2626,3 +2626,25 @@ fn review_rendered_rows_are_single_line(world: &mut WatnWorld) {
         );
     }
 }
+
+#[given("the provider returns a review response with an unknown purpose status and matching stage purposes")]
+fn review_unknown_status_matching_purposes(world: &mut WatnWorld) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": "git rev-list --all | xargs -n1 git ls-tree -r | head -5",
+        "stages": [
+            {"stage_text": "git rev-list --all", "purpose": "List every commit."},
+            {"stage_text": "xargs -n1", "purpose": "Pass every commit to the file listing."},
+            {"stage_text": "git ls-tree -r", "purpose": "List the files in each commit."},
+            {"stage_text": "head -5", "purpose": "Keep the first five files."}
+        ],
+        "purpose_status": "incomplete"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}
+
+#[then(expr = "the review surface should show the stage purpose {string}")]
+fn review_shows_stage_purpose(world: &mut WatnWorld, purpose: String) {
+    assert_review_rendered_contains(world, &purpose);
+}

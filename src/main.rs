@@ -532,6 +532,8 @@ fn review_system_prompt() -> String {
          - command is the complete executable command for the request.\n\
          - Split the command into stages at top-level pipes, && and ; boundaries. stage_text must be the exact text of each stage.\n\
          - purpose is plain text explaining the stage; never evaluate or execute anything.\n\
+         - purpose_status must be exactly one of ready, loading, or purpose-unavailable.\n\
+         - Never put a line break or tab inside command; write it as a single line.\n\
          - Do not wrap the response in a markdown code fence and do not add prose before or after the object.\n\
          Operating System: {} ({}). Shell: {}.",
         std::env::consts::OS,
