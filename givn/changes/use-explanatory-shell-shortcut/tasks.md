@@ -287,7 +287,7 @@ Domain constraints:
   1 scenario (1 passed)
   8 steps (8 passed)
   ```
-- [x] COMMIT: Create one atomic commit covering this RED/GREEN/REFACTOR loop,
+- [x] COMMIT: `b574ac6367b860eebc2219cd3ac36829e16cfa9b` - Create one atomic commit covering this RED/GREEN/REFACTOR loop,
   with commit message `feat(interactive-shell-shortcut): The review surface explains a complex command flow`.
   Production files in commit: `src/review/mod.rs`, `src/review/flow.rs`,
   `src/review/response.rs`, `src/review/panel.rs`, `src/lib.rs`. Test files:
@@ -332,7 +332,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'A complete candidate is buffered before review'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `c391af85bf5e5c9b5819c502a9ebb873e4aa1d45` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): A complete candidate is buffered before review`.
   Production files in commit: `src/review/buffer.rs`, `src/review/mod.rs`.
   Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature.
@@ -379,7 +379,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Direct command editing preserves the original intent'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `855c3c3adcce803592fa28103a369abe5d666f4f` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Direct command editing preserves the original intent`.
   Production files in commit: none (behavior from `b574ac6`); test files:
   `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature.
@@ -420,7 +420,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Escape discards a direct command edit'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `b2d00180871000cb50614d18f2ee5eca03698b5d` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Escape discards a direct command edit`.
   Production files in commit: none (behavior from `b574ac6`); test files:
   `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature.
@@ -461,7 +461,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Edited candidate purpose refresh failure remains reviewable'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `ea564b96cbdd9965e63ca01ae03c723c8cbf16cc` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Edited candidate purpose refresh failure remains reviewable`.
   Production files in commit: none (refresh-failure behavior from `b574ac6`). Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature. Commit hash: `ea564b96cbdd9965e63ca01ae03c723c8cbf16cc`.
 
@@ -500,7 +500,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'The compact review surface cycles three focus regions'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 13 steps (13 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `d5a75e0f48a292723cebe63b791f01e2c75d385c` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): The compact review surface cycles three focus regions`.
   Production files in commit: none (three-region focus state from `b574ac6`); fixture command widened to two stages in the step harness. Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature. Commit hash: `d5a75e0f48a292723cebe63b791f01e2c75d385c`.
 
@@ -539,7 +539,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Review actions use Enter and Escape'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `f1356abf631f61544c3ef00db618a702b397dc59` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Review actions use Enter and Escape`.
   Production files in commit: none (Enter/Escape dispatch from `b574ac6`); outcome recording added to the step harness. Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature. Commit hash: `f1356abf631f61544c3ef00db618a702b397dc59`.
 
@@ -579,7 +579,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Stage purposes can load after a structured candidate appears'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `c4e3d96174937e6aeea836f4f7c4b17e4fe7de0a` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Stage purposes can load after a structured candidate appears`.
   Production files in commit: none (structured response lifecycle from `b574ac6`); step harness added loading fixtures. Commit hash: `c4e3d96174937e6aeea836f4f7c4b17e4fe7de0a`.
 
@@ -616,7 +616,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'A command-only response shows purpose-unavailable'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `ba01600f53aaa9f32f5a78ee6b7119e39c4f8757` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): A command-only response shows purpose-unavailable`.
   Production files in commit: none (purpose-status fallback from `b574ac6`). Commit hash: `ba01600f53aaa9f32f5a78ee6b7119e39c4f8757`.
 
@@ -653,7 +653,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `fac21f1e8b5b0fb72d6e5c58f8dc8ebbf48a4254` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Unsupported command flow remains reviewable`.
   Production files in commit: none (conservative flow derivation from `b574ac6`). Commit hash: `fac21f1e8b5b0fb72d6e5c58f8dc8ebbf48a4254`.
 
@@ -690,7 +690,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Enhanced renderer failure falls back to the inline review surface'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `8245bee9e9a5bf4e9c2b629d75edbbe13e06fa87` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Enhanced renderer failure falls back to the inline review surface`.
   Production files in commit: `src/review/adapter.rs` (new `PresentationSelection`), `src/review/mod.rs`. Commit hash: `8245bee9e9a5bf4e9c2b629d75edbbe13e06fa87`.
 
@@ -726,7 +726,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Portable review-surface failure releases no candidate'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `83de6baa3c782e1aacb947e27a652d0a2756bc83` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Portable review-surface failure releases no candidate`.
   Production files in commit: none (portable `Unavailable` from `8245bee`). Commit hash: `83de6baa3c782e1aacb947e27a652d0a2756bc83`.
 
@@ -762,7 +762,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Provider failure preserves a selected candidate during review'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `73a8eaa` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Provider failure preserves a selected candidate during review`.
   Production files in commit: none (failure isolation from `b574ac6`). Commit hash: `73a8eaa`.
 
@@ -801,7 +801,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Disabled review preserves direct Ctrl-W replacement'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `81703bb` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Disabled review preserves direct Ctrl-W replacement`.
   Production files in commit: `src/config/types.rs` (review panel config and override), `src/review/routing.rs` (new `resolve_review_enabled`/`request_route`), `src/review/mod.rs`. Commit hash: `81703bb`.
 
@@ -838,7 +838,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Disabled review preserves direct positional output'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `a769c1f` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Disabled review preserves direct positional output`.
   Production files in commit: none (routing from `81703bb`). Commit hash: `a769c1f`.
 
@@ -874,7 +874,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Disabled review preserves -x confirmation'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `c4182a1` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Disabled review preserves -x confirmation`.
   Production files in commit: none (routing from `81703bb`). Commit hash: `c4182a1`.
 
@@ -910,7 +910,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Non-review -x preserves confirmation'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `5d8a44f` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Non-review -x preserves confirmation`.
   Production files in commit: none (routing from `81703bb`). Commit hash: `5d8a44f`.
 
@@ -948,7 +948,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `b0d9fd3` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Rephrasing starts a new candidate cycle`.
   Production files in commit: `src/review/panel.rs` (`rephrase_intent`, `intent_history`, `replace_current`, `retain_current`, `select_candidate`). Commit hash: `b0d9fd3`.
 
@@ -983,7 +983,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Regeneration replaces the current candidate by default'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `db38234` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Regeneration replaces the current candidate by default`.
   Production files in commit: none (`replace_current` from `b0d9fd3`). Commit hash: `db38234`.
 
@@ -1020,7 +1020,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `a5781e9` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Higher-tier review generates a candidate at the next configured tier`.
   Production files in commit: `src/review/panel.rs` (`escalate`). Commit hash: `a5781e9`.
 
@@ -1060,7 +1060,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Highest-tier review opens explicit provider catalog model selection'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `de7d083` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Highest-tier review opens explicit provider catalog model selection`.
   Production files in commit: `src/review/panel.rs` (`open_model_selection`, `select_model`, `complete_model_selection`, selection rendering). Commit hash: `de7d083`.
 
@@ -1095,7 +1095,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Rejected candidate returns to the current intent'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `e82dc92` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Rejected candidate returns to the current intent`.
   Production files in commit: none (`Reject` dispatch from `b574ac6`). Commit hash: `e82dc92`.
 
@@ -1133,7 +1133,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Retained candidates can be compared and one selected'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 9 steps (9 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `194fb6d` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Retained candidates can be compared and one selected`.
   Production files in commit: `src/review/panel.rs` (per-candidate comparison contexts and rendering). Commit hash: `194fb6d`.
 
@@ -1171,7 +1171,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Interrupting an in-progress review operation preserves the selected candidate'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `7750664` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Interrupting an in-progress review operation preserves the selected candidate`.
   Production files in commit: `src/review/panel.rs` (`ReviewOperation`, `begin_operation`, `interrupt_operation`). Commit hash: `7750664`.
 
@@ -1209,7 +1209,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'Shell repaint remains owned by the line editor after review'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `b07fb04` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): Shell repaint remains owned by the line editor after review`.
   Production files in commit: `src/review/panel.rs` (`ControllingTerminal::begin` public for the deterministic writer seam). Commit hash: `b07fb04`.
 
@@ -1247,7 +1247,7 @@ Domain constraints:
   command: `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `315c326` - Create one atomic commit with message
   `feat(interactive-shell-shortcut): A narrow terminal keeps the inline review bounded and readable`.
   Production files in commit: none (bounded layout from `b574ac6`); harness renders at 40x8 for this scenario. Commit hash: `315c326`.
 
@@ -1378,7 +1378,7 @@ Domain constraints:
   command: `./run-tests.sh --e2e --name 'Developer accepts an explained candidate from Ctrl-W'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `112ba6fb3ae7f6e497273d2dc926fcf0f0ca7600` - Create one atomic commit with message
   `test(e2e): Developer accepts an explained candidate from Ctrl-W`.
   Production files in commit: `src/main.rs` (review mode resolution, buffered sink, structured response, panel driver, outcome routing), `src/exec.rs` (`execute` for eligible `-x`), `src/review/panel.rs` (controlling-terminal eligibility), `tests/steps/mod.rs` (PTY command seam). Commit hash: `112ba6fb3ae7f6e497273d2dc926fcf0f0ca7600`.
 
@@ -1418,7 +1418,7 @@ Domain constraints:
   command: `./run-tests.sh --e2e --name 'Developer cancels a review without changing the shell buffer'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `d13f069` - Create one atomic commit with message
   `test(e2e): Developer cancels a review without changing the shell buffer`.
   Production files in commit: none (driver and PTY seam from `112ba6f`); E2E step bindings only. Commit hash: `d13f069`.
 
@@ -1459,7 +1459,7 @@ Domain constraints:
   command: `./run-tests.sh --e2e --name 'Developer accepts a candidate from an interactive terminal request'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `35e06bb` - Create one atomic commit with message
   `test(e2e): Developer accepts a candidate from an interactive terminal request`.
   Production files in commit: none (CLI review path from `112ba6f`); E2E step bindings for the redirected-stdout PTY seam. Commit hash: `35e06bb`.
 
@@ -1501,7 +1501,7 @@ Domain constraints:
   command: `./run-tests.sh --e2e --name 'Developer accepts an eligible -x candidate and it executes once'`
   output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [x] COMMIT: Create one atomic commit with message
+- [x] COMMIT: `6d60718` - Create one atomic commit with message
   `test(e2e): Developer accepts an eligible -x candidate and it executes once`.
   Production files in commit: `src/main.rs` (review-eligible `-x` executes without printing the candidate to the command-output channel). Commit hash: `6d60718`.
 
