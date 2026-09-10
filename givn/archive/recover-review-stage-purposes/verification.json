@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "recover-review-stage-purposes",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_commit": "00766ba1df5971a97fed93fa6b9acb6c118f2ce8",
+  "tested_commit": "00766ba1df5971a97fed93fa6b9acb6c118f2ce8",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 81,
+      "passed": 81,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 53.23813244
+    },
+    "regular": {
+      "status": "passed",
+      "total": 188,
+      "passed": 188,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 33.501244263
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 16414,
+    "line_valid": 17757,
+    "line_percent": 92
+  },
   "started_at_unix": 1789041208,
-  "finished_at_unix": null
+  "finished_at_unix": 1789041442
 }
