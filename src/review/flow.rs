@@ -359,4 +359,43 @@ mod tests {
             .any(|span| span.text == "<"));
         assert!(flow.has_unsupported());
     }
+
+    #[test]
+    fn quotes_escapes_xargs_options_and_empty_segments_are_handled() {
+        let quoted = derive_command_flow("printf 'a|b' && echo 'x&&y'");
+        assert_eq!(
+            quoted.stage_texts().collect::<Vec<_>>(),
+            vec!["printf 'a|b'", "echo 'x&&y'"]
+        );
+
+        let escaped = derive_command_flow(r"echo a\ b | cat");
+        assert_eq!(
+            escaped.stage_texts().collect::<Vec<_>>(),
+            vec![r"echo a\ b", "cat"]
+        );
+
+        let xargs = derive_command_flow("xargs -0 -- rm -f");
+        assert_eq!(
+            xargs.stage_texts().collect::<Vec<_>>(),
+            vec!["xargs -0 --", "rm -f"]
+        );
+
+        let xargs_without_command = derive_command_flow("xargs -0");
+        assert_eq!(
+            xargs_without_command.stage_texts().collect::<Vec<_>>(),
+            vec!["xargs -0"]
+        );
+
+        let trailing = derive_command_flow("ls ; ");
+        assert_eq!(trailing.stages.len(), 1);
+        assert_eq!(trailing.stages[0].stage_text, "ls");
+
+        let single_ampersand = derive_command_flow("sleep 1 & echo done");
+        assert!(single_ampersand.has_unsupported());
+
+        let simple = derive_command_flow("true");
+        assert!(simple.stages[0].is_supported());
+        assert_eq!(simple.stage_texts().collect::<Vec<_>>(), vec!["true"]);
+        assert!(!simple.has_unsupported());
+    }
 }

@@ -240,7 +240,7 @@ fn unavailable_stages(flow: &CommandFlow) -> Vec<ReviewStage> {
 mod tests {
     use super::{
         parse_structured_review_response, PurposeStatus, ReviewCandidate, ReviewParseResult,
-        ReviewResponseError,
+        ReviewResponseError, REVIEW_VERSION,
     };
 
     const COMMAND: &str = "git log --since='7 days ago' | xargs -n1 git show --stat";
@@ -284,5 +284,67 @@ mod tests {
         candidate.edit_command("printf 'new'");
         assert!(candidate.apply_response_for(generation, &raw).is_none());
         assert_eq!(candidate.command, "printf 'new'");
+    }
+
+    #[test]
+    fn validation_rejections_map_to_explicit_purpose_unavailable_errors() {
+        let mut candidate = ReviewCandidate::from_command("df -h");
+
+        let unsupported = r#"{"review_version":2,"command":"df -h","stages":[],"purpose_status":"purpose-unavailable"}"#;
+        assert!(matches!(
+            candidate.apply_response(unsupported),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::UnsupportedVersion(2))
+        ));
+
+        let empty = r#"{"review_version":1,"command":"","stages":[],"purpose_status":"purpose-unavailable"}"#;
+        assert!(matches!(
+            candidate.apply_response(empty),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::EmptyCommand)
+        ));
+
+        let mismatch = r#"{"review_version":1,"command":"ls","stages":[],"purpose_status":"purpose-unavailable"}"#;
+        assert!(matches!(
+            candidate.apply_response(mismatch),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::CommandMismatch)
+        ));
+
+        let stage_mismatch = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"wrong"}],"purpose_status":"ready"}"#;
+        assert!(matches!(
+            candidate.apply_response(stage_mismatch),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::StageMismatch)
+        ));
+
+        let missing_purpose = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h"}],"purpose_status":"ready"}"#;
+        assert!(matches!(
+            candidate.apply_response(missing_purpose),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::MissingPurpose)
+        ));
+
+        let loading_without_request = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h"}],"purpose_status":"loading"}"#;
+        assert!(matches!(
+            candidate.apply_response(loading_without_request),
+            ReviewParseResult::PurposeUnavailable(ReviewResponseError::InvalidLoadingResponse)
+        ));
+    }
+
+    #[test]
+    fn identity_stage_purposes_and_error_display_are_exposed() {
+        let candidate = ReviewCandidate::from_command("df -h");
+        let identity = candidate.identity();
+        assert_eq!(identity.generation, 0);
+        assert_eq!(identity.review_version, REVIEW_VERSION);
+        assert_eq!(candidate.stage_purposes().count(), 1);
+
+        for error in [
+            ReviewResponseError::InvalidJson("broken".to_string()),
+            ReviewResponseError::UnsupportedVersion(9),
+            ReviewResponseError::EmptyCommand,
+            ReviewResponseError::CommandMismatch,
+            ReviewResponseError::StageMismatch,
+            ReviewResponseError::MissingPurpose,
+            ReviewResponseError::InvalidLoadingResponse,
+        ] {
+            assert!(!error.to_string().is_empty());
+        }
     }
 }

@@ -788,7 +788,8 @@ pub fn controlling_terminal_is_usable() -> bool {
 mod tests {
     use super::{
         render_lines, sanitize_terminal_text, ControllingTerminal, FocusRegion, InlineLayout,
-        PanelAction, PanelInputMode, PanelOutcome, ReviewContext, ReviewPanelState,
+        PanelAction, PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation,
+        ReviewPanelState,
     };
     use crate::review::ReviewCandidate;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -911,5 +912,123 @@ mod tests {
             "okdone"
         );
         assert!(sanitize_terminal_text("line\u{7}bell").contains('?'));
+    }
+
+    #[test]
+    fn review_action_edges_and_ignored_keys_are_covered() {
+        let mut cancel_panel = state();
+        cancel_panel.focus = FocusRegion::Actions;
+        cancel_panel.action_cursor = 3;
+        assert_eq!(cancel_panel.selected_action(), PanelAction::Cancel);
+        assert_eq!(
+            cancel_panel.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Cancelled
+        );
+
+        let mut flow_panel = state();
+        flow_panel.focus = FocusRegion::Flow;
+        let stage = flow_panel.flow_stage;
+        flow_panel.handle_key(key(KeyCode::Left));
+        flow_panel.handle_key(key(KeyCode::Right));
+        flow_panel.handle_key(key(KeyCode::F(1)));
+        assert_eq!(flow_panel.flow_stage, stage);
+        flow_panel.handle_key(key(KeyCode::Up));
+        assert_eq!(flow_panel.flow_stage, 0);
+
+        let mut release = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+        release.kind = crossterm::event::KeyEventKind::Release;
+        assert_eq!(flow_panel.handle_key(release), PanelOutcome::Continue);
+    }
+
+    #[test]
+    fn candidate_history_model_selection_and_operations_are_covered() {
+        let mut panel = state();
+        panel.open_model_selection(vec!["model-a".to_string(), "model-b".to_string()]);
+        assert!(panel.model_selection().is_some());
+        let lines = render_lines(&panel, InlineLayout::for_dimensions(80, 24));
+        assert!(lines.iter().any(|line| line.contains("Models:")));
+        panel.select_model("model-b", ReviewCandidate::from_command("ls -la"));
+        assert_eq!(panel.candidate().command, "ls -la");
+        assert!(panel.model_selection().is_none());
+        panel.complete_model_selection();
+        assert_eq!(panel.context.model, panel.configured_model());
+
+        panel.retain_current();
+        assert_eq!(panel.candidates.len(), 2);
+        panel.select_candidate(10);
+        assert_eq!(panel.selected_candidate, 1);
+        panel.rephrase_intent("list files");
+        assert_eq!(panel.intent_history(), ["show disk usage".to_string()]);
+        assert_eq!(panel.context.intent, "list files");
+
+        panel.begin_operation(ReviewOperation::ModelSelection);
+        assert_eq!(
+            panel.pending_operation(),
+            Some(ReviewOperation::ModelSelection)
+        );
+        assert_eq!(
+            panel.interrupt_operation(),
+            Some(ReviewOperation::ModelSelection)
+        );
+        assert_eq!(panel.pending_operation(), None);
+
+        let context = panel.context.clone();
+        panel.escalate(context, ReviewCandidate::from_command("ls -l"));
+        assert_eq!(panel.candidate().command, "ls -l");
+    }
+
+    #[test]
+    fn candidates_focus_selection_and_editor_edges_are_covered() {
+        let mut panel = state();
+        panel.retain_current();
+        panel.focus = FocusRegion::Candidates;
+        panel.candidate_cursor = 1;
+        assert_eq!(
+            panel.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Continue
+        );
+        assert_eq!(panel.selected_candidate, 1);
+        panel.handle_key(key(KeyCode::Down));
+        panel.handle_key(key(KeyCode::Up));
+        panel.focus = FocusRegion::Flow;
+        assert_eq!(
+            panel.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Continue
+        );
+
+        panel.input_mode = PanelInputMode::CommandEditor;
+        panel.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::ALT));
+        panel.handle_key(key(KeyCode::Backspace));
+        assert_eq!(panel.handle_key(key(KeyCode::F(1))), PanelOutcome::Continue);
+
+        assert_eq!(super::move_cursor(0, 1, 0), 0);
+        assert_eq!(super::move_cursor(0, -1, 0), 0);
+        assert_eq!(
+            super::wrap_lines(vec![String::new(), "abcdef".to_string()], 2, 5),
+            vec![
+                String::new(),
+                "ab".to_string(),
+                "cd".to_string(),
+                "ef".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn inline_panel_renders_and_dispatches_through_its_terminal() {
+        let layout = InlineLayout::for_dimensions(80, 24);
+        let terminal = ControllingTerminal::new(Vec::new(), layout);
+        let mut panel = super::InlineReviewPanel::new(terminal, state());
+        assert_eq!(panel.terminal().layout().width, 80);
+        panel.terminal_mut().begin().unwrap();
+        panel.render().unwrap();
+        let outcome = panel
+            .handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE))
+            .unwrap();
+        assert_eq!(outcome, PanelOutcome::Continue);
+        panel.state.focus = FocusRegion::Actions;
+        panel.state.action_cursor = 0;
+        let outcome = panel.handle_key(key(KeyCode::Enter)).unwrap();
+        assert!(matches!(outcome, PanelOutcome::Accepted(_)));
     }
 }

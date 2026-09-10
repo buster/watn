@@ -68,12 +68,28 @@ streamed incrementally to stdout. Completion metadata (model, tokens/s, elapsed
 time, and cost when configured) is written to stderr. With `-v`, nonblank
 provider reasoning is printed to stderr after successful completion.
 
+In an interactive terminal, the explanatory review surface opens after the
+candidate is complete. It is a small inline panel on the controlling terminal
+that shows the command flow, model-written stage purposes, and the review
+actions. Nothing reaches stdout until you explicitly accept the candidate.
+Disable it per invocation with `--no-review-panel` or persistently with
+`[review] panel = false`.
+
 ```text
 $ watn find all files modified in the last day
 find . -type f -mtime -1
 $ printf "find all rust source files" | watn
 find . -type f -name "*.rs"
 ```
+
+### Review surface
+
+The review surface has three focus regions: `Flow`, `Candidates`, and
+`Actions`. `Tab` and `Shift-Tab` move focus, arrow keys navigate within a
+region, `Enter` activates the selected action, and `Escape` cancels the
+review without releasing anything. The separate command editor commits with
+`Enter` and discards with `Escape`, and never evaluates the edited text.
+Direct command edits preserve the original intent.
 
 ### Model tiers
 
@@ -99,6 +115,11 @@ Press Enter, `y`, or `yes` to execute. Any other text cancels; Ctrl-C
 interrupts.
 Execution uses `sh -c` with the generated command.
 
+In an eligible interactive terminal, `-x` is executed from the review surface:
+final acceptance is the only authorization, and no second confirmation is
+shown. Redirected, disabled, and otherwise non-review `-x` requests keep the
+`Execute now?` confirmation.
+
 ### Options and commands
 
 | Option | Description |
@@ -110,6 +131,8 @@ Execution uses `sh -c` with the generated command.
 | `-x`, `--execute` | Prompt for confirmation before executing the command |
 | `-v`, `--verbose` | Print provider reasoning to stderr after successful completion when available |
 | `--provider <NAME>` | Select a configured provider |
+| `--review-panel` | Force the explanatory review surface on for this invocation |
+| `--no-review-panel` | Disable the explanatory review surface for this invocation |
 | `--set-small <NAME>` | Set the small-tier model non-interactively |
 | `--set-normal <NAME>` | Set the normal-tier model non-interactively |
 | `--set-thinking <NAME>` | Set the thinking-tier model non-interactively |
@@ -148,6 +171,12 @@ leftmost value wins.
 | Model | `--model` > selected tier > `WATN_MODEL`/`[defaults].model` > provider default |
 | Endpoint | Saved provider entry > built-in `openrouter`/`openai` endpoint; custom providers require an entry |
 | API key | Saved literal/reference > provider-specific env var > `WATN_API_KEY` |
+| Review surface | `--review-panel`/`--no-review-panel` > `[review].panel` > enabled |
+
+The review surface applies only when stdin, stderr, and the controlling
+terminal are available; redirected and non-terminal requests keep their
+existing behavior. `[review] panel = false` disables the surface for Ctrl-W,
+direct requests, interactive stdin, and `-x`.
 
 The default request uses the small tier. `WATN_MODEL` changes only the default
 model, not a configured tier. Provider-specific key variables are

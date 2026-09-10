@@ -265,4 +265,28 @@ mod tests {
             Err("--review-panel and --no-review-panel are mutually exclusive")
         );
     }
+
+    #[test]
+    fn review_panel_override_flags_are_exhaustive_and_precedential() {
+        assert_eq!(
+            ReviewPanelOverride::from_flags(false, false),
+            Ok(ReviewPanelOverride::Unset)
+        );
+        assert_eq!(
+            ReviewPanelOverride::from_flags(true, false),
+            Ok(ReviewPanelOverride::Enabled)
+        );
+        assert_eq!(
+            ReviewPanelOverride::from_flags(false, true),
+            Ok(ReviewPanelOverride::Disabled)
+        );
+        assert!(ReviewPanelOverride::Enabled.resolve(false));
+        assert!(!ReviewPanelOverride::Disabled.resolve(true));
+
+        let parsed: Config = toml::from_str("[review]\n").unwrap();
+        assert!(
+            parsed.review.panel,
+            "an empty [review] section keeps the enabled default"
+        );
+    }
 }
