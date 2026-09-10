@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "change": "recover-review-stage-purposes",
+  "status": "pending",
+  "candidate_commit": null,
+  "tested_commit": null,
+  "scopes": {},
+  "coverage": null,
+  "started_at_unix": 1789041208,
+  "finished_at_unix": null
+}
