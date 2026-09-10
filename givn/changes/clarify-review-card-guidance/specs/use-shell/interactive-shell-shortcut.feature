@@ -9,7 +9,7 @@ Feature: Clearer review card guidance
     Then the model chooser should explain its keys and input
     And the current model should be marked
 
-  @givn.added @wip
+  @givn.added
   Scenario: The first suggestion is ready to choose
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider catalog contains "model-a" and "model-b"

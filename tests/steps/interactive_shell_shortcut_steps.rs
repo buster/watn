@@ -3657,3 +3657,38 @@ fn review_current_model_marked(world: &mut WatnWorld) {
     );
     assert_review_rendered_contains(world, "●");
 }
+
+#[when("the catalog suggestions arrive")]
+fn review_catalog_arrives(world: &mut WatnWorld) {
+    let catalog = world.review.catalog_models.clone();
+    panel_mut(world).begin_catalog_load(1);
+    panel_mut(world).set_catalog(1, catalog);
+    render_surface(world);
+}
+
+#[then("the first suggestion should be highlighted")]
+fn review_first_suggestion_highlighted(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let chooser = panel.chooser().expect("chooser state");
+    assert_eq!(
+        chooser.highlight,
+        Some(0),
+        "the first pick must be ready to choose"
+    );
+    let rendered = review_rendered_text(world);
+    assert!(
+        rendered.contains("\u{1b}[7m"),
+        "the highlighted pick must be visible, got:\n{rendered}"
+    );
+}
+
+#[when("I choose the highlighted suggestion")]
+fn review_choose_highlighted(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
+    let watn::review::PanelOutcome::RegenerateWith { tier, model } = outcome else {
+        panic!("the highlighted pick must request regeneration, got {outcome:?}");
+    };
+    assert_eq!(model, "model-a", "the first pick must be chosen");
+    regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
+    render_surface(world);
+}

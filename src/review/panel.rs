@@ -166,13 +166,14 @@ impl ReviewPanelState {
     }
 
     pub fn open_model_chooser(&mut self, tiers: Vec<TierChoice>, catalog: Vec<String>) {
+        let highlight = (!catalog.is_empty()).then_some(0);
         self.chooser = Some(ModelChooser {
             tiers,
             catalog,
             catalog_loading: false,
             query: String::new(),
             query_cursor: 0,
-            highlight: None,
+            highlight,
         });
         self.input_mode = PanelInputMode::ModelChooser;
     }
@@ -189,9 +190,9 @@ impl ReviewPanelState {
             return;
         }
         if let Some(chooser) = &mut self.chooser {
+            chooser.highlight = (chooser.query.is_empty() && !catalog.is_empty()).then_some(0);
             chooser.catalog = catalog;
             chooser.catalog_loading = false;
-            chooser.highlight = None;
         }
     }
 
@@ -1185,6 +1186,33 @@ mod tests {
         assert_eq!(
             empty_enter.handle_key(key(KeyCode::Enter)),
             PanelOutcome::Continue
+        );
+    }
+
+    #[test]
+    fn catalog_highlights_the_first_pick_only_for_an_empty_query() {
+        let mut opened = state();
+        opened.open_model_chooser(
+            Vec::new(),
+            vec!["model-a".to_string(), "model-b".to_string()],
+        );
+        assert_eq!(opened.chooser().unwrap().highlight, Some(0));
+
+        let mut arrived = state();
+        arrived.open_model_chooser(Vec::new(), Vec::new());
+        arrived.begin_catalog_load(1);
+        arrived.set_catalog(1, vec!["model-a".to_string()]);
+        assert_eq!(arrived.chooser().unwrap().highlight, Some(0));
+
+        let mut typed = state();
+        typed.open_model_chooser(Vec::new(), Vec::new());
+        typed.handle_key(key(KeyCode::Char('m')));
+        typed.begin_catalog_load(2);
+        typed.set_catalog(2, vec!["model-a".to_string()]);
+        assert_eq!(
+            typed.chooser().unwrap().highlight,
+            None,
+            "typed text stays authoritative when suggestions arrive"
         );
     }
 
