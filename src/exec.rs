@@ -55,6 +55,17 @@ pub fn execute(command: &str) -> ! {
     std::process::exit(status.code().unwrap_or(0));
 }
 
+/// Pure confirmation classification: the answer string plus whether the
+/// explanation option is offered becomes the prompt outcome.
+pub fn classify_confirmation(input: &str, allow_explain: bool) -> PromptResult {
+    match confirmation_from_input(input, allow_explain) {
+        Confirmation::Execute => PromptResult::Execute,
+        Confirmation::Explain => PromptResult::Explain,
+        Confirmation::Cancelled => PromptResult::Cancelled,
+        Confirmation::Interrupted => PromptResult::Interrupted,
+    }
+}
+
 fn read_line_confirmation(allow_explain: bool) -> Confirmation {
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {

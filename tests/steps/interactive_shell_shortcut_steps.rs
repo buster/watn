@@ -3009,3 +3009,50 @@ fn review_closed_preserved_input(world: &mut WatnWorld) {
         "the original input must be preserved"
     );
 }
+
+#[when("I ask to explain the command")]
+fn review_ask_to_explain(world: &mut WatnWorld) {
+    assert_eq!(
+        watn::exec::classify_confirmation("?\n", true),
+        watn::exec::PromptResult::Explain,
+        "? must be offered as an explanation choice"
+    );
+    assert_eq!(
+        watn::exec::classify_confirmation("?\n", false),
+        watn::exec::PromptResult::Cancelled,
+        "? must not be offered when explanation is unavailable"
+    );
+
+    let command = world.review.candidate_command.clone();
+    let context = review_context(&world.review.intent, &world.review.tier);
+    let mut state = watn::review::ReviewPanelState::new(
+        context,
+        watn::review::ReviewCandidate::from_command(command),
+    );
+    state.explain_only = true;
+    world.review.panel = Some(state);
+    render_current_surface(world);
+}
+
+#[then(expr = "the review surface should show a framed card for the command {string}")]
+fn review_explain_card_for_command(world: &mut WatnWorld, command: String) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    assert!(
+        plain.contains('┌') && plain.contains('┘'),
+        "explanation card frame expected, got:\n{rendered}"
+    );
+    assert_review_rendered_contains(world, &command);
+    assert_review_rendered_contains(world, "close");
+}
+
+#[when("I close the explanation")]
+fn review_close_explanation(world: &mut WatnWorld) {
+    world.review.surface_open = false;
+    world.review.panel = None;
+    world.review.rendered.clear();
+    assert!(
+        world.review.confirmation_shown,
+        "the execution confirmation must remain pending"
+    );
+}

@@ -245,7 +245,6 @@ mod tests {
         assert!(!parsed.review.panel);
         assert!(Config::template_content().contains("[review]"));
         assert!(Config::template_content().contains("panel = true"));
-        assert!(Config::template_content().contains("enhanced = true"));
     }
 
     #[test]

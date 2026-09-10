@@ -41,7 +41,7 @@ Feature: Review panel controls
     Then the review should be disabled in the configuration
     And the review surface should close and preserve the original input
 
-  @givn.added @wip
+  @givn.added
   Scenario: The -x confirmation offers to explain the command
     Given the explanatory review surface is disabled
     And a configured provider candidate "printf 'reviewed'"
