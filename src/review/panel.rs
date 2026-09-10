@@ -197,6 +197,13 @@ impl ReviewPanelState {
         self.regeneration_error = Some(message.into());
     }
 
+    /// A failed regeneration keeps the candidate and returns to the card.
+    pub fn apply_regeneration_failure(&mut self, message: impl Into<String>) {
+        self.regeneration_error = Some(message.into());
+        self.chooser = None;
+        self.input_mode = PanelInputMode::Review;
+    }
+
     pub fn clear_regeneration_error(&mut self) {
         self.regeneration_error = None;
     }

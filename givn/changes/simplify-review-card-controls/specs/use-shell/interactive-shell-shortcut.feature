@@ -122,7 +122,7 @@ Feature: Simplified review card controls
     Then the model chooser should remain open
     And the previous candidate should remain visible
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed regeneration preserves the previous candidate
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And regeneration fails

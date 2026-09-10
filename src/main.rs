@@ -814,7 +814,7 @@ fn run_review_path(
                 let provider = match registry.get(provider_name) {
                     Ok(provider) => provider,
                     Err(error) => {
-                        panel.state.set_regeneration_error(error.to_string());
+                        panel.state.apply_regeneration_failure(error.to_string());
                         let _ = panel.render();
                         continue;
                     }
@@ -848,10 +848,10 @@ fn run_review_path(
                             }
                             None => panel
                                 .state
-                                .set_regeneration_error("no complete command candidate"),
+                                .apply_regeneration_failure("no complete command candidate"),
                         }
                     }
-                    Err(error) => panel.state.set_regeneration_error(error.to_string()),
+                    Err(error) => panel.state.apply_regeneration_failure(error.to_string()),
                 }
                 panel.state.interrupt_operation();
                 if let Err(error) = panel.render() {

@@ -1089,6 +1089,7 @@ pub struct ReviewState {
     pub tier: String,
     pub highest_tier: bool,
     pub catalog_models: Vec<String>,
+    pub regeneration_fails: bool,
     pub cleanup: String,
     pub narrow: bool,
     pub e2e: bool,
@@ -3203,7 +3204,11 @@ fn review_reject_and_choose_normal_tier(world: &mut WatnWorld) {
         panic!("the normal tier key must request regeneration, got {outcome:?}");
     };
     assert_eq!((tier.as_str(), model.as_str()), ("2", "review-model-2"));
-    regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
+    if world.review.regeneration_fails {
+        regenerate_failing(world, &model);
+    } else {
+        regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
+    }
     render_surface(world);
 }
 
@@ -3332,4 +3337,60 @@ fn review_previous_candidate_visible(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
     assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
+}
+
+#[given("regeneration fails")]
+fn review_regeneration_fails(world: &mut WatnWorld) {
+    world.review.regeneration_fails = true;
+}
+
+fn regenerate_failing(world: &mut WatnWorld, model: &str) {
+    world.pending_mock_auth_fail = true;
+    world.pending_mock_model = Some(model.to_string());
+    world.pending_mock_usage = Some(false);
+    super::ensure_test_env(world);
+    let server = world.mock_server.0.as_ref().expect("mock provider twin");
+    let endpoint = format!("http://127.0.0.1:{}", server.port());
+    let intent = world.review.intent.clone();
+    let model_owned = model.to_string();
+    let error = std::thread::spawn(move || {
+        let interrupt = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let provider = watn::provider::openai_compat::OpenAICompatibleProvider::new(
+            endpoint,
+            "test-key".to_string(),
+            std::sync::Arc::clone(&interrupt),
+        );
+        let messages = vec![
+            watn::provider::Message {
+                role: "system".to_string(),
+                content: "review engine".to_string(),
+            },
+            watn::provider::Message {
+                role: "user".to_string(),
+                content: intent,
+            },
+        ];
+        let options = watn::provider::RequestOptions {
+            model: model_owned,
+            temperature: None,
+            max_tokens: None,
+            reasoning_effort: None,
+        };
+        watn::review::session::generate_candidate(&provider, &messages, &options, &interrupt, None)
+            .err()
+            .expect("regeneration must fail against the auth-failing twin")
+    })
+    .join()
+    .expect("regeneration thread panicked");
+    panel_mut(world).apply_regeneration_failure(error.to_string());
+}
+
+#[then("the review surface should report the generation failure")]
+fn review_reports_generation_failure(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let error = panel
+        .regeneration_error()
+        .expect("a regeneration error must be recorded");
+    assert!(!error.is_empty(), "the failure must be reported");
+    assert_review_rendered_contains(world, "Error");
 }
