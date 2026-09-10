@@ -1,5 +1,6 @@
 mod adapter;
 mod buffer;
+mod card;
 mod flow;
 mod panel;
 mod response;
@@ -7,6 +8,7 @@ mod routing;
 
 pub use adapter::{PresentationAdapter, PresentationSelection};
 pub use buffer::ReviewBuffer;
+pub use card::{color_terminal_supports_card, render_card_lines, terminal_supports_color};
 pub use flow::{derive_command_flow, CommandFlow, CommandStage, StageSupport, UnsupportedSpan};
 pub use panel::{
     controlling_terminal_is_usable, render_lines, sanitize_terminal_text, ControllingTerminal,

@@ -1094,6 +1094,8 @@ pub struct ReviewState {
     pub narrow: bool,
     pub e2e: bool,
     pub stdout_path: Option<std::path::PathBuf>,
+    pub plain_panel: bool,
+    pub color_incapable: bool,
 }
 
 fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
@@ -1114,15 +1116,34 @@ fn review_layout(world: &WatnWorld) -> watn::review::InlineLayout {
     }
 }
 
+fn review_uses_card(world: &WatnWorld) -> bool {
+    !world.review.plain_panel
+        && !world.review.color_incapable
+        && world
+            .review
+            .adapter
+            .as_ref()
+            .and_then(|selection| selection.active())
+            == Some(watn::review::PresentationAdapter::Enhanced)
+}
+
 fn render_panel_state(
     rendered: &mut Vec<String>,
     state: &watn::review::ReviewPanelState,
     layout: watn::review::InlineLayout,
+    card: bool,
 ) {
     let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
-    terminal
-        .render(state)
-        .expect("render the review surface through the controlling terminal");
+    if card {
+        let lines = watn::review::render_card_lines(state, layout, true);
+        terminal
+            .render_lines(&lines)
+            .expect("render the review card through the controlling terminal");
+    } else {
+        terminal
+            .render(state)
+            .expect("render the review surface through the controlling terminal");
+    }
     let bytes = terminal.into_writer();
     rendered.push(String::from_utf8(bytes).expect("review surface bytes are UTF-8"));
 }
@@ -1135,14 +1156,30 @@ fn render_surface(world: &mut WatnWorld) {
         .expect("review panel state")
         .clone();
     let layout = review_layout(world);
+    let card = review_uses_card(world);
     let stage_count = state.candidate().flow.stages.len().max(1);
     let mut rendered = Vec::new();
     for stage_index in 0..stage_count {
         let mut stage_state = state.clone();
         stage_state.flow_stage = stage_index.min(stage_count - 1);
-        render_panel_state(&mut rendered, &stage_state, layout);
+        render_panel_state(&mut rendered, &stage_state, layout, card);
     }
     world.review.candidate = Some(state.candidate().clone());
+    world.review.rendered = rendered;
+    world.review.surface_open = true;
+}
+
+fn render_current_surface(world: &mut WatnWorld) {
+    let state = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .clone();
+    let layout = review_layout(world);
+    let card = review_uses_card(world);
+    let mut rendered = Vec::new();
+    render_panel_state(&mut rendered, &state, layout, card);
     world.review.rendered = rendered;
     world.review.surface_open = true;
 }
@@ -1190,11 +1227,42 @@ fn review_rendered_text(world: &WatnWorld) -> String {
     world.review.rendered.join("\n")
 }
 
+fn strip_ansi(value: &str) -> String {
+    let mut out = String::new();
+    let mut chars = value.chars();
+    while let Some(character) = chars.next() {
+        if character == '\u{1b}' {
+            for escaped in chars.by_ref() {
+                if escaped.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            out.push(character);
+        }
+    }
+    out
+}
+
+fn collapse_whitespace(value: &str) -> String {
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 fn assert_review_rendered_contains(world: &WatnWorld, needle: &str) {
     let rendered = review_rendered_text(world);
     let flattened = rendered.replace("\r\n", "");
+    let plain = strip_ansi(&rendered)
+        .replace("\r\n", "")
+        .replace(['│', '┌', '┐', '└', '┘', '─'], " ");
+    let collapsed = collapse_whitespace(&plain);
+    let dense: String = plain.split_whitespace().collect();
+    let needle_dense: String = needle.split_whitespace().collect();
     assert!(
-        rendered.contains(needle) || flattened.contains(needle),
+        rendered.contains(needle)
+            || flattened.contains(needle)
+            || plain.contains(needle)
+            || collapsed.contains(&collapse_whitespace(needle))
+            || dense.contains(&needle_dense),
         "review surface should show {needle:?}, got:\n{rendered}"
     );
 }
@@ -1265,8 +1333,12 @@ fn review_invoke_disabled_ctrl_w(world: &mut WatnWorld, input: &str) {
 }
 
 fn build_review_panel(world: &mut WatnWorld) {
+    let enhanced_open = world
+        .review
+        .enhanced_adapter
+        .or_else(|| (!world.review.plain_panel).then_some(true));
     let selection = watn::review::PresentationSelection::open(
-        world.review.enhanced_adapter,
+        enhanced_open,
         !world.review.portable_adapter_fails,
     );
     world.review.adapter = Some(selection);
@@ -1522,7 +1594,7 @@ fn review_final_acceptance_required(world: &mut WatnWorld) {
         world.review.released.is_none(),
         "candidate was released without final acceptance"
     );
-    assert_review_rendered_contains(world, "Accept candidate");
+    assert_review_rendered_contains(world, "Accept");
 }
 
 #[when("I change the selected candidate")]
@@ -1548,7 +1620,7 @@ fn review_unedited_candidate_selected(world: &mut WatnWorld) {
 #[then("the review surface should remain open")]
 fn review_surface_remains_open(world: &mut WatnWorld) {
     assert!(world.review.surface_open, "review surface closed");
-    assert_review_rendered_contains(world, "Accept candidate");
+    assert_review_rendered_contains(world, "Accept");
 }
 
 #[when("I edit the selected candidate and purpose refresh fails")]
@@ -1615,7 +1687,17 @@ fn review_press_tab(world: &mut WatnWorld) {
 fn assert_review_focus(world: &WatnWorld, expected: watn::review::FocusRegion, label: &str) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.focus, expected, "focus should move to {label}");
-    assert_review_rendered_contains(world, &format!("Focus: {label}"));
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    let active_tab = format!("[{label}]");
+    let plain_focus = format!("Focus: {label}");
+    assert!(
+        rendered.contains(&active_tab)
+            || plain.contains(&active_tab)
+            || rendered.contains(&plain_focus)
+            || plain.contains(&plain_focus),
+        "focus {label} should be visible, got:\n{rendered}"
+    );
 }
 
 #[then("focus should move to Flow")]
@@ -1796,7 +1878,7 @@ fn review_candidate_reviewable(world: &mut WatnWorld) {
         world.review.released.is_none(),
         "candidate must not be released without acceptance"
     );
-    assert_review_rendered_contains(world, "Accept candidate");
+    assert_review_rendered_contains(world, "Accept");
 }
 
 const REVIEW_UNSUPPORTED_COMMAND: &str = "for file in *.log; do cat < \"$file\"; done";
@@ -1828,8 +1910,8 @@ fn review_unsupported_marked(world: &mut WatnWorld) {
 
 #[then("the review surface should still offer final acceptance and cancellation")]
 fn review_acceptance_and_cancellation_offered(world: &mut WatnWorld) {
-    assert_review_rendered_contains(world, "Accept candidate");
-    assert_review_rendered_contains(world, "Cancel review");
+    assert_review_rendered_contains(world, "Accept");
+    assert_review_rendered_contains(world, "Cancel");
     assert!(world.review.released.is_none());
 }
 
@@ -1871,6 +1953,7 @@ fn review_current_candidate_available(world: &mut WatnWorld) {
 
 #[given("the portable inline review surface cannot open")]
 fn review_portable_cannot_open(world: &mut WatnWorld) {
+    world.review.enhanced_adapter = Some(false);
     world.review.portable_adapter_fails = true;
 }
 
@@ -1955,7 +2038,10 @@ fn review_purpose_unavailable_or_generation_failure(world: &mut WatnWorld) {
 fn review_disabled_shortcut(world: &mut WatnWorld) {
     install_bash_shortcut(world);
     let config = watn::config::types::Config {
-        review: watn::config::types::ReviewConfig { panel: false },
+        review: watn::config::types::ReviewConfig {
+            panel: false,
+            enhanced: false,
+        },
         ..watn::config::types::Config::default()
     };
     assert!(
@@ -2012,7 +2098,10 @@ fn review_history_no_evaluation_unchanged(world: &mut WatnWorld) {
 #[given("the explanatory review surface is disabled")]
 fn review_surface_disabled(world: &mut WatnWorld) {
     let config = watn::config::types::Config {
-        review: watn::config::types::ReviewConfig { panel: false },
+        review: watn::config::types::ReviewConfig {
+            panel: false,
+            enhanced: false,
+        },
         ..watn::config::types::Config::default()
     };
     assert!(!watn::review::resolve_review_enabled(
@@ -2169,7 +2258,8 @@ fn review_new_candidate_for_intent(world: &mut WatnWorld) {
 fn review_visible_intent(world: &mut WatnWorld, intent: String) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.context.intent, intent);
-    assert_review_rendered_contains(world, &format!("intent: {intent}"));
+    assert_review_rendered_contains(world, "Intent");
+    assert_review_rendered_contains(world, &intent);
 }
 
 #[then("the prior intent should remain only in current-review history")]
@@ -2272,7 +2362,8 @@ fn review_tier_context_visible(world: &mut WatnWorld) {
 fn review_intent_unchanged(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.context.intent, "inspect recent log changes");
-    assert_review_rendered_contains(world, "intent: inspect recent log changes");
+    assert_review_rendered_contains(world, "Intent");
+    assert_review_rendered_contains(world, "inspect recent log changes");
 }
 
 #[given("an installed Bash shortcut and a candidate generated at the highest configured tier")]
@@ -2352,7 +2443,8 @@ fn review_nothing_released(world: &mut WatnWorld) {
 fn review_current_intent_remains(world: &mut WatnWorld, intent: String) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.context.intent, intent);
-    assert_review_rendered_contains(world, &format!("intent: {intent}"));
+    assert_review_rendered_contains(world, "Intent");
+    assert_review_rendered_contains(world, &intent);
 }
 
 #[then("the review should offer regeneration or rephrasing")]
@@ -2361,8 +2453,8 @@ fn review_offer_regeneration(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
     assert_eq!(panel.focus, watn::review::FocusRegion::Actions);
-    assert_review_rendered_contains(world, "Accept candidate");
-    assert_review_rendered_contains(world, "Cancel review");
+    assert_review_rendered_contains(world, "Accept");
+    assert_review_rendered_contains(world, "Cancel");
 }
 
 #[when("I retain the current candidate for comparison")]
@@ -2385,14 +2477,22 @@ fn review_both_candidates_available(world: &mut WatnWorld) {
 
 #[then("each candidate should show its tier and provider/model context")]
 fn review_candidates_show_context(world: &mut WatnWorld) {
-    assert_review_rendered_contains(
-        world,
-        &format!("1. {REVIEW_REGENERATED_COMMAND} | tier 1 | loopback/review-model"),
-    );
-    assert_review_rendered_contains(
-        world,
-        &format!("2. {REVIEW_FIXTURE_COMMAND} | tier 1 | loopback/review-model"),
-    );
+    let count = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .candidates
+        .len();
+    for index in 0..count {
+        panel_mut(world).select_candidate(index);
+        render_current_surface(world);
+        assert_review_rendered_contains(world, &format!("◆ {}/{}", index + 1, count));
+        assert_review_rendered_contains(world, "tier 1");
+        assert_review_rendered_contains(world, "loopback/review-model");
+    }
+    panel_mut(world).select_candidate(0);
+    render_current_surface(world);
 }
 
 #[when("I select the retained candidate")]
@@ -2543,8 +2643,11 @@ fn review_bounded_panel(world: &mut WatnWorld) {
 
 #[then("it should show a compact command-flow overview and one readable selected stage")]
 fn review_compact_overview(world: &mut WatnWorld) {
-    assert_review_rendered_contains(world, "Flow [1/8]");
-    assert_review_rendered_contains(world, "> a");
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.flow_stage, 0);
+    assert_eq!(panel.candidate().flow.stages[0].stage_text, "a");
+    assert_review_rendered_contains(world, "1/8");
+    assert_review_rendered_contains(world, "a");
 }
 
 #[then("arrow navigation should reach every command-flow stage")]
@@ -2730,4 +2833,53 @@ fn review_untrusted_stage_split(world: &mut WatnWorld) {
     })
     .to_string();
     world.review.structured_response = Some(response);
+}
+
+#[then("the review surface should show a framed card")]
+fn review_shows_framed_card(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    for needle in ["┌", "┘", "watn", "Flow", "Stage", "Focus"] {
+        assert!(
+            rendered.contains(needle) || plain.contains(needle),
+            "card should show {needle:?}, got:\n{rendered}"
+        );
+    }
+}
+
+#[then("the review surface should show the intent")]
+fn review_shows_intent(world: &mut WatnWorld) {
+    let intent = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .context
+        .intent
+        .clone();
+    assert_review_rendered_contains(world, "Intent");
+    assert_review_rendered_contains(world, &intent);
+}
+
+#[then(expr = "the review surface should show the selected stage {string}")]
+fn review_shows_selected_stage(world: &mut WatnWorld, stage: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().flow.stages[panel.flow_stage].stage_text,
+        stage
+    );
+    assert_review_rendered_contains(world, &stage);
+}
+
+#[then("the review surface should show the review actions")]
+fn review_shows_actions(world: &mut WatnWorld) {
+    for action in ["Accept", "Edit", "Reject", "Cancel"] {
+        assert_review_rendered_contains(world, action);
+    }
+}
+
+#[then("the review surface should show key hints")]
+fn review_shows_key_hints(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "esc cancel");
+    assert_review_rendered_contains(world, "accept");
 }

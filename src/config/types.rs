@@ -104,11 +104,16 @@ fn default_review_panel() -> bool {
 pub struct ReviewConfig {
     #[serde(default = "default_review_panel")]
     pub panel: bool,
+    #[serde(default = "default_review_panel")]
+    pub enhanced: bool,
 }
 
 impl Default for ReviewConfig {
     fn default() -> Self {
-        Self { panel: true }
+        Self {
+            panel: true,
+            enhanced: true,
+        }
     }
 }
 
@@ -142,6 +147,10 @@ impl ReviewPanelOverride {
 
 pub fn review_panel_enabled(config: &Config, override_value: ReviewPanelOverride) -> bool {
     override_value.resolve(config.review.panel)
+}
+
+pub fn review_enhanced(config: &Config, override_value: ReviewPanelOverride) -> bool {
+    override_value.resolve(config.review.enhanced)
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -229,7 +238,7 @@ pub struct LiteLLMConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::{review_panel_enabled, Config, ReviewConfig, ReviewPanelOverride};
+    use super::{review_enhanced, review_panel_enabled, Config, ReviewConfig, ReviewPanelOverride};
 
     #[test]
     fn template_does_not_include_schema_version() {
@@ -240,17 +249,22 @@ mod tests {
     fn review_panel_defaults_to_enabled_and_is_persisted() {
         let config = Config::default();
         assert!(config.review.panel);
+        assert!(config.review.enhanced);
 
         let parsed: Config = toml::from_str("[review]\npanel = false\n").unwrap();
         assert!(!parsed.review.panel);
         assert!(Config::template_content().contains("[review]"));
         assert!(Config::template_content().contains("panel = true"));
+        assert!(Config::template_content().contains("enhanced = true"));
     }
 
     #[test]
     fn review_panel_override_is_tri_state_and_has_precedence() {
         let config = Config {
-            review: ReviewConfig { panel: false },
+            review: ReviewConfig {
+                panel: false,
+                enhanced: false,
+            },
             ..Config::default()
         };
 
@@ -288,5 +302,34 @@ mod tests {
             parsed.review.panel,
             "an empty [review] section keeps the enabled default"
         );
+        assert!(parsed.review.enhanced);
+        assert!(review_enhanced(
+            &Config::default(),
+            ReviewPanelOverride::Unset
+        ));
+        assert!(!review_enhanced(
+            &Config {
+                review: ReviewConfig {
+                    panel: true,
+                    enhanced: false,
+                },
+                ..Config::default()
+            },
+            ReviewPanelOverride::Unset
+        ));
+        assert!(!review_enhanced(
+            &Config::default(),
+            ReviewPanelOverride::Disabled
+        ));
+        assert!(review_enhanced(
+            &Config {
+                review: ReviewConfig {
+                    panel: true,
+                    enhanced: false,
+                },
+                ..Config::default()
+            },
+            ReviewPanelOverride::Enabled
+        ));
     }
 }

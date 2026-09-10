@@ -57,7 +57,7 @@ pub enum PanelAction {
 }
 
 impl PanelAction {
-    const ALL: [Self; 4] = [Self::Accept, Self::EditCommand, Self::Reject, Self::Cancel];
+    pub const ALL: [Self; 4] = [Self::Accept, Self::EditCommand, Self::Reject, Self::Cancel];
 
     fn label(self) -> &'static str {
         match self {
@@ -65,6 +65,15 @@ impl PanelAction {
             Self::EditCommand => "Edit command",
             Self::Reject => "Reject candidate",
             Self::Cancel => "Cancel review",
+        }
+    }
+
+    pub fn short_label(self) -> &'static str {
+        match self {
+            Self::Accept => "Accept",
+            Self::EditCommand => "Edit",
+            Self::Reject => "Reject",
+            Self::Cancel => "Cancel",
         }
     }
 }
@@ -296,7 +305,17 @@ impl ReviewPanelState {
             KeyCode::Esc => return PanelOutcome::Cancelled,
             KeyCode::Up => self.move_selection(-1),
             KeyCode::Down => self.move_selection(1),
-            KeyCode::Left | KeyCode::Right => {}
+            KeyCode::Left => self.move_selection(-1),
+            KeyCode::Right => self.move_selection(1),
+            KeyCode::Char('e')
+                if !key
+                    .modifiers
+                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
+            {
+                self.focus = FocusRegion::Actions;
+                self.action_cursor = 1;
+                return self.activate_selection();
+            }
             KeyCode::Enter => return self.activate_selection(),
             _ => {}
         }
@@ -505,6 +524,10 @@ impl<W: Write> ControllingTerminal<W> {
 
     pub fn render(&mut self, state: &ReviewPanelState) -> io::Result<()> {
         let lines = render_lines(state, self.layout);
+        self.render_lines(&lines)
+    }
+
+    pub fn render_lines(&mut self, lines: &[String]) -> io::Result<()> {
         if self.rows_rendered > 0 {
             let rows_rendered = self.rows_rendered;
             queue!(
@@ -536,15 +559,37 @@ impl<W: Write> Drop for ControllingTerminal<W> {
 pub struct InlineReviewPanel<W: Write> {
     terminal: ControllingTerminal<W>,
     pub state: ReviewPanelState,
+    card: bool,
 }
 
 impl<W: Write> InlineReviewPanel<W> {
     pub fn new(terminal: ControllingTerminal<W>, state: ReviewPanelState) -> Self {
-        Self { terminal, state }
+        Self {
+            terminal,
+            state,
+            card: false,
+        }
+    }
+
+    pub fn with_card(
+        terminal: ControllingTerminal<W>,
+        state: ReviewPanelState,
+        card: bool,
+    ) -> Self {
+        Self {
+            terminal,
+            state,
+            card,
+        }
     }
 
     pub fn render(&mut self) -> io::Result<()> {
-        self.terminal.render(&self.state)
+        let lines = if self.card {
+            crate::review::render_card_lines(&self.state, self.terminal.layout(), true)
+        } else {
+            render_lines(&self.state, self.terminal.layout())
+        };
+        self.terminal.render_lines(&lines)
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> io::Result<PanelOutcome> {
@@ -690,24 +735,31 @@ pub fn render_lines(state: &ReviewPanelState, layout: InlineLayout) -> Vec<Strin
     wrap_lines(lines, layout.content_width.max(1), layout.max_rows as usize)
 }
 
+/// Wrap one logical value into rows of at most `width` characters.
+pub fn wrap_text(text: &str, width: usize) -> Vec<String> {
+    let width = width.max(1);
+    let mut wrapped = Vec::new();
+    let mut remaining = text;
+    if remaining.is_empty() {
+        return vec![String::new()];
+    }
+    while remaining.chars().count() > width {
+        let split_at = remaining
+            .char_indices()
+            .nth(width)
+            .map(|(index, _)| index)
+            .unwrap_or(remaining.len());
+        wrapped.push(remaining[..split_at].to_string());
+        remaining = &remaining[split_at..];
+    }
+    wrapped.push(remaining.to_string());
+    wrapped
+}
+
 fn wrap_lines(lines: Vec<String>, width: usize, max_rows: usize) -> Vec<String> {
     let mut wrapped = Vec::new();
     for line in lines {
-        let mut remaining = line.as_str();
-        if remaining.is_empty() {
-            wrapped.push(String::new());
-            continue;
-        }
-        while remaining.chars().count() > width {
-            let split_at = remaining
-                .char_indices()
-                .nth(width)
-                .map(|(index, _)| index)
-                .unwrap_or(remaining.len());
-            wrapped.push(remaining[..split_at].to_string());
-            remaining = &remaining[split_at..];
-        }
-        wrapped.push(remaining.to_string());
+        wrapped.extend(wrap_text(&line, width));
     }
     wrapped.truncate(max_rows.max(1));
     wrapped
@@ -929,13 +981,18 @@ mod tests {
             PanelOutcome::Cancelled
         );
 
-        let mut flow_panel = state();
+        let mut flow_panel = ReviewPanelState::new(
+            state().context.clone(),
+            ReviewCandidate::from_command("df -h | head -1"),
+        );
         flow_panel.focus = FocusRegion::Flow;
-        let stage = flow_panel.flow_stage;
+        assert_eq!(flow_panel.flow_stage, 0);
         flow_panel.handle_key(key(KeyCode::Left));
+        assert_eq!(flow_panel.flow_stage, 0);
         flow_panel.handle_key(key(KeyCode::Right));
+        assert_eq!(flow_panel.flow_stage, 1);
         flow_panel.handle_key(key(KeyCode::F(1)));
-        assert_eq!(flow_panel.flow_stage, stage);
+        assert_eq!(flow_panel.flow_stage, 1);
         flow_panel.handle_key(key(KeyCode::Up));
         assert_eq!(flow_panel.flow_stage, 0);
 

@@ -77,6 +77,19 @@ struct Cli {
     no_review_panel: bool,
 
     #[arg(
+        long = "enhanced-review-panel",
+        conflicts_with = "no_enhanced_review_panel",
+        help = "Force the enhanced review card on for this invocation"
+    )]
+    enhanced_review_panel: bool,
+
+    #[arg(
+        long = "no-enhanced-review-panel",
+        help = "Use the plain review panel for this invocation"
+    )]
+    no_enhanced_review_panel: bool,
+
+    #[arg(
         short = 'v',
         long = "verbose",
         help = "Print provider reasoning to stderr when available"
@@ -311,6 +324,19 @@ fn main() {
     let review_enabled =
         watn::review::resolve_review_enabled(&config, review_override, review_eligible);
 
+    let enhanced_override = match watn::config::types::ReviewPanelOverride::from_flags(
+        cli.enhanced_review_panel,
+        cli.no_enhanced_review_panel,
+    ) {
+        Ok(override_value) => override_value,
+        Err(message) => {
+            eprintln!("{message}");
+            std::process::exit(2);
+        }
+    };
+    let use_card = watn::config::types::review_enhanced(&config, enhanced_override)
+        && watn::review::color_terminal_supports_card();
+
     let mut registry = ProviderRegistry::new();
     build_registry(
         &mut registry,
@@ -436,6 +462,7 @@ fn main() {
                         &model,
                         cli.execute,
                         cli.verbose,
+                        use_card,
                         &config,
                     );
                 }
@@ -552,6 +579,7 @@ fn run_review_path(
     model: &str,
     execute: bool,
     verbose: bool,
+    card: bool,
     config: &watn::config::types::Config,
 ) -> ! {
     let raw = buffer.candidate().unwrap_or_default();
@@ -585,9 +613,10 @@ fn run_review_path(
             std::process::exit(1);
         }
     };
-    let mut panel = watn::review::InlineReviewPanel::new(
+    let mut panel = watn::review::InlineReviewPanel::with_card(
         terminal,
         watn::review::ReviewPanelState::new(context, candidate.clone()),
+        card,
     );
     if let Err(error) = panel.render() {
         eprintln!("review unavailable: {error}");
