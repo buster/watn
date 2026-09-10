@@ -3394,3 +3394,22 @@ fn review_reports_generation_failure(world: &mut WatnWorld) {
     assert!(!error.is_empty(), "the failure must be reported");
     assert_review_rendered_contains(world, "Error");
 }
+
+#[when("I leave the model chooser")]
+fn review_leave_chooser(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Esc));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::Continue,
+        "Escape must close the chooser without cancelling the review"
+    );
+    render_surface(world);
+}
+
+#[then("the review should remain open")]
+fn review_remains_open(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+    assert!(panel.chooser().is_none(), "the chooser must close");
+    assert!(world.review.surface_open, "the review must stay open");
+}

@@ -132,7 +132,7 @@ Feature: Simplified review card controls
     And the review surface should report the generation failure
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: Leaving the model chooser preserves the candidate
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface
