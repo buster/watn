@@ -2112,3 +2112,57 @@ fn review_acceptance_not_authorize(world: &mut WatnWorld) {
         "no review candidate may be released for a non-review -x request"
     );
 }
+
+const REVIEW_REPLACEMENT_COMMAND: &str = "df -h --local";
+
+#[when(expr = "I rephrase the intent as {string}")]
+fn review_rephrase_intent(world: &mut WatnWorld, intent: String) {
+    let panel = panel_mut(world);
+    panel.rephrase_intent(intent);
+    let replacement = watn::review::ReviewCandidate::from_command(REVIEW_REPLACEMENT_COMMAND);
+    panel.replace_current(replacement);
+    render_surface(world);
+}
+
+#[then("a new candidate should be generated for the current intent")]
+fn review_new_candidate_for_intent(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, REVIEW_REPLACEMENT_COMMAND);
+    assert_eq!(
+        panel.selected_candidate, 0,
+        "the new cycle selects its own candidate"
+    );
+    assert_review_rendered_contains(world, REVIEW_REPLACEMENT_COMMAND);
+}
+
+#[then(expr = "the visible intent should be {string}")]
+fn review_visible_intent(world: &mut WatnWorld, intent: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.context.intent, intent);
+    assert_review_rendered_contains(world, &format!("intent: {intent}"));
+}
+
+#[then("the prior intent should remain only in current-review history")]
+fn review_prior_intent_only_history(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.intent_history(), ["show disk usage".to_string()]);
+    assert_ne!(
+        panel.context.intent, "show disk usage",
+        "the prior intent must not remain the active intent"
+    );
+}
+
+#[then("the prior candidate should not be accepted by the new cycle")]
+fn review_prior_candidate_not_accepted(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_ne!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+    match panel
+        .clone()
+        .handle_key(key(crossterm::event::KeyCode::Enter))
+    {
+        watn::review::PanelOutcome::Accepted(candidate) => {
+            assert_eq!(candidate.command, REVIEW_REPLACEMENT_COMMAND);
+        }
+        outcome => panic!("the new cycle must accept only its own candidate, got {outcome:?}"),
+    }
+}

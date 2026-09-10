@@ -206,7 +206,7 @@ Feature: Explanatory interactive shell shortcut
     Then "reviewed" should be printed once
     And no second execution confirmation should be shown
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rephrasing starts a new candidate cycle
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with current input "show disk usage"

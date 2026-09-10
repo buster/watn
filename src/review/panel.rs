@@ -127,6 +127,7 @@ pub struct ReviewPanelState {
     pub candidate_cursor: usize,
     pub action_cursor: usize,
     pub input_mode: PanelInputMode,
+    intent_history: Vec<String>,
     editor_buffer: String,
     editor_original: String,
 }
@@ -143,6 +144,7 @@ impl ReviewPanelState {
             candidate_cursor: 0,
             action_cursor: 0,
             input_mode: PanelInputMode::Review,
+            intent_history: Vec::new(),
             editor_buffer: String::new(),
             editor_original: String::new(),
         }
@@ -150,6 +152,39 @@ impl ReviewPanelState {
 
     pub fn candidate(&self) -> &ReviewCandidate {
         &self.candidates[self.selected_candidate]
+    }
+
+    pub fn intent_history(&self) -> &[String] {
+        &self.intent_history
+    }
+
+    /// Rephrasing replaces the visible active Intent and starts a new candidate
+    /// cycle. The prior Intent remains only in current-review history.
+    pub fn rephrase_intent(&mut self, intent: impl Into<String>) {
+        self.intent_history.push(self.context.intent.clone());
+        self.context.intent = intent.into();
+        self.selected_candidate = 0;
+        self.candidate_cursor = 0;
+        self.flow_stage = 0;
+    }
+
+    /// Regeneration and escalation replace the current candidate by default.
+    pub fn replace_current(&mut self, candidate: ReviewCandidate) {
+        self.candidates[self.selected_candidate] = candidate;
+        self.flow_stage = 0;
+        self.candidate_cursor = self.selected_candidate;
+    }
+
+    /// Explicit comparison retention keeps the current candidate in history.
+    pub fn retain_current(&mut self) {
+        let retained = self.candidate().clone();
+        self.candidates.push(retained);
+    }
+
+    pub fn select_candidate(&mut self, index: usize) {
+        self.selected_candidate = index.min(self.candidates.len().saturating_sub(1));
+        self.candidate_cursor = self.selected_candidate;
+        self.flow_stage = 0;
     }
 
     pub fn selected_action(&self) -> PanelAction {
