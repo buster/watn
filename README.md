@@ -182,13 +182,14 @@ leftmost value wins.
 | Model | `--model` > selected tier > `WATN_MODEL`/`[defaults].model` > provider default |
 | Endpoint | Saved provider entry > built-in `openrouter`/`openai` endpoint; custom providers require an entry |
 | API key | Saved literal/reference > provider-specific env var > `WATN_API_KEY` |
-| Review surface | `--review-panel`/`--no-review-panel` > `[review].panel` > enabled |
+| Review surface | `--review-panel`/`--no-review-panel` (also persisted to `[review].panel`) > `[review].panel` > enabled |
 
 The review surface applies only when stdin, stderr, and the controlling
 terminal are available; redirected and non-terminal requests keep their
 existing behavior. `[review] panel = false` disables the surface for Ctrl-W,
 direct requests, interactive stdin, and `-x`. The card's `d` decision writes
-the same setting.
+the same setting, and a `--review-panel` or `--no-review-panel` invocation
+persists the chosen setting so the last choice survives.
 
 The default request uses the small tier. `WATN_MODEL` changes only the default
 model, not a configured tier. Provider-specific key variables are
