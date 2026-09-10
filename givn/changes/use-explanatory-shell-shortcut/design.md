@@ -36,9 +36,12 @@ not present in the interaction matrix.
 The review surface applies to these review-eligible consumers:
 
 - Ctrl-W from an installed Bash, Zsh, or Fish shortcut.
-- Direct positional questions with terminal stdin, stdout, and stderr.
-- Interactive stdin questions with terminal stdin, stdout, and stderr.
-- `-x` questions with terminal stdin, stdout, and stderr when review is enabled.
+- Direct positional questions with terminal stdin and stderr and a usable
+  controlling terminal.
+- Interactive stdin questions with terminal stdin and stderr and a usable
+  controlling terminal.
+- `-x` questions with terminal stdin and stderr and a usable controlling
+  terminal when review is enabled.
 
 Non-TTY, redirected, disabled, and otherwise non-review paths retain their
 current behavior. No semantic command-risk evaluation is introduced.
@@ -52,8 +55,15 @@ The effective review setting is resolved before provider generation:
 3. The built-in default is enabled.
 
 The two CLI overrides are mutually exclusive. Review mode additionally requires
-terminal stdin, stdout, and stderr. The effective setting and eligibility are
-captured for the request and do not change during a review.
+terminal stdin and stderr and a usable controlling terminal. The effective
+setting and eligibility are captured for the request and do not change during a
+review.
+
+Stdout is deliberately not part of the eligibility requirement: the installed
+Ctrl-W widget invokes `watn` through command substitution, and stdout is
+reserved for the accepted candidate on every review-eligible path. The review
+surface uses the controlling-terminal channel only, so a captured stdout never
+receives review bytes.
 
 Disabled review has no review state, no command-flow derivation, no review
 surface, and no review buffering. It follows the existing behavior for each
@@ -351,7 +361,7 @@ use case. Shell completions are intentionally absent from this change.
 |---|---|---|---|
 | review and accept a generated candidate from Ctrl-W | Developer accepts an explained candidate from Ctrl-W | CLI / terminal | Real Bash PTY invokes the installed widget, sends Ctrl-W and Enter, then observes the prompt, buffer, history, and no execution |
 | cancel a candidate review from Ctrl-W | Developer cancels a review without changing the shell buffer | CLI / terminal | Real Bash PTY invokes the installed widget, sends Ctrl-W and Escape, then observes the unchanged buffer and history |
-| review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request | CLI / terminal | Real `watn` subprocess with terminal stdin/stdout/stderr drives the review surface and observes command-output channel bytes |
+| review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request | CLI / terminal | Real `watn` subprocess with terminal stdin/stderr and a usable controlling terminal; command-output channel captured separately |
 | review and execute an accepted eligible `-x` candidate | Developer accepts an eligible `-x` candidate and it executes once | CLI / terminal | Real `watn -x` subprocess in a PTY accepts the review and observes one execution with no second confirmation |
 
 The real interface is a CLI subprocess. Bash PTY scenarios use the existing

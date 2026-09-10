@@ -216,3 +216,24 @@ Chapter 09 records the ADR-0015 amendment without creating a new ADR. Chapter
 ## Status
 
 DESIGN-REVIEW: PASS
+
+## Post-Review Amendment
+
+Implementation revealed one interface obstacle in the reviewed design: the
+installed Bash widget invokes `watn` through command substitution, so `watn`'s
+stdout is captured by the widget and is not a terminal. The reviewed
+eligibility rule ("terminal stdin, stdout, and stderr") therefore made the
+Ctrl-W interaction — an inventory action — unreachable.
+
+Amendment: review eligibility requires terminal stdin and stderr plus a usable
+controlling terminal (`/dev/tty`). Stdout stays reserved for the accepted
+candidate and never carries review bytes, so the channel contract, disabled
+and non-review routing, and every reviewed scenario remain unchanged. The
+`Ctrl-W` consumer now reaches `ReviewSurface`; direct and `-x` scenarios are
+driven with stdout captured separately to prove channel isolation.
+
+This amendment is recorded before review sign-off. The prior qualification
+results for ADR-0015 and the structured response/renderer decisions are
+unaffected; the affected artifact is `design.md` "Review Mode Resolution" and
+the direct-request row of the Interaction Coverage Matrix.
+
