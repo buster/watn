@@ -30,10 +30,8 @@
 
 ## Overlap dispositions
 
-| Scenario A | Scenario B | Disposition |
-|---|---|---|
-| Disabled review preserves -x confirmation | Disabling the review panel from the command line persists it | variant |
-| Disabling the review panel preserves the original command handling | Enabling the review panel from the command line persists it | variant |
+No deterministic shape match remains; the two scenarios cover the opposite
+persistence directions and no permanent scenario shares their shape.
 
 ## Split-or-keep
 
