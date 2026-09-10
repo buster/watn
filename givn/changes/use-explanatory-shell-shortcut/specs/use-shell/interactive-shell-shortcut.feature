@@ -46,7 +46,7 @@ Feature: Explanatory interactive shell shortcut
     When the provider sends [DONE]
     Then the review surface should open with the complete candidate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Direct command editing preserves the original intent
     Given an installed Bash shortcut and a provider candidate for "inspect recent log changes"
     When I invoke Ctrl-W with current input "inspect recent log changes"

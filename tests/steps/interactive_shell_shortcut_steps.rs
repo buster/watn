@@ -1069,12 +1069,72 @@ pub struct ReviewState {
     pub intent: String,
     pub context: Option<watn::review::ReviewContext>,
     pub candidate: Option<watn::review::ReviewCandidate>,
+    pub panel: Option<watn::review::ReviewPanelState>,
     pub buffer: watn::review::ReviewBuffer,
     pub rendered: Vec<String>,
     pub surface_open: bool,
     pub progress_line: Option<String>,
     pub command_output: String,
     pub released: Option<String>,
+}
+
+fn review_context(intent: &str) -> watn::review::ReviewContext {
+    watn::review::ReviewContext {
+        intent: intent.to_string(),
+        tier: "1".to_string(),
+        provider: "loopback".to_string(),
+        model: "review-model".to_string(),
+    }
+}
+
+fn render_panel_state(rendered: &mut Vec<String>, state: &watn::review::ReviewPanelState) {
+    let layout = watn::review::InlineLayout::for_dimensions(100, 40);
+    let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
+    terminal
+        .render(state)
+        .expect("render the review surface through the controlling terminal");
+    let bytes = terminal.into_writer();
+    rendered.push(String::from_utf8(bytes).expect("review surface bytes are UTF-8"));
+}
+
+fn render_surface(world: &mut WatnWorld) {
+    let state = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .clone();
+    let stage_count = state.candidate().flow.stages.len().max(1);
+    let mut rendered = Vec::new();
+    for stage_index in 0..stage_count {
+        let mut stage_state = state.clone();
+        stage_state.flow_stage = stage_index.min(stage_count - 1);
+        render_panel_state(&mut rendered, &stage_state);
+    }
+    world.review.candidate = Some(state.candidate().clone());
+    world.review.rendered = rendered;
+    world.review.surface_open = true;
+}
+
+fn panel_mut(world: &mut WatnWorld) -> &mut watn::review::ReviewPanelState {
+    world.review.panel.as_mut().expect("review panel state")
+}
+
+fn key(code: crossterm::event::KeyCode) -> crossterm::event::KeyEvent {
+    crossterm::event::KeyEvent::new(code, crossterm::event::KeyModifiers::NONE)
+}
+
+fn replace_editor_text(panel: &mut watn::review::ReviewPanelState, text: &str) {
+    let original = panel
+        .editor_buffer()
+        .expect("command editor buffer")
+        .to_string();
+    for _ in 0..original.chars().count() {
+        panel.handle_key(key(crossterm::event::KeyCode::Backspace));
+    }
+    for character in text.chars() {
+        panel.handle_key(key(crossterm::event::KeyCode::Char(character)));
+    }
 }
 
 fn install_bash_shortcut(world: &mut WatnWorld) {
@@ -1161,30 +1221,10 @@ fn review_invoke_structured(world: &mut WatnWorld, input: String) {
             "structured review response must validate against the derived command flow"
         );
     }
-    let context = watn::review::ReviewContext {
-        intent: input,
-        tier: "1".to_string(),
-        provider: "loopback".to_string(),
-        model: "review-model".to_string(),
-    };
+    let context = review_context(&input);
     world.review.context = Some(context.clone());
-
-    let layout = watn::review::InlineLayout::for_dimensions(100, 40);
-    let mut rendered = Vec::new();
-    for stage_index in 0..candidate.flow.stages.len() {
-        let mut state = watn::review::ReviewPanelState::new(context.clone(), candidate.clone());
-        state.flow_stage = stage_index;
-        let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
-        terminal
-            .render(&state)
-            .expect("render the review surface through the controlling terminal");
-        let bytes = terminal.into_writer();
-        rendered.push(String::from_utf8(bytes).expect("review surface bytes are UTF-8"));
-    }
-
-    world.review.rendered = rendered;
-    world.review.candidate = Some(candidate);
-    world.review.surface_open = true;
+    world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
+    render_surface(world);
     world.review.command_output.clear();
 }
 
@@ -1322,4 +1362,79 @@ fn review_surface_opens_complete(world: &mut WatnWorld) {
         world.review.released.is_none(),
         "complete candidate was released without final acceptance"
     );
+}
+
+#[given(expr = "an installed Bash shortcut and a provider candidate for {string}")]
+fn review_candidate_for_intent(world: &mut WatnWorld, intent: String) {
+    install_bash_shortcut(world);
+    world.review = ReviewState {
+        candidate_command: "git log --oneline".to_string(),
+        intent,
+        ..ReviewState::default()
+    };
+}
+
+#[when("I open the separate command editor")]
+fn review_open_command_editor(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.focus = watn::review::FocusRegion::Actions;
+    panel.action_cursor = 1;
+    assert_eq!(
+        panel.selected_action(),
+        watn::review::PanelAction::EditCommand
+    );
+    assert_eq!(
+        panel.handle_key(key(crossterm::event::KeyCode::Enter)),
+        watn::review::PanelOutcome::Continue
+    );
+    assert_eq!(
+        panel.input_mode,
+        watn::review::PanelInputMode::CommandEditor
+    );
+}
+
+#[when("I edit the selected candidate without changing the original intent")]
+fn review_edit_candidate(world: &mut WatnWorld) {
+    replace_editor_text(panel_mut(world), "git status --short");
+    assert_eq!(panel_mut(world).editor_buffer(), Some("git status --short"));
+    assert_eq!(
+        world
+            .review
+            .context
+            .as_ref()
+            .map(|context| context.intent.as_str()),
+        Some("inspect recent log changes")
+    );
+}
+
+#[when("I press Enter in the command editor")]
+fn review_enter_command_editor(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::EditCommitted("git status --short".to_string())
+    );
+    render_surface(world);
+}
+
+#[then("the review surface should refresh the command flow for the edited candidate")]
+fn review_refreshed_flow(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "git status --short");
+}
+
+#[then("the original intent should remain visible in the review context")]
+fn review_original_intent_visible(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "inspect recent log changes");
+}
+
+#[then("final acceptance should still be required")]
+fn review_final_acceptance_required(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+    assert!(world.review.surface_open, "review surface closed early");
+    assert!(
+        world.review.released.is_none(),
+        "candidate was released without final acceptance"
+    );
+    assert_review_rendered_contains(world, "Accept candidate");
 }
