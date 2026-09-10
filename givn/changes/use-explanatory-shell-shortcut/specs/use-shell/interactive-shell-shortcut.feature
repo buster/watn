@@ -68,7 +68,7 @@ Feature: Explanatory interactive shell shortcut
     And the review surface should remain open
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: Edited candidate purpose refresh failure remains reviewable
     Given an installed Bash shortcut and a provider candidate for "inspect recent log changes"
     When I invoke Ctrl-W with current input "inspect recent log changes"

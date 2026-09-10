@@ -1374,9 +1374,7 @@ fn review_candidate_for_intent(world: &mut WatnWorld, intent: String) {
     };
 }
 
-#[when("I open the separate command editor")]
-fn review_open_command_editor(world: &mut WatnWorld) {
-    let panel = panel_mut(world);
+fn open_command_editor(panel: &mut watn::review::ReviewPanelState) {
     panel.focus = watn::review::FocusRegion::Actions;
     panel.action_cursor = 1;
     assert_eq!(
@@ -1391,6 +1389,11 @@ fn review_open_command_editor(world: &mut WatnWorld) {
         panel.input_mode,
         watn::review::PanelInputMode::CommandEditor
     );
+}
+
+#[when("I open the separate command editor")]
+fn review_open_command_editor(world: &mut WatnWorld) {
+    open_command_editor(panel_mut(world));
 }
 
 #[when("I edit the selected candidate without changing the original intent")]
@@ -1463,4 +1466,47 @@ fn review_unedited_candidate_selected(world: &mut WatnWorld) {
 fn review_surface_remains_open(world: &mut WatnWorld) {
     assert!(world.review.surface_open, "review surface closed");
     assert_review_rendered_contains(world, "Accept candidate");
+}
+
+#[when("I edit the selected candidate and purpose refresh fails")]
+fn review_edit_and_refresh_fails(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    open_command_editor(panel);
+    replace_editor_text(panel, "git status --short");
+    assert_eq!(
+        panel.handle_key(key(crossterm::event::KeyCode::Enter)),
+        watn::review::PanelOutcome::EditCommitted("git status --short".to_string())
+    );
+    let selected = panel.selected_candidate;
+    let result = panel.candidates[selected].apply_response("{\"review_version\":1,");
+    assert!(
+        matches!(
+            result,
+            watn::review::ReviewParseResult::PurposeUnavailable(_)
+        ),
+        "malformed refresh response must produce purpose-unavailable"
+    );
+    render_surface(world);
+}
+
+#[then("the edited candidate should remain visible")]
+fn review_edited_candidate_visible(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, "git status --short");
+    assert_review_rendered_contains(world, "git status --short");
+}
+
+#[then("the review surface should show purpose-unavailable or unsupported flow state")]
+fn review_purpose_unavailable_shown(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().purpose_status,
+        watn::review::PurposeStatus::Unavailable
+    );
+    assert_review_rendered_contains(world, "purpose-unavailable");
+}
+
+#[then("the original intent should remain visible")]
+fn review_intent_visible(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "inspect recent log changes");
 }
