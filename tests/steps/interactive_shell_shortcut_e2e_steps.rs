@@ -3,7 +3,13 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::process::Command;
 
+use super::{
+    ensure_test_env, find_binary, finish_pty_session, pty_wait_for_label, pty_write,
+    start_pty_command,
+};
 use crate::WatnWorld;
+
+const E2E_REVIEW_COMMAND: &str = "printf 'accepted' > /tmp/watn-shortcut-should-not-run";
 
 fn captured_bash_line(world: &WatnWorld) -> &str {
     world
@@ -84,5 +90,143 @@ fn bash_process_records_request(world: &mut WatnWorld, comment: String) {
     assert!(
         history.contains(&comment),
         "the shell history should contain the request comment {comment:?}, got: {history:?}"
+    );
+}
+
+#[cucumber::given("the candidate has a visible command flow with model-written stage purposes")]
+fn e2e_visible_command_flow(world: &mut WatnWorld) {
+    world.review.e2e = true;
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": E2E_REVIEW_COMMAND,
+        "stages": [
+            {
+                "stage_text": E2E_REVIEW_COMMAND,
+                "purpose": "Write the accepted marker without executing it."
+            }
+        ],
+        "purpose_status": "ready"
+    })
+    .to_string();
+    world.pending_mock_output = Some(response);
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_usage = Some(false);
+    world.temp_dir = None;
+    world.raw_config = None;
+    ensure_test_env(world);
+
+    let home = world
+        .temp_dir
+        .as_ref()
+        .expect("e2e review temp dir")
+        .path()
+        .join("home");
+    std::fs::create_dir_all(&home).expect("create e2e review home");
+    let target = home.join(".bashrc");
+    let environment = watn::shell_shortcut::ShellEnvironment {
+        home,
+        xdg_config_home: None,
+        shell: Some("/bin/bash".to_string()),
+    };
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Bash],
+        &environment,
+    );
+    assert!(report.is_success(), "e2e shortcut install: {report:?}");
+    world.shortcut_targets = std::collections::HashMap::from([("bash".to_string(), target)]);
+
+    let binary = find_binary();
+    let bin_dir = world
+        .temp_dir
+        .as_ref()
+        .expect("e2e review temp dir")
+        .path()
+        .join("bin");
+    std::fs::create_dir_all(&bin_dir).expect("create e2e bin dir");
+    let watn_link = bin_dir.join("watn");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(&binary, &watn_link).expect("link the real watn binary");
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    world.path_override = Some(format!("{}:{}", bin_dir.display(), current_path));
+
+    let _ = std::fs::remove_file("/tmp/watn-shortcut-should-not-run");
+}
+
+pub(crate) fn invoke_review_widget_pty(world: &mut WatnWorld) {
+    let target = world
+        .shortcut_targets
+        .get("bash")
+        .expect("e2e Bash shortcut target")
+        .display()
+        .to_string();
+    world
+        .env_vars
+        .insert("WATN_SHORTCUT_FILE".to_string(), target);
+    world
+        .env_vars
+        .insert("WATN_INPUT".to_string(), world.review.intent.clone());
+    let script = r#"
+source "$WATN_SHORTCUT_FILE"
+READLINE_LINE="$WATN_INPUT"
+READLINE_POINT=0
+_watn_widget
+printf 'LINE<<%s>>\n' "$READLINE_LINE"
+printf 'HIST<<%s>>\n' "$(history)"
+"#;
+    let session = start_pty_command(world, "bash", &["--noprofile", "--norc", "-c", script]);
+    world.pty_session = Some(session);
+}
+
+fn marker_value_first(output: &str, marker: &str) -> String {
+    let start = output.find(marker).expect("marker start") + marker.len();
+    let rest = &output[start..];
+    let end = rest.find(">>").expect("marker end");
+    rest[..end].to_string()
+}
+
+fn marker_value_last(output: &str, marker: &str) -> String {
+    let start = output.find(marker).expect("marker start") + marker.len();
+    let rest = &output[start..];
+    let end = rest.rfind(">>").expect("marker end");
+    rest[..end].to_string()
+}
+
+#[when("I accept the selected candidate in the review surface")]
+fn e2e_accept_candidate(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("e2e bash PTY session");
+    pty_wait_for_label(session, "Accept candidate");
+    pty_write(session, "\r");
+    let output = pty_wait_for_label(session, "HIST<<");
+    let line = marker_value_first(&output, "LINE<<");
+    let history = marker_value_last(&output, "HIST<<");
+    world.review.bash_command_line = line;
+    world.review.bash_history = history.lines().map(str::to_string).collect();
+    let session = world.pty_session.take().expect("e2e bash PTY session");
+    let _ = finish_pty_session(world, session);
+}
+
+#[then("the Bash command line should contain the accepted candidate")]
+fn e2e_bash_line_contains_candidate(world: &mut WatnWorld) {
+    assert!(
+        world.review.bash_command_line.contains(E2E_REVIEW_COMMAND),
+        "Bash command line {:?} should contain the accepted candidate",
+        world.review.bash_command_line
+    );
+}
+
+#[then(expr = "the Bash history should contain the original request comment {string}")]
+fn e2e_bash_history_contains_comment(world: &mut WatnWorld, comment: String) {
+    let history = world.review.bash_history.join("\n");
+    assert!(
+        history.contains(&comment),
+        "Bash history {history:?} should contain {comment:?}"
+    );
+}
+
+#[then("the accepted candidate should not have executed")]
+fn e2e_candidate_not_executed(_world: &mut WatnWorld) {
+    assert!(
+        !std::path::Path::new("/tmp/watn-shortcut-should-not-run").exists(),
+        "the accepted candidate must not execute"
     );
 }

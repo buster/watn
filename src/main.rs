@@ -16,8 +16,13 @@ use watn::setup::{SetupEntryPoint, SetupWizardOutcome};
 type StreamOutcome = (
     Result<StreamingResponse, watn::error::Error>,
     Option<watn::output::spinner::Spinner>,
-    render::StreamRenderer<io::Stdout>,
+    CommandSink,
 );
+
+enum CommandSink {
+    Stream(render::StreamRenderer<io::Stdout>),
+    Review(watn::review::ReviewBuffer),
+}
 
 #[derive(clap::Parser)]
 #[command(name = "watn", version = env!("CARGO_PKG_VERSION"))]
@@ -57,6 +62,19 @@ struct Cli {
         help = "Prompt before executing the generated command"
     )]
     execute: bool,
+
+    #[arg(
+        long = "review-panel",
+        conflicts_with = "no_review_panel",
+        help = "Force the explanatory review surface on for this invocation"
+    )]
+    review_panel: bool,
+
+    #[arg(
+        long = "no-review-panel",
+        help = "Disable the explanatory review surface for this invocation"
+    )]
+    no_review_panel: bool,
 
     #[arg(
         short = 'v',
@@ -279,6 +297,20 @@ fn main() {
 
     let interrupt = Arc::new(AtomicBool::new(false));
 
+    let review_override = match watn::config::types::ReviewPanelOverride::from_flags(
+        cli.review_panel,
+        cli.no_review_panel,
+    ) {
+        Ok(override_value) => override_value,
+        Err(message) => {
+            eprintln!("{message}");
+            std::process::exit(2);
+        }
+    };
+    let review_eligible = watn::review::controlling_terminal_is_usable();
+    let review_enabled =
+        watn::review::resolve_review_enabled(&config, review_override, review_eligible);
+
     let mut registry = ProviderRegistry::new();
     build_registry(
         &mut registry,
@@ -288,26 +320,31 @@ fn main() {
         Arc::clone(&interrupt),
     );
 
-    let system_prompt = format!(
-        "You are a direct answer engine. Output ONLY the requested information.\n\
-         Operating System: {} ({}). Shell: {}.\n\
-         \n\
-         For commands: Output executable syntax only. No explanations, no comments.\n\
-         For questions: Output the answer only. No context, no elaboration.\n\
-         \n\
-         Rules:\n\
-         - If asked for a command, provide ONLY the command\n\
-         - If asked a question, provide ONLY the answer\n\
-         - Never include markdown formatting or code blocks\n\
-         - Never add explanatory text before or after\n\
-         - Assume output will be piped or executed directly\n\
-         - For multi-step commands, use && or ; to chain them\n\
-         - Make commands robust and handle edge cases silently",
-        std::env::consts::OS,
-        std::env::consts::ARCH,
-        std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string()),
-    );
+    let system_prompt = if review_enabled {
+        review_system_prompt()
+    } else {
+        format!(
+            "You are a direct answer engine. Output ONLY the requested information.\n\
+             Operating System: {} ({}). Shell: {}.\n\
+             \n\
+             For commands: Output executable syntax only. No explanations, no comments.\n\
+             For questions: Output the answer only. No context, no elaboration.\n\
+             \n\
+             Rules:\n\
+             - If asked for a command, provide ONLY the command\n\
+             - If asked a question, provide ONLY the answer\n\
+             - Never include markdown formatting or code blocks\n\
+             - Never add explanatory text before or after\n\
+             - Assume output will be piped or executed directly\n\
+             - For multi-step commands, use && or ; to chain them\n\
+             - Make commands robust and handle edge cases silently",
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string()),
+        )
+    };
 
+    let intent = question.clone();
     let messages = vec![
         Message {
             role: "system".to_string(),
@@ -335,9 +372,13 @@ fn main() {
     .expect("install SIGINT handler");
 
     let mut spinner = Some(watn::output::spinner::Spinner::start(&model));
-    let mut output = render::StreamRenderer::new(io::stdout());
+    let mut sink = if review_enabled {
+        CommandSink::Review(watn::review::ReviewBuffer::new())
+    } else {
+        CommandSink::Stream(render::StreamRenderer::new(io::stdout()))
+    };
 
-    let (stream_result, mut spinner, mut output) = {
+    let (stream_result, mut spinner, mut sink) = {
         let worker_provider_name = provider_name.to_string();
         let worker_messages = messages;
         let worker_options = options;
@@ -347,15 +388,18 @@ fn main() {
                 let mut emit_content = |event: StreamEvent| -> Result<(), watn::error::Error> {
                     match event {
                         StreamEvent::Content(content) if !content.is_empty() => {
-                            if !output.has_content() {
-                                if let Some(active_spinner) = spinner.take() {
-                                    active_spinner.finish();
-                                }
+                            if let Some(active_spinner) = spinner.take() {
+                                active_spinner.finish();
                             }
 
-                            output
-                                .write_content(&content)
-                                .map_err(watn::error::Error::IoError)?;
+                            match &mut sink {
+                                CommandSink::Stream(output) => {
+                                    output
+                                        .write_content(&content)
+                                        .map_err(watn::error::Error::IoError)?;
+                                }
+                                CommandSink::Review(buffer) => buffer.receive(&content),
+                            }
                         }
                         StreamEvent::Content(_) => {}
                     }
@@ -368,7 +412,7 @@ fn main() {
                     &mut emit_content,
                 )
             };
-            (result, spinner, output)
+            (result, spinner, sink)
         });
         wait_for_stream_result(stream_handle, &interrupt)
     };
@@ -378,6 +422,24 @@ fn main() {
             if let Some(active_spinner) = spinner.take() {
                 active_spinner.finish();
             }
+
+            let mut output = match sink {
+                CommandSink::Stream(output) => output,
+                CommandSink::Review(mut buffer) => {
+                    buffer.complete();
+                    run_review_path(
+                        &response,
+                        &buffer,
+                        &intent,
+                        tier.unwrap_or("1"),
+                        provider_name,
+                        &model,
+                        cli.execute,
+                        cli.verbose,
+                        &config,
+                    );
+                }
+            };
 
             if let Err(error) = output.complete() {
                 let error = watn::error::Error::IoError(error);
@@ -443,8 +505,10 @@ fn main() {
             if let Some(active_spinner) = spinner.take() {
                 active_spinner.finish();
             }
-            if output.has_content() {
-                let _ = output.finish_partial();
+            if let CommandSink::Stream(output) = &mut sink {
+                if output.has_content() {
+                    let _ = output.finish_partial();
+                }
             }
             if matches!(e, watn::error::Error::Interrupted) {
                 std::process::exit(130);
@@ -458,6 +522,152 @@ fn main() {
     if interrupt.load(Ordering::SeqCst) {
         std::process::exit(130);
     }
+}
+
+fn review_system_prompt() -> String {
+    format!(
+        "You are a command review engine. Respond with exactly one JSON object and nothing else.\n\
+         Schema: {{\"review_version\":1,\"command\":\"...\",\"stages\":[{{\"stage_text\":\"...\",\"purpose\":\"...\"}}],\"purpose_status\":\"ready\"}}\n\
+         Rules:\n\
+         - command is the complete executable command for the request.\n\
+         - Split the command into stages at top-level pipes, && and ; boundaries. stage_text must be the exact text of each stage.\n\
+         - purpose is plain text explaining the stage; never evaluate or execute anything.\n\
+         Operating System: {} ({}). Shell: {}.",
+        std::env::consts::OS,
+        std::env::consts::ARCH,
+        std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string()),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_review_path(
+    response: &StreamingResponse,
+    buffer: &watn::review::ReviewBuffer,
+    intent: &str,
+    tier: &str,
+    provider: &str,
+    model: &str,
+    execute: bool,
+    verbose: bool,
+    config: &watn::config::types::Config,
+) -> ! {
+    let raw = buffer.candidate().unwrap_or_default();
+    let candidate = match watn::review::parse_structured_review_response(raw) {
+        Ok(parsed) => {
+            let mut candidate = watn::review::ReviewCandidate::from_command(parsed.command.clone());
+            let _ = candidate.apply_response(raw);
+            candidate
+        }
+        Err(_) => watn::review::ReviewCandidate::from_command(raw),
+    };
+
+    if candidate.command.trim().is_empty() {
+        eprintln!("review unavailable: no complete command candidate");
+        std::process::exit(1);
+    }
+
+    let context = watn::review::ReviewContext {
+        intent: intent.to_string(),
+        tier: tier.to_string(),
+        provider: provider.to_string(),
+        model: model.to_string(),
+    };
+    let size = crossterm::terminal::size().unwrap_or((80, 24));
+    let layout = watn::review::InlineLayout::for_dimensions(size.0, size.1);
+    let terminal = match std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("/dev/tty")
+        .map_err(|error| error.to_string())
+        .and_then(|tty| {
+            watn::review::ControllingTerminal::open(tty, layout).map_err(|error| error.to_string())
+        }) {
+        Ok(terminal) => terminal,
+        Err(error) => {
+            eprintln!("review unavailable: {error}");
+            std::process::exit(1);
+        }
+    };
+    let mut panel = watn::review::InlineReviewPanel::new(
+        terminal,
+        watn::review::ReviewPanelState::new(context, candidate.clone()),
+    );
+    if let Err(error) = panel.render() {
+        eprintln!("review unavailable: {error}");
+        std::process::exit(1);
+    }
+
+    let accepted = loop {
+        let key = match crossterm::event::read() {
+            Ok(crossterm::event::Event::Key(key)) => key,
+            Ok(_) => continue,
+            Err(error) => {
+                eprintln!("review unavailable: {error}");
+                std::process::exit(1);
+            }
+        };
+        match panel.handle_key(key) {
+            Ok(watn::review::PanelOutcome::Accepted(candidate)) => break candidate,
+            Ok(watn::review::PanelOutcome::Cancelled) => {
+                let _ = panel.finish();
+                std::process::exit(0);
+            }
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("review unavailable: {error}");
+                std::process::exit(1);
+            }
+        }
+    };
+    if let Err(error) = panel.finish() {
+        eprintln!("review unavailable: {error}");
+        std::process::exit(1);
+    }
+
+    {
+        use std::io::Write as _;
+        let mut stdout = io::stdout();
+        if writeln!(stdout, "{}", accepted.command).is_err() || stdout.flush().is_err() {
+            std::process::exit(1);
+        }
+    }
+
+    if verbose {
+        if let Some(reasoning) = &response.reasoning_content {
+            if !reasoning.trim().is_empty() {
+                let _ = render::print_reasoning(reasoning);
+            }
+        }
+    }
+
+    let cost = config.pricing.get(&response.model).map(|p| {
+        let input_cost = p.input
+            * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
+            / 1_000_000.0;
+        let output_cost = p.output
+            * response
+                .final_usage
+                .as_ref()
+                .map_or(0, |u| u.completion_tokens) as f64
+            / 1_000_000.0;
+        input_cost + output_cost
+    });
+    let elapsed = response.elapsed_secs;
+    let tok_s = if elapsed > 0.0 {
+        response
+            .final_usage
+            .as_ref()
+            .map_or(0.0, |u| u.completion_tokens as f64)
+            / elapsed
+    } else {
+        0.0
+    };
+    let _ = render::print_metadata(&response.model, tok_s, cost, elapsed);
+
+    if execute {
+        watn::exec::execute(&accepted.command);
+    }
+    std::process::exit(0);
 }
 
 fn wait_for_stream_result(

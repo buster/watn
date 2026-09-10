@@ -1092,6 +1092,7 @@ pub struct ReviewState {
     pub catalog_models: Vec<String>,
     pub cleanup: String,
     pub narrow: bool,
+    pub e2e: bool,
 }
 
 fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
@@ -1232,6 +1233,10 @@ fn review_structured_response(world: &mut WatnWorld, step: &cucumber::gherkin::S
 fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
     world.review.intent = input.clone();
     world.review.progress_line = Some(format!("Generating command for {input}"));
+    if world.review.e2e {
+        crate::steps::interactive_shell_shortcut_e2e_steps::invoke_review_widget_pty(world);
+        return;
+    }
     match world.review.driver.clone() {
         ReviewDriver::Structured if world.review.review_disabled => {
             review_invoke_disabled_ctrl_w(world, &input);

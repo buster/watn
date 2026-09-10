@@ -574,6 +574,15 @@ impl std::fmt::Debug for PtySession {
 /// config are prepared from the world first.
 pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> PtySession {
     let binary = find_binary();
+    start_pty_command(world, binary, args)
+}
+
+/// Start an arbitrary program in a PTY with the world's environment.
+pub(crate) fn start_pty_command(
+    world: &mut crate::WatnWorld,
+    program: impl AsRef<std::ffi::OsStr>,
+    args: &[&str],
+) -> PtySession {
     ensure_test_env(world);
 
     let pty_system = portable_pty::native_pty_system();
@@ -586,7 +595,7 @@ pub(crate) fn start_pty_session(world: &mut crate::WatnWorld, args: &[&str]) -> 
         })
         .expect("open pty");
 
-    let mut cmd = portable_pty::CommandBuilder::new(binary);
+    let mut cmd = portable_pty::CommandBuilder::new(program);
     for a in args {
         cmd.arg(a);
     }

@@ -775,8 +775,12 @@ pub fn sanitize_terminal_text(value: &str) -> String {
 
 pub fn controlling_terminal_is_usable() -> bool {
     io::stdin().is_terminal()
-        && io::stdout().is_terminal()
         && io::stderr().is_terminal()
+        && std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("/dev/tty")
+            .is_ok()
         && std::env::var("TERM").as_deref() != Ok("dumb")
 }
 

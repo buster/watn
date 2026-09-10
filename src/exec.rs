@@ -27,17 +27,21 @@ pub fn prompt_and_execute(command: &str) -> PromptResult {
     };
 
     match confirmation {
-        Confirmation::Execute => {
-            let status = std::process::Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .status()
-                .expect("failed to execute command");
-            std::process::exit(status.code().unwrap_or(0));
-        }
+        Confirmation::Execute => execute(command),
         Confirmation::Cancelled => PromptResult::Cancelled,
         Confirmation::Interrupted => PromptResult::Interrupted,
     }
+}
+
+/// Executes an already-authorized command and exits with its status. Review
+/// acceptance is the sole authorization for review-eligible `-x` requests.
+pub fn execute(command: &str) -> ! {
+    let status = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .status()
+        .expect("failed to execute command");
+    std::process::exit(status.code().unwrap_or(0));
 }
 
 fn read_line_confirmation() -> Confirmation {
