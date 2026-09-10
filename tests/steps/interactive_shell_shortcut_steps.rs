@@ -1050,3 +1050,145 @@ fn all_bindings(world: &mut WatnWorld) {
     assert!(zsh.contains("bindkey '^W'"));
     assert!(fish.contains("bind \\cw"));
 }
+
+#[derive(Debug, Default)]
+pub struct ReviewState {
+    pub candidate_command: String,
+    pub structured_response: Option<String>,
+    pub intent: String,
+    pub context: Option<watn::review::ReviewContext>,
+    pub candidate: Option<watn::review::ReviewCandidate>,
+    pub rendered: Vec<String>,
+    pub command_output: String,
+}
+
+fn install_bash_shortcut(world: &mut WatnWorld) {
+    let temp = tempfile::tempdir().expect("create shortcut temp dir");
+    let home = temp.path().join("home");
+    std::fs::create_dir_all(&home).expect("create isolated home");
+    world.shortcut_targets = HashMap::from([("bash".to_string(), home.join(".bashrc"))]);
+    world.temp_dir = Some(temp);
+    let environment = shortcut_environment(world);
+    let report = watn::shell_shortcut::install_with_environment(
+        &[watn::shell_shortcut::Shell::Bash],
+        &environment,
+    );
+    assert!(
+        report.aggregate_error().is_none(),
+        "Bash shortcut installation failed: {:?}",
+        report.aggregate_error()
+    );
+}
+
+fn review_rendered_text(world: &WatnWorld) -> String {
+    world.review.rendered.join("\n")
+}
+
+fn assert_review_rendered_contains(world: &WatnWorld, needle: &str) {
+    let rendered = review_rendered_text(world);
+    assert!(
+        rendered.contains(needle),
+        "review surface should show {needle:?}, got:\n{rendered}"
+    );
+}
+
+const REVIEW_COMMAND_STAGES: [&str; 4] = [
+    "git log --format='%H' --since='7 days ago'",
+    "xargs -n1",
+    "git show --stat --oneline",
+    "printf 'done'",
+];
+
+const REVIEW_STAGE_PURPOSES: [&str; 4] = [
+    "Collect commit identifiers from the recent history.",
+    "Pass each collected identifier to the per-commit command.",
+    "Inspect each collected commit with a compact change summary.",
+    "Report that the success branch completed.",
+];
+
+#[given(expr = "an installed Bash shortcut and a provider candidate {string}")]
+fn review_candidate_given(world: &mut WatnWorld, command: String) {
+    install_bash_shortcut(world);
+    world.review = ReviewState::default();
+    world.review.candidate_command = command;
+}
+
+#[given("the provider returns this structured review response:")]
+fn review_structured_response(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let response = step
+        .docstring
+        .as_deref()
+        .expect("structured review response docstring")
+        .trim()
+        .to_string();
+    world.review.structured_response = Some(response);
+}
+
+#[when(expr = "I invoke Ctrl-W with current input {string}")]
+fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
+    world.review.intent = input.clone();
+    let command = world.review.candidate_command.clone();
+    let mut candidate = watn::review::ReviewCandidate::from_command(command);
+    if let Some(raw) = world.review.structured_response.clone() {
+        assert_eq!(
+            candidate.apply_response(&raw),
+            watn::review::ReviewParseResult::Ready,
+            "structured review response must validate against the derived command flow"
+        );
+    }
+    let context = watn::review::ReviewContext {
+        intent: input,
+        tier: "1".to_string(),
+        provider: "loopback".to_string(),
+        model: "review-model".to_string(),
+    };
+    world.review.context = Some(context.clone());
+
+    let layout = watn::review::InlineLayout::for_dimensions(100, 40);
+    let mut rendered = Vec::new();
+    for stage_index in 0..candidate.flow.stages.len() {
+        let mut state = watn::review::ReviewPanelState::new(context.clone(), candidate.clone());
+        state.flow_stage = stage_index;
+        let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
+        terminal
+            .render(&state)
+            .expect("render the review surface through the controlling terminal");
+        let bytes = terminal.into_writer();
+        rendered.push(String::from_utf8(bytes).expect("review surface bytes are UTF-8"));
+    }
+
+    world.review.rendered = rendered;
+    world.review.candidate = Some(candidate);
+    world.review.command_output.clear();
+}
+
+#[then("the review surface should show the git log stage")]
+fn review_shows_git_log(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, REVIEW_COMMAND_STAGES[0]);
+}
+
+#[then("the review surface should show the xargs stage")]
+fn review_shows_xargs(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, REVIEW_COMMAND_STAGES[1]);
+}
+
+#[then("the review surface should show the git show stage")]
+fn review_shows_git_show(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, REVIEW_COMMAND_STAGES[2]);
+}
+
+#[then("the review surface should show the success branch")]
+fn review_shows_success_branch(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, REVIEW_COMMAND_STAGES[3]);
+}
+
+#[then("the review surface should show each model-written stage purpose")]
+fn review_shows_stage_purposes(world: &mut WatnWorld) {
+    for purpose in REVIEW_STAGE_PURPOSES {
+        assert_review_rendered_contains(world, purpose);
+    }
+    assert!(
+        world.review.command_output.is_empty(),
+        "review bytes must not reach the command-output channel"
+    );
+}

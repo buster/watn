@@ -77,6 +77,7 @@ pub struct WatnWorld {
     pub hanging_server: Option<crate::steps::cancel_completion_steps::HangServer>,
     pub live_stream: Option<crate::steps::incremental_sse_rendering_e2e_steps::LiveInvocation>,
     pub release_truth: crate::steps::release_truth_steps::ReleaseTruthState,
+    pub review: crate::steps::interactive_shell_shortcut_steps::ReviewState,
 }
 
 impl Drop for WatnWorld {
