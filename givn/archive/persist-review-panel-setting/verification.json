@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "persist-review-panel-setting",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1789056652,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_commit": "7630bce0dc6c2dcb7cdb21d1c11b4a8429ecaa48",
+  "tested_commit": "7630bce0dc6c2dcb7cdb21d1c11b4a8429ecaa48",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 81,
+      "passed": 81,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 53.077334086
+    },
+    "regular": {
+      "status": "passed",
+      "total": 200,
+      "passed": 200,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 33.898739613000004
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 17204,
+    "line_valid": 18665,
+    "line_percent": 92
+  },
+  "started_at_unix": 1789056803,
+  "finished_at_unix": 1789057038
 }
