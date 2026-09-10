@@ -139,9 +139,9 @@ returning control to the shell line editor.
 Review decisions are explicit. Direct edits preserve the original Intent and
 refresh Command flow and Purpose status; cancellation, rejection, and failure
 preserve input; review display and buffer replacement never evaluate a
-Candidate. An enhanced Presentation adapter can fail without losing the review
-because the portable inline adapter is retried. A portable-panel failure
-returns `Unavailable` and releases no Candidate.
+Candidate. A card that cannot open returns `Unavailable` and releases no
+Candidate. A `d` decision inside the card writes `[review] panel = false`
+through the atomic configuration save path.
 
 The review-mode provider response is structured and contains a version, a
 complete Candidate command, exact Stage text, model-written Stage purposes, and
@@ -158,10 +158,10 @@ overlap, with every purpose non-empty — either as an exact provider split or a
 the derived stage text; missing or mismatched purposes show `purpose-unavailable` and Watn
 never authors substitute text.
 
-The review presentation selects the enhanced card only when the terminal
-supports color (`NO_COLOR` unset, `TERM` not `dumb`, and a color-capable
-terminal type); otherwise the plain panel is used. Card colors are presentation
-only and never change command, stage, or purpose text.
+The review card paints colors only when the terminal supports them
+(`NO_COLOR` unset, `TERM` not `dumb`, and a color-capable terminal type);
+otherwise the same card renders monochrome. Color is presentation only and
+never changes command, stage, or purpose text.
 
 The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
 `Actions`. Tab cycles forward, Shift-Tab cycles backward, arrows navigate within
