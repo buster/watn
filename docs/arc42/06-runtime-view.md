@@ -126,7 +126,10 @@ sequenceDiagram
 Cancellation, portable-panel failure, empty output, generation failure, and
 rejection release no Candidate. A structured-response or purpose failure keeps
 the selected Candidate reviewable with `purpose-unavailable`; incomplete flow
-keeps raw text and marks unsupported portions. An enhanced Presentation adapter
+keeps raw text and marks unsupported portions. The Candidate shown for a
+command-only or invalid response is the provider's own command text: Watn
+recovers a complete non-empty command from a fenced or JSON-shaped payload and
+otherwise shows `Unavailable` without opening the surface. An enhanced Presentation adapter
 failure retries the portable inline panel. Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.

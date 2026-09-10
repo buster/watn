@@ -175,16 +175,17 @@ async fn main() {
     let cucumber_runner = runner::Basic::<WatnWorld>::default();
     let writer = writer::Basic::stdout().normalized().summarized();
 
-    let writer = Cucumber::<WatnWorld, VecParser, Vec<PathBuf>, _, _, cucumber::cli::Empty>::custom(
-        VecParser,
-        cucumber_runner,
-        writer,
-    )
-    .steps(WatnWorld::collection())
-    .fail_on_skipped()
-    .max_concurrent_scenarios(1)
-    .run(feature_files)
-    .await;
+    let writer =
+        Cucumber::<WatnWorld, VecParser, Vec<PathBuf>, _, _, cucumber::cli::Empty>::custom(
+            VecParser,
+            cucumber_runner,
+            writer,
+        )
+        .steps(WatnWorld::collection())
+        .fail_on_skipped()
+        .max_concurrent_scenarios(1)
+        .run(feature_files)
+        .await;
 
     let stats = writer.scenarios_stats();
     if let Ok(path) = std::env::var("GIVN_RESULT_FILE") {

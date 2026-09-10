@@ -148,7 +148,11 @@ complete Candidate command, exact Stage text, model-written Stage purposes, and
 Purpose status. A valid structured response can show `loading` for delayed
 purposes. A command-only, invalid, stale, or mismatched response shows
 `purpose-unavailable` without replacing the Candidate with locally authored
-purpose text. A purpose failure keeps the Candidate reviewable.
+purpose text. A purpose failure keeps the Candidate reviewable. A fenced or
+prose-wrapped structured response is recognized, and a JSON-shaped payload with
+a complete command keeps that provider-written command reviewable as
+`purpose-unavailable`. Rendered review values flatten line breaks and tabs so
+they occupy one inline row.
 
 The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
 `Actions`. Tab cycles forward, Shift-Tab cycles backward, arrows navigate within
