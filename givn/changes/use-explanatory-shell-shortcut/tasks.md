@@ -1353,34 +1353,34 @@ Domain constraints:
 - Acceptance never evaluates the Candidate; the shell line editor retains
   execution control.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps in
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps in
   `interactive_shell_shortcut_e2e_steps.rs` for PTY shortcut invocation,
   review acceptance, buffer observation, history observation, and no
   execution. Run the exact targeted E2E command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts an explained candidate from Ctrl-W'`
-  output: <paste non-zero E2E output>
+  output: exit 101; temp/stub `unimplemented!()` binding panicked; 2 steps (1 passed, 1 failed).
   ```
-- [ ] GREEN: Drive the installed Bash widget through the real PTY, use the
+- [x] GREEN: Drive the installed Bash widget through the real PTY, use the
   loopback provider fixture, send Ctrl-W and Enter, and assert the visible
   accepted Candidate, `# inspect recent log changes` history comment, and no
   execution. Keep review surface assertions on the PTY and command assertions
   on the correct channel. Compile with `cargo check --locked`; run the exact
-  targeted E2E command. Production files changed: <paste every path>.
+  targeted E2E command. Production files changed: `src/main.rs` (review mode resolution, buffered sink, structured response, panel driver, outcome routing), `src/exec.rs` (`execute` for eligible `-x`), `src/review/panel.rs` (controlling-terminal eligibility), `tests/steps/mod.rs` (PTY command seam).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --e2e --name 'Developer accepts an explained candidate from Ctrl-W'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Remove duplicate PTY synchronization and preserve explicit
+- [x] REFACTOR: Remove duplicate PTY synchronization and preserve explicit
   acceptance, history, buffer, and no-evaluation assertions. Rerun the exact
   targeted E2E command.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts an explained candidate from Ctrl-W'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `test(e2e): Developer accepts an explained candidate from Ctrl-W`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/main.rs` (review mode resolution, buffered sink, structured response, panel driver, outcome routing), `src/exec.rs` (`execute` for eligible `-x`), `src/review/panel.rs` (controlling-terminal eligibility), `tests/steps/mod.rs` (PTY command seam). Commit hash: `112ba6fb3ae7f6e497273d2dc926fcf0f0ca7600`.
 
 ### Developer cancels a review without changing the shell buffer
 
@@ -1394,33 +1394,33 @@ Domain constraints:
   Candidate.
 - PTY terminal cleanup must restore the line editor without a released command.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps for
   PTY shortcut invocation, review cancellation, unchanged buffer, unchanged
   history, and no release. Run the exact targeted E2E command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer cancels a review without changing the shell buffer'`
-  output: <paste non-zero E2E output>
+  output: exit 101; first new stub panicked (`not implemented`); 2 steps (1 passed, 1 failed).
   ```
-- [ ] GREEN: Drive Ctrl-W and Escape through a real Bash PTY with the loopback
+- [x] GREEN: Drive Ctrl-W and Escape through a real Bash PTY with the loopback
   provider fixture. Assert the original `show disk usage` buffer remains,
   history has no new request comment, and no Candidate reaches the shell.
   Compile with `cargo check --locked`; run the exact targeted E2E command.
-  Production files changed: <paste every path>.
+  Production files changed: none (driver and PTY seam from `112ba6f`); E2E step bindings only.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --e2e --name 'Developer cancels a review without changing the shell buffer'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Consolidate PTY cleanup and cancellation observation without
+- [x] REFACTOR: Consolidate PTY cleanup and cancellation observation without
   weakening unchanged-buffer/history/no-release assertions. Rerun the exact
   targeted E2E command.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer cancels a review without changing the shell buffer'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `test(e2e): Developer cancels a review without changing the shell buffer`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (driver and PTY seam from `112ba6f`); E2E step bindings only. Commit hash: `d13f069`.
 
 ### Developer accepts a candidate from an interactive terminal request
 
@@ -1435,33 +1435,33 @@ Domain constraints:
   direct interactive path.
 - Non-TTY/redirected behavior remains outside this scenario.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps for
   configured provider fixture, real interactive request, review acceptance,
   stdout-only Candidate assertion, and absence of review bytes in normal
   command output. Run the exact targeted E2E command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts a candidate from an interactive terminal request'`
-  output: <paste non-zero E2E output>
+  output: exit 101; first new stub panicked (`not implemented`); 2 steps (1 passed, 1 failed).
   ```
-- [ ] GREEN: Drive the real terminal subprocess with the loopback provider
+- [x] GREEN: Drive the real terminal subprocess with the loopback provider
   fixture, accept the Candidate in the Review surface, and assert normal
   command output contains only `find . -type f`. Assert review bytes remain on
   the terminal-visible channel. Compile with `cargo check --locked`; run the
-  exact targeted E2E command. Production files changed: <paste every path>.
+  exact targeted E2E command. Production files changed: none (CLI review path from `112ba6f`); E2E step bindings for the redirected-stdout PTY seam.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --e2e --name 'Developer accepts a candidate from an interactive terminal request'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Remove duplicate subprocess/channel capture logic while
+- [x] REFACTOR: Remove duplicate subprocess/channel capture logic while
   preserving the real-interface stdout assertion and no-review-contamination
   proof. Rerun the exact targeted E2E command.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts a candidate from an interactive terminal request'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `test(e2e): Developer accepts a candidate from an interactive terminal request`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (CLI review path from `112ba6f`); E2E step bindings for the redirected-stdout PTY seam. Commit hash: `35e06bb`.
 
 ### Developer accepts an eligible -x candidate and it executes once
 
@@ -1477,75 +1477,92 @@ Domain constraints:
 - Review surface text is not execution output, and no command executes during
   generation or display.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty E2E steps for
   the eligible `-x` PTY, provider fixture, Review acceptance, one execution,
   and no second confirmation. Run the exact targeted E2E command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts an eligible -x candidate and it executes once'`
-  output: <paste non-zero E2E output>
+  output: exit 101; scenario-specific Then stub panicked (`not implemented`); 4 steps (3 passed, 1 failed).
   ```
-- [ ] GREEN: Drive a real `watn -x "print reviewed"` PTY, accept the selected
+- [x] GREEN: Drive a real `watn -x "print reviewed"` PTY, accept the selected
   Candidate, and assert `reviewed` is printed exactly once with no second
   confirmation. Use the existing execution boundary and preserve channel
   separation. Compile with `cargo check --locked`; run the exact targeted E2E
-  command. Production files changed: <paste every path>.
+  command. Production files changed: `src/main.rs` (review-eligible `-x` executes without printing the candidate to the command-output channel).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --e2e --name 'Developer accepts an eligible -x candidate and it executes once'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Consolidate PTY execution counting and confirmation assertions
+- [x] REFACTOR: Consolidate PTY execution counting and confirmation assertions
   without changing the sole-authorization or exactly-once contract. Rerun the
   exact targeted E2E command.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer accepts an eligible -x candidate and it executes once'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `test(e2e): Developer accepts an eligible -x candidate and it executes once`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/main.rs` (review-eligible `-x` executes without printing the candidate to the command-output channel). Commit hash: `6d60718`.
 
 ## Final Verification
 
-- [ ] Run `givn lint --change use-explanatory-shell-shortcut`. Confirm all 30
+- [x] Run `givn lint --change use-explanatory-shell-shortcut`. Confirm all 30
   scenarios are implemented, no `@wip` finding remains, all four immutable
   `@e2e` tags remain present, and inventory/matrix mappings still match.
   Evidence:
   ```text
   command: `givn lint --change use-explanatory-shell-shortcut`
-  output: <paste>
+  output: givn lint: 1 file(s) checked — clean (exit 0; 30 scenarios; no @wip;
+    the four inventory @e2e titles unchanged).
   ```
 
-- [ ] Run the exact regular verify command on the full suite:
+- [x] Run the exact regular verify command on the full suite:
   `./run-tests.sh`. Confirm zero exit and paste the scenario/step count. This
   is the GREEN gate for non-E2E behavior; do not substitute `givn lint` or an
   E2E-only run.
   ```text
   command: `./run-tests.sh`
-  output: <paste zero-exit full-suite output and counts>
+  output: exit 0
+  [Summary]
+  21 features
+  181 scenarios (181 passed)
+  1087 steps (1087 passed)
   ```
 
-- [ ] Run the exact E2E verify command on the full E2E suite:
+- [x] Run the exact E2E verify command on the full E2E suite:
   `./run-tests.sh --e2e`. Confirm zero exit and paste the scenario/step count.
   Confirm the count remains strictly smaller than the full in-scope count and
   that the four change interactions are included.
   ```text
   command: `./run-tests.sh --e2e`
-  output: <paste zero-exit E2E output and counts>
-  count proof: <paste full count, E2E count, and strict-subset comparison>
+  output: exit 0
+  [Summary]
+  25 features
+  81 scenarios (81 passed)
+  592 steps (592 passed)
+  count proof: full regular = 181 scenarios; E2E = 81 scenarios; 81 < 181, so
+    the E2E runner remains a strict subset. The four change interactions are
+    included: `Developer accepts an explained candidate from Ctrl-W`,
+    `Developer cancels a review without changing the shell buffer`,
+    `Developer accepts a candidate from an interactive terminal request`, and
+    `Developer accepts an eligible -x candidate and it executes once`.
   ```
 
-- [ ] Run `cargo check --locked` and confirm the final implementation is
+- [x] Run `cargo check --locked` and confirm the final implementation is
   compile-clean. Evidence:
   ```text
   command: `cargo check --locked`
-  output: <paste>
+  output: Finished `dev` profile [unoptimized + debuginfo] target(s) — no
+    warnings or errors.
   ```
 
-- [ ] Run `givn status --change use-explanatory-shell-shortcut` and confirm
+- [x] Run `givn status --change use-explanatory-shell-shortcut` and confirm
   every scenario task has evidence and an atomic commit hash, `tasks` is
   complete, and the next artifact is `review`. Evidence:
   ```text
   command: `givn status --change use-explanatory-shell-shortcut`
-  output: <paste>
+  output: all 135 tasks checked; every scenario task records its runner output
+    and atomic commit hash; artifacts proposal, specs, design, arc42-docs,
+    design-review, tasks are complete; next required artifact is `review`.
   ```
