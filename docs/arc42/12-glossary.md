@@ -20,6 +20,7 @@
 | Buffered reasoning | Provider-collected reasoning that is deliberately not emitted during the content stream and is discarded from user-visible output when the stream fails |
 | Partial output | Command content already flushed before a provider or output failure; it remains visible but is never treated as a successful executable result |
 | Model picker | The SetupWizard model-page search flow that updates suggestions as the user types and applies a stale-generation guard to remote results |
+| Model chooser | The in-card list of configured tiers and provider-catalog suggestions used to regenerate a rejected Candidate; the suggestions load without blocking the chooser. Anti-terms: not the SetupWizard Model picker, not the model table or tier tabs |
 | Setup coordinator | The ratatui keyboard-driven draft flow for provider, completion endpoint, credential, provider-local catalog, separate model/reasoning questions, shell desired state, and final review |
 | Quick setup | The plain-line first-run flow (automatic when no config file exists, or via `watn quicksetup`) asking endpoint, credential, three model strengths, and one shell multiple-choice question; an empty answer accepts the suggestion, no reasoning is asked, and no network request is made |
 | Reasoning effort | A non-empty per-level string controlling `reasoning_effort`; `off` sends no field and every other value is persisted and sent verbatim |
@@ -98,9 +99,9 @@
 | Ideation topic | A preserved exploratory topic that may be mapped to a stable use-case ID but is not silently promoted during migration |
 | Persona | A confirmed user perspective associated with ideation or a use case; absence is recorded rather than invented |
 | Handoff | An explicit decision to promote an ideation topic into a permanent use-case change |
-| Candidate | A selectable generated or directly edited command in the current review; not a generic result or answer |
+| Candidate | A generated or directly edited command under review; not a generic result or answer |
 | Command flow | The visible syntactic structure of a candidate, including command stages and control-flow operators; not a pipeline map or semantic safety verdict |
-| Review surface | A transient terminal presentation for examining a proposal and its candidates; an overlay is only one possible presentation, not the domain boundary |
+| Review surface | A transient terminal presentation for examining a Candidate and its Command flow; an overlay is only one possible presentation, not the domain boundary |
 | Review decision | An explicit developer action during review, such as accept, edit, reject, cancel, rephrase, or escalate; not a generic action |
 | Presentation adapter | A terminal-specific renderer that presents the review surface; not a generic handler |
 | Intent | The current natural-language request that produces a Candidate; a rephrase replaces the visible active Intent and direct command editing does not change it |
@@ -111,5 +112,5 @@
 | Command-output channel | The existing stdout channel carrying only the accepted Candidate for a review-eligible accepted direct path; it is not the controlling-terminal channel |
 | Controlling-terminal channel | The terminal descriptor used for the transient Review surface and ANSI cleanup; it never carries review text through stdout |
 | Shell line-editor buffer | The current editable command line owned by Bash Readline, Zsh ZLE, or Fish `commandline`; Watn changes it only after accepted Ctrl-W review |
-| Review outcome | The typed result `Accepted(candidate)`, `Cancelled`, or `Unavailable` returned by review; it is not shell execution authorization except for eligible `-x` after acceptance |
-| Review history | Candidate and prior-Intent state retained only during one current review; it is not persisted shell history |
+| Review outcome | The typed result `Accepted(candidate)`, `Cancelled`, `RejectRequested`, `RegenerateWith(tier, model)`, or `Unavailable` returned by review; it is not shell execution authorization except for eligible `-x` after acceptance |
+| Review history | Prior-Intent state retained only during one current review; it is not persisted shell history |

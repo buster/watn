@@ -136,10 +136,14 @@ because the shell widget captures stdout as the command-output channel. The
 surface restores cursor visibility, raw input mode, and occupied rows before
 returning control to the shell line editor.
 
-Review decisions are explicit. Direct edits preserve the original Intent and
-refresh Command flow and Purpose status; cancellation, rejection, and failure
-preserve input; review display and buffer replacement never evaluate a
-Candidate. A card that cannot open returns `Unavailable` and releases no
+Review decisions are explicit: the card opens on the command flow, Enter or `a`
+accepts, `e` edits, `r` rejects, `c` or Escape cancels, and `d` disables
+permanently. Direct edits preserve the original Intent and refresh Command flow
+and Purpose status. Rejection releases nothing and opens the model chooser;
+choosing a configured tier or a typed or catalog-suggested model regenerates the
+Candidate, and a failed regeneration keeps the previous Candidate and reports
+the failure. Cancellation and failure preserve input; review display and buffer
+replacement never evaluate a Candidate. A card that cannot open returns `Unavailable` and releases no
 Candidate. A `d` decision inside the card writes `[review] panel = false`
 through the atomic configuration save path. A set `--review-panel` or
 `--no-review-panel` override records the same setting before generation, so the

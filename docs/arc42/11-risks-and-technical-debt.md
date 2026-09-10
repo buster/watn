@@ -76,6 +76,7 @@
 | R-073 | Buffering review-eligible output until `[DONE]` may make generation feel slower or leak output through an alternate path | Medium | High | Preserve the existing progress line first, use the existing synchronous callback with a review-only buffered sink, release only after final acceptance, and assert stdout/controlling-terminal separation |
 | R-074 | Inline review cleanup may leave terminal state or conflict with shell repaint | Medium | High | Restore cursor, raw mode, and occupied rows on every outcome; leave final prompt repaint to the shell line editor; cover acceptance, cancellation, interruption, and failure in a fixed-size Bash PTY |
 | R-075 | Direct, Ctrl-W, and `-x` consumers may accidentally share the wrong output or authorization boundary | Medium | High | Keep the consumer routing matrix explicit, resolve review eligibility before generation, and assert direct stdout, Ctrl-W history/buffer, disabled paths, and eligible/non-review `-x` separately |
+| R-077 | Regeneration after rejection can fail or return an unusable candidate, and provider-catalog suggestions can be unavailable | Medium | Medium | Keep the previous candidate and review state on failure, report the failure in the card, release nothing, and degrade the chooser to configured tiers and typed model names when the catalog is unavailable |
 
 ## Technical debt
 
