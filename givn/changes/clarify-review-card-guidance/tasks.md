@@ -86,28 +86,28 @@ Domain constraints:
 - A stage Watn does not decompose is marked `nested syntax` with the same
   amber styling; the flow splitter and the raw stage text are unchanged.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new step with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new step with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The card marks nested shell syntax'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed); the marker stub panicked.
   ```
-- [ ] GREEN: Rename the marker copy in both render paths; update the live
+- [x] GREEN: Rename the marker copy in both render paths; update the live
   "Unsupported command flow remains reviewable" step and the two unit tests to
   assert `nested syntax`; replace the old card-marker step. Compile and run the
   exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/card.rs` (`NESTED_SYNTAX_MARKER`, both render paths; unit test), `src/review/panel.rs` (unit test), `tests/steps/interactive_shell_shortcut_steps.rs` (live marker assertion and the new card step), delta feature.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The card marks nested shell syntax'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 4 steps (4 passed); full regular 212/212, e2e 82/82, lib 78 passed.
   ```
-- [ ] REFACTOR: Keep the marker copy in one constant. Rerun the exact targeted
+- [x] REFACTOR: Keep the marker copy in one constant. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'The card marks nested shell syntax'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 4 steps (4 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The card marks nested shell syntax
+- [x] COMMIT: `61b00bb3cf3eb3e6ae49d612e5560eaee1bb572e` - feat(interactive-shell-shortcut): The card marks nested shell syntax
 
 ## Final verification
 
