@@ -1093,6 +1093,7 @@ pub struct ReviewState {
     pub cleanup: String,
     pub narrow: bool,
     pub e2e: bool,
+    pub stdout_path: Option<std::path::PathBuf>,
 }
 
 fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
@@ -2069,16 +2070,20 @@ fn review_no_surface_opens(world: &mut WatnWorld) {
 }
 
 #[when(regex = r##"^I run `watn -x "([^"]*)"` in an eligible terminal$"##)]
-fn review_run_x_eligible(world: &mut WatnWorld, _question: String) {
+fn review_run_x_eligible(world: &mut WatnWorld, question: String) {
     let review_enabled = !world.review.review_disabled && !world.review.review_ineligible;
-    assert_eq!(
-        watn::review::request_route(review_enabled, true),
-        watn::review::RequestRoute::ExecuteWithConfirmation,
-        "disabled review must keep the existing -x confirmation"
-    );
-    world.review.confirmation_shown = true;
-    world.review.surface_open = false;
-    world.review.panel = None;
+    if !review_enabled {
+        assert_eq!(
+            watn::review::request_route(false, true),
+            watn::review::RequestRoute::ExecuteWithConfirmation,
+            "disabled review must keep the existing -x confirmation"
+        );
+        world.review.confirmation_shown = true;
+        world.review.surface_open = false;
+        world.review.panel = None;
+        return;
+    }
+    crate::steps::interactive_shell_shortcut_e2e_steps::run_eligible_x_review(world, question);
 }
 
 #[then("the existing \"Execute now?\" confirmation should be shown")]

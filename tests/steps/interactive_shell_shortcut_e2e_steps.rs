@@ -271,3 +271,98 @@ fn e2e_history_no_comment(world: &mut WatnWorld, request: String) {
         "cancellation must not record a request comment, history: {history:?}"
     );
 }
+
+pub(crate) fn prepare_e2e_direct(world: &mut WatnWorld, output: String) {
+    world.review.e2e = true;
+    world.pending_mock_output = Some(output);
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_usage = Some(false);
+    world.temp_dir = None;
+    world.raw_config = None;
+    ensure_test_env(world);
+    let binary = find_binary();
+    world
+        .env_vars
+        .insert("WATN_BIN".to_string(), binary.display().to_string());
+}
+
+fn start_direct_review(world: &mut WatnWorld, script: &str) {
+    let out = world
+        .temp_dir
+        .as_ref()
+        .expect("e2e direct temp dir")
+        .path()
+        .join("stdout.txt");
+    world
+        .env_vars
+        .insert("WATN_OUT".to_string(), out.display().to_string());
+    world.review.stdout_path = Some(out);
+    let session = start_pty_command(world, "sh", &["-c", script]);
+    world.pty_session = Some(session);
+}
+
+#[when(expr = "I ask interactively for {string}")]
+fn e2e_ask_interactively(world: &mut WatnWorld, question: String) {
+    let command = world.review.candidate_command.clone();
+    prepare_e2e_direct(world, command);
+    world.env_vars.insert("WATN_QUESTION".to_string(), question);
+    start_direct_review(world, r#""$WATN_BIN" "$WATN_QUESTION" > "$WATN_OUT""#);
+}
+
+pub(crate) fn run_eligible_x_review(world: &mut WatnWorld, question: String) {
+    let command = world.review.candidate_command.clone();
+    prepare_e2e_direct(world, command);
+    world.env_vars.insert("WATN_QUESTION".to_string(), question);
+    start_direct_review(world, r#""$WATN_BIN" -x "$WATN_QUESTION" > "$WATN_OUT""#);
+}
+
+#[when("I accept the candidate in the review surface")]
+fn e2e_accept_direct_candidate(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("e2e direct PTY session");
+    pty_wait_for_label(session, "Accept candidate");
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("e2e direct PTY session");
+    let _ = finish_pty_session(world, session);
+    if let Some(path) = &world.review.stdout_path {
+        world.review.command_output = std::fs::read_to_string(path).unwrap_or_default();
+    }
+}
+
+#[then(expr = "normal command output should contain only {string}")]
+fn e2e_normal_output_only(world: &mut WatnWorld, expected: String) {
+    assert_eq!(
+        world.review.command_output.trim_end(),
+        expected,
+        "the command-output channel must contain only the accepted candidate"
+    );
+}
+
+#[then("the review surface should not appear in normal command output")]
+fn e2e_normal_output_no_review(world: &mut WatnWorld) {
+    let output = &world.review.command_output;
+    assert!(
+        !output.contains("Review |")
+            && !output.contains("Accept candidate")
+            && !output.contains("purpose"),
+        "review surface text leaked into the command-output channel: {output:?}"
+    );
+}
+
+#[then(expr = "{string} should be printed once")]
+fn e2e_printed_once(world: &mut WatnWorld, text: String) {
+    assert_eq!(
+        world.review.command_output.matches(&text).count(),
+        1,
+        "expected exactly one execution of the accepted candidate, output: {:?}",
+        world.review.command_output
+    );
+}
+
+#[then("no second execution confirmation should be shown")]
+fn e2e_no_second_confirmation(world: &mut WatnWorld) {
+    let terminal = world.output.as_deref().unwrap_or_default();
+    assert!(
+        !terminal.contains("Execute now?"),
+        "eligible review -x must not show a second confirmation: {terminal:?}"
+    );
+}

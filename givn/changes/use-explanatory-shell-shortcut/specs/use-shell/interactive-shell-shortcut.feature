@@ -190,7 +190,7 @@ Feature: Explanatory interactive shell shortcut
     Then the existing "Execute now?" confirmation should be shown
     And review acceptance should not authorize execution
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer accepts a candidate from an interactive terminal request
     Given a configured provider candidate "find . -type f"
     When I ask interactively for "find all files"
@@ -198,7 +198,7 @@ Feature: Explanatory interactive shell shortcut
     Then normal command output should contain only "find . -type f"
     And the review surface should not appear in normal command output
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer accepts an eligible -x candidate and it executes once
     Given a configured provider candidate "printf 'reviewed'"
     When I run `watn -x "print reviewed"` in an eligible terminal
