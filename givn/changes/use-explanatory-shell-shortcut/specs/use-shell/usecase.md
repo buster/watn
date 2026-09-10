@@ -92,9 +92,6 @@ evaluation.
 
 - terminal-developer--interactive
 
-The Persona is a confirmed review lens, not a Gherkin actor. The actors above
-describe the human and shell line-editor roles at the interaction boundary.
-
 ## Capabilities
 
 - interactive-shell-shortcut
@@ -111,10 +108,6 @@ describe the human and shell line-editor roles at the interaction boundary.
 ## Includes
 
 - fragment: corpus-infra
-
-The include remains valid because candidate generation uses the existing
-streaming and interruption infrastructure. This change does not add a new
-fragment capability and does not include shell completions.
 
 ## Extends
 
