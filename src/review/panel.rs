@@ -453,6 +453,13 @@ impl ReviewPanelState {
         let plain = !key
             .modifiers
             .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT);
+        if self.explain_only {
+            return match key.code {
+                KeyCode::Esc => PanelOutcome::Cancelled,
+                KeyCode::Enter => PanelOutcome::Accepted(self.candidate.clone()),
+                _ => PanelOutcome::Continue,
+            };
+        }
         match key.code {
             KeyCode::Esc => PanelOutcome::Cancelled,
             KeyCode::Up | KeyCode::Left => {

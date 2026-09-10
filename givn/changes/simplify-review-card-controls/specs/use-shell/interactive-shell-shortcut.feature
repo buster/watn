@@ -166,13 +166,13 @@ Feature: Simplified review card controls
     When I press Delete
     Then the text at the insertion point should be removed
 
-  @givn.added @wip
+  @givn.added
   Scenario: The explanation card ignores review decisions
     Given the explanatory review surface is disabled
     And a configured provider candidate "printf 'reviewed'"
     When I run `watn -x "print reviewed"` in an eligible terminal
     And I ask to explain the command
-    And I press the accept shortcut
+    And I press the accept shortcut on the explanation card
     Then the explanation card should remain open
     When I close the explanation
     Then the existing "Execute now?" confirmation should be shown

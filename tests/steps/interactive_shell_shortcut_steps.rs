@@ -3560,3 +3560,26 @@ fn editor_text_at_removed(world: &mut WatnWorld) {
     );
     assert_eq!(panel.editor_cursor(), cursor);
 }
+
+#[when("I press the accept shortcut on the explanation card")]
+fn review_explain_accept_shortcut(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('a')));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::Continue,
+        "an explanation-only card must ignore review decisions"
+    );
+    render_current_surface(world);
+}
+
+#[then("the explanation card should remain open")]
+fn review_explain_card_remains_open(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(
+        panel.explain_only,
+        "the explanation card stays explanation-only"
+    );
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+    assert!(world.review.surface_open, "the explanation must stay open");
+    assert_review_rendered_contains(world, "close");
+}
