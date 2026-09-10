@@ -13,31 +13,31 @@ Use-case constraints apply to every scenario:
 
 ## Setup
 
-- [ ] Confirm the runner and strict mode for this change. Bind one temporary
+- [x] Confirm the runner and strict mode for this change. Bind one temporary
   step for the first scenario with `unimplemented!()`, remove `@wip` from that
   scenario only, and run the targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The review card opens on the first command-flow stage'`
-  exit: <paste non-zero exit status>
-  output: <paste the failing stub output>
+  exit: 1
+  output: 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed); the first Then stub panicked with `not implemented`.
   ```
 
-- [ ] Record the baseline before scenario implementation. Run `./run-tests.sh`
+- [x] Record the baseline before scenario implementation. Run `./run-tests.sh`
   and `./run-tests.sh --e2e` and record exit status and scenario counts.
   ```text
   regular command: `./run-tests.sh`
-  regular output/count: <paste>
+  regular output/count: exit 0; 194 scenarios (194 passed); 1157 steps (1157 passed). Six permanent scenarios are filtered because this delta declares them removed.
   e2e command: `./run-tests.sh --e2e`
-  e2e output/count: <paste>
+  e2e output/count: exit 0; 81 scenarios (81 passed); 592 steps (592 passed).
   ```
 
-- [ ] Align the release-truth plain-`r` check with its scenario wording ("plain
+- [x] Align the release-truth plain-`r` check with its scenario wording ("plain
   r for reasoning focus"): a line may mention `r` as the reject decision, but
   must not present `r` as the reasoning focus. Run the targeted release-truth
   scenario.
   ```text
   command: `./run-tests.sh --name 'Active documentation describes current command streaming'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 11 steps (11 passed). The check now rejects only lines that present plain `r` as the reasoning focus.
   ```
 
 ## Scenarios
@@ -49,30 +49,30 @@ Domain constraints:
 - The card opens on the command flow; the first stage and its purpose are the
   visible subject; no focus region exists.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The review card opens on the first command-flow stage'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed); the stub panicked.
   ```
-- [ ] GREEN: Remove `FocusRegion`, `PanelAction`, and the candidate list from
+- [x] GREEN: Remove `FocusRegion`, `PanelAction`, and the candidate list from
   the panel state; render one candidate with the first stage active and no
   focus strip; migrate every step binding that references the removed APIs,
   including the retained higher-tier and interrupt scenarios and the removed
   scenarios' bindings. Compile with `cargo check --locked`, then run the exact
   targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (single-candidate state, focus regions and action cursor removed, arrows move stages, `e`/`d`/Enter decisions), `src/review/card.rs` (header, no focus row or action row, hints), `src/review/mod.rs` (exports), `tests/steps/interactive_shell_shortcut_steps.rs` (bindings and removed-API migration), `tests/steps/release_truth_steps.rs` (plain-`r` check aligned with its scenario wording), `tests/steps/interactive_shell_shortcut_e2e_steps.rs` (card wait labels).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The review card opens on the first command-flow stage'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed); full suites also green: regular 195/195, e2e 81/81, lib 71 passed.
   ```
-- [ ] REFACTOR: Keep the state machine and renderer coherent (no stale focus
+- [x] REFACTOR: Keep the state machine and renderer coherent (no stale focus
   helpers). Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'The review card opens on the first command-flow stage'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The review card opens on the first command-flow stage
+- [x] COMMIT: `7ca2fcf1e8adab3da5d7148c6dc564e265d16ffd` - feat(interactive-shell-shortcut): The review card opens on the first command-flow stage
 
 ### The review card exposes the direct decision shortcuts
 
