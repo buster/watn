@@ -122,7 +122,7 @@ Feature: Explanatory interactive shell shortcut
     And the review surface should not claim that purposes are loading
     And the candidate should remain reviewable
 
-  @givn.added @wip
+  @givn.added
   Scenario: Unsupported command flow remains reviewable
     Given an installed Bash shortcut and a provider candidate containing unsupported shell syntax
     When I invoke Ctrl-W with the current input

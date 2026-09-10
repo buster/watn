@@ -1731,3 +1731,37 @@ fn review_candidate_reviewable(world: &mut WatnWorld) {
     );
     assert_review_rendered_contains(world, "Accept candidate");
 }
+
+const REVIEW_UNSUPPORTED_COMMAND: &str = "for file in *.log; do cat < \"$file\"; done";
+
+#[given("an installed Bash shortcut and a provider candidate containing unsupported shell syntax")]
+fn review_unsupported_candidate(world: &mut WatnWorld) {
+    install_bash_shortcut(world);
+    world.review = ReviewState {
+        candidate_command: REVIEW_UNSUPPORTED_COMMAND.to_string(),
+        intent: "inspect log files".to_string(),
+        ..ReviewState::default()
+    };
+}
+
+#[then("the raw candidate should remain visible")]
+fn review_raw_candidate_visible(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, REVIEW_UNSUPPORTED_COMMAND);
+}
+
+#[then("unsupported command-flow portions should be marked")]
+fn review_unsupported_marked(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(
+        panel.candidate().flow.has_unsupported(),
+        "unsupported syntax must be marked in the derived flow"
+    );
+    assert_review_rendered_contains(world, "unsupported");
+}
+
+#[then("the review surface should still offer final acceptance and cancellation")]
+fn review_acceptance_and_cancellation_offered(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "Accept candidate");
+    assert_review_rendered_contains(world, "Cancel review");
+    assert!(world.review.released.is_none());
+}
