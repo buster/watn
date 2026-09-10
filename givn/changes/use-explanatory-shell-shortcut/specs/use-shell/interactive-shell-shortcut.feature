@@ -174,7 +174,7 @@ Feature: Explanatory interactive shell shortcut
     Then the existing command-output channel should contain only "find . -type f"
     And no review surface should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabled review preserves -x confirmation
     Given the explanatory review surface is disabled
     And a configured provider candidate "printf 'reviewed'"

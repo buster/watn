@@ -1084,6 +1084,8 @@ pub struct ReviewState {
     pub bash_command_line: String,
     pub bash_history: Vec<String>,
     pub review_disabled: bool,
+    pub review_ineligible: bool,
+    pub confirmation_shown: bool,
     pub executed: bool,
 }
 
@@ -2040,4 +2042,35 @@ fn review_submit_stdin(world: &mut WatnWorld, question: String) {
 fn review_no_surface_opens(world: &mut WatnWorld) {
     assert!(!world.review.surface_open, "review surface must not open");
     assert!(world.review.panel.is_none(), "no review panel may exist");
+}
+
+#[when(regex = r##"^I run `watn -x "([^"]*)"` in an eligible terminal$"##)]
+fn review_run_x_eligible(world: &mut WatnWorld, _question: String) {
+    let review_enabled = !world.review.review_disabled && !world.review.review_ineligible;
+    assert_eq!(
+        watn::review::request_route(review_enabled, true),
+        watn::review::RequestRoute::ExecuteWithConfirmation,
+        "disabled review must keep the existing -x confirmation"
+    );
+    world.review.confirmation_shown = true;
+    world.review.surface_open = false;
+    world.review.panel = None;
+}
+
+#[then("the existing \"Execute now?\" confirmation should be shown")]
+fn review_existing_confirmation_shown(world: &mut WatnWorld) {
+    assert!(
+        world.review.confirmation_shown,
+        "existing confirmation prompt must be shown"
+    );
+    assert!(world.review.panel.is_none(), "no review surface may open");
+}
+
+#[then("execution should require the existing confirmation response")]
+fn review_execution_requires_confirmation(world: &mut WatnWorld) {
+    assert!(
+        !world.review.executed,
+        "no execution may happen before the confirmation response"
+    );
+    assert!(world.review.confirmation_shown);
 }
