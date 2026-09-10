@@ -78,7 +78,7 @@ Feature: Explanatory interactive shell shortcut
     And the original intent should remain visible
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: The compact review surface cycles three focus regions
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

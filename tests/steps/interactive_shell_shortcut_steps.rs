@@ -1211,7 +1211,7 @@ fn review_invoke_ctrl_w(world: &mut WatnWorld, input: String) {
     }
 }
 
-fn review_invoke_structured(world: &mut WatnWorld, input: String) {
+fn build_review_panel(world: &mut WatnWorld) {
     let command = world.review.candidate_command.clone();
     let mut candidate = watn::review::ReviewCandidate::from_command(command);
     if let Some(raw) = world.review.structured_response.clone() {
@@ -1221,10 +1221,15 @@ fn review_invoke_structured(world: &mut WatnWorld, input: String) {
             "structured review response must validate against the derived command flow"
         );
     }
-    let context = review_context(&input);
+    let intent = world.review.intent.clone();
+    let context = review_context(&intent);
     world.review.context = Some(context.clone());
     world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
     render_surface(world);
+}
+
+fn review_invoke_structured(world: &mut WatnWorld, _input: String) {
+    build_review_panel(world);
     world.review.command_output.clear();
 }
 
@@ -1364,11 +1369,13 @@ fn review_surface_opens_complete(world: &mut WatnWorld) {
     );
 }
 
+const REVIEW_FIXTURE_COMMAND: &str = "git log --oneline | head -5";
+
 #[given(expr = "an installed Bash shortcut and a provider candidate for {string}")]
 fn review_candidate_for_intent(world: &mut WatnWorld, intent: String) {
     install_bash_shortcut(world);
     world.review = ReviewState {
-        candidate_command: "git log --oneline".to_string(),
+        candidate_command: REVIEW_FIXTURE_COMMAND.to_string(),
         intent,
         ..ReviewState::default()
     };
@@ -1457,9 +1464,9 @@ fn review_escape_command_editor(world: &mut WatnWorld) {
 #[then("the unedited candidate should remain selected")]
 fn review_unedited_candidate_selected(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.candidate().command, "git log --oneline");
+    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
     assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
-    assert_review_rendered_contains(world, "git log --oneline");
+    assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
 }
 
 #[then("the review surface should remain open")]
@@ -1509,4 +1516,72 @@ fn review_purpose_unavailable_shown(world: &mut WatnWorld) {
 #[then("the original intent should remain visible")]
 fn review_intent_visible(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "inspect recent log changes");
+}
+
+#[when("I open the review surface")]
+fn review_open_surface(world: &mut WatnWorld) {
+    build_review_panel(world);
+}
+
+#[then("the initial focus should be Actions with final acceptance selected")]
+fn review_initial_focus(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.focus, watn::review::FocusRegion::Actions);
+    assert_eq!(panel.selected_action(), watn::review::PanelAction::Accept);
+}
+
+#[when("I press Tab")]
+fn review_press_tab(world: &mut WatnWorld) {
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Tab));
+    render_surface(world);
+}
+
+fn assert_review_focus(world: &WatnWorld, expected: watn::review::FocusRegion, label: &str) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.focus, expected, "focus should move to {label}");
+    assert_review_rendered_contains(world, &format!("Focus: {label}"));
+}
+
+#[then("focus should move to Flow")]
+fn review_focus_flow(world: &mut WatnWorld) {
+    assert_review_focus(world, watn::review::FocusRegion::Flow, "Flow");
+}
+
+#[then("focus should move to Candidates")]
+fn review_focus_candidates(world: &mut WatnWorld) {
+    assert_review_focus(world, watn::review::FocusRegion::Candidates, "Candidates");
+}
+
+#[then("focus should move to Actions")]
+fn review_focus_actions(world: &mut WatnWorld) {
+    assert_review_focus(world, watn::review::FocusRegion::Actions, "Actions");
+}
+
+#[when("I press an arrow key within the Flow region")]
+fn review_arrow_in_flow(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.focus = watn::review::FocusRegion::Flow;
+    panel.handle_key(key(crossterm::event::KeyCode::Down));
+    render_surface(world);
+}
+
+#[then("the selected command-flow stage should change")]
+fn review_flow_stage_changed(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.flow_stage, 1,
+        "arrow key within Flow should select the next stage"
+    );
+    assert_review_rendered_contains(world, "head -5");
+}
+
+#[when("I press Shift-Tab within the Actions region")]
+fn review_shift_tab_in_actions(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.focus = watn::review::FocusRegion::Actions;
+    panel.handle_key(crossterm::event::KeyEvent::new(
+        crossterm::event::KeyCode::Tab,
+        crossterm::event::KeyModifiers::SHIFT,
+    ));
+    render_surface(world);
 }
