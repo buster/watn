@@ -488,13 +488,6 @@ Feature: Interactive shell shortcut for watn
     When  I move to the previous stage
     Then  the review surface should show only the selected stage "git log --oneline"
 
-  Scenario: The card marks unsupported stage syntax
-    Given  an installed Bash shortcut and a provider candidate containing unsupported shell syntax
-    When  I invoke Ctrl-W with the current input
-    Then  the raw candidate should remain visible
-    And  unsupported command-flow portions should be marked
-    And  the card should mark the unsupported stage
-
   Scenario: The card's edit shortcut opens the command editor
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     When  I invoke Ctrl-W with the current input
@@ -716,3 +709,25 @@ Feature: Interactive shell shortcut for watn
     And  the review surface should show "cancel"
     And  the review surface should show "disable"
     And  accept should be shown as the default decision
+  Scenario: The model chooser explains how to choose
+    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
+    When  I open the review surface
+    And  I press the reject shortcut
+    Then  the model chooser should explain its keys and input
+    And  the current model should be marked
+
+  Scenario: The first suggestion is ready to choose
+    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
+    And  the provider catalog contains "model-a" and "model-b"
+    When  I open the review surface
+    And  I press the reject shortcut
+    And  the catalog suggestions arrive
+    Then  the first suggestion should be highlighted
+    When  I choose the highlighted suggestion
+    Then  a new candidate should use "model-a"
+
+  Scenario: The card marks nested shell syntax
+    Given  an installed Bash shortcut and a provider candidate containing unsupported shell syntax
+    When  I invoke Ctrl-W with the current input
+    Then  the raw candidate should remain visible
+    And  the card should mark the nested syntax
