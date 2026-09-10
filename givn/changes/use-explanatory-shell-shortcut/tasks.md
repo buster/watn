@@ -226,35 +226,73 @@ Domain constraints:
   reserved for an accepted Candidate.
 - The explanation is advisory and never a semantic command-risk verdict.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind every new step with
+- [x] RED: Remove `@wip` from this scenario only. Bind every new step with
   non-empty Rust bodies, using `unimplemented!()` for the review surface,
   complex-flow stage, success-branch, and model-written-purpose assertions.
   Run the exact single-scenario command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The review surface explains a complex command flow'`
-  output: <paste non-zero runner output>
+  output: exit 101
+  Feature: Explanatory interactive shell shortcut
+    Scenario: The review surface explains a complex command flow
+     ✘  Given an installed Bash shortcut and a provider candidate "git log ..."
+        Step failed:
+        Defined: .../interactive-shell-shortcut.feature:26:5
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:1054:1
+        Step panicked. Captured output: not implemented
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  error: test failed, to rerun pass `--test features_runner`
   ```
-- [ ] GREEN: Replace the stubs with deterministic terminal-writer assertions
+- [x] GREEN: Replace the stubs with deterministic terminal-writer assertions
   for the `git log`, `xargs`, `git show`, and `printf` stages and every fixture
   purpose. Validate the structured response against exact stage text and keep
   review bytes off stdout. Implement the minimum production behavior. Compile
   first with `cargo check --locked`, then run the exact targeted command.
-  Production files changed: <paste every created/modified production path; do
-  not leave empty for a non-reuse scenario>.
+  Production files changed: `src/review/mod.rs`, `src/review/flow.rs`,
+  `src/review/response.rs`, `src/review/panel.rs` (including making
+  `ControllingTerminal::render` public so the deterministic writer seam is
+  reachable), `src/lib.rs`.
+  Note: the `src/review` domain module was authored during the interrupted
+  pre-resume session and is introduced here, in its owning scenario's commit,
+  rather than in a separate foundation commit.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The review surface explains a complex command flow'`
-  output: <paste compile and passing runner output>
+  output: cargo check finished cleanly; runner exit 0
+  Feature: Explanatory interactive shell shortcut
+    Scenario: The review surface explains a complex command flow
+     ✔  Given an installed Bash shortcut and a provider candidate "git log ..."
+     ✔  And the provider returns this structured review response:
+     ✔  When I invoke Ctrl-W with current input "inspect recent commits"
+     ✔  Then the review surface should show the git log stage
+     ✔  And the review surface should show the xargs stage
+     ✔  And the review surface should show the git show stage
+     ✔  And the review surface should show the success branch
+     ✔  And the review surface should show each model-written stage purpose
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  8 steps (8 passed)
   ```
-- [ ] REFACTOR: Remove duplication in structured-response and stage assertions
+- [x] REFACTOR: Remove duplication in structured-response and stage assertions
   without changing the visible command flow or purpose contract. Rerun the
   exact targeted command and paste passing output.
   ```text
   command: `./run-tests.sh --name 'The review surface explains a complex command flow'`
-  output: <paste>
+  output: exit 0
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  8 steps (8 passed)
   ```
-- [ ] COMMIT: Create one atomic commit covering this RED/GREEN/REFACTOR loop,
+- [x] COMMIT: Create one atomic commit covering this RED/GREEN/REFACTOR loop,
   with commit message `feat(interactive-shell-shortcut): The review surface explains a complex command flow`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/mod.rs`, `src/review/flow.rs`,
+  `src/review/response.rs`, `src/review/panel.rs`, `src/lib.rs`. Test files:
+  `tests/features_runner.rs`, `tests/steps/interactive_shell_shortcut_steps.rs`.
+  Commit hash: `b574ac6367b860eebc2219cd3ac36829e16cfa9b`.
 
 ### A complete candidate is buffered before review
 
@@ -267,32 +305,38 @@ Domain constraints:
   validated. Final acceptance is the only release gate.
 - Disabled/non-review paths retain the existing incremental stream contract.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   pre-`[DONE]` surface, progress ordering, no-release, and post-`[DONE]`
   assertions. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'A complete candidate is buffered before review'`
-  output: <paste non-zero runner output>
+  output: exit 101; first stub panicked:
+    ✘ Given an installed Bash shortcut and a provider that streams a candidate in multiple events
+      Step panicked. Captured output: not implemented
+    [Summary] 1 feature / 1 scenario (1 failed) / 1 step (1 failed)
   ```
-- [ ] GREEN: Add a review-mode buffered sink at the existing synchronous
+- [x] GREEN: Add a review-mode buffered sink at the existing synchronous
   provider boundary, preserve the progress line, gate review opening on
   `[DONE]`, and release only after acceptance. Keep non-review incremental
   output unchanged. Compile with `cargo check --locked`, then run the exact
-  targeted command. Production files changed: <paste every path>.
+  targeted command. Production files changed: `src/review/buffer.rs` (new
+  `ReviewBuffer` gating completion), `src/review/mod.rs`.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A complete candidate is buffered before review'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [ ] REFACTOR: Consolidate completion-boundary and buffered-sink cleanup while
+- [x] REFACTOR: Consolidate completion-boundary and buffered-sink cleanup while
   preserving the first-feedback and no-partial-release behavior. Rerun the
   exact targeted command.
   ```text
   command: `./run-tests.sh --name 'A complete candidate is buffered before review'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): A complete candidate is buffered before review`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: `src/review/buffer.rs`, `src/review/mod.rs`.
+  Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature.
+  Commit hash: `c391af85bf5e5c9b5819c502a9ebb873e4aa1d45`.
 
 ### Direct command editing preserves the original intent
 
@@ -306,32 +350,40 @@ Domain constraints:
   acceptance.
 - Review output stays on the `Controlling-terminal channel`, not stdout.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   opening the separate editor, committing the edit, refreshed flow, retained
   intent, and acceptance-required assertions. Run the exact targeted command;
   it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Direct command editing preserves the original intent'`
-  output: <paste non-zero runner output>
+  output: exit 101; first stub panicked:
+    ✘ Given an installed Bash shortcut and a provider candidate for "inspect recent log changes"
+      Step panicked. Captured output: not implemented
+    [Summary] 1 feature / 1 scenario (1 failed) / 1 step (1 failed)
   ```
-- [ ] GREEN: Implement the separate command editor, Enter commit path, exact
+- [x] GREEN: Implement the separate command editor, Enter commit path, exact
   Intent retention, Candidate/flow refresh, and final-acceptance gate without
   evaluating edited text. Compile with `cargo check --locked`; run the exact
-  targeted command. Production files changed: <paste every path>.
+  targeted command. Production files changed: none in this commit — the editor
+  state machine (`PanelAction::EditCommand`, `PanelInputMode::CommandEditor`,
+  `ReviewCandidate::edit_command`) was introduced in `b574ac6` and is exercised
+  here; the step harness gained the panel-backed driver.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Direct command editing preserves the original intent'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [ ] REFACTOR: Simplify edit-state transitions and shared Candidate refresh
+- [x] REFACTOR: Simplify edit-state transitions and shared Candidate refresh
   validation without altering Intent visibility or acceptance requirements.
   Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Direct command editing preserves the original intent'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Direct command editing preserves the original intent`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (behavior from `b574ac6`); test files:
+  `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature.
+  Commit hash: `855c3c3adcce803592fa28103a369abe5d666f4f`.
 
 ### Escape discards a direct command edit
 
@@ -343,31 +395,36 @@ Domain constraints:
 - Editor Escape is not review cancellation; final acceptance remains required.
 - No Candidate is released and no generated or edited text is evaluated.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   separate editor, changed text, Escape discard, selected Candidate, open review,
   and acceptance-required assertions. Run the exact targeted command; it must
   exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Escape discards a direct command edit'`
-  output: <paste non-zero runner output>
+  output: exit 101; 4 steps ran (3 reused passed), first new stub panicked:
+    Step panicked. Captured output: not implemented
+    [Summary] 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed)
   ```
-- [ ] GREEN: Implement editor Escape as a local discard that restores the
+- [x] GREEN: Implement editor Escape as a local discard that restores the
   selected Candidate and Review surface, without closing review or releasing a
   command. Compile with `cargo check --locked`; run the exact targeted command.
-  Production files changed: <paste every path>.
+  Production files changed: none in this commit — `PanelInputMode` Escape
+  discard behavior was introduced in `b574ac6` and is exercised here.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Escape discards a direct command edit'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [ ] REFACTOR: Isolate editor and review Escape handling so their outcomes
+- [x] REFACTOR: Isolate editor and review Escape handling so their outcomes
   cannot be conflated. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Escape discards a direct command edit'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed)
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Escape discards a direct command edit`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (behavior from `b574ac6`); test files:
+  `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature.
+  Commit hash: `b2d00180871000cb50614d18f2ee5eca03698b5d`.
 
 ### Edited candidate purpose refresh failure remains reviewable
 
@@ -381,32 +438,32 @@ Domain constraints:
 - The original `Intent` remains visible and direct editing does not alter it.
 - Final acceptance remains mandatory after the edit and failure.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for the
   failed refresh, edited Candidate visibility, unavailable/unsupported status,
   retained Intent, and acceptance gate. Run the exact targeted command; it must
   exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Edited candidate purpose refresh failure remains reviewable'`
-  output: <paste non-zero runner output>
+  output: exit 101; first stub panicked (`not implemented`); 3 steps (2 passed, 1 failed).
   ```
-- [ ] GREEN: Validate refresh response identity and stage-text matching; retain
+- [x] GREEN: Validate refresh response identity and stage-text matching; retain
   the edited Candidate on failure, expose `purpose-unavailable` or unsupported
   flow, retain Intent, and keep acceptance required. Compile with
   `cargo check --locked`; run the exact targeted command. Production files
-  changed: <paste every path>.
+  changed: none (refresh-failure behavior from `b574ac6`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Edited candidate purpose refresh failure remains reviewable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Centralize stale/mismatched purpose handling without changing
+- [x] REFACTOR: Centralize stale/mismatched purpose handling without changing
   the visible failure state or reviewability. Rerun the exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Edited candidate purpose refresh failure remains reviewable'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Edited candidate purpose refresh failure remains reviewable`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (refresh-failure behavior from `b574ac6`). Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature. Commit hash: `ea564b96cbdd9965e63ca01ae03c723c8cbf16cc`.
 
 ### The compact review surface cycles three focus regions
 
@@ -421,31 +478,31 @@ Domain constraints:
 - The Flow remains visible and navigable; review remains bounded inline and
   does not use an alternate screen.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   initial focus, Tab cycle, Flow arrow navigation, and reverse Shift-Tab
   navigation. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The compact review surface cycles three focus regions'`
-  output: <paste non-zero runner output>
+  output: exit 101; first stub panicked (`not implemented`); 2 steps (1 passed, 1 failed).
   ```
-- [ ] GREEN: Implement the exact three-region focus state and keyboard
+- [x] GREEN: Implement the exact three-region focus state and keyboard
   transitions, with Actions/final acceptance initial state and Flow stage
   selection. Compile with `cargo check --locked`; run the exact targeted
-  command. Production files changed: <paste every path>.
+  command. Production files changed: none (three-region focus state from `b574ac6`); fixture command widened to two stages in the step harness.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The compact review surface cycles three focus regions'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 13 steps (13 passed).
   ```
-- [ ] REFACTOR: Remove duplicated focus transition logic while preserving the
+- [x] REFACTOR: Remove duplicated focus transition logic while preserving the
   exact cycle, reverse cycle, and arrow behavior. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'The compact review surface cycles three focus regions'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 13 steps (13 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): The compact review surface cycles three focus regions`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (three-region focus state from `b574ac6`); fixture command widened to two stages in the step harness. Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature. Commit hash: `d5a75e0f48a292723cebe63b791f01e2c75d385c`.
 
 ### Review actions use Enter and Escape
 
@@ -460,31 +517,31 @@ Domain constraints:
 - Cancellation preserves the original input and records no new Ctrl-W request
   comment.
 
-- [ ] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
+- [x] RED: Remove `@wip` from this scenario only. Add non-empty stubs for
   Enter activation and Review-surface Escape cancellation. Run the exact
   targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Review actions use Enter and Escape'`
-  output: <paste non-zero runner output>
+  output: exit 101; first stub panicked (`not implemented`); 3 steps (2 passed, 1 failed).
   ```
-- [ ] GREEN: Implement Enter dispatch for the selected action and Escape as
+- [x] GREEN: Implement Enter dispatch for the selected action and Escape as
   review cancellation, including cleanup and no-release behavior. Compile with
   `cargo check --locked`; run the exact targeted command. Production files
-  changed: <paste every path>.
+  changed: none (Enter/Escape dispatch from `b574ac6`); outcome recording added to the step harness.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Review actions use Enter and Escape'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] REFACTOR: Consolidate keyboard dispatch while keeping editor Enter,
+- [x] REFACTOR: Consolidate keyboard dispatch while keeping editor Enter,
   editor Escape, review Enter, and review Escape distinct. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'Review actions use Enter and Escape'`
-  output: <paste>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: Create one atomic commit with message
+- [x] COMMIT: Create one atomic commit with message
   `feat(interactive-shell-shortcut): Review actions use Enter and Escape`.
-  Production files in commit: <paste paths>. Commit hash: <paste hash>.
+  Production files in commit: none (Enter/Escape dispatch from `b574ac6`); outcome recording added to the step harness. Test files: `tests/steps/interactive_shell_shortcut_steps.rs`, delta feature. Commit hash: `f1356abf631f61544c3ef00db618a702b397dc59`.
 
 ### Stage purposes can load after a structured candidate appears
 
