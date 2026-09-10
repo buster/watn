@@ -33,6 +33,7 @@
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
 | Mismatched stage text still shows purpose-unavailable | Provider stages that do not cover the command are not trusted | variant |
+| An invalid structured response with a command stays reviewable | Provider stages that do not cover the command are not trusted | variant |
 
 ## Split-or-keep
 
