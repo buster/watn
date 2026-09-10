@@ -141,7 +141,7 @@ Feature: Simplified review card controls
     Then the previous candidate should remain visible
     And the review should remain open
 
-  @givn.added @wip
+  @givn.added
   Scenario: The command editor moves the insertion point with arrows and Home and End
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

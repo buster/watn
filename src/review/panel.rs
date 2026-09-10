@@ -115,6 +115,7 @@ pub struct ReviewPanelState {
     pending_model: Option<String>,
     pending_operation: Option<ReviewOperation>,
     editor_buffer: String,
+    editor_cursor: usize,
     editor_original: String,
 }
 
@@ -134,6 +135,7 @@ impl ReviewPanelState {
             pending_model: None,
             pending_operation: None,
             editor_buffer: String::new(),
+            editor_cursor: 0,
             editor_original: String::new(),
         }
     }
@@ -284,6 +286,10 @@ impl ReviewPanelState {
 
     pub fn editor_buffer(&self) -> Option<&str> {
         (self.input_mode == PanelInputMode::CommandEditor).then_some(self.editor_buffer.as_str())
+    }
+
+    pub fn editor_cursor(&self) -> usize {
+        self.editor_cursor
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> PanelOutcome {
@@ -474,14 +480,19 @@ impl ReviewPanelState {
     fn begin_editor(&mut self) -> PanelOutcome {
         self.editor_original = self.candidate.command.clone();
         self.editor_buffer = self.editor_original.clone();
+        self.editor_cursor = self.editor_buffer.chars().count();
         self.input_mode = PanelInputMode::CommandEditor;
         PanelOutcome::Continue
     }
 
     fn handle_editor_key(&mut self, key: KeyEvent) -> PanelOutcome {
+        let plain = !key
+            .modifiers
+            .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT);
         match key.code {
             KeyCode::Esc => {
                 self.editor_buffer.clear();
+                self.editor_cursor = 0;
                 self.input_mode = PanelInputMode::Review;
                 self.editor_buffer = self.editor_original.clone();
                 PanelOutcome::EditDiscarded
@@ -490,19 +501,49 @@ impl ReviewPanelState {
                 let command = self.editor_buffer.clone();
                 self.candidate.edit_command(command.clone());
                 self.input_mode = PanelInputMode::Review;
+                self.editor_cursor = 0;
                 self.editor_original.clear();
                 PanelOutcome::EditCommitted(command)
             }
-            KeyCode::Backspace => {
-                self.editor_buffer.pop();
+            KeyCode::Left if plain => {
+                self.editor_cursor = self.editor_cursor.saturating_sub(1);
                 PanelOutcome::Continue
             }
-            KeyCode::Char(character)
-                if !key
-                    .modifiers
-                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
-            {
-                self.editor_buffer.push(character);
+            KeyCode::Right if plain => {
+                let len = self.editor_buffer.chars().count();
+                self.editor_cursor = (self.editor_cursor + 1).min(len);
+                PanelOutcome::Continue
+            }
+            KeyCode::Home if plain => {
+                self.editor_cursor = 0;
+                PanelOutcome::Continue
+            }
+            KeyCode::End if plain => {
+                self.editor_cursor = self.editor_buffer.chars().count();
+                PanelOutcome::Continue
+            }
+            KeyCode::Backspace if plain => {
+                if self.editor_cursor > 0 {
+                    let start = char_index_to_byte(&self.editor_buffer, self.editor_cursor - 1);
+                    let end = char_index_to_byte(&self.editor_buffer, self.editor_cursor);
+                    self.editor_buffer.replace_range(start..end, "");
+                    self.editor_cursor -= 1;
+                }
+                PanelOutcome::Continue
+            }
+            KeyCode::Delete if plain => {
+                let len = self.editor_buffer.chars().count();
+                if self.editor_cursor < len {
+                    let start = char_index_to_byte(&self.editor_buffer, self.editor_cursor);
+                    let end = char_index_to_byte(&self.editor_buffer, self.editor_cursor + 1);
+                    self.editor_buffer.replace_range(start..end, "");
+                }
+                PanelOutcome::Continue
+            }
+            KeyCode::Char(character) if plain => {
+                let byte = char_index_to_byte(&self.editor_buffer, self.editor_cursor);
+                self.editor_buffer.insert(byte, character);
+                self.editor_cursor += 1;
                 PanelOutcome::Continue
             }
             _ => PanelOutcome::Continue,

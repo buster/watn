@@ -3413,3 +3413,67 @@ fn review_remains_open(world: &mut WatnWorld) {
     assert!(panel.chooser().is_none(), "the chooser must close");
     assert!(world.review.surface_open, "the review must stay open");
 }
+
+#[when("I move the insertion point to the start")]
+fn editor_move_start(world: &mut WatnWorld) {
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Home));
+}
+
+#[then("the insertion point should be at the start")]
+fn editor_cursor_at_start(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.editor_cursor(), 0, "Home must move to the start");
+}
+
+#[then("typing should insert at the insertion point")]
+fn editor_typing_inserts(world: &mut WatnWorld) {
+    let cursor = {
+        let panel = world.review.panel.as_ref().expect("review panel state");
+        panel.editor_cursor()
+    };
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('Z')));
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let buffer = panel.editor_buffer().expect("editor is open");
+    assert_eq!(
+        buffer.chars().nth(cursor),
+        Some('Z'),
+        "typing must insert at the insertion point"
+    );
+    assert_eq!(panel.editor_cursor(), cursor + 1);
+}
+
+#[when("I move the insertion point to the end")]
+fn editor_move_end(world: &mut WatnWorld) {
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::End));
+}
+
+#[then("the insertion point should be at the end")]
+fn editor_cursor_at_end(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let len = panel
+        .editor_buffer()
+        .expect("editor is open")
+        .chars()
+        .count();
+    assert_eq!(panel.editor_cursor(), len, "End must move to the end");
+}
+
+#[when("I move the insertion point one character left with the arrow key")]
+fn editor_move_left(world: &mut WatnWorld) {
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Left));
+}
+
+#[then("the insertion point should be before the last character")]
+fn editor_cursor_before_last(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let len = panel
+        .editor_buffer()
+        .expect("editor is open")
+        .chars()
+        .count();
+    assert_eq!(
+        panel.editor_cursor() + 1,
+        len,
+        "Left must place the insertion point before the last character"
+    );
+}

@@ -362,14 +362,15 @@ pub fn render_card_lines(
     }
 
     if state.input_mode == super::panel::PanelInputMode::CommandEditor {
+        let buffer = sanitize_terminal_text(state.editor_buffer().unwrap_or(""));
+        let cursor = super::panel::char_index_to_byte(&buffer, state.editor_cursor());
+        let (before, after) = buffer.split_at(cursor);
         content.push((
             95,
             format!(
-                "{}   {}▏",
+                "{}   {}",
                 ink.label(&pad_to("Edit", label_width)),
-                ink.white(&sanitize_terminal_text(
-                    &state.editor_buffer().unwrap_or("")
-                ))
+                ink.white(&format!("{before}▏{after}"))
             ),
         ));
     }
