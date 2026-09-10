@@ -28,7 +28,7 @@
 - Generate shell-native Ctrl-W widgets for Bash, Zsh, and Fish using `command watn -- "$question"`, capture-only substitution, trailing-CR/LF normalization, a `#`-prefixed request comment recorded in the shell history, a buffer holding only the generated command, and no evaluation
 - Keep the existing progress line first, then use a small transient inline review surface on the controlling-terminal channel; buffer the complete Candidate until `[DONE]` and explicit acceptance and keep review-surface bytes out of stdout
 - Derive a conservative local Command flow with exact Stage text and visible unsupported portions; obtain model-written Stage purposes through the structured review response and preserve reviewability with `loading` or `purpose-unavailable` status
-- Resolve review preference as per-invocation override over persisted configuration over default-on; enhanced renderer failure falls back to the portable inline panel
+- Resolve review preference as per-invocation override over persisted configuration over default-on; the card is the only review surface, rendered monochrome when the terminal lacks color, and the in-panel `d` decision persists the disable
 - Own startup-file edits through exact marker pairs, atomic same-directory replacement, and independent per-shell result aggregation rather than a multi-file transaction
 - Use the existing SetupWizard focus state to color only the active widget border green, preserving the existing layout, selection styles, and cursor contract
 - Treat the permanent Gherkin tree as one behavior inventory: deterministic
@@ -58,7 +58,7 @@
 | Completion generation | `clap_complete` renderers fed by `Cli::command()` and a local `CompletionShell` parser | Keeps generated options, subcommands, positional arguments, and selector values aligned with the authoritative CLI definition while avoiding config/provider side effects |
 | Shell shortcut integration | Native Bash Readline, Zsh ZLE, and Fish commandline blocks plus standard filesystem writes | Preserves each shell's buffer/cursor API, keeps the installed executable on `PATH`, and confines mutation to selected marked startup-file blocks |
 | Review response | Structured provider response in review mode | Carries the complete Candidate, exact Stage text, model-written Stage purposes, version, and purpose status; command-only or invalid responses remain reviewable with `purpose-unavailable` |
-| Review presentation | Portable inline Presentation adapter with optional enhanced adapters | Uses the controlling-terminal channel, bounded dimensions, deterministic writer seam, and inline fallback; never uses the alternate screen or stdout |
+| Review presentation | Single inline review card with optional color | Uses the controlling-terminal channel, bounded dimensions, and a deterministic writer seam; never uses the alternate screen or stdout |
 
 ## Approach to quality goals
 
