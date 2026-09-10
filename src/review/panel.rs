@@ -913,6 +913,12 @@ mod tests {
     }
 
     #[test]
+    fn sanitization_flattens_row_breaking_characters() {
+        assert_eq!(sanitize_terminal_text("a\nb\tc\rd"), "a b c d");
+        assert_eq!(sanitize_terminal_text("{\n  \"a\": 1\n}"), "{   \"a\": 1 }");
+    }
+
+    #[test]
     fn review_action_edges_and_ignored_keys_are_covered() {
         let mut cancel_panel = state();
         cancel_panel.focus = FocusRegion::Actions;

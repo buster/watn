@@ -35,7 +35,7 @@ Feature: Review response recovery and inline rendering safety
     Then the original Bash command line should remain unchanged
     And no candidate should be released to the shell
 
-  @givn.added @wip
+  @givn.added
   Scenario: A multiline provider payload keeps every rendered value on one row
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider returns a markdown-fenced structured review response with line breaks

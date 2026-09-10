@@ -2606,3 +2606,23 @@ fn review_response_without_command(world: &mut WatnWorld) {
     .to_string();
     world.review.structured_response = Some(response);
 }
+
+#[given("the provider returns a markdown-fenced structured review response with line breaks")]
+fn review_multiline_fenced_response(world: &mut WatnWorld) {
+    let response = "```json\n{\n  \"review_version\": 1,\n  \"command\": \"df -h --local\",\n  \"stages\": [\n    {\"stage_text\": \"df -h --local\", \"purpose\": \"Show local disk usage.\"}\n  ],\n  \"purpose_status\": \"ready\"\n}\n```";
+    world.review.structured_response = Some(response.to_string());
+}
+
+#[then("every rendered review value should stay on one inline row")]
+fn review_rendered_rows_are_single_line(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let layout = review_layout(world);
+    let lines = watn::review::render_lines(panel, layout);
+    assert!(!lines.is_empty(), "review surface rendered no rows");
+    for line in &lines {
+        assert!(
+            !line.contains('\n') && !line.contains('\r') && !line.contains('\t'),
+            "rendered review value contains a row break: {line:?}"
+        );
+    }
+}
