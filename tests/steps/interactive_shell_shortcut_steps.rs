@@ -3014,3 +3014,22 @@ fn review_terminal_without_color(world: &mut WatnWorld) {
     );
     world.review.color_incapable = true;
 }
+
+#[when("I press the edit shortcut")]
+fn review_press_edit_shortcut(world: &mut WatnWorld) {
+    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('e')));
+    render_current_surface(world);
+}
+
+#[then("the command editor should be open")]
+fn review_command_editor_open(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.input_mode,
+        watn::review::PanelInputMode::CommandEditor
+    );
+    assert!(
+        panel.editor_buffer().is_some(),
+        "editor buffer should be active"
+    );
+}

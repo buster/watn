@@ -55,7 +55,7 @@ Feature: Enhanced review card
     When I invoke Ctrl-W with the current input
     Then the plain review surface should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: The card's edit shortcut opens the command editor
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with the current input

@@ -1137,6 +1137,18 @@ mod tests {
     }
 
     #[test]
+    fn e_shortcut_opens_the_command_editor() {
+        let mut panel = state();
+        assert_eq!(panel.input_mode, PanelInputMode::Review);
+        assert_eq!(
+            panel.handle_key(key(KeyCode::Char('e'))),
+            PanelOutcome::Continue
+        );
+        assert_eq!(panel.input_mode, PanelInputMode::CommandEditor);
+        assert_eq!(panel.editor_buffer(), Some("df -h"));
+    }
+
+    #[test]
     fn command_editor_rendering_and_reverse_focus_cycle_are_covered() {
         let mut panel = state();
         panel.input_mode = PanelInputMode::CommandEditor;
