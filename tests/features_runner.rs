@@ -175,7 +175,7 @@ async fn main() {
     let cucumber_runner = runner::Basic::<WatnWorld>::default();
     let writer = writer::Basic::stdout().normalized().summarized();
 
-    Cucumber::<WatnWorld, VecParser, Vec<PathBuf>, _, _, cucumber::cli::Empty>::custom(
+    let writer = Cucumber::<WatnWorld, VecParser, Vec<PathBuf>, _, _, cucumber::cli::Empty>::custom(
         VecParser,
         cucumber_runner,
         writer,
@@ -183,6 +183,22 @@ async fn main() {
     .steps(WatnWorld::collection())
     .fail_on_skipped()
     .max_concurrent_scenarios(1)
-    .run_and_exit(feature_files)
+    .run(feature_files)
     .await;
+
+    let stats = writer.scenarios_stats();
+    if let Ok(path) = std::env::var("GIVN_RESULT_FILE") {
+        let scope = std::env::var("GIVN_RESULT_SCOPE").unwrap_or_else(|_| "regular".to_string());
+        let payload = serde_json::json!({
+            "scope": scope,
+            "total": stats.total(),
+            "passed": stats.passed,
+            "failed": stats.failed,
+            "skipped": stats.skipped,
+        });
+        std::fs::write(&path, format!("{payload}\n")).expect("write the review result file");
+    }
+    if stats.failed > 0 || stats.skipped > 0 {
+        std::process::exit(1);
+    }
 }

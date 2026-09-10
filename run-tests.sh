@@ -23,8 +23,10 @@ cp target/debug/watn "$root/test-support-debug"
 
 if [ "$e2e" -eq 1 ]; then
     tags='@e2e and not @wip'
+    export GIVN_RESULT_SCOPE=e2e
 else
     tags='not @wip and not @e2e'
+    export GIVN_RESULT_SCOPE=regular
 fi
 
 if [ -n "$scenario_name" ]; then
