@@ -3064,3 +3064,75 @@ fn review_press_cancel_shortcut(world: &mut WatnWorld) {
         "c must cancel the review"
     );
 }
+
+fn chooser_tier_choices() -> Vec<watn::review::TierChoice> {
+    vec![
+        watn::review::TierChoice {
+            tier: "1".to_string(),
+            label: "small".to_string(),
+            model: "review-model".to_string(),
+        },
+        watn::review::TierChoice {
+            tier: "2".to_string(),
+            label: "normal".to_string(),
+            model: "review-model-2".to_string(),
+        },
+        watn::review::TierChoice {
+            tier: "3".to_string(),
+            label: "thinking".to_string(),
+            model: "review-model-3".to_string(),
+        },
+    ]
+}
+
+#[when("I press the reject shortcut")]
+fn review_press_reject_shortcut(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('r')));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::RejectRequested,
+        "r must request the model chooser"
+    );
+    world.review.panel_outcome = Some(outcome);
+    panel_mut(world).open_model_chooser(chooser_tier_choices(), Vec::new());
+    render_surface(world);
+}
+
+#[then("the model chooser should open")]
+fn review_model_chooser_open(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::ModelChooser);
+    assert!(panel.chooser().is_some(), "chooser state must be present");
+    assert_review_rendered_contains(world, "Models");
+}
+
+#[then("it should offer the configured small, normal, and thinking tiers with number shortcuts")]
+fn review_model_chooser_tiers(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let chooser = panel.chooser().expect("chooser state");
+    let labels: Vec<&str> = chooser
+        .tiers
+        .iter()
+        .map(|choice| choice.label.as_str())
+        .collect();
+    assert_eq!(labels, ["small", "normal", "thinking"]);
+    for (index, label) in ["1 small", "2 normal", "3 thinking"].iter().enumerate() {
+        let _ = index;
+        assert_review_rendered_contains(world, label);
+    }
+    assert!(chooser
+        .tiers
+        .iter()
+        .any(|choice| choice.model == "review-model-2"));
+}
+
+#[then("it should offer a field for another model name")]
+fn review_model_chooser_field(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    assert!(
+        plain.contains("Model"),
+        "the chooser must offer a model field, got:\n{rendered}"
+    );
+    assert_review_rendered_contains(world, "esc close");
+}

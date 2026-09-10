@@ -71,7 +71,7 @@ Feature: Simplified review card controls
     Then the review should be cancelled
     And no candidate should be released
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rejecting a candidate opens the model chooser
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

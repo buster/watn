@@ -10,8 +10,8 @@ pub use card::{color_terminal_supports_card, render_card_lines, terminal_support
 pub use flow::{derive_command_flow, CommandFlow, CommandStage, StageSupport, UnsupportedSpan};
 pub use panel::{
     controlling_terminal_is_usable, sanitize_terminal_text, ControllingTerminal, InlineLayout,
-    InlineReviewPanel, PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation,
-    ReviewPanelState,
+    InlineReviewPanel, ModelChooser, PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation,
+    ReviewPanelState, TierChoice,
 };
 pub use response::{
     candidate_from_provider_response, parse_structured_review_response, CandidateIdentity,

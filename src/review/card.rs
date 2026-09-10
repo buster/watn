@@ -374,24 +374,81 @@ pub fn render_card_lines(
         ));
     }
 
-    if let Some(models) = state.model_selection() {
+    if let Some(chooser) = state.chooser() {
+        if !chooser.tiers.is_empty() {
+            let tiers = chooser
+                .tiers
+                .iter()
+                .enumerate()
+                .map(|(index, choice)| {
+                    let label = format!("[{} {} · {}]", index + 1, choice.label, choice.model);
+                    if index == 0 {
+                        ink.reverse(&ink.white(&label))
+                    } else {
+                        ink.white(&label)
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("  ");
+            content.push((
+                75,
+                format!("{}   {tiers}", ink.label(&pad_to("Models", label_width))),
+            ));
+        }
+        let suggestions: Vec<String> = chooser
+            .filtered()
+            .into_iter()
+            .take(4)
+            .enumerate()
+            .map(|(index, model)| {
+                if Some(index) == chooser.highlight {
+                    ink.reverse(&ink.white(model))
+                } else {
+                    ink.white(model)
+                }
+            })
+            .collect();
+        if chooser.catalog_loading {
+            content.push((
+                70,
+                format!(
+                    "{}   {}",
+                    ink.label(&pad_to("Matches", label_width)),
+                    ink.dim("loading suggestions…")
+                ),
+            ));
+        } else if !suggestions.is_empty() {
+            content.push((
+                70,
+                format!(
+                    "{}   {}",
+                    ink.label(&pad_to("Matches", label_width)),
+                    suggestions.join("  ")
+                ),
+            ));
+        }
+        let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
+        let (before, after) = chooser.query.split_at(cursor);
         content.push((
-            75,
+            85,
             format!(
                 "{}   {}",
-                ink.label(&pad_to("Models", label_width)),
-                models
-                    .iter()
-                    .enumerate()
-                    .map(|(index, model)| {
-                        if index == 0 {
-                            ink.reverse(&ink.white(&format!("[{model}]")))
-                        } else {
-                            ink.white(model)
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join("  ")
+                ink.label(&pad_to("Model", label_width)),
+                ink.white(&format!("{before}▏{after}"))
+            ),
+        ));
+    }
+
+    if let Some(error) = state.regeneration_error() {
+        content.push((
+            95,
+            format!(
+                "{}   {}",
+                ink.label(&pad_to("Error", label_width)),
+                ink.amber(&ellipsize(
+                    &sanitize_terminal_text(error),
+                    inner - label_width - 3
+                ))
             ),
         ));
     }
@@ -399,6 +456,8 @@ pub fn render_card_lines(
     content.push((10, String::new()));
     let hints = if state.input_mode == super::panel::PanelInputMode::CommandEditor {
         ink.dim("⏎ commit · esc discard")
+    } else if state.input_mode == super::panel::PanelInputMode::ModelChooser {
+        ink.dim("1-3 tier · ⏎ choose · esc close")
     } else if state.explain_only {
         ink.dim("esc close")
     } else {

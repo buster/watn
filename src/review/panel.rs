@@ -17,6 +17,34 @@ const MIN_PANEL_WIDTH: u16 = 20;
 pub enum PanelInputMode {
     Review,
     CommandEditor,
+    ModelChooser,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TierChoice {
+    pub tier: String,
+    pub label: String,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelChooser {
+    pub tiers: Vec<TierChoice>,
+    pub catalog: Vec<String>,
+    pub catalog_loading: bool,
+    pub query: String,
+    pub query_cursor: usize,
+    pub highlight: Option<usize>,
+}
+
+impl ModelChooser {
+    pub fn filtered(&self) -> Vec<&String> {
+        let query = self.query.to_lowercase();
+        self.catalog
+            .iter()
+            .filter(|model| query.is_empty() || model.to_lowercase().contains(&query))
+            .collect()
+    }
 }
 
 /// In-progress review operations that can be interrupted independently of the
@@ -36,6 +64,8 @@ pub enum PanelOutcome {
     EditCommitted(String),
     EditDiscarded,
     DisableReviewPermanently,
+    RejectRequested,
+    RegenerateWith { tier: String, model: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,8 +109,9 @@ pub struct ReviewPanelState {
     pub explain_only: bool,
     intent_history: Vec<String>,
     configured_model: String,
-    model_selection: Option<Vec<String>>,
-    model_cursor: usize,
+    chooser: Option<ModelChooser>,
+    regeneration_error: Option<String>,
+    catalog_request_id: u64,
     pending_model: Option<String>,
     pending_operation: Option<ReviewOperation>,
     editor_buffer: String,
@@ -97,8 +128,9 @@ impl ReviewPanelState {
             input_mode: PanelInputMode::Review,
             explain_only: false,
             intent_history: Vec::new(),
-            model_selection: None,
-            model_cursor: 0,
+            chooser: None,
+            regeneration_error: None,
+            catalog_request_id: 0,
             pending_model: None,
             pending_operation: None,
             editor_buffer: String::new(),
@@ -111,14 +143,77 @@ impl ReviewPanelState {
     }
 
     pub fn model_selection(&self) -> Option<&[String]> {
-        self.model_selection.as_deref()
+        self.chooser
+            .as_ref()
+            .filter(|chooser| chooser.tiers.is_empty())
+            .map(|chooser| chooser.catalog.as_slice())
+    }
+
+    pub fn chooser(&self) -> Option<&ModelChooser> {
+        self.chooser.as_ref()
+    }
+
+    pub fn regeneration_error(&self) -> Option<&str> {
+        self.regeneration_error.as_deref()
     }
 
     /// At the highest configured tier, a higher-tier request opens the explicit
     /// provider catalog selection instead of generating.
     pub fn open_model_selection(&mut self, models: Vec<String>) {
-        self.model_cursor = 0;
-        self.model_selection = Some(models);
+        self.open_model_chooser(Vec::new(), models);
+    }
+
+    pub fn open_model_chooser(&mut self, tiers: Vec<TierChoice>, catalog: Vec<String>) {
+        self.chooser = Some(ModelChooser {
+            tiers,
+            catalog,
+            catalog_loading: false,
+            query: String::new(),
+            query_cursor: 0,
+            highlight: None,
+        });
+        self.input_mode = PanelInputMode::ModelChooser;
+    }
+
+    pub fn begin_catalog_load(&mut self, request_id: u64) {
+        self.catalog_request_id = request_id;
+        if let Some(chooser) = &mut self.chooser {
+            chooser.catalog_loading = true;
+        }
+    }
+
+    pub fn set_catalog(&mut self, request_id: u64, catalog: Vec<String>) {
+        if self.catalog_request_id != request_id {
+            return;
+        }
+        if let Some(chooser) = &mut self.chooser {
+            chooser.catalog = catalog;
+            chooser.catalog_loading = false;
+            chooser.highlight = None;
+        }
+    }
+
+    pub fn set_regeneration_error(&mut self, message: impl Into<String>) {
+        self.regeneration_error = Some(message.into());
+    }
+
+    pub fn clear_regeneration_error(&mut self) {
+        self.regeneration_error = None;
+    }
+
+    /// Applies a regenerated candidate and its tier/model context.
+    pub fn apply_regeneration(
+        &mut self,
+        tier: impl Into<String>,
+        model: impl Into<String>,
+        candidate: ReviewCandidate,
+    ) {
+        self.context.tier = tier.into();
+        self.context.model = model.into();
+        self.chooser = None;
+        self.input_mode = PanelInputMode::Review;
+        self.regeneration_error = None;
+        self.replace_current(candidate);
     }
 
     /// Applies the selected model to the next candidate only. The configured
@@ -127,7 +222,7 @@ impl ReviewPanelState {
         let model = model.into();
         self.pending_model = Some(model.clone());
         self.context.model = model;
-        self.model_selection = None;
+        self.chooser = None;
         self.replace_current(candidate);
     }
 
@@ -188,10 +283,157 @@ impl ReviewPanelState {
         if key.kind != KeyEventKind::Press {
             return PanelOutcome::Continue;
         }
-        if self.input_mode == PanelInputMode::CommandEditor {
-            return self.handle_editor_key(key);
+        match self.input_mode {
+            PanelInputMode::CommandEditor => self.handle_editor_key(key),
+            PanelInputMode::ModelChooser => self.handle_chooser_key(key),
+            PanelInputMode::Review => self.handle_review_key(key),
         }
-        self.handle_review_key(key)
+    }
+
+    fn handle_chooser_key(&mut self, key: KeyEvent) -> PanelOutcome {
+        let plain = !key
+            .modifiers
+            .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT);
+        match key.code {
+            KeyCode::Esc => {
+                self.chooser = None;
+                self.input_mode = PanelInputMode::Review;
+                PanelOutcome::Continue
+            }
+            KeyCode::Char('1') | KeyCode::Char('2') | KeyCode::Char('3') if plain => {
+                let index = match key.code {
+                    KeyCode::Char('1') => 0,
+                    KeyCode::Char('2') => 1,
+                    _ => 2,
+                };
+                let Some(chooser) = &self.chooser else {
+                    return PanelOutcome::Continue;
+                };
+                let Some(choice) = chooser.tiers.get(index) else {
+                    return PanelOutcome::Continue;
+                };
+                PanelOutcome::RegenerateWith {
+                    tier: choice.tier.clone(),
+                    model: choice.model.clone(),
+                }
+            }
+            KeyCode::Up => {
+                self.move_chooser_highlight(-1);
+                PanelOutcome::Continue
+            }
+            KeyCode::Down => {
+                self.move_chooser_highlight(1);
+                PanelOutcome::Continue
+            }
+            KeyCode::Enter => self.choose_chooser_model(),
+            KeyCode::Backspace if plain => {
+                self.chooser_query_backspace();
+                PanelOutcome::Continue
+            }
+            KeyCode::Delete if plain => {
+                self.chooser_query_delete();
+                PanelOutcome::Continue
+            }
+            KeyCode::Left if plain => {
+                self.move_chooser_query_cursor(-1);
+                PanelOutcome::Continue
+            }
+            KeyCode::Right if plain => {
+                self.move_chooser_query_cursor(1);
+                PanelOutcome::Continue
+            }
+            KeyCode::Home if plain => {
+                if let Some(chooser) = &mut self.chooser {
+                    chooser.query_cursor = 0;
+                }
+                PanelOutcome::Continue
+            }
+            KeyCode::End if plain => {
+                if let Some(chooser) = &mut self.chooser {
+                    chooser.query_cursor = chooser.query.chars().count();
+                }
+                PanelOutcome::Continue
+            }
+            KeyCode::Char(character) if plain => {
+                self.chooser_query_insert(character);
+                PanelOutcome::Continue
+            }
+            _ => PanelOutcome::Continue,
+        }
+    }
+
+    fn choose_chooser_model(&mut self) -> PanelOutcome {
+        let Some(chooser) = &self.chooser else {
+            return PanelOutcome::Continue;
+        };
+        let model = match chooser.highlight {
+            Some(index) => chooser.filtered().get(index).map(|model| (*model).clone()),
+            None if !chooser.query.is_empty() => Some(chooser.query.clone()),
+            None => None,
+        };
+        match model {
+            Some(model) => PanelOutcome::RegenerateWith {
+                tier: self.context.tier.clone(),
+                model,
+            },
+            None => PanelOutcome::Continue,
+        }
+    }
+
+    fn move_chooser_highlight(&mut self, delta: isize) {
+        if let Some(chooser) = &mut self.chooser {
+            let len = chooser.filtered().len();
+            chooser.highlight = match (chooser.highlight, delta) {
+                (None, 1) if len > 0 => Some(0),
+                (None, _) => None,
+                (Some(current), _) => {
+                    let next = move_cursor(current, delta, len);
+                    (len > 0).then_some(next)
+                }
+            };
+        }
+    }
+
+    fn move_chooser_query_cursor(&mut self, delta: isize) {
+        if let Some(chooser) = &mut self.chooser {
+            let len = chooser.query.chars().count();
+            chooser.query_cursor = move_cursor(chooser.query_cursor, delta, len.max(1)).min(len);
+        }
+    }
+
+    fn chooser_query_insert(&mut self, character: char) {
+        if let Some(chooser) = &mut self.chooser {
+            let byte = char_index_to_byte(&chooser.query, chooser.query_cursor);
+            chooser.query.insert(byte, character);
+            chooser.query_cursor += 1;
+            chooser.highlight = None;
+        }
+    }
+
+    fn chooser_query_backspace(&mut self) {
+        if let Some(chooser) = &mut self.chooser {
+            if chooser.query_cursor == 0 {
+                return;
+            }
+            let end = char_index_to_byte(&chooser.query, chooser.query_cursor);
+            let start = char_index_to_byte(&chooser.query, chooser.query_cursor - 1);
+            chooser.query.replace_range(start..end, "");
+            chooser.query_cursor -= 1;
+            chooser.highlight = None;
+        }
+    }
+
+    fn chooser_query_delete(&mut self) {
+        if let Some(chooser) = &mut self.chooser {
+            let len = chooser.query.chars().count();
+            if chooser.query_cursor >= len {
+                return;
+            }
+            let start = char_index_to_byte(&chooser.query, chooser.query_cursor);
+            let end = char_index_to_byte(&chooser.query, chooser.query_cursor + 1);
+            chooser.query.replace_range(start..end, "");
+            chooser.highlight = None;
+        }
     }
 
     fn handle_review_key(&mut self, key: KeyEvent) -> PanelOutcome {
@@ -213,6 +455,7 @@ impl ReviewPanelState {
                 PanelOutcome::Accepted(self.candidate.clone())
             }
             KeyCode::Char('c') | KeyCode::Char('C') if plain => PanelOutcome::Cancelled,
+            KeyCode::Char('r') | KeyCode::Char('R') if plain => PanelOutcome::RejectRequested,
             KeyCode::Char('d') | KeyCode::Char('D') if plain => {
                 PanelOutcome::DisableReviewPermanently
             }
@@ -263,6 +506,14 @@ impl ReviewPanelState {
         let len = self.candidate.flow.stages.len();
         self.flow_stage = move_cursor(self.flow_stage, delta, len);
     }
+}
+
+pub fn char_index_to_byte(value: &str, index: usize) -> usize {
+    value
+        .char_indices()
+        .nth(index)
+        .map(|(byte, _)| byte)
+        .unwrap_or(value.len())
 }
 
 fn move_cursor(current: usize, delta: isize, len: usize) -> usize {
@@ -710,7 +961,7 @@ mod tests {
         assert!(panel.model_selection().is_some());
         let lines =
             crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
-        assert!(lines.iter().any(|line| line.contains("Models")));
+        assert!(lines.iter().any(|line| line.contains("Matches")));
         panel.select_model("model-b", ReviewCandidate::from_command("ls -la"));
         assert_eq!(panel.candidate().command, "ls -la");
         assert!(panel.model_selection().is_none());
