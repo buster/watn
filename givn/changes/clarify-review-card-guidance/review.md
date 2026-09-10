@@ -40,15 +40,11 @@ UBIQUITOUS LANGUAGE: CLEAN
 
 ## Overlap dispositions
 
-| Scenario A | Scenario B | Disposition |
-|---|---|---|
-| The first suggestion is ready to choose | A model name is suggested from the provider catalog while typing | variant |
-| The first suggestion is ready to choose | A typed model name works when the catalog is unavailable | variant |
-
-The default-selection scenario proves a different invariant: with an empty
-query, the first pick is selected and Enter uses it. The catalog-typing and
-typed-model scenarios cover query filtering and typed-text precedence; the
-highlight precedence rule (empty query only) is what keeps them distinct.
+No deterministic shape match remains in the current finding set. The
+default-selection scenario proves a different invariant from the catalog
+scenarios: with an empty query the first pick is selected and Enter uses it,
+while the catalog-typing and typed-model scenarios cover query filtering and
+typed-text precedence; the highlight precedence rule keeps them distinct.
 
 ## Split-or-keep
 
