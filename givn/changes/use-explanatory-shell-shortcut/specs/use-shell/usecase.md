@@ -44,16 +44,13 @@ command request.
 
 ## Extensions
 
-- Disabled review-surface behavior preserves the existing direct replacement, output, and
-  execution-confirmation contracts.
+- Disabled review-surface behavior preserves the existing direct replacement, output, and execution-confirmation contracts.
 - Enhanced Presentation adapter failure falls back to the portable inline review surface.
 - Portable review-surface failure preserves the original input and releases no command.
-- Provider or explanation failure preserves review state when a selected
-  candidate exists; initial generation failure releases no command.
+- Provider or explanation failure preserves review state when a selected candidate exists; initial generation failure releases no command.
 - An unsupported command-flow portion remains visible and reviewable.
 - Non-TTY and redirected requests retain raw or existing confirmation behavior.
-- Active eligible `-x` requires `-x` and review acceptance, without a second
-  prompt; disabled or non-review `-x` retains the existing confirmation.
+- Active eligible `-x` requires `-x` and review acceptance, without a second prompt; disabled or non-review `-x` retains the existing confirmation.
 
 ## Rules
 
