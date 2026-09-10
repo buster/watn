@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "use-explanatory-shell-shortcut",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_commit": "bac511b555b32644ac164935ac2dd1f0b06eb3bc",
+  "tested_commit": "bac511b555b32644ac164935ac2dd1f0b06eb3bc",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 81,
+      "passed": 81,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 53.241854751
+    },
+    "regular": {
+      "status": "passed",
+      "total": 181,
+      "passed": 181,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 33.333546713
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 16175,
+    "line_valid": 17509,
+    "line_percent": 92
+  },
   "started_at_unix": 1789037919,
-  "finished_at_unix": null
+  "finished_at_unix": 1789038143
 }
