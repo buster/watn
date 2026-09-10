@@ -2980,3 +2980,68 @@ fn review_accept_is_default(world: &mut WatnWorld) {
         "the accept hint should be painted as the default decision, got:\n{rendered}"
     );
 }
+
+fn drive_review_key(
+    world: &mut WatnWorld,
+    code: crossterm::event::KeyCode,
+) -> watn::review::PanelOutcome {
+    let state = world.review.panel.clone().expect("review panel state");
+    let layout = watn::review::InlineLayout::for_dimensions(100, 40);
+    let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
+    terminal.begin().expect("hide the review cursor");
+    let mut panel = watn::review::InlineReviewPanel::new(terminal, state);
+    panel.render().expect("render review surface");
+    let outcome = panel.handle_key(key(code)).expect("press the review key");
+    panel.finish().expect("restore the controlling terminal");
+    let bytes = panel.terminal().writer().clone();
+    world.review.cleanup = String::from_utf8(bytes).expect("cleanup bytes are UTF-8");
+    match &outcome {
+        watn::review::PanelOutcome::Accepted(candidate) => {
+            world.review.released = Some(candidate.command.clone());
+            world.review.bash_command_line = candidate.command.clone();
+        }
+        _ => {}
+    }
+    if matches!(
+        outcome,
+        watn::review::PanelOutcome::Accepted(_) | watn::review::PanelOutcome::Cancelled
+    ) {
+        world.review.surface_open = false;
+    }
+    world.review.panel_outcome = Some(outcome.clone());
+    outcome
+}
+
+#[when("I press Enter in the review surface")]
+fn review_press_enter(world: &mut WatnWorld) {
+    let outcome = drive_review_key(world, crossterm::event::KeyCode::Enter);
+    assert!(
+        matches!(outcome, watn::review::PanelOutcome::Accepted(_)),
+        "Enter must accept the candidate, got {outcome:?}"
+    );
+}
+
+#[then("the current candidate should be accepted")]
+fn review_current_candidate_accepted(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        world.review.released.as_deref(),
+        Some(panel.candidate().command.as_str()),
+        "the current candidate must be the released candidate"
+    );
+}
+
+#[then("no alternative candidate should be generated")]
+fn review_no_alternative_generated(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+    assert!(
+        panel.model_selection().is_none(),
+        "no model choice may open"
+    );
+    assert_eq!(
+        panel.candidate().command,
+        REVIEW_FIXTURE_COMMAND,
+        "acceptance must not regenerate or replace the candidate"
+    );
+}

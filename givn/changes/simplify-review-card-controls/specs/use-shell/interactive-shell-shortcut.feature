@@ -47,7 +47,7 @@ Feature: Simplified review card controls
     And the review surface should show "c cancel"
     And accept should be shown as the default decision
 
-  @givn.added @wip
+  @givn.added
   Scenario: Enter accepts the current candidate
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface
