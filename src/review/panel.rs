@@ -457,7 +457,7 @@ impl<W: Write> ControllingTerminal<W> {
         self.writer.take().expect("terminal writer is present")
     }
 
-    fn begin(&mut self) -> io::Result<()> {
+    pub fn begin(&mut self) -> io::Result<()> {
         queue!(self.writer_mut(), cursor::Hide)?;
         self.cursor_hidden = true;
         self.writer_mut().flush()

@@ -275,7 +275,7 @@ Feature: Explanatory interactive shell shortcut
     And the selected candidate should remain available
     And the review state should remain open
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shell repaint remains owned by the line editor after review
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with current input "show disk usage"

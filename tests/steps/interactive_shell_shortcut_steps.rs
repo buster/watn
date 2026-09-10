@@ -1090,6 +1090,7 @@ pub struct ReviewState {
     pub tier: String,
     pub highest_tier: bool,
     pub catalog_models: Vec<String>,
+    pub cleanup: String,
 }
 
 fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
@@ -2428,4 +2429,61 @@ fn review_state_remains_open(world: &mut WatnWorld) {
     assert!(world.review.surface_open, "review state must remain open");
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+}
+
+#[when("I accept the selected candidate")]
+fn review_accept_candidate(world: &mut WatnWorld) {
+    let state = world.review.panel.clone().expect("review panel state");
+    let layout = watn::review::InlineLayout::for_dimensions(100, 40);
+    let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
+    terminal.begin().expect("hide the review cursor");
+    let mut panel = watn::review::InlineReviewPanel::new(terminal, state);
+    panel.render().expect("render review surface");
+    let outcome = panel
+        .handle_key(key(crossterm::event::KeyCode::Enter))
+        .expect("accept the selected candidate");
+    panel.finish().expect("restore the controlling terminal");
+    let bytes = panel.terminal().writer().clone();
+    world.review.cleanup = String::from_utf8(bytes).expect("cleanup bytes are UTF-8");
+    match outcome {
+        watn::review::PanelOutcome::Accepted(candidate) => {
+            world.review.released = Some(candidate.command.clone());
+            world.review.bash_command_line = candidate.command.clone();
+        }
+        outcome => panic!("expected candidate acceptance, got {outcome:?}"),
+    }
+    world.review.surface_open = false;
+}
+
+#[then("the review surface should disappear immediately")]
+fn review_surface_disappears(world: &mut WatnWorld) {
+    assert!(!world.review.surface_open, "review surface must close");
+    assert!(
+        world.review.cleanup.contains("\u{1b}[J"),
+        "inline rows must be cleared on acceptance: {:?}",
+        world.review.cleanup
+    );
+}
+
+#[then("Watn should leave cursor and inline rows restored")]
+fn review_terminal_restored(world: &mut WatnWorld) {
+    let cleanup = &world.review.cleanup;
+    assert!(
+        cleanup.contains("\u{1b}[?25h"),
+        "cursor visibility must be restored: {cleanup:?}"
+    );
+    assert!(
+        cleanup.contains("\u{1b}["),
+        "inline row movement must be reset: {cleanup:?}"
+    );
+}
+
+#[then("the Bash line editor should repaint the prompt with the accepted candidate")]
+fn review_line_editor_repaint(world: &mut WatnWorld) {
+    assert_eq!(world.review.bash_command_line, REVIEW_FIXTURE_COMMAND);
+    assert_eq!(
+        world.review.released.as_deref(),
+        Some(REVIEW_FIXTURE_COMMAND),
+        "only the accepted candidate is released"
+    );
 }
