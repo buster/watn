@@ -33,7 +33,7 @@
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
 | A provider payload without a usable command releases nothing | A failing review card releases no candidate | variant |
-| Portable review-surface failure releases no candidate | A failing review card releases no candidate | variant |
+| Disabled review preserves -x confirmation | The -x confirmation offers to explain the command | variant |
 
 Removed+added pairs are supersessions: the enhanced/portable adapter scenarios
 are replaced by the single-card failure and monochrome scenarios, and the
