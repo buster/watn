@@ -519,6 +519,7 @@ pub fn render_card_lines(
 mod tests {
     use super::{render_card_lines, terminal_supports_color};
     use crate::review::{InlineLayout, ReviewCandidate, ReviewContext, ReviewPanelState};
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn state() -> ReviewPanelState {
         ReviewPanelState::new(
@@ -562,6 +563,43 @@ mod tests {
             "separators are colored"
         );
         assert!(joined.contains("◆ tier 1 · loopback/review-model"));
+    }
+
+    #[test]
+    fn wrapping_truncation_helpers_stay_bounded() {
+        assert_eq!(super::ellipsize("abc", 0), "");
+        assert_eq!(super::ellipsize("abcdef", 3).chars().count(), 3);
+        let rows = super::wrap_capped("alpha beta gamma delta", 6, 1);
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].ends_with('…'));
+        let styled = super::wrap_visible("\u{1b}[97malpha beta\u{1b}[0m", 4, 1);
+        assert_eq!(styled.len(), 1);
+        assert!(styled[0].contains("alph"));
+    }
+
+    #[test]
+    fn chooser_rows_render_highlight_and_error() {
+        let mut chooser = state();
+        chooser.open_model_chooser(
+            vec![crate::review::TierChoice {
+                tier: "2".to_string(),
+                label: "normal".to_string(),
+                model: "model-b".to_string(),
+            }],
+            vec!["model-a".to_string(), "model-b".to_string()],
+        );
+        chooser.handle_key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+        let lines = render_card_lines(&chooser, InlineLayout::for_dimensions(80, 24), true);
+        let joined = lines.join("\n");
+        assert!(joined.contains("Matches"));
+        assert!(joined.contains("\u{1b}[7m"), "the highlight is reversed");
+        assert!(joined.contains("1-3 tier"));
+
+        chooser.apply_regeneration_failure("provider exploded");
+        let lines = render_card_lines(&chooser, InlineLayout::for_dimensions(80, 24), true);
+        let joined = lines.join("\n");
+        assert!(joined.contains("Error"));
+        assert!(joined.contains("provider exploded"));
     }
 
     #[test]

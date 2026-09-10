@@ -873,7 +873,7 @@ pub fn controlling_terminal_is_usable() -> bool {
 mod tests {
     use super::{
         sanitize_terminal_text, ControllingTerminal, InlineLayout, PanelInputMode, PanelOutcome,
-        ReviewContext, ReviewOperation, ReviewPanelState,
+        ReviewContext, ReviewOperation, ReviewPanelState, TierChoice,
     };
     use crate::review::ReviewCandidate;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -1113,6 +1113,103 @@ mod tests {
             sanitize_terminal_text("ok\u{1b}]0;t\u{1b}X\u{7}done"),
             "okdone"
         );
+    }
+
+    #[test]
+    fn chooser_query_editing_and_suggestion_selection_are_covered() {
+        let mut panel = state();
+        panel.open_model_chooser(
+            vec![TierChoice {
+                tier: "2".to_string(),
+                label: "normal".to_string(),
+                model: "model-b".to_string(),
+            }],
+            vec!["model-a".to_string(), "model-b".to_string()],
+        );
+        for character in "model-b".chars() {
+            panel.handle_key(key(KeyCode::Char(character)));
+        }
+        assert_eq!(
+            panel
+                .chooser()
+                .unwrap()
+                .filtered()
+                .iter()
+                .map(|model| (*model).clone())
+                .collect::<Vec<_>>(),
+            vec!["model-b".to_string()]
+        );
+        panel.handle_key(key(KeyCode::Up));
+        assert!(panel.chooser().unwrap().highlight.is_none());
+        panel.handle_key(key(KeyCode::Down));
+        assert_eq!(panel.chooser().unwrap().highlight, Some(0));
+        let outcome = panel.handle_key(key(KeyCode::Enter));
+        assert_eq!(
+            outcome,
+            PanelOutcome::RegenerateWith {
+                tier: "1".to_string(),
+                model: "model-b".to_string(),
+            }
+        );
+
+        let mut editing = state();
+        editing.open_model_chooser(Vec::new(), Vec::new());
+        for character in "ab".chars() {
+            editing.handle_key(key(KeyCode::Char(character)));
+        }
+        editing.handle_key(key(KeyCode::Left));
+        editing.handle_key(key(KeyCode::Backspace));
+        assert_eq!(editing.chooser().unwrap().query, "b");
+        assert_eq!(editing.chooser().unwrap().query_cursor, 0);
+        editing.handle_key(key(KeyCode::Delete));
+        assert_eq!(editing.chooser().unwrap().query, "");
+        for character in "cd".chars() {
+            editing.handle_key(key(KeyCode::Char(character)));
+        }
+        editing.handle_key(key(KeyCode::Home));
+        assert_eq!(editing.chooser().unwrap().query_cursor, 0);
+        editing.handle_key(key(KeyCode::Right));
+        assert_eq!(editing.chooser().unwrap().query_cursor, 1);
+        editing.handle_key(key(KeyCode::End));
+        assert_eq!(editing.chooser().unwrap().query_cursor, 2);
+        assert_eq!(
+            editing.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::RegenerateWith {
+                tier: "1".to_string(),
+                model: "cd".to_string(),
+            }
+        );
+
+        let mut empty_enter = state();
+        empty_enter.open_model_chooser(Vec::new(), Vec::new());
+        assert_eq!(
+            empty_enter.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Continue
+        );
+    }
+
+    #[test]
+    fn catalog_results_errors_and_highlights_are_applied_safely() {
+        let mut panel = state();
+        panel.open_model_chooser(Vec::new(), Vec::new());
+        panel.begin_catalog_load(2);
+        panel.set_catalog(1, vec!["stale".to_string()]);
+        assert!(panel.chooser().unwrap().catalog.is_empty());
+        assert!(panel.chooser().unwrap().catalog_loading);
+        panel.set_catalog(2, vec!["fresh".to_string()]);
+        assert_eq!(panel.chooser().unwrap().catalog, vec!["fresh".to_string()]);
+        assert!(!panel.chooser().unwrap().catalog_loading);
+
+        panel.set_regeneration_error("boom");
+        assert_eq!(panel.regeneration_error(), Some("boom"));
+        panel.clear_regeneration_error();
+        assert_eq!(panel.regeneration_error(), None);
+
+        panel.set_regeneration_error("boom");
+        panel.apply_regeneration_failure("failed");
+        assert_eq!(panel.regeneration_error(), Some("failed"));
+        assert!(panel.chooser().is_none());
+        assert_eq!(panel.input_mode, PanelInputMode::Review);
     }
 
     #[test]
