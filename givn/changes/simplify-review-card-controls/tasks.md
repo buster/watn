@@ -443,38 +443,38 @@ Domain constraints:
 - In the explanation-only card only closing is offered; `a`/`e`/`r`/`d` are
   ignored and nothing executes.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The explanation card ignores review decisions'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 5 steps (4 passed, 1 failed); the explanation-shortcut stub panicked.
   ```
-- [ ] GREEN: Gate `a`/`A`, `e`/`E`, `r`/`R`, `d`/`D` behind the explanation
+- [x] GREEN: Gate `a`/`A`, `e`/`E`, `r`/`R`, `d`/`D` behind the explanation
   mode. Compile and run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (explain-only gate for `a`/`e`/`r`/`d`), `tests/steps/interactive_shell_shortcut_steps.rs` (bindings).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The explanation card ignores review decisions'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 9 steps (9 passed); full regular 209/209, e2e 81/81, lib 71 passed.
   ```
-- [ ] REFACTOR: Keep the mode gate in one place. Rerun the exact targeted
+- [x] REFACTOR: Keep the mode gate in one place. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'The explanation card ignores review decisions'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 9 steps (9 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The explanation card ignores review decisions
+- [x] COMMIT: `7a8ba1cb52174d30074efa2a12800465e3ecf5db` - feat(interactive-shell-shortcut): The explanation card ignores review decisions
 
 ## E2E setup
 
-- [ ] Add `pending_tiers` and `pending_mock_replacements` to `WatnWorld`;
+- [x] Add `pending_tiers` and `pending_mock_replacements` to `WatnWorld`;
   register replacement mocks before the generic chat mock in every
   `ensure_test_env` registration block; confirm the local stack starts with the
   in-process provider twin. Record the verify command counts: `./run-tests.sh`
   full count and `./run-tests.sh --e2e` count, with the e2e count strictly
   smaller.
   ```text
-  regular count: <paste>
-  e2e count: <paste>
+  regular count: `./run-tests.sh` exit 0; 209 scenarios (209 passed).
+  e2e count: `./run-tests.sh --e2e` exit 0; 82 scenarios (82 passed). The e2e count is strictly smaller; the local twin runs in-process with no external network.
   ```
 
 ## E2E scenarios
@@ -487,48 +487,48 @@ Domain constraints:
   replacement candidate is accepted, and only the replacement reaches the
   command-output channel.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the E2E steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the E2E steps with
   `unimplemented!()` or drive the real PTY until the missing assertion fails.
   Run the exact targeted e2e command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer rejects a candidate and regenerates with another model'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 2 steps (1 passed, 1 failed); the replacement-candidate stub panicked.
   ```
-- [ ] GREEN: Configure distinct tier models, register the replacement mock for
+- [x] GREEN: Configure distinct tier models, register the replacement mock for
   the normal tier, drive `r`, `2`, wait for the replacement candidate, accept,
   and assert the output channel. List files touched. Run the exact targeted
   e2e command; it must exit zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer rejects a candidate and regenerates with another model'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed). The PTY shows the replacement candidate and the `normal-model` context before acceptance.
   ```
-- [ ] REFACTOR: Keep PTY label waits displacement-safe. Rerun the exact
+- [x] REFACTOR: Keep PTY label waits displacement-safe. Rerun the exact
   targeted e2e command.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer rejects a candidate and regenerates with another model'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - test(e2e): Developer rejects a candidate and regenerates with another model
+- [x] COMMIT: `cbbe6c37e9a0fa856f14a6a21906ad23bcbe1fd7` - test(e2e): Developer rejects a candidate and regenerates with another model
 
 ## Final verification
 
-- [ ] Run `givn lint --change simplify-review-card-controls`
+- [x] Run `givn lint --change simplify-review-card-controls`
   ```text
-  output: <paste>
+  output: exit 0; `givn lint: 1 file(s) checked — clean`; two advisory subset notices are dispositioned in the coverage review.
   ```
-- [ ] Run the full regular suite `./run-tests.sh`
+- [x] Run the full regular suite `./run-tests.sh`
   ```text
-  output: <paste>
+  output: exit 0; 21 features; 209 scenarios (209 passed); 1523 steps (1523 passed).
   ```
-- [ ] Run the full E2E suite `./run-tests.sh --e2e`
+- [x] Run the full E2E suite `./run-tests.sh --e2e`
   ```text
-  output: <paste>
+  output: exit 0; 24 features; 82 scenarios (82 passed); 605 steps (605 passed).
   ```
-- [ ] Run `cargo check --locked`
+- [x] Run `cargo check --locked`
   ```text
-  output: <paste>
+  output: `Finished dev profile [unoptimized + debuginfo] target(s)` — no warnings or errors.
   ```
-- [ ] Run `givn status --change simplify-review-card-controls`
+- [x] Run `givn status --change simplify-review-card-controls`
   ```text
-  output: <paste>
+  output: all tasks checked; artifacts proposal, specs, design, arc42-docs, design-review, tasks complete; next required artifact is `review`.
   ```
