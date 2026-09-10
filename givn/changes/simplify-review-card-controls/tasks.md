@@ -249,27 +249,27 @@ Domain constraints:
 - Typing filters catalog suggestions; choosing a suggestion regenerates with
   that model.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'A model name is suggested from the provider catalog while typing'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed); the reject-and-type stub panicked.
   ```
-- [ ] GREEN: Add the chooser query, filtering, highlight, and Enter selection;
+- [x] GREEN: Add the chooser query, filtering, highlight, and Enter selection;
   `session::fetch_catalog` maps catalog entries. Compile and run the exact
   targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `tests/steps/interactive_shell_shortcut_steps.rs` only (chooser typing, filtering, and Enter selection already live in `src/review/panel.rs` from the chooser scenario).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A model name is suggested from the provider catalog while typing'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed); full regular 202/202; lib 71 passed.
   ```
-- [ ] REFACTOR: Keep filtering and highlighting pure. Rerun the exact targeted
+- [x] REFACTOR: Keep filtering and highlighting pure. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'A model name is suggested from the provider catalog while typing'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A model name is suggested from the provider catalog while typing
+- [x] COMMIT: `c298ebfe99ed013cb84f302b338c30f31d0e033a` - feat(interactive-shell-shortcut): A model name is suggested from the provider catalog while typing
 
 ### A typed model name works when the catalog is unavailable
 
