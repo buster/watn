@@ -1438,3 +1438,29 @@ fn review_final_acceptance_required(world: &mut WatnWorld) {
     );
     assert_review_rendered_contains(world, "Accept candidate");
 }
+
+#[when("I change the selected candidate")]
+fn review_change_candidate(world: &mut WatnWorld) {
+    replace_editor_text(panel_mut(world), "git status --short");
+}
+
+#[when("I press Escape in the command editor")]
+fn review_escape_command_editor(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Esc));
+    assert_eq!(outcome, watn::review::PanelOutcome::EditDiscarded);
+    render_surface(world);
+}
+
+#[then("the unedited candidate should remain selected")]
+fn review_unedited_candidate_selected(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, "git log --oneline");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+    assert_review_rendered_contains(world, "git log --oneline");
+}
+
+#[then("the review surface should remain open")]
+fn review_surface_remains_open(world: &mut WatnWorld) {
+    assert!(world.review.surface_open, "review surface closed");
+    assert_review_rendered_contains(world, "Accept candidate");
+}
