@@ -147,7 +147,7 @@ Feature: Explanatory interactive shell shortcut
     And no candidate should be released to the shell
     And no new request comment should be recorded in Bash history
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider failure preserves a selected candidate during review
     Given an installed Bash shortcut and a selected candidate for "show disk usage"
     When a purpose refresh or replacement generation fails

@@ -1857,3 +1857,49 @@ fn review_no_history_comment(world: &mut WatnWorld) {
         "failed review must not record a request comment"
     );
 }
+
+const REVIEW_FAILED_RESPONSE: &str = "{\"review_version\":1,";
+
+#[given(expr = "an installed Bash shortcut and a selected candidate for {string}")]
+fn review_selected_candidate(world: &mut WatnWorld, intent: String) {
+    review_candidate_for_intent(world, intent);
+    build_review_panel(world);
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.selected_candidate, 0);
+}
+
+#[when("a purpose refresh or replacement generation fails")]
+fn review_refresh_or_generation_fails(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    let selected = panel.selected_candidate;
+    let result = panel.candidates[selected].apply_response(REVIEW_FAILED_RESPONSE);
+    assert!(
+        matches!(
+            result,
+            watn::review::ReviewParseResult::PurposeUnavailable(_)
+        ),
+        "provider failure must be isolated as purpose-unavailable"
+    );
+    render_surface(world);
+}
+
+#[then("the selected candidate should remain available")]
+fn review_selected_candidate_available(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+    assert!(
+        world.review.surface_open,
+        "review surface closed on failure"
+    );
+    assert!(world.review.released.is_none());
+}
+
+#[then("the review surface should show purpose-unavailable or generation failure")]
+fn review_purpose_unavailable_or_generation_failure(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().purpose_status,
+        watn::review::PurposeStatus::Unavailable
+    );
+    assert_review_rendered_contains(world, "purpose-unavailable");
+}
