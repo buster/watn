@@ -3001,3 +3001,16 @@ fn contains_sgr(value: &str) -> bool {
     }
     false
 }
+
+#[given("the terminal does not support color")]
+fn review_terminal_without_color(world: &mut WatnWorld) {
+    assert!(
+        !watn::review::terminal_supports_color(true, "xterm-256color", true),
+        "NO_COLOR must disable color"
+    );
+    assert!(
+        !watn::review::terminal_supports_color(false, "dumb", true),
+        "dumb terminals must not use color"
+    );
+    world.review.color_incapable = true;
+}

@@ -48,7 +48,7 @@ Feature: Enhanced review card
     Then the plain review surface should open
     And the current candidate should remain available
 
-  @givn.added @wip
+  @givn.added
   Scenario: A color-incapable terminal falls back to the plain review surface
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the terminal does not support color
