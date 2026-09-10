@@ -334,26 +334,26 @@ Domain constraints:
 - On generation failure the previous candidate and review state stay; the card
   reports the failure; acceptance is still required.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'A failed regeneration preserves the previous candidate'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 2 steps (1 passed, 1 failed); the regeneration-fails Given stub panicked.
   ```
-- [ ] GREEN: Add `regeneration_error` rendering and the failure branch that
+- [x] GREEN: Add `regeneration_error` rendering and the failure branch that
   keeps the candidate. Compile and run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (`apply_regeneration_failure` returns to the card with the error), `src/main.rs` (both regeneration failure branches use it), `tests/steps/interactive_shell_shortcut_steps.rs` (failing twin binding).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A failed regeneration preserves the previous candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed); full regular 205/205; lib 71 passed.
   ```
-- [ ] REFACTOR: Keep error rendering bounded like other rows. Rerun the exact
+- [x] REFACTOR: Keep error rendering bounded like other rows. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'A failed regeneration preserves the previous candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A failed regeneration preserves the previous candidate
+- [x] COMMIT: `19db0a6114a60eb7e84ebeee7ad4b7ce066d214c` - feat(interactive-shell-shortcut): A failed regeneration preserves the previous candidate
 
 ### Leaving the model chooser preserves the candidate
 
