@@ -8,7 +8,7 @@ Feature: Review panel controls
     Then the review surface should show a framed card
     And the review surface should not show the plain panel
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failing review card releases no candidate
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the review card cannot open

@@ -2920,6 +2920,11 @@ fn review_command_editor_open(world: &mut WatnWorld) {
     );
 }
 
+#[given("the review card cannot open")]
+fn review_card_cannot_open(world: &mut WatnWorld) {
+    world.review.card_open_fails = true;
+}
+
 #[then("the review surface should not show the plain panel")]
 fn review_no_plain_panel(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
