@@ -158,6 +158,11 @@ overlap, with every purpose non-empty — either as an exact provider split or a
 the derived stage text; missing or mismatched purposes show `purpose-unavailable` and Watn
 never authors substitute text.
 
+The review presentation selects the enhanced card only when the terminal
+supports color (`NO_COLOR` unset, `TERM` not `dumb`, and a color-capable
+terminal type); otherwise the plain panel is used. Card colors are presentation
+only and never change command, stage, or purpose text.
+
 The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
 `Actions`. Tab cycles forward, Shift-Tab cycles backward, arrows navigate within
 the focused region, and Enter activates. Escape cancels the review. A separate

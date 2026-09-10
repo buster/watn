@@ -136,7 +136,9 @@ status word is outside the contract; provider-written commands with line breaks
 are normalized to one line before the flow is derived. A provider stage split
 is trusted when every stage text appears verbatim in the command, in order,
 without overlap and with only whitespace or shell separators between; that
-split then becomes the displayed Command flow. An enhanced Presentation adapter
+split then becomes the displayed Command flow. The review surface presents
+through the enhanced card when it is enabled and the terminal supports color;
+otherwise the portable plain panel opens with the same Candidate and state. An enhanced Presentation adapter
 failure retries the portable inline panel. Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.

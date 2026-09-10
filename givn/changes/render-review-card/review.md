@@ -32,9 +32,8 @@ The six new delta scenarios are presentation variants of these actions.
 
 ## Overlap dispositions
 
-| Scenario A | Scenario B | Disposition |
-|---|---|---|
-| Disabling the enhanced card preserves the plain review surface | A color-incapable terminal falls back to the plain review surface | variant |
+No deterministic shape match remains after the card scenarios were separated
+by their distinct preconditions.
 
 ## Split-or-keep
 
