@@ -109,13 +109,13 @@ sequenceDiagram
     Provider-->>CLI: complete structured response at [DONE]
     CLI->>CLI: validate response and derive Command flow
     CLI->>Panel: show Candidate and Command flow
-    Panel-->>User: exact Stage text, purposes/status, focus regions, actions
+    Panel-->>User: exact Stage text, purposes/status, direct decision hints
     opt structured response supports delayed purposes
         Panel-->>User: loading status, then updated model-written purposes
     else command-only or invalid structured response
         Panel-->>User: purpose-unavailable status
     end
-    User->>Panel: navigate, edit, rephrase, compare, or escalate
+    User->>Panel: navigate, decide, edit, rephrase, reject, or escalate
     Panel-->>Panel: refresh current candidate state
     User->>Panel: final acceptance
     Panel->>Output: accepted Candidate only after cleanup
@@ -136,23 +136,30 @@ status word is outside the contract; provider-written commands with line breaks
 are normalized to one line before the flow is derived. A provider stage split
 is trusted when every stage text appears verbatim in the command, in order,
 without overlap and with only whitespace or shell separators between; that
-split then becomes the displayed Command flow. The review surface presents
-through the review card, rendered monochrome when the terminal lacks color. A set `--review-panel`/`--no-review-panel` override persists the preference before generation; a `d` decision inside the card persists the review disable; an interactive `-x` confirmation accepts `?` to open the card as an explanation and close back to the confirmation.
-failure retries the portable inline panel. Active eligible `-x` consumes
+split then becomes the displayed Command flow. The card opens on the command
+flow; arrows move stages, Enter or `a` accepts, `e` edits, `r` rejects, and `c`
+or Escape cancels. Rejecting opens the model chooser with the configured tiers,
+a typed model field, and provider-catalog suggestions that load without
+blocking; choosing a tier or model regenerates the Candidate and returns to the
+card, and a failed regeneration keeps the previous Candidate. The review surface
+presents through the review card, rendered monochrome when the terminal lacks
+color. A set `--review-panel`/`--no-review-panel` override persists the preference before generation; a `d` decision inside the card persists the review disable; an interactive `-x` confirmation accepts `?` to open the card as an explanation and close back to the confirmation.
+Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.
 
 ## Scenario: Review Candidate lifecycle
 
-The review surface owns one selected Candidate and process-local current-review
-history. Regeneration replaces the Candidate unless comparison retention was
-explicit. Rephrase replaces the visible Intent and starts a new Candidate cycle;
-the prior Intent remains only in current-review history. Rejection returns to the
-current Intent without releasing a Candidate. A higher-tier request uses the
-next configured tier; at the highest tier it opens the existing provider catalog
-picker and applies one explicit model to the next Candidate only. Interrupting
-generation, purpose refresh, or model selection cancels only that operation and
-preserves the selected Candidate and review state.
+The review surface owns one Candidate and process-local current-review history.
+Regeneration replaces the Candidate. Rephrase replaces the visible Intent and
+starts a new Candidate cycle; the prior Intent remains only in current-review
+history. Rejection releases no Candidate, keeps the active Intent, and opens the
+model chooser; choosing a tier or model regenerates a fresh Candidate. A
+higher-tier request uses the next configured tier; at the highest tier it opens
+the existing provider catalog picker and applies one explicit model to the next
+Candidate only. Interrupting generation, purpose refresh, or model selection
+cancels only that operation and preserves the selected Candidate and review
+state.
 
 ```mermaid
 stateDiagram-v2
@@ -165,9 +172,12 @@ stateDiagram-v2
     Editing --> Reviewing: Enter commits refreshed Candidate
     Editing --> Reviewing: Escape discards edit
     Reviewing --> Generating: Rephrase, regenerate, or higher tier
+    Reviewing --> ModelChoosing: reject shortcut
+    ModelChoosing --> Generating: tier or model chosen
+    ModelChoosing --> Reviewing: chooser closed
     Reviewing --> ModelSelection: highest tier + higher tier
     ModelSelection --> Generating: explicit provider model selected
-    Reviewing --> Reviewing: retain, compare, select, reject, or purpose update
+    Reviewing --> Reviewing: purpose update
     Reviewing --> Accepted: final acceptance
     Reviewing --> Cancelled: Escape or portable panel failure
     Generating --> Reviewing: interrupted operation with selected Candidate

@@ -204,7 +204,14 @@ fn docs_no_deferred(world: &mut crate::WatnWorld) {
 
 #[then("the documentation does not use plain r for reasoning focus")]
 fn docs_no_plain_r(world: &mut crate::WatnWorld) {
-    assert!(!active_docs_text(world).contains("`r`"));
+    for line in active_docs_text(world).lines() {
+        if line.contains("`r`") {
+            assert!(
+                !line.to_lowercase().contains("reasoning"),
+                "plain r must not be documented as the reasoning focus: {line}"
+            );
+        }
+    }
 }
 
 #[then("the documentation does not name obsolete setup helper components")]

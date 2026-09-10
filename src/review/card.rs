@@ -1,6 +1,4 @@
-use super::panel::{
-    sanitize_terminal_text, wrap_text, FocusRegion, InlineLayout, PanelAction, ReviewPanelState,
-};
+use super::panel::{sanitize_terminal_text, wrap_text, InlineLayout, ReviewPanelState};
 
 const MAX_CARD_ROWS: u16 = 18;
 const NARROW_WIDTH: u16 = 60;
@@ -238,44 +236,10 @@ fn flow_strip(state: &ReviewPanelState, ink: &Ink) -> String {
         .join(" · ")
 }
 
-fn focus_tabs(state: &ReviewPanelState, ink: &Ink) -> String {
-    FocusRegion::ALL
-        .iter()
-        .map(|region| {
-            let label = region.label();
-            if *region == state.focus {
-                ink.reverse(&ink.white(&format!("[{label}]")))
-            } else {
-                ink.dim(label)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("  ")
-}
-
-fn action_row(state: &ReviewPanelState, ink: &Ink) -> String {
-    PanelAction::ALL
-        .iter()
-        .map(|action| {
-            let label = action.short_label();
-            if *action == state.selected_action() {
-                ink.reverse(&ink.green(&format!(" {label} ")))
-            } else {
-                ink.dim(label)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("   ")
-}
-
 fn header_right(state: &ReviewPanelState) -> String {
     format!(
-        "◆ {}/{} · tier {} · {}/{}",
-        state.selected_candidate + 1,
-        state.candidates.len(),
-        state.context.tier,
-        state.context.provider,
-        state.context.model
+        "◆ tier {} · {}/{}",
+        state.context.tier, state.context.provider, state.context.model
     )
 }
 
@@ -433,23 +397,12 @@ pub fn render_card_lines(
     }
 
     content.push((10, String::new()));
-    content.push((
-        60,
-        format!(
-            "{}   {}",
-            ink.label(&pad_to("Focus", label_width)),
-            focus_tabs(state, &ink)
-        ),
-    ));
-    if state.input_mode != super::panel::PanelInputMode::CommandEditor {
-        content.push((80, action_row(state, &ink)));
-    }
     let hints = if state.input_mode == super::panel::PanelInputMode::CommandEditor {
         "⏎ commit · esc discard".to_string()
     } else if state.explain_only {
         "esc close".to_string()
     } else {
-        "←→ stages · ⇥ region · ⏎ accept · e edit · d disable · esc cancel".to_string()
+        "◂▸ stages · ⏎ accept · e edit · d disable · esc cancel".to_string()
     };
     content.push((30, ink.dim(&hints)));
 
@@ -501,9 +454,7 @@ pub fn render_card_lines(
 #[cfg(test)]
 mod tests {
     use super::{render_card_lines, terminal_supports_color};
-    use crate::review::{
-        FocusRegion, InlineLayout, PanelAction, ReviewCandidate, ReviewContext, ReviewPanelState,
-    };
+    use crate::review::{InlineLayout, ReviewCandidate, ReviewContext, ReviewPanelState};
 
     fn state() -> ReviewPanelState {
         ReviewPanelState::new(
@@ -538,7 +489,7 @@ mod tests {
         assert!(joined.contains("Command"));
         assert!(joined.contains("Flow"));
         assert!(joined.contains("Stage"));
-        assert!(joined.contains("Accept"));
+        assert!(joined.contains("accept"));
         assert!(joined.contains("esc cancel"));
         assert!(joined.contains("\u{1b}[38;5;81m"), "labels are colored");
         assert!(joined.contains("\u{1b}[38;5;221m"), "flags are colored");
@@ -546,13 +497,13 @@ mod tests {
             joined.contains("\u{1b}[38;5;240m"),
             "separators are colored"
         );
-        assert!(joined.contains("◆ 1/1 · tier 1 · loopback/review-model"));
+        assert!(joined.contains("◆ tier 1 · loopback/review-model"));
     }
 
     #[test]
     fn card_stays_bounded_and_marks_unsupported_stages() {
         let mut unsupported = state();
-        unsupported.candidates[0] = ReviewCandidate::from_command("printf one; cat < input");
+        unsupported.candidate = ReviewCandidate::from_command("printf one; cat < input");
         unsupported.flow_stage = 1;
         let layout = InlineLayout::for_dimensions(40, 8);
         let lines = render_card_lines(&unsupported, layout, true);
@@ -567,15 +518,5 @@ mod tests {
         let layout = InlineLayout::for_dimensions(100, 40);
         let lines = render_card_lines(&state(), layout, false);
         assert!(lines.iter().all(|line| !line.contains('\u{1b}')));
-    }
-
-    #[test]
-    fn action_short_labels_are_stable() {
-        assert_eq!(PanelAction::Accept.short_label(), "Accept");
-        assert_eq!(PanelAction::EditCommand.short_label(), "Edit");
-        assert_eq!(PanelAction::Reject.short_label(), "Reject");
-        assert_eq!(PanelAction::Cancel.short_label(), "Cancel");
-        let state = state();
-        assert_eq!(state.focus, FocusRegion::Actions);
     }
 }

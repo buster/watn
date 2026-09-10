@@ -14,71 +14,6 @@ const MAX_PANEL_ROWS: u16 = 14;
 const MIN_PANEL_WIDTH: u16 = 20;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FocusRegion {
-    Flow,
-    Candidates,
-    Actions,
-}
-
-impl FocusRegion {
-    pub const ALL: [Self; 3] = [Self::Flow, Self::Candidates, Self::Actions];
-
-    fn next(self) -> Self {
-        match self {
-            Self::Flow => Self::Candidates,
-            Self::Candidates => Self::Actions,
-            Self::Actions => Self::Flow,
-        }
-    }
-
-    fn previous(self) -> Self {
-        match self {
-            Self::Flow => Self::Actions,
-            Self::Candidates => Self::Flow,
-            Self::Actions => Self::Candidates,
-        }
-    }
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Flow => "Flow",
-            Self::Candidates => "Candidates",
-            Self::Actions => "Actions",
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PanelAction {
-    Accept,
-    EditCommand,
-    Reject,
-    Cancel,
-}
-
-impl PanelAction {
-    pub const ALL: [Self; 4] = [Self::Accept, Self::EditCommand, Self::Reject, Self::Cancel];
-
-    fn label(self) -> &'static str {
-        match self {
-            Self::Accept => "Accept candidate",
-            Self::EditCommand => "Edit command",
-            Self::Reject => "Reject candidate",
-            Self::Cancel => "Cancel review",
-        }
-    }
-
-    pub fn short_label(self) -> &'static str {
-        match self {
-            Self::Accept => "Accept",
-            Self::EditCommand => "Edit",
-            Self::Reject => "Reject",
-            Self::Cancel => "Cancel",
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PanelInputMode {
     Review,
     CommandEditor,
@@ -100,7 +35,6 @@ pub enum PanelOutcome {
     Cancelled,
     EditCommitted(String),
     EditDiscarded,
-    Rejected,
     DisableReviewPermanently,
 }
 
@@ -139,13 +73,8 @@ impl InlineLayout {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReviewPanelState {
     pub context: ReviewContext,
-    pub candidates: Vec<ReviewCandidate>,
-    candidate_contexts: Vec<ReviewContext>,
-    pub selected_candidate: usize,
-    pub focus: FocusRegion,
+    pub candidate: ReviewCandidate,
     pub flow_stage: usize,
-    pub candidate_cursor: usize,
-    pub action_cursor: usize,
     pub input_mode: PanelInputMode,
     pub explain_only: bool,
     intent_history: Vec<String>,
@@ -160,18 +89,11 @@ pub struct ReviewPanelState {
 
 impl ReviewPanelState {
     pub fn new(context: ReviewContext, candidate: ReviewCandidate) -> Self {
-        let candidate_contexts = vec![context.clone()];
         Self {
             configured_model: context.model.clone(),
             context,
-            candidates: vec![candidate],
-            candidate_contexts,
-            selected_candidate: 0,
-            // Actions is the release gate and the initial decision point.
-            focus: FocusRegion::Actions,
+            candidate,
             flow_stage: 0,
-            candidate_cursor: 0,
-            action_cursor: 0,
             input_mode: PanelInputMode::Review,
             explain_only: false,
             intent_history: Vec::new(),
@@ -230,7 +152,7 @@ impl ReviewPanelState {
     }
 
     pub fn candidate(&self) -> &ReviewCandidate {
-        &self.candidates[self.selected_candidate]
+        &self.candidate
     }
 
     pub fn intent_history(&self) -> &[String] {
@@ -242,17 +164,13 @@ impl ReviewPanelState {
     pub fn rephrase_intent(&mut self, intent: impl Into<String>) {
         self.intent_history.push(self.context.intent.clone());
         self.context.intent = intent.into();
-        self.selected_candidate = 0;
-        self.candidate_cursor = 0;
         self.flow_stage = 0;
     }
 
     /// Regeneration and escalation replace the current candidate by default.
     pub fn replace_current(&mut self, candidate: ReviewCandidate) {
-        self.candidates[self.selected_candidate] = candidate;
-        self.candidate_contexts[self.selected_candidate] = self.context.clone();
+        self.candidate = candidate;
         self.flow_stage = 0;
-        self.candidate_cursor = self.selected_candidate;
     }
 
     /// Higher-tier escalation generates a candidate in the next tier context
@@ -260,24 +178,6 @@ impl ReviewPanelState {
     pub fn escalate(&mut self, context: ReviewContext, candidate: ReviewCandidate) {
         self.context = context;
         self.replace_current(candidate);
-    }
-
-    /// Explicit comparison retention keeps the current candidate in history.
-    pub fn retain_current(&mut self) {
-        let retained = self.candidate().clone();
-        let retained_context = self.context.clone();
-        self.candidates.push(retained);
-        self.candidate_contexts.push(retained_context);
-    }
-
-    pub fn select_candidate(&mut self, index: usize) {
-        self.selected_candidate = index.min(self.candidates.len().saturating_sub(1));
-        self.candidate_cursor = self.selected_candidate;
-        self.flow_stage = 0;
-    }
-
-    pub fn selected_action(&self) -> PanelAction {
-        PanelAction::ALL[self.action_cursor]
     }
 
     pub fn editor_buffer(&self) -> Option<&str> {
@@ -295,40 +195,32 @@ impl ReviewPanelState {
     }
 
     fn handle_review_key(&mut self, key: KeyEvent) -> PanelOutcome {
-        if key.code == KeyCode::Tab && key.modifiers.contains(KeyModifiers::SHIFT)
-            || key.code == KeyCode::BackTab
-        {
-            self.focus = self.focus.previous();
-            return PanelOutcome::Continue;
-        }
+        let plain = !key
+            .modifiers
+            .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT);
         match key.code {
-            KeyCode::Tab => {
-                self.focus = self.focus.next();
+            KeyCode::Esc => PanelOutcome::Cancelled,
+            KeyCode::Up | KeyCode::Left => {
+                self.move_flow_stage(-1);
+                PanelOutcome::Continue
             }
-            KeyCode::Esc => return PanelOutcome::Cancelled,
-            KeyCode::Up => self.move_selection(-1),
-            KeyCode::Down => self.move_selection(1),
-            KeyCode::Left => self.move_selection(-1),
-            KeyCode::Right => self.move_selection(1),
-            KeyCode::Char('e')
-                if !key
-                    .modifiers
-                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
-            {
-                self.focus = FocusRegion::Actions;
-                self.action_cursor = 1;
-                return self.activate_selection();
+            KeyCode::Down | KeyCode::Right => {
+                self.move_flow_stage(1);
+                PanelOutcome::Continue
             }
-            KeyCode::Char('d')
-                if !key
-                    .modifiers
-                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
-            {
-                return PanelOutcome::DisableReviewPermanently;
+            KeyCode::Char('e') | KeyCode::Char('E') if plain => self.begin_editor(),
+            KeyCode::Char('d') | KeyCode::Char('D') if plain => {
+                PanelOutcome::DisableReviewPermanently
             }
-            KeyCode::Enter => return self.activate_selection(),
-            _ => {}
+            KeyCode::Enter => PanelOutcome::Accepted(self.candidate.clone()),
+            _ => PanelOutcome::Continue,
         }
+    }
+
+    fn begin_editor(&mut self) -> PanelOutcome {
+        self.editor_original = self.candidate.command.clone();
+        self.editor_buffer = self.editor_original.clone();
+        self.input_mode = PanelInputMode::CommandEditor;
         PanelOutcome::Continue
     }
 
@@ -342,7 +234,7 @@ impl ReviewPanelState {
             }
             KeyCode::Enter => {
                 let command = self.editor_buffer.clone();
-                self.candidate_mut().edit_command(command.clone());
+                self.candidate.edit_command(command.clone());
                 self.input_mode = PanelInputMode::Review;
                 self.editor_original.clear();
                 PanelOutcome::EditCommitted(command)
@@ -363,48 +255,9 @@ impl ReviewPanelState {
         }
     }
 
-    fn activate_selection(&mut self) -> PanelOutcome {
-        match self.focus {
-            FocusRegion::Actions => match self.selected_action() {
-                PanelAction::Accept => PanelOutcome::Accepted(self.candidate().clone()),
-                PanelAction::EditCommand => {
-                    self.editor_original = self.candidate().command.clone();
-                    self.editor_buffer = self.editor_original.clone();
-                    self.input_mode = PanelInputMode::CommandEditor;
-                    PanelOutcome::Continue
-                }
-                PanelAction::Reject => PanelOutcome::Rejected,
-                PanelAction::Cancel => PanelOutcome::Cancelled,
-            },
-            FocusRegion::Candidates => {
-                self.selected_candidate = self.candidate_cursor.min(self.candidates.len() - 1);
-                self.flow_stage = self
-                    .flow_stage
-                    .min(self.candidate().flow.stages.len().saturating_sub(1));
-                PanelOutcome::Continue
-            }
-            FocusRegion::Flow => PanelOutcome::Continue,
-        }
-    }
-
-    fn move_selection(&mut self, delta: isize) {
-        match self.focus {
-            FocusRegion::Flow => {
-                let len = self.candidate().flow.stages.len();
-                self.flow_stage = move_cursor(self.flow_stage, delta, len);
-            }
-            FocusRegion::Candidates => {
-                self.candidate_cursor =
-                    move_cursor(self.candidate_cursor, delta, self.candidates.len());
-            }
-            FocusRegion::Actions => {
-                self.action_cursor = move_cursor(self.action_cursor, delta, PanelAction::ALL.len());
-            }
-        }
-    }
-
-    fn candidate_mut(&mut self) -> &mut ReviewCandidate {
-        &mut self.candidates[self.selected_candidate]
+    fn move_flow_stage(&mut self, delta: isize) {
+        let len = self.candidate.flow.stages.len();
+        self.flow_stage = move_cursor(self.flow_stage, delta, len);
     }
 }
 
@@ -709,8 +562,8 @@ pub fn controlling_terminal_is_usable() -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        sanitize_terminal_text, ControllingTerminal, FocusRegion, InlineLayout, PanelAction,
-        PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation, ReviewPanelState,
+        sanitize_terminal_text, ControllingTerminal, InlineLayout, PanelInputMode, PanelOutcome,
+        ReviewContext, ReviewOperation, ReviewPanelState,
     };
     use crate::review::ReviewCandidate;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -732,40 +585,40 @@ mod tests {
     }
 
     #[test]
-    fn starts_on_accept_and_cycles_exactly_three_focus_regions() {
+    fn starts_on_the_first_stage_with_no_focus_region() {
         let mut state = state();
-        assert_eq!(state.focus, FocusRegion::Actions);
-        assert_eq!(state.selected_action(), PanelAction::Accept);
-        state.handle_key(key(KeyCode::Tab));
-        assert_eq!(state.focus, FocusRegion::Flow);
-        state.handle_key(key(KeyCode::Tab));
-        assert_eq!(state.focus, FocusRegion::Candidates);
-        state.handle_key(key(KeyCode::Tab));
-        assert_eq!(state.focus, FocusRegion::Actions);
-        state.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::SHIFT));
-        assert_eq!(state.focus, FocusRegion::Candidates);
+        assert_eq!(state.flow_stage, 0);
+        state.handle_key(key(KeyCode::Right));
+        assert_eq!(state.flow_stage, 0, "single stage cannot move");
+        assert_eq!(state.input_mode, PanelInputMode::Review);
     }
 
     #[test]
-    fn arrows_navigate_flow_and_editor_keys_are_local() {
-        let mut state = state();
-        state.handle_key(key(KeyCode::Tab));
-        assert_eq!(state.focus, FocusRegion::Flow);
-        state.handle_key(key(KeyCode::Down));
-        assert_eq!(state.flow_stage, 0);
-
-        let mut multi_stage = ReviewPanelState::new(
-            state.context.clone(),
+    fn arrows_move_stages_and_enter_accepts() {
+        let mut state = ReviewPanelState::new(
+            state().context.clone(),
             ReviewCandidate::from_command("printf one; printf two"),
         );
-        multi_stage.handle_key(key(KeyCode::Tab));
-        multi_stage.handle_key(key(KeyCode::Down));
-        assert_eq!(multi_stage.flow_stage, 1);
+        state.handle_key(key(KeyCode::Right));
+        assert_eq!(state.flow_stage, 1);
+        state.handle_key(key(KeyCode::Left));
+        assert_eq!(state.flow_stage, 0);
+        state.handle_key(key(KeyCode::Down));
+        assert_eq!(state.flow_stage, 1);
+        state.handle_key(key(KeyCode::Up));
+        assert_eq!(state.flow_stage, 0);
 
-        state.focus = FocusRegion::Actions;
-        state.action_cursor = 1;
-        assert_eq!(
+        assert!(matches!(
             state.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Accepted(_)
+        ));
+    }
+
+    #[test]
+    fn edit_shortcut_opens_the_command_editor_and_escape_discards() {
+        let mut state = state();
+        assert_eq!(
+            state.handle_key(key(KeyCode::Char('e'))),
             PanelOutcome::Continue
         );
         assert_eq!(state.input_mode, PanelInputMode::CommandEditor);
@@ -780,26 +633,31 @@ mod tests {
     }
 
     #[test]
-    fn enter_accepts_and_escape_cancels_without_alternate_screen_commands() {
-        let mut accepted_state = state();
-        assert!(matches!(
-            accepted_state.handle_key(key(KeyCode::Enter)),
-            PanelOutcome::Accepted(_)
-        ));
-        let mut cancelled_state = state();
+    fn enter_commits_the_editor_and_disable_is_permanent() {
+        let mut commit = state();
+        commit.handle_key(key(KeyCode::Char('e')));
+        commit.handle_key(key(KeyCode::Char('x')));
         assert_eq!(
-            cancelled_state.handle_key(key(KeyCode::Esc)),
-            PanelOutcome::Cancelled
+            commit.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::EditCommitted("df -hx".to_string())
         );
+        assert_eq!(commit.candidate().command, "df -hx");
 
-        let layout = InlineLayout::for_dimensions(80, 24);
-        let terminal = ControllingTerminal::new(Vec::new(), layout);
-        let mut panel = super::InlineReviewPanel::new(terminal, state());
-        panel.render().unwrap();
-        let bytes = panel.terminal.into_writer();
-        let output = String::from_utf8(bytes).unwrap();
-        assert!(!output.contains("1049"));
-        assert!(output.contains("Flow"));
+        let mut disable = state();
+        assert_eq!(
+            disable.handle_key(key(KeyCode::Char('d'))),
+            PanelOutcome::DisableReviewPermanently
+        );
+    }
+
+    #[test]
+    fn escape_cancels_and_release_events_are_ignored() {
+        let mut state = state();
+        assert_eq!(state.handle_key(key(KeyCode::Esc)), PanelOutcome::Cancelled);
+
+        let mut release = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+        release.kind = crossterm::event::KeyEventKind::Release;
+        assert_eq!(state.handle_key(release), PanelOutcome::Continue);
     }
 
     #[test]
@@ -842,38 +700,7 @@ mod tests {
     }
 
     #[test]
-    fn review_action_edges_and_ignored_keys_are_covered() {
-        let mut cancel_panel = state();
-        cancel_panel.focus = FocusRegion::Actions;
-        cancel_panel.action_cursor = 3;
-        assert_eq!(cancel_panel.selected_action(), PanelAction::Cancel);
-        assert_eq!(
-            cancel_panel.handle_key(key(KeyCode::Enter)),
-            PanelOutcome::Cancelled
-        );
-
-        let mut flow_panel = ReviewPanelState::new(
-            state().context.clone(),
-            ReviewCandidate::from_command("df -h | head -1"),
-        );
-        flow_panel.focus = FocusRegion::Flow;
-        assert_eq!(flow_panel.flow_stage, 0);
-        flow_panel.handle_key(key(KeyCode::Left));
-        assert_eq!(flow_panel.flow_stage, 0);
-        flow_panel.handle_key(key(KeyCode::Right));
-        assert_eq!(flow_panel.flow_stage, 1);
-        flow_panel.handle_key(key(KeyCode::F(1)));
-        assert_eq!(flow_panel.flow_stage, 1);
-        flow_panel.handle_key(key(KeyCode::Up));
-        assert_eq!(flow_panel.flow_stage, 0);
-
-        let mut release = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
-        release.kind = crossterm::event::KeyEventKind::Release;
-        assert_eq!(flow_panel.handle_key(release), PanelOutcome::Continue);
-    }
-
-    #[test]
-    fn candidate_history_model_selection_and_operations_are_covered() {
+    fn model_selection_replaces_the_candidate_and_restores_the_model() {
         let mut panel = state();
         panel.open_model_selection(vec!["model-a".to_string(), "model-b".to_string()]);
         assert!(panel.model_selection().is_some());
@@ -885,14 +712,15 @@ mod tests {
         assert!(panel.model_selection().is_none());
         panel.complete_model_selection();
         assert_eq!(panel.context.model, panel.configured_model());
+    }
 
-        panel.retain_current();
-        assert_eq!(panel.candidates.len(), 2);
-        panel.select_candidate(10);
-        assert_eq!(panel.selected_candidate, 1);
+    #[test]
+    fn rephrase_and_operations_preserve_the_candidate() {
+        let mut panel = state();
         panel.rephrase_intent("list files");
         assert_eq!(panel.intent_history(), ["show disk usage".to_string()]);
         assert_eq!(panel.context.intent, "list files");
+        assert_eq!(panel.candidate().command, "df -h");
 
         panel.begin_operation(ReviewOperation::ModelSelection);
         assert_eq!(
@@ -904,32 +732,22 @@ mod tests {
             Some(ReviewOperation::ModelSelection)
         );
         assert_eq!(panel.pending_operation(), None);
+        assert_eq!(panel.candidate().command, "df -h");
+    }
 
+    #[test]
+    fn escalation_replaces_the_candidate() {
+        let mut panel = state();
         let context = panel.context.clone();
         panel.escalate(context, ReviewCandidate::from_command("ls -l"));
         assert_eq!(panel.candidate().command, "ls -l");
     }
 
     #[test]
-    fn candidates_focus_selection_and_editor_edges_are_covered() {
+    fn editor_edges_are_covered() {
         let mut panel = state();
-        panel.retain_current();
-        panel.focus = FocusRegion::Candidates;
-        panel.candidate_cursor = 1;
-        assert_eq!(
-            panel.handle_key(key(KeyCode::Enter)),
-            PanelOutcome::Continue
-        );
-        assert_eq!(panel.selected_candidate, 1);
-        panel.handle_key(key(KeyCode::Down));
-        panel.handle_key(key(KeyCode::Up));
-        panel.focus = FocusRegion::Flow;
-        assert_eq!(
-            panel.handle_key(key(KeyCode::Enter)),
-            PanelOutcome::Continue
-        );
-
         panel.input_mode = PanelInputMode::CommandEditor;
+        panel.editor_buffer = "df -h".to_string();
         panel.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::ALT));
         panel.handle_key(key(KeyCode::Backspace));
         assert_eq!(panel.handle_key(key(KeyCode::F(1))), PanelOutcome::Continue);
@@ -952,29 +770,11 @@ mod tests {
         panel.terminal_mut().begin().unwrap();
         panel.render().unwrap();
         let outcome = panel
-            .handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE))
+            .handle_key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE))
             .unwrap();
         assert_eq!(outcome, PanelOutcome::Continue);
-        panel.state.focus = FocusRegion::Actions;
-        panel.state.action_cursor = 0;
         let outcome = panel.handle_key(key(KeyCode::Enter)).unwrap();
         assert!(matches!(outcome, PanelOutcome::Accepted(_)));
-    }
-
-    #[test]
-    fn focus_reverse_navigation_and_action_arrows_are_covered() {
-        let mut panel = state();
-        panel.focus = FocusRegion::Flow;
-        panel.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::SHIFT));
-        assert_eq!(panel.focus, FocusRegion::Actions);
-
-        panel.action_cursor = 0;
-        panel.handle_key(key(KeyCode::Down));
-        assert_eq!(panel.action_cursor, 1);
-        panel.handle_key(key(KeyCode::Up));
-        assert_eq!(panel.action_cursor, 0);
-        panel.handle_key(key(KeyCode::Up));
-        assert_eq!(panel.action_cursor, 0);
     }
 
     #[test]
@@ -1006,31 +806,12 @@ mod tests {
     }
 
     #[test]
-    fn e_shortcut_opens_the_command_editor() {
+    fn control_modified_letters_are_not_review_decisions() {
         let mut panel = state();
+        let control_e = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL);
+        assert_eq!(panel.handle_key(control_e), PanelOutcome::Continue);
         assert_eq!(panel.input_mode, PanelInputMode::Review);
-        assert_eq!(
-            panel.handle_key(key(KeyCode::Char('e'))),
-            PanelOutcome::Continue
-        );
-        assert_eq!(panel.input_mode, PanelInputMode::CommandEditor);
-        assert_eq!(panel.editor_buffer(), Some("df -h"));
-    }
-
-    #[test]
-    fn command_editor_rendering_and_reverse_focus_cycle_are_covered() {
-        let mut panel = state();
-        panel.input_mode = PanelInputMode::CommandEditor;
-        panel.editor_buffer = "df -h".to_string();
-        let lines =
-            crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
-        assert!(lines.iter().any(|line| line.contains("Edit")));
-        assert!(lines.iter().any(|line| line.contains("commit")));
-        assert!(lines.iter().any(|line| line.contains("df -h")));
-
-        panel.input_mode = PanelInputMode::Review;
-        panel.focus = FocusRegion::Candidates;
-        panel.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::SHIFT));
-        assert_eq!(panel.focus, FocusRegion::Flow);
+        let alt_d = KeyEvent::new(KeyCode::Char('d'), KeyModifiers::ALT);
+        assert_eq!(panel.handle_key(alt_d), PanelOutcome::Continue);
     }
 }

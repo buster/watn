@@ -1499,14 +1499,8 @@ fn review_candidate_for_intent(world: &mut WatnWorld, intent: String) {
 }
 
 fn open_command_editor(panel: &mut watn::review::ReviewPanelState) {
-    panel.focus = watn::review::FocusRegion::Actions;
-    panel.action_cursor = 1;
     assert_eq!(
-        panel.selected_action(),
-        watn::review::PanelAction::EditCommand
-    );
-    assert_eq!(
-        panel.handle_key(key(crossterm::event::KeyCode::Enter)),
+        panel.handle_key(key(crossterm::event::KeyCode::Char('e'))),
         watn::review::PanelOutcome::Continue
     );
     assert_eq!(
@@ -1563,7 +1557,7 @@ fn review_final_acceptance_required(world: &mut WatnWorld) {
         world.review.released.is_none(),
         "candidate was released without final acceptance"
     );
-    assert_review_rendered_contains(world, "Accept");
+    assert_review_rendered_contains(world, "accept");
 }
 
 #[when("I change the selected candidate")]
@@ -1589,7 +1583,7 @@ fn review_unedited_candidate_selected(world: &mut WatnWorld) {
 #[then("the review surface should remain open")]
 fn review_surface_remains_open(world: &mut WatnWorld) {
     assert!(world.review.surface_open, "review surface closed");
-    assert_review_rendered_contains(world, "Accept");
+    assert_review_rendered_contains(world, "accept");
 }
 
 #[when("I edit the selected candidate and purpose refresh fails")]
@@ -1601,8 +1595,7 @@ fn review_edit_and_refresh_fails(world: &mut WatnWorld) {
         panel.handle_key(key(crossterm::event::KeyCode::Enter)),
         watn::review::PanelOutcome::EditCommitted("git status --short".to_string())
     );
-    let selected = panel.selected_candidate;
-    let result = panel.candidates[selected].apply_response("{\"review_version\":1,");
+    let result = panel.candidate.apply_response("{\"review_version\":1,");
     assert!(
         matches!(
             result,
@@ -1638,97 +1631,6 @@ fn review_intent_visible(world: &mut WatnWorld) {
 #[when("I open the review surface")]
 fn review_open_surface(world: &mut WatnWorld) {
     build_review_panel(world);
-}
-
-#[then("the initial focus should be Actions with final acceptance selected")]
-fn review_initial_focus(world: &mut WatnWorld) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.focus, watn::review::FocusRegion::Actions);
-    assert_eq!(panel.selected_action(), watn::review::PanelAction::Accept);
-}
-
-#[when("I press Tab")]
-fn review_press_tab(world: &mut WatnWorld) {
-    panel_mut(world).handle_key(key(crossterm::event::KeyCode::Tab));
-    render_surface(world);
-}
-
-fn assert_review_focus(world: &WatnWorld, expected: watn::review::FocusRegion, label: &str) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.focus, expected, "focus should move to {label}");
-    let rendered = review_rendered_text(world);
-    let plain = strip_ansi(&rendered);
-    let active_tab = format!("[{label}]");
-    let plain_focus = format!("Focus: {label}");
-    assert!(
-        rendered.contains(&active_tab)
-            || plain.contains(&active_tab)
-            || rendered.contains(&plain_focus)
-            || plain.contains(&plain_focus),
-        "focus {label} should be visible, got:\n{rendered}"
-    );
-}
-
-#[then("focus should move to Flow")]
-fn review_focus_flow(world: &mut WatnWorld) {
-    assert_review_focus(world, watn::review::FocusRegion::Flow, "Flow");
-}
-
-#[then("focus should move to Candidates")]
-fn review_focus_candidates(world: &mut WatnWorld) {
-    assert_review_focus(world, watn::review::FocusRegion::Candidates, "Candidates");
-}
-
-#[then("focus should move to Actions")]
-fn review_focus_actions(world: &mut WatnWorld) {
-    assert_review_focus(world, watn::review::FocusRegion::Actions, "Actions");
-}
-
-#[when("I press an arrow key within the Flow region")]
-fn review_arrow_in_flow(world: &mut WatnWorld) {
-    let panel = panel_mut(world);
-    panel.focus = watn::review::FocusRegion::Flow;
-    panel.handle_key(key(crossterm::event::KeyCode::Down));
-    render_surface(world);
-}
-
-#[then("the selected command-flow stage should change")]
-fn review_flow_stage_changed(world: &mut WatnWorld) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(
-        panel.flow_stage, 1,
-        "arrow key within Flow should select the next stage"
-    );
-    assert_review_rendered_contains(world, "head -5");
-}
-
-#[when("I press Shift-Tab within the Actions region")]
-fn review_shift_tab_in_actions(world: &mut WatnWorld) {
-    let panel = panel_mut(world);
-    panel.focus = watn::review::FocusRegion::Actions;
-    panel.handle_key(crossterm::event::KeyEvent::new(
-        crossterm::event::KeyCode::Tab,
-        crossterm::event::KeyModifiers::SHIFT,
-    ));
-    render_surface(world);
-}
-
-#[when("I press Enter on the selected action")]
-fn review_enter_selected_action(world: &mut WatnWorld) {
-    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Enter));
-    world.review.panel_outcome = Some(outcome);
-}
-
-#[then("the selected action should activate")]
-fn review_selected_action_activates(world: &mut WatnWorld) {
-    assert!(
-        matches!(
-            world.review.panel_outcome,
-            Some(watn::review::PanelOutcome::Accepted(_))
-        ),
-        "Enter should activate the selected Accept action, got {:?}",
-        world.review.panel_outcome
-    );
 }
 
 #[when("I press Escape in the review surface")]
@@ -1796,8 +1698,7 @@ fn review_surface_loading(world: &mut WatnWorld) {
 #[when("stage purposes become available")]
 fn review_stage_purposes_available(world: &mut WatnWorld) {
     let panel = panel_mut(world);
-    let selected = panel.selected_candidate;
-    let result = panel.candidates[selected].apply_response(REVIEW_READY_RESPONSE);
+    let result = panel.candidate.apply_response(REVIEW_READY_RESPONSE);
     assert_eq!(result, watn::review::ReviewParseResult::Ready);
     render_surface(world);
 }
@@ -1847,7 +1748,7 @@ fn review_candidate_reviewable(world: &mut WatnWorld) {
         world.review.released.is_none(),
         "candidate must not be released without acceptance"
     );
-    assert_review_rendered_contains(world, "Accept");
+    assert_review_rendered_contains(world, "accept");
 }
 
 const REVIEW_UNSUPPORTED_COMMAND: &str = "for file in *.log; do cat < \"$file\"; done";
@@ -1879,8 +1780,8 @@ fn review_unsupported_marked(world: &mut WatnWorld) {
 
 #[then("the review surface should still offer final acceptance and cancellation")]
 fn review_acceptance_and_cancellation_offered(world: &mut WatnWorld) {
-    assert_review_rendered_contains(world, "Accept");
-    assert_review_rendered_contains(world, "Cancel");
+    assert_review_rendered_contains(world, "accept");
+    assert_review_rendered_contains(world, "cancel");
     assert!(world.review.released.is_none());
 }
 
@@ -1929,14 +1830,12 @@ fn review_selected_candidate(world: &mut WatnWorld, intent: String) {
     review_candidate_for_intent(world, intent);
     build_review_panel(world);
     let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.selected_candidate, 0);
 }
 
 #[when("a purpose refresh or replacement generation fails")]
 fn review_refresh_or_generation_fails(world: &mut WatnWorld) {
     let panel = panel_mut(world);
-    let selected = panel.selected_candidate;
-    let result = panel.candidates[selected].apply_response(REVIEW_FAILED_RESPONSE);
+    let result = panel.candidate.apply_response(REVIEW_FAILED_RESPONSE);
     assert!(
         matches!(
             result,
@@ -2175,10 +2074,6 @@ fn review_rephrase_intent(world: &mut WatnWorld, intent: String) {
 fn review_new_candidate_for_intent(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.candidate().command, REVIEW_REPLACEMENT_COMMAND);
-    assert_eq!(
-        panel.selected_candidate, 0,
-        "the new cycle selects its own candidate"
-    );
     assert_review_rendered_contains(world, REVIEW_REPLACEMENT_COMMAND);
 }
 
@@ -2236,11 +2131,6 @@ fn review_replacement_for_intent(world: &mut WatnWorld) {
 #[then("the prior candidate should not be retained unless comparison was requested")]
 fn review_prior_not_retained(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(
-        panel.candidates.len(),
-        1,
-        "default regeneration replaces the prior candidate"
-    );
     assert_ne!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
 }
 
@@ -2343,18 +2233,6 @@ fn review_model_oneshot(world: &mut WatnWorld) {
     assert!(panel.model_selection().is_none(), "selection is closed");
 }
 
-#[when("I reject the selected candidate")]
-fn review_reject_candidate(world: &mut WatnWorld) {
-    let panel = panel_mut(world);
-    panel.focus = watn::review::FocusRegion::Actions;
-    panel.action_cursor = 2;
-    assert_eq!(panel.selected_action(), watn::review::PanelAction::Reject);
-    let outcome = panel.handle_key(key(crossterm::event::KeyCode::Enter));
-    assert_eq!(outcome, watn::review::PanelOutcome::Rejected);
-    world.review.panel_outcome = Some(outcome);
-    render_surface(world);
-}
-
 #[then("no candidate should be released")]
 fn review_nothing_released(world: &mut WatnWorld) {
     assert!(
@@ -2373,81 +2251,6 @@ fn review_current_intent_remains(world: &mut WatnWorld, intent: String) {
     assert_eq!(panel.context.intent, intent);
     assert_review_rendered_contains(world, "Intent");
     assert_review_rendered_contains(world, &intent);
-}
-
-#[then("the review should offer regeneration or rephrasing")]
-fn review_offer_regeneration(world: &mut WatnWorld) {
-    assert!(world.review.surface_open, "review must stay available");
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
-    assert_eq!(panel.focus, watn::review::FocusRegion::Actions);
-    assert_review_rendered_contains(world, "Accept");
-    assert_review_rendered_contains(world, "Cancel");
-}
-
-#[when("I retain the current candidate for comparison")]
-fn review_retain_candidate(world: &mut WatnWorld) {
-    panel_mut(world).retain_current();
-    render_surface(world);
-}
-
-#[then("both candidates should be available in the current review only")]
-fn review_both_candidates_available(world: &mut WatnWorld) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(
-        panel.candidates.len(),
-        2,
-        "retention keeps both candidates in the current review"
-    );
-    assert_eq!(panel.candidate().command, REVIEW_REGENERATED_COMMAND);
-    assert_eq!(panel.candidates[1].command, REVIEW_FIXTURE_COMMAND);
-}
-
-#[then("each candidate should show its tier and provider/model context")]
-fn review_candidates_show_context(world: &mut WatnWorld) {
-    let count = world
-        .review
-        .panel
-        .as_ref()
-        .expect("review panel state")
-        .candidates
-        .len();
-    for index in 0..count {
-        panel_mut(world).select_candidate(index);
-        render_current_surface(world);
-        assert_review_rendered_contains(world, &format!("◆ {}/{}", index + 1, count));
-        assert_review_rendered_contains(world, "tier 1");
-        assert_review_rendered_contains(world, "loopback/review-model");
-    }
-    panel_mut(world).select_candidate(0);
-    render_current_surface(world);
-}
-
-#[when("I select the retained candidate")]
-fn review_select_retained(world: &mut WatnWorld) {
-    panel_mut(world).select_candidate(1);
-    render_surface(world);
-}
-
-#[then("it should become the selected candidate for final acceptance")]
-fn review_retained_selected(world: &mut WatnWorld) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.selected_candidate, 1);
-    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
-}
-
-#[then("only the selected candidate should be eligible for acceptance")]
-fn review_only_selected_accept(world: &mut WatnWorld) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    match panel
-        .clone()
-        .handle_key(key(crossterm::event::KeyCode::Enter))
-    {
-        watn::review::PanelOutcome::Accepted(candidate) => {
-            assert_eq!(candidate.command, REVIEW_FIXTURE_COMMAND);
-        }
-        outcome => panic!("only the selected candidate may be accepted, got {outcome:?}"),
-    }
 }
 
 #[when("I start a regeneration, purpose refresh, or provider catalog model selection")]
@@ -2581,7 +2384,6 @@ fn review_compact_overview(world: &mut WatnWorld) {
 #[then("arrow navigation should reach every command-flow stage")]
 fn review_arrow_reaches_every_stage(world: &mut WatnWorld) {
     let mut panel = world.review.panel.clone().expect("review panel state");
-    panel.focus = watn::review::FocusRegion::Flow;
     let stage_count = panel.candidate().flow.stages.len();
     let mut seen = vec![panel.flow_stage];
     for _ in 0..stage_count.saturating_sub(1) {
@@ -2767,7 +2569,7 @@ fn review_untrusted_stage_split(world: &mut WatnWorld) {
 fn review_shows_framed_card(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
     let plain = strip_ansi(&rendered);
-    for needle in ["┌", "┘", "watn", "Flow", "Stage", "Focus"] {
+    for needle in ["┌", "┘", "watn", "Flow", "Stage", "accept"] {
         assert!(
             rendered.contains(needle) || plain.contains(needle),
             "card should show {needle:?}, got:\n{rendered}"
@@ -2842,7 +2644,6 @@ fn review_only_selected_stage(world: &mut WatnWorld, stage: String) {
 #[when("I move to the next stage")]
 fn review_next_stage(world: &mut WatnWorld) {
     let panel = panel_mut(world);
-    panel.focus = watn::review::FocusRegion::Flow;
     panel.handle_key(key(crossterm::event::KeyCode::Right));
     render_current_surface(world);
 }
@@ -2850,7 +2651,6 @@ fn review_next_stage(world: &mut WatnWorld) {
 #[when("I move to the previous stage")]
 fn review_previous_stage(world: &mut WatnWorld) {
     let panel = panel_mut(world);
-    panel.focus = watn::review::FocusRegion::Flow;
     panel.handle_key(key(crossterm::event::KeyCode::Left));
     render_current_surface(world);
 }
@@ -2934,7 +2734,7 @@ fn review_no_plain_panel(world: &mut WatnWorld) {
         "card frame expected, got:\n{rendered}"
     );
     assert!(
-        !plain.contains("Focus:") && !plain.contains("Accept candidate"),
+        !plain.contains("Focus:") && !plain.contains("Review |"),
         "plain panel must not render, got:\n{rendered}"
     );
 }
@@ -3127,4 +2927,31 @@ fn review_enabled_in_configuration(world: &mut WatnWorld) {
 #[then("the review surface should be disabled in the configuration")]
 fn review_disabled_in_configuration_step(world: &mut WatnWorld) {
     assert_persisted_panel(world, false);
+}
+
+#[then("the first command-flow stage should be selected")]
+fn review_first_stage_selected(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.flow_stage, 0,
+        "the first command-flow stage is active when the card opens"
+    );
+    assert_review_rendered_contains(world, "git log --oneline");
+}
+
+#[then("its stage purpose should be visible")]
+fn review_first_stage_purpose_visible(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "List recent commits.");
+}
+
+#[then("no focus region should be shown")]
+fn review_no_focus_region(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    for absent in ["Focus", "[Flow]", "[Candidates]", "[Actions]", "region"] {
+        assert!(
+            !plain.contains(absent),
+            "focus region remnant {absent:?} in:\n{rendered}"
+        );
+    }
 }
