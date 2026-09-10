@@ -14,7 +14,8 @@ pub use panel::{
     ReviewContext, ReviewOperation, ReviewPanelState,
 };
 pub use response::{
-    parse_structured_review_response, CandidateIdentity, PurposeStatus, ReviewCandidate,
-    ReviewParseResult, ReviewResponse, ReviewResponseError, ReviewStage, REVIEW_VERSION,
+    candidate_from_provider_response, parse_structured_review_response, CandidateIdentity,
+    PurposeStatus, ReviewCandidate, ReviewParseResult, ReviewResponse, ReviewResponseError,
+    ReviewStage, REVIEW_VERSION,
 };
 pub use routing::{request_route, resolve_review_enabled, RequestRoute};

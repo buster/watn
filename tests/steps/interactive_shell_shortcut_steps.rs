@@ -1278,18 +1278,18 @@ fn build_review_panel(world: &mut WatnWorld) {
         world.review.surface_open = false;
         return;
     }
-    let command = world.review.candidate_command.clone();
-    let mut candidate = watn::review::ReviewCandidate::from_command(command);
-    if let Some(raw) = world.review.structured_response.clone() {
-        let result = candidate.apply_response(&raw);
-        assert!(
-            matches!(
-                result,
-                watn::review::ReviewParseResult::Ready | watn::review::ReviewParseResult::Loading
-            ),
-            "structured review response must validate against the derived command flow, got {result:?}"
-        );
-    }
+    let candidate = match world.review.structured_response.clone() {
+        Some(raw) => watn::review::candidate_from_provider_response(&raw),
+        None => Some(watn::review::ReviewCandidate::from_command(
+            world.review.candidate_command.clone(),
+        )),
+    };
+    let Some(candidate) = candidate else {
+        world.review.surface_open = false;
+        world.review.panel = None;
+        world.review.rendered.clear();
+        return;
+    };
     let intent = world.review.intent.clone();
     let tier = world.review.tier.clone();
     let context = review_context(&intent, &tier);
@@ -2563,4 +2563,14 @@ fn review_arrow_reaches_every_stage(world: &mut WatnWorld) {
         );
     }
     assert_eq!(panel.flow_stage, stage_count - 1);
+}
+
+#[given("the provider returns a markdown-fenced structured review response:")]
+fn review_fenced_response(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let response = step
+        .docstring
+        .as_deref()
+        .expect("fenced response docstring")
+        .to_string();
+    world.review.structured_response = Some(response);
 }

@@ -532,6 +532,7 @@ fn review_system_prompt() -> String {
          - command is the complete executable command for the request.\n\
          - Split the command into stages at top-level pipes, && and ; boundaries. stage_text must be the exact text of each stage.\n\
          - purpose is plain text explaining the stage; never evaluate or execute anything.\n\
+         - Do not wrap the response in a markdown code fence and do not add prose before or after the object.\n\
          Operating System: {} ({}). Shell: {}.",
         std::env::consts::OS,
         std::env::consts::ARCH,
@@ -552,19 +553,13 @@ fn run_review_path(
     config: &watn::config::types::Config,
 ) -> ! {
     let raw = buffer.candidate().unwrap_or_default();
-    let candidate = match watn::review::parse_structured_review_response(raw) {
-        Ok(parsed) => {
-            let mut candidate = watn::review::ReviewCandidate::from_command(parsed.command.clone());
-            let _ = candidate.apply_response(raw);
-            candidate
+    let candidate = match watn::review::candidate_from_provider_response(raw) {
+        Some(candidate) => candidate,
+        None => {
+            eprintln!("review unavailable: no complete command candidate");
+            std::process::exit(1);
         }
-        Err(_) => watn::review::ReviewCandidate::from_command(raw),
     };
-
-    if candidate.command.trim().is_empty() {
-        eprintln!("review unavailable: no complete command candidate");
-        std::process::exit(1);
-    }
 
     let context = watn::review::ReviewContext {
         intent: intent.to_string(),

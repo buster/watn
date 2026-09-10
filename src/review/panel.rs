@@ -730,11 +730,9 @@ pub fn sanitize_terminal_text(value: &str) -> String {
             EscapeState::Normal => {
                 if character == '\u{1b}' {
                     state = EscapeState::Esc;
-                } else if character.is_control()
-                    && character != '\n'
-                    && character != '\r'
-                    && character != '\t'
-                {
+                } else if character == '\n' || character == '\r' || character == '\t' {
+                    sanitized.push(' ');
+                } else if character.is_control() {
                     sanitized.push('?');
                 } else {
                     sanitized.push(character);

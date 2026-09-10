@@ -87,11 +87,69 @@ pub enum ReviewParseResult {
     PurposeUnavailable(ReviewResponseError),
 }
 
-/// Parse only the structured response object. Command-only provider output is
-/// deliberately not treated as a parseable review response.
+/// Locate the structured JSON object inside a provider payload. Providers may
+/// wrap the object in a markdown code fence, possibly with surrounding prose.
+fn locate_json_payload(raw: &str) -> Option<&str> {
+    let trimmed = raw.trim();
+    if let Some(fence_start) = trimmed.find("```") {
+        let after_fence = &trimmed[fence_start + 3..];
+        if let Some(line_end) = after_fence.find('\n') {
+            let body = &after_fence[line_end + 1..];
+            if let Some(fence_end) = body.find("```") {
+                let fenced = body[..fence_end].trim();
+                if !fenced.is_empty() {
+                    return Some(fenced);
+                }
+            }
+        }
+    }
+    let start = trimmed.find('{')?;
+    let end = trimmed.rfind('}')?;
+    (end > start).then(|| trimmed[start..=end].trim())
+}
+
+/// Parse the structured response object. Markdown fences and surrounding prose
+/// are tolerated; command-only provider output is deliberately not a parseable
+/// review response.
 pub fn parse_structured_review_response(raw: &str) -> Result<ReviewResponse, ReviewResponseError> {
-    serde_json::from_str(raw.trim())
+    let payload = locate_json_payload(raw).unwrap_or_else(|| raw.trim());
+    serde_json::from_str(payload)
         .map_err(|error| ReviewResponseError::InvalidJson(error.to_string()))
+}
+
+/// Build a reviewable candidate from a provider payload.
+///
+/// - A valid structured response keeps its command and model-written purposes.
+/// - A JSON-shaped payload that fails strict validation contributes only its
+///   provider-written command; purposes stay unavailable.
+/// - A non-JSON payload is treated as command text.
+/// - `None` means no usable command exists: the review is `Unavailable`.
+pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    if let Ok(parsed) = parse_structured_review_response(trimmed) {
+        let mut candidate = ReviewCandidate::from_command(parsed.command.clone());
+        let _ = candidate.apply_response(trimmed);
+        return Some(candidate);
+    }
+    if let Some(payload) = locate_json_payload(trimmed) {
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload) {
+            if value.get("review_version").is_some()
+                || value.get("command").is_some()
+                || value.get("purpose_status").is_some()
+            {
+                let command = value
+                    .get("command")
+                    .and_then(|command| command.as_str())
+                    .map(str::trim)
+                    .filter(|command| !command.is_empty());
+                return command.map(ReviewCandidate::from_command);
+            }
+        }
+    }
+    Some(ReviewCandidate::from_command(trimmed))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -237,8 +295,8 @@ fn unavailable_stages(flow: &CommandFlow) -> Vec<ReviewStage> {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_structured_review_response, PurposeStatus, ReviewCandidate, ReviewParseResult,
-        ReviewResponseError, REVIEW_VERSION,
+        candidate_from_provider_response, parse_structured_review_response, PurposeStatus,
+        ReviewCandidate, ReviewParseResult, ReviewResponseError, REVIEW_VERSION,
     };
 
     const COMMAND: &str = "git log --since='7 days ago' | xargs -n1 git show --stat";
@@ -359,5 +417,22 @@ mod tests {
             ReviewParseResult::PurposeUnavailable(ReviewResponseError::InvalidLoadingResponse)
         ));
         assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+    }
+
+    #[test]
+    fn markdown_fenced_and_prose_wrapped_responses_are_recognized() {
+        let command = "git log --oneline | head -5";
+        let response = format!(
+            "Here is the review:\n```json\n{{\"review_version\":1,\"command\":{command},\"stages\":[{{\"stage_text\":\"git log --oneline\",\"purpose\":\"List commits.\"}},{{\"stage_text\":\"head -5\",\"purpose\":\"Keep five.\"}}],\"purpose_status\":\"ready\"}}\n```\n",
+            command = serde_json::to_string(command).unwrap()
+        );
+
+        let parsed = parse_structured_review_response(&response).unwrap();
+        assert_eq!(parsed.command, command);
+
+        let candidate = candidate_from_provider_response(&response).unwrap();
+        assert_eq!(candidate.command, command);
+        assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
+        assert_eq!(candidate.stage_purposes().count(), 2);
     }
 }
