@@ -284,7 +284,7 @@ Feature: Explanatory interactive shell shortcut
     And Watn should leave cursor and inline rows restored
     And the Bash line editor should repaint the prompt with the accepted candidate
 
-  @givn.added @wip
+  @givn.added
   Scenario: A narrow terminal keeps the inline review bounded and readable
     Given an installed Bash shortcut and a provider candidate with more stages than fit in the terminal
     When I invoke Ctrl-W with current input "inspect recent log changes"

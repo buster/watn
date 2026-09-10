@@ -1091,6 +1091,7 @@ pub struct ReviewState {
     pub highest_tier: bool,
     pub catalog_models: Vec<String>,
     pub cleanup: String,
+    pub narrow: bool,
 }
 
 fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
@@ -1103,8 +1104,19 @@ fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
     }
 }
 
-fn render_panel_state(rendered: &mut Vec<String>, state: &watn::review::ReviewPanelState) {
-    let layout = watn::review::InlineLayout::for_dimensions(100, 40);
+fn review_layout(world: &WatnWorld) -> watn::review::InlineLayout {
+    if world.review.narrow {
+        watn::review::InlineLayout::for_dimensions(40, 8)
+    } else {
+        watn::review::InlineLayout::for_dimensions(100, 40)
+    }
+}
+
+fn render_panel_state(
+    rendered: &mut Vec<String>,
+    state: &watn::review::ReviewPanelState,
+    layout: watn::review::InlineLayout,
+) {
     let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
     terminal
         .render(state)
@@ -1120,12 +1132,13 @@ fn render_surface(world: &mut WatnWorld) {
         .as_ref()
         .expect("review panel state")
         .clone();
+    let layout = review_layout(world);
     let stage_count = state.candidate().flow.stages.len().max(1);
     let mut rendered = Vec::new();
     for stage_index in 0..stage_count {
         let mut stage_state = state.clone();
         stage_state.flow_stage = stage_index.min(stage_count - 1);
-        render_panel_state(&mut rendered, &stage_state);
+        render_panel_state(&mut rendered, &stage_state, layout);
     }
     world.review.candidate = Some(state.candidate().clone());
     world.review.rendered = rendered;
@@ -2486,4 +2499,58 @@ fn review_line_editor_repaint(world: &mut WatnWorld) {
         Some(REVIEW_FIXTURE_COMMAND),
         "only the accepted candidate is released"
     );
+}
+
+const REVIEW_MANY_STAGE_COMMAND: &str = "a | b | c | d | e | f | g | h";
+
+#[given(
+    "an installed Bash shortcut and a provider candidate with more stages than fit in the terminal"
+)]
+fn review_many_stages_candidate(world: &mut WatnWorld) {
+    install_bash_shortcut(world);
+    world.review = ReviewState {
+        candidate_command: REVIEW_MANY_STAGE_COMMAND.to_string(),
+        intent: "inspect recent log changes".to_string(),
+        narrow: true,
+        ..ReviewState::default()
+    };
+}
+
+#[then("the review surface should remain a bounded inline panel")]
+fn review_bounded_panel(world: &mut WatnWorld) {
+    let layout = review_layout(world);
+    assert!(layout.is_bounded(), "narrow layout must stay bounded");
+    for rendered in &world.review.rendered {
+        let rows = rendered.split("\r\n").count();
+        assert!(
+            rows <= layout.max_rows as usize,
+            "rendered panel has {rows} rows, above the {} row bound",
+            layout.max_rows
+        );
+    }
+}
+
+#[then("it should show a compact command-flow overview and one readable selected stage")]
+fn review_compact_overview(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "Flow [1/8]");
+    assert_review_rendered_contains(world, "> a");
+}
+
+#[then("arrow navigation should reach every command-flow stage")]
+fn review_arrow_reaches_every_stage(world: &mut WatnWorld) {
+    let mut panel = world.review.panel.clone().expect("review panel state");
+    panel.focus = watn::review::FocusRegion::Flow;
+    let stage_count = panel.candidate().flow.stages.len();
+    let mut seen = vec![panel.flow_stage];
+    for _ in 0..stage_count.saturating_sub(1) {
+        panel.handle_key(key(crossterm::event::KeyCode::Down));
+        seen.push(panel.flow_stage);
+    }
+    for index in 0..stage_count {
+        assert!(
+            seen.contains(&index),
+            "arrow navigation must reach stage {index}, saw {seen:?}"
+        );
+    }
+    assert_eq!(panel.flow_stage, stage_count - 1);
 }
