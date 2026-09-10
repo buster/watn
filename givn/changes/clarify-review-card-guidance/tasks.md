@@ -7,13 +7,13 @@ escape-free.
 
 ## Setup
 
-- [ ] Record the baseline before scenario implementation. Run `./run-tests.sh`
+- [x] Record the baseline before scenario implementation. Run `./run-tests.sh`
   and `./run-tests.sh --e2e` and record exit status and scenario counts.
   ```text
   regular command: `./run-tests.sh`
-  regular output/count: <paste>
+  regular output/count: exit 0; 209 scenarios (209 passed).
   e2e command: `./run-tests.sh --e2e`
-  e2e output/count: <paste>
+  e2e output/count: exit 0; 82 scenarios (82 passed).
   ```
 
 ## Scenarios
@@ -25,29 +25,29 @@ Domain constraints:
 - The chooser states its keys and input: tier digits, typing, arrows, Enter,
   and Escape; the current model is marked; labels are plain language.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The model chooser explains how to choose'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed); the guidance stub panicked.
   ```
-- [ ] GREEN: Render the `Models` tier digits as keys with the active-model
+- [x] GREEN: Render the `Models` tier digits as keys with the active-model
   marker, the `Picks` and `Search` labels with the placeholder, and the new
   hint; migrate the chooser step assertions and the unit tests that pin
   `Matches`/`1-3`. Compile with `cargo check --locked`, then run the exact
   targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/card.rs` (keyed tier digits with active-model marker, `Picks`/`Search` labels, placeholder, new hint), `src/review/panel.rs` (unit label), `tests/steps/interactive_shell_shortcut_steps.rs` (field/hint assertions and new bindings).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The model chooser explains how to choose'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Keep one keyed-segment helper for all hints. Rerun the exact
+- [x] REFACTOR: Keep one keyed-segment helper for all hints. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'The model chooser explains how to choose'`
   output: <paste passing output>
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The model chooser explains how to choose
+- [x] COMMIT: `f96b31aee5a84c40be44f6f10b0a86f1b44ddbe5` - feat(interactive-shell-shortcut): The model chooser explains how to choose
 
 ### The first suggestion is ready to choose
 
@@ -56,28 +56,28 @@ Domain constraints:
 - A non-empty catalog highlights its first pick when the query is empty, so
   arrows and Enter act immediately; typed text stays authoritative.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The first suggestion is ready to choose'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 5 steps (4 passed, 1 failed); the arrival stub panicked.
   ```
-- [ ] GREEN: Set the default highlight in `open_model_chooser` and
+- [x] GREEN: Set the default highlight in `open_model_chooser` and
   `set_catalog` (empty query only), add the matching unit assertions, and bind
   arrival, highlight, and Enter selection through the session regeneration
   path. Compile and run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (default highlight in `open_model_chooser`/`set_catalog` plus unit assertions), `tests/steps/interactive_shell_shortcut_steps.rs` (arrival, highlight, and choice bindings).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The first suggestion is ready to choose'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [ ] REFACTOR: Keep the highlight precedence in one place. Rerun the exact
+- [x] REFACTOR: Keep the highlight precedence in one place. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'The first suggestion is ready to choose'`
   output: <paste passing output>
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The first suggestion is ready to choose
+- [x] COMMIT: `832f659c8ded8e43db591cc48c3b480cc36488a0` - feat(interactive-shell-shortcut): The first suggestion is ready to choose
 
 ### The card marks nested shell syntax
 
