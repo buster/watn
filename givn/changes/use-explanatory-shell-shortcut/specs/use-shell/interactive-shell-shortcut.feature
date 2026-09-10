@@ -182,7 +182,7 @@ Feature: Explanatory interactive shell shortcut
     Then the existing "Execute now?" confirmation should be shown
     And execution should require the existing confirmation response
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-review -x preserves confirmation
     Given an `-x` request is redirected or otherwise not review-eligible
     And a configured provider candidate "printf 'reviewed'"

@@ -2074,3 +2074,41 @@ fn review_execution_requires_confirmation(world: &mut WatnWorld) {
     );
     assert!(world.review.confirmation_shown);
 }
+
+#[given("an `-x` request is redirected or otherwise not review-eligible")]
+fn review_x_not_eligible(world: &mut WatnWorld) {
+    world.review.review_ineligible = true;
+    let config = watn::config::types::Config::default();
+    assert!(
+        !watn::review::resolve_review_enabled(
+            &config,
+            watn::config::types::ReviewPanelOverride::Unset,
+            false
+        ),
+        "an ineligible request must not enter review even with the default panel"
+    );
+}
+
+#[when("I run the request")]
+fn review_run_request(world: &mut WatnWorld) {
+    let review_enabled = !world.review.review_disabled && !world.review.review_ineligible;
+    assert_eq!(
+        watn::review::request_route(review_enabled, true),
+        watn::review::RequestRoute::ExecuteWithConfirmation,
+        "non-eligible -x must route to the existing confirmation"
+    );
+    world.review.confirmation_shown = true;
+}
+
+#[then("review acceptance should not authorize execution")]
+fn review_acceptance_not_authorize(world: &mut WatnWorld) {
+    assert!(
+        !world.review.executed,
+        "only the existing confirmation may authorize execution"
+    );
+    assert!(world.review.confirmation_shown);
+    assert!(
+        world.review.released.is_none(),
+        "no review candidate may be released for a non-review -x request"
+    );
+}
