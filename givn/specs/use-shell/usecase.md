@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:d3bebbeb57b99ff9c464150b0b8459b7cbe05f035747c47f0206948ebc25ff84 -->
 # Use case: use-shell
 
 ## Level
@@ -34,9 +35,7 @@ command request.
    transient review surface after the candidate exists.
 4. Show the candidate's command flow, exact stage text, and model-written stage
    purposes or purpose-unavailable status.
-5. Let the developer inspect, edit, rephrase, regenerate, compare, reject,
-   cancel, escalate, select a catalog model, or interrupt an in-progress
-   operation.
+5. Let the developer inspect the command flow, accept, edit at the insertion point, reject and regenerate with another model, cancel, rephrase, escalate, or interrupt an in-progress operation.
 6. Require explicit final acceptance before releasing a candidate.
 7. Route the accepted candidate to the existing consumer: replace the shell
    buffer for Ctrl-W, use the existing command-output channel for direct paths,
@@ -58,6 +57,7 @@ command request.
 - The existing progress line appears before the review surface.
 - The review surface is enabled by default, configurable persistently, overridable per invocation, and may select an enhanced presentation adapter automatically.
 - Eligible review output is buffered until final acceptance.
+- Review decisions are direct shortcuts; the command flow is active when the card opens and Enter accepts the current candidate.
 - Review-surface text is rendered through the controlling-terminal channel; accepted command text remains the only command-output channel content.
 - Direct command editing preserves the original intent and refreshes explanation state; it never evaluates the edited candidate.
 - Every candidate requires explicit final acceptance.
@@ -70,9 +70,9 @@ command request.
 - A complex `git log | xargs git show && printf` candidate shows its stages and purposes in the review surface.
 - A cancelled review preserves the original buffer and history.
 - Rephrasing replaces the visible active intent and starts a new candidate cycle; the prior intent remains only in current-review history.
-- Regeneration replaces the current candidate by default; explicit retention is required for comparison.
+- Rejecting a candidate opens a model chooser with the configured tiers, a model field, and provider catalog suggestions; choosing one regenerates the candidate.
 - A higher-tier request uses the next configured tier. At the highest tier it opens the existing provider catalog picker for one explicit model selection.
-- Rejection releases no candidate and returns to the active intent.
+- A rejected candidate is not released and the active intent is unchanged; leaving the model chooser keeps the current candidate.
 - An interrupted generation, purpose operation, or model selection preserves the selected candidate and review state.
 
 ## Minimal guarantee
@@ -108,6 +108,7 @@ evaluation.
 | interactive-shell-shortcut | cancel a candidate review from Ctrl-W | Developer cancels a review without changing the shell buffer |
 | interactive-shell-shortcut | review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request |
 | interactive-shell-shortcut | review and execute an accepted eligible -x candidate | Developer accepts an eligible -x candidate and it executes once |
+| interactive-shell-shortcut | reject a candidate and regenerate with another model | Developer rejects a candidate and regenerates with another model |
 | shell-completions | generate Bash completions | Built Bash completion generation emits the current command tree |
 
 ## Includes
