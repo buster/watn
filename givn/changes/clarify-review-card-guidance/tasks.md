@@ -45,7 +45,7 @@ Domain constraints:
   targeted command.
   ```text
   command: `./run-tests.sh --name 'The model chooser explains how to choose'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
 - [x] COMMIT: `f96b31aee5a84c40be44f6f10b0a86f1b44ddbe5` - feat(interactive-shell-shortcut): The model chooser explains how to choose
 
@@ -75,7 +75,7 @@ Domain constraints:
   targeted command.
   ```text
   command: `./run-tests.sh --name 'The first suggestion is ready to choose'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
 - [x] COMMIT: `832f659c8ded8e43db591cc48c3b480cc36488a0` - feat(interactive-shell-shortcut): The first suggestion is ready to choose
 
