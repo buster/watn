@@ -578,6 +578,31 @@ mod tests {
     }
 
     #[test]
+    fn a_long_stage_wraps_to_a_continuation_row() {
+        let candidate = ReviewCandidate::from_command(
+            "git log --format='%H' --since='7 days ago' | xargs -n1 git show --stat --oneline",
+        );
+        let state = ReviewPanelState::new(
+            ReviewContext {
+                intent: "inspect recent commits".to_string(),
+                tier: "1".to_string(),
+                provider: "loopback".to_string(),
+                model: "review-model".to_string(),
+            },
+            candidate,
+        );
+        let lines = render_card_lines(&state, InlineLayout::for_dimensions(60, 24), true);
+        let joined = lines.join("\n");
+        assert!(joined.contains("--since"), "stage text is rendered");
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains('\'') && !line.contains("--since")),
+            "a wrapped stage has a continuation row, got:\n{joined}"
+        );
+    }
+
+    #[test]
     fn chooser_rows_render_highlight_and_error() {
         let mut chooser = state();
         chooser.open_model_chooser(

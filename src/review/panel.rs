@@ -1213,6 +1213,35 @@ mod tests {
     }
 
     #[test]
+    fn editor_arrow_keys_and_explanation_decisions_are_covered() {
+        let mut editor = state();
+        editor.handle_key(key(KeyCode::Char('e')));
+        editor.handle_key(key(KeyCode::Left));
+        editor.handle_key(key(KeyCode::Right));
+        assert_eq!(
+            editor.editor_cursor(),
+            editor.editor_buffer().unwrap().chars().count()
+        );
+
+        let mut explanation = state();
+        explanation.explain_only = true;
+        assert_eq!(
+            explanation.handle_key(key(KeyCode::Char('d'))),
+            PanelOutcome::Continue
+        );
+        assert!(matches!(
+            explanation.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Accepted(_)
+        ));
+        let mut closing = state();
+        closing.explain_only = true;
+        assert_eq!(
+            closing.handle_key(key(KeyCode::Esc)),
+            PanelOutcome::Cancelled
+        );
+    }
+
+    #[test]
     fn control_modified_letters_are_not_review_decisions() {
         let mut panel = state();
         let control_e = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL);
