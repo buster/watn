@@ -131,8 +131,12 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
     }
     if let Ok(parsed) = parse_structured_review_response(trimmed) {
         let mut candidate = ReviewCandidate::from_command(parsed.command.clone());
-        let _ = candidate.apply_response(trimmed);
-        return Some(candidate);
+        if matches!(
+            candidate.apply_response(trimmed),
+            ReviewParseResult::Ready | ReviewParseResult::Loading
+        ) {
+            return Some(candidate);
+        }
     }
     if let Some(payload) = locate_json_payload(trimmed) {
         if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload) {
@@ -452,5 +456,14 @@ mod tests {
         let raw = "awk '{print $1}' file.txt";
         let candidate = candidate_from_provider_response(raw).unwrap();
         assert_eq!(candidate.command, "awk '{print $1}' file.txt");
+    }
+
+    #[test]
+    fn structured_payloads_without_a_usable_command_are_unavailable() {
+        let raw = r#"{"review_version":1,"stages":[],"purpose_status":"ready"}"#;
+        assert!(candidate_from_provider_response(raw).is_none());
+
+        let empty = r#"{"review_version":1,"command":"   ","stages":[],"purpose_status":"ready"}"#;
+        assert!(candidate_from_provider_response(empty).is_none());
     }
 }

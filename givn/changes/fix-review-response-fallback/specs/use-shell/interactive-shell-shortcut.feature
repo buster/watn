@@ -27,7 +27,7 @@ Feature: Review response recovery and inline rendering safety
     And the review surface should show purpose-unavailable or unsupported flow state
     And final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: A provider payload without a usable command releases nothing
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider returns a structured review payload without a complete command

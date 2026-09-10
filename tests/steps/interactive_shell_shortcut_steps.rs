@@ -2595,3 +2595,14 @@ fn review_shows_command(world: &mut WatnWorld, command: String) {
     assert_eq!(panel.candidate().command, command);
     assert_review_rendered_contains(world, &command);
 }
+
+#[given("the provider returns a structured review payload without a complete command")]
+fn review_response_without_command(world: &mut WatnWorld) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "stages": [],
+        "purpose_status": "ready"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}
