@@ -195,9 +195,9 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
     save_config_at(config, &xdg_config_path())
 }
 
-/// Persistently disable the review surface at the given configuration path,
+/// Persist the review-surface preference at the given configuration path,
 /// preserving every other setting.
-pub fn persist_review_disabled_at(config_path: &std::path::Path) -> Result<(), Error> {
+pub fn persist_review_panel_at(config_path: &std::path::Path, enabled: bool) -> Result<(), Error> {
     let mut config = if config_path.exists() {
         let content = std::fs::read_to_string(config_path)
             .map_err(|error| Error::ConfigError(format!("cannot read config: {error}")))?;
@@ -206,12 +206,12 @@ pub fn persist_review_disabled_at(config_path: &std::path::Path) -> Result<(), E
     } else {
         Config::default()
     };
-    config.review.panel = false;
+    config.review.panel = enabled;
     save_config_at(&config, config_path)
 }
 
-pub fn persist_review_disabled() -> Result<(), Error> {
-    persist_review_disabled_at(&xdg_config_path())
+pub fn persist_review_panel(enabled: bool) -> Result<(), Error> {
+    persist_review_panel_at(&xdg_config_path(), enabled)
 }
 
 pub fn save_config_at(config: &Config, config_path: &std::path::Path) -> Result<(), Error> {
@@ -376,4 +376,30 @@ pub fn get_provider_api_key(
         "api key not found for provider '{}'",
         provider_name
     )))
+}
+
+#[cfg(test)]
+mod persist_tests {
+    use super::*;
+
+    #[test]
+    fn persist_review_panel_preserves_other_settings() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("config.toml");
+        let mut config = Config::default();
+        config.defaults.provider = Some("test".to_string());
+        save_config_at(&config, &path).expect("seed config");
+
+        persist_review_panel_at(&path, false).expect("disable");
+        let stored: Config =
+            toml::from_str(&std::fs::read_to_string(&path).expect("read")).expect("parse");
+        assert!(!stored.review.panel);
+        assert_eq!(stored.defaults.provider.as_deref(), Some("test"));
+
+        persist_review_panel_at(&path, true).expect("enable");
+        let stored: Config =
+            toml::from_str(&std::fs::read_to_string(&path).expect("read")).expect("parse");
+        assert!(stored.review.panel);
+        assert_eq!(stored.defaults.provider.as_deref(), Some("test"));
+    }
 }

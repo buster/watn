@@ -2971,7 +2971,7 @@ fn review_disable_permanently(world: &mut WatnWorld) {
         .join("config.toml");
     std::fs::create_dir_all(path.parent().expect("config dir")).expect("create config dir");
     std::fs::write(&path, "[review]\npanel = true\n").expect("write config");
-    watn::config::persist_review_disabled_at(&path).expect("persist review disable");
+    watn::config::persist_review_panel_at(&path, false).expect("persist review disable");
     world.review.config_path = Some(path);
 
     world.review.surface_open = false;
@@ -3055,4 +3055,76 @@ fn review_close_explanation(world: &mut WatnWorld) {
         world.review.confirmation_shown,
         "the execution confirmation must remain pending"
     );
+}
+
+fn persisted_config_path(world: &WatnWorld) -> std::path::PathBuf {
+    let xdg = world
+        .env_vars
+        .get("XDG_CONFIG_HOME")
+        .expect("isolated XDG_CONFIG_HOME");
+    std::path::Path::new(xdg).join("watn").join("config.toml")
+}
+
+fn seed_persisted_panel(world: &mut WatnWorld, enabled: bool) {
+    super::ensure_test_env(world);
+    let path = persisted_config_path(world);
+    let mut config: watn::config::types::Config = if path.exists() {
+        toml::from_str(&std::fs::read_to_string(&path).expect("read config"))
+            .expect("parse persisted config")
+    } else {
+        watn::config::types::Config::default()
+    };
+    config.review.panel = enabled;
+    watn::config::save_config_at(&config, &path).expect("seed persisted panel");
+}
+
+fn assert_persisted_panel(world: &WatnWorld, expected: bool) {
+    let path = persisted_config_path(world);
+    let config: watn::config::types::Config =
+        toml::from_str(&std::fs::read_to_string(&path).expect("read persisted config"))
+            .expect("parse persisted config");
+    assert_eq!(
+        config.review.panel, expected,
+        "persisted review panel setting should be {expected}"
+    );
+}
+
+#[given(expr = "a configured provider with candidate {string}")]
+fn review_configured_provider_with_candidate(world: &mut WatnWorld, command: String) {
+    world.pending_mock_output = Some(command.clone());
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_usage = Some(false);
+    world.review.candidate_command = command;
+}
+
+#[given("the persisted review surface is disabled")]
+fn review_persisted_disabled(world: &mut WatnWorld) {
+    seed_persisted_panel(world, false);
+    assert_persisted_panel(world, false);
+}
+
+#[given("the persisted review surface is enabled")]
+fn review_persisted_enabled(world: &mut WatnWorld) {
+    seed_persisted_panel(world, true);
+    assert_persisted_panel(world, true);
+}
+
+#[when(expr = "I run watn with --review-panel for {string}")]
+fn review_run_with_enable_flag(world: &mut WatnWorld, question: String) {
+    super::run_binary_with_state(world, &["--review-panel", &question], None);
+}
+
+#[when(expr = "I run watn with --no-review-panel for {string}")]
+fn review_run_with_disable_flag(world: &mut WatnWorld, question: String) {
+    super::run_binary_with_state(world, &["--no-review-panel", &question], None);
+}
+
+#[then("the review surface should be enabled in the configuration")]
+fn review_enabled_in_configuration(world: &mut WatnWorld) {
+    assert_persisted_panel(world, true);
+}
+
+#[then("the review surface should be disabled in the configuration")]
+fn review_disabled_in_configuration_step(world: &mut WatnWorld) {
+    assert_persisted_panel(world, false);
 }

@@ -307,6 +307,16 @@ fn main() {
             std::process::exit(2);
         }
     };
+    if review_override != watn::config::types::ReviewPanelOverride::Unset {
+        let enabled = matches!(
+            review_override,
+            watn::config::types::ReviewPanelOverride::Enabled
+        );
+        if let Err(error) = watn::config::persist_review_panel(enabled) {
+            eprintln!("warning: could not persist the review panel setting: {error}");
+        }
+    }
+
     let review_eligible = watn::review::controlling_terminal_is_usable();
     let review_enabled =
         watn::review::resolve_review_enabled(&config, review_override, review_eligible);
@@ -687,7 +697,7 @@ fn run_review_path(
                 std::process::exit(0);
             }
             Ok(watn::review::PanelOutcome::DisableReviewPermanently) => {
-                match watn::config::persist_review_disabled() {
+                match watn::config::persist_review_panel(false) {
                     Ok(()) => {
                         let _ = panel.finish();
                         eprintln!(
