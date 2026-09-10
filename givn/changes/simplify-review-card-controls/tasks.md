@@ -219,28 +219,28 @@ Domain constraints:
 - Choosing a tier regenerates a fresh candidate at that tier and still requires
   acceptance.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'A configured tier can be chosen with its number'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the reject-and-choose stub panicked.
   ```
-- [ ] GREEN: Add `RegenerateWith`, number-key handling, and the library
+- [x] GREEN: Add `RegenerateWith`, number-key handling, and the library
   `session::generate_candidate`/`parse_generated_candidate`; the scenario drives
   a real in-process provider against the world twin. Compile and run the exact
   targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/session.rs` (new: `Generation`, `generate_candidate`, `parse_generated_candidate`, `chooser_tiers`, `fetch_catalog`), `src/review/mod.rs` (module export), `src/main.rs` (review generation through the session, reject/catalog worker, regenerate outcome), `tests/steps/interactive_shell_shortcut_steps.rs` (real provider twin binding).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A configured tier can be chosen with its number'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed); full regular 201/201, e2e 81/81, lib 71 passed.
   ```
-- [ ] REFACTOR: Keep one regeneration path for tiers and models. Rerun the
+- [x] REFACTOR: Keep one regeneration path for tiers and models. Rerun the
   exact targeted command.
   ```text
   command: `./run-tests.sh --name 'A configured tier can be chosen with its number'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 6 steps (6 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A configured tier can be chosen with its number
+- [x] COMMIT: `5dafdc59c1d3e5fc991b10459e716bffb767f3a9` - feat(interactive-shell-shortcut): A configured tier can be chosen with its number
 
 ### A model name is suggested from the provider catalog while typing
 
