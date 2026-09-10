@@ -2883,3 +2883,46 @@ fn review_shows_key_hints(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "esc cancel");
     assert_review_rendered_contains(world, "accept");
 }
+
+#[then(expr = "the review surface should show only the selected stage {string}")]
+fn review_only_selected_stage(world: &mut WatnWorld, stage: String) {
+    let (index, count, selected) = {
+        let panel = world.review.panel.as_ref().expect("review panel state");
+        (
+            panel.flow_stage,
+            panel.candidate().flow.stages.len(),
+            panel.candidate().flow.stages[panel.flow_stage]
+                .stage_text
+                .clone(),
+        )
+    };
+    assert_eq!(selected, stage, "selected stage should be {stage:?}");
+    render_current_surface(world);
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered)
+        .replace("\r\n", "")
+        .replace(['│', '┌', '┐', '└', '┘', '─'], " ");
+    let collapsed = collapse_whitespace(&plain);
+    assert!(
+        collapsed.contains(&format!("Stage {}/{} {stage}", index + 1, count)),
+        "card should show the selected stage {stage:?} as stage {}/{}, got:\n{rendered}",
+        index + 1,
+        count
+    );
+}
+
+#[when("I move to the next stage")]
+fn review_next_stage(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.focus = watn::review::FocusRegion::Flow;
+    panel.handle_key(key(crossterm::event::KeyCode::Right));
+    render_current_surface(world);
+}
+
+#[when("I move to the previous stage")]
+fn review_previous_stage(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    panel.focus = watn::review::FocusRegion::Flow;
+    panel.handle_key(key(crossterm::event::KeyCode::Left));
+    render_current_surface(world);
+}

@@ -17,7 +17,7 @@ Feature: Enhanced review card
     And the review surface should show the review actions
     And the review surface should show key hints
 
-  @givn.added @wip
+  @givn.added
   Scenario: The card shows one stage at a time and moves stages with the arrow keys
     Given an installed Bash shortcut and a provider candidate "git log --oneline | head -5"
     And the provider returns this structured review response:
