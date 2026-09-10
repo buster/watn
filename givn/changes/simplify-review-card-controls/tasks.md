@@ -109,26 +109,26 @@ Domain constraints:
 
 - Enter is final acceptance and releases only the current candidate.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Enter accepts the current candidate'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the When stub panicked.
   ```
-- [ ] GREEN: Route Enter in review mode to acceptance with no regeneration.
+- [x] GREEN: Route Enter in review mode to acceptance with no regeneration.
   Compile and run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `tests/steps/interactive_shell_shortcut_steps.rs` only (shared `drive_review_key` helper); Enter acceptance is the production path introduced by the first scenario.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Enter accepts the current candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed); full regular 197/197, e2e 81/81, lib 71 passed.
   ```
-- [ ] REFACTOR: Keep one acceptance path for Enter and the shortcut. Rerun the
+- [x] REFACTOR: Keep one acceptance path for Enter and the shortcut. Rerun the
   exact targeted command.
   ```text
   command: `./run-tests.sh --name 'Enter accepts the current candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): Enter accepts the current candidate
+- [x] COMMIT: `8f4a93e61d8d9653e2719a7b45f5f917f66be15b` - feat(interactive-shell-shortcut): Enter accepts the current candidate
 
 ### The accept shortcut accepts the current candidate
 
@@ -136,26 +136,26 @@ Domain constraints:
 
 - `a` is equivalent to Enter and releases only the current candidate.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'The accept shortcut accepts the current candidate'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the shortcut stub panicked.
   ```
-- [ ] GREEN: Handle `a`/`A` in review mode. Compile and run the exact targeted
+- [x] GREEN: Handle `a`/`A` in review mode. Compile and run the exact targeted
   command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (`a`/`A` routes to acceptance), `tests/steps/interactive_shell_shortcut_steps.rs` (shortcut binding).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'The accept shortcut accepts the current candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed); full regular 198/198, lib 71 passed.
   ```
-- [ ] REFACTOR: Share the acceptance path with Enter. Rerun the exact targeted
+- [x] REFACTOR: Share the acceptance path with Enter. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'The accept shortcut accepts the current candidate'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 5 steps (5 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The accept shortcut accepts the current candidate
+- [x] COMMIT: `a75973b3a9f3d17143aa02d06997bc0e85dffa34` - feat(interactive-shell-shortcut): The accept shortcut accepts the current candidate
 
 ### The cancel shortcut cancels the review
 
