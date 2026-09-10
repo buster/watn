@@ -2967,21 +2967,61 @@ fn review_surface_shows(world: &mut WatnWorld, needle: String) {
 #[then("accept should be shown as the default decision")]
 fn review_accept_is_default(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
-    let green = "\u{1b}[38;5;114m";
-    let mut found = false;
-    let mut rest = rendered.as_str();
-    while let Some(index) = rest.find(green) {
-        let tail = &rest[index + green.len()..];
-        if tail.starts_with("⏎/a accept") {
-            found = true;
-            break;
-        }
-        rest = tail;
+    let sequence = "\u{1b}[1;38;5;114ma\u{1b}[0m\u{1b}[2mccept\u{1b}[0m";
+    assert!(
+        rendered.contains(sequence),
+        "the a in accept should be bold green as the default decision, got:\n{rendered}"
+    );
+}
+
+fn assert_review_keys_bold(world: &WatnWorld, keys: &[&str]) {
+    let rendered = review_rendered_text(world);
+    for key in keys {
+        let sequence = format!("\u{1b}[1;38;5;81m{key}\u{1b}[0m");
+        assert!(
+            rendered.contains(&sequence),
+            "key {key:?} should be bold and colored, got:\n{rendered}"
+        );
+    }
+}
+
+#[then("the decision keys should be shown colored and bold")]
+fn review_decision_keys_emphasized(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    for (key, rest) in [
+        ("e", "dit"),
+        ("r", "eject"),
+        ("c", "ancel"),
+        ("d", "isable"),
+    ] {
+        let sequence = format!("\u{1b}[1;38;5;81m{key}\u{1b}[0m\u{1b}[2m{rest}\u{1b}[0m");
+        assert!(
+            rendered.contains(&sequence),
+            "the {key:?} in {key}{rest} should be bold and colored, got:\n{rendered}"
+        );
     }
     assert!(
-        found,
-        "the accept hint should be painted as the default decision, got:\n{rendered}"
+        rendered.contains("\u{1b}[1;38;5;114ma\u{1b}[0m\u{1b}[2mccept\u{1b}[0m"),
+        "the a in accept keeps its green default emphasis, got:\n{rendered}"
     );
+    assert!(
+        rendered.contains("\u{1b}[1;38;5;81m⏎\u{1b}[0m"),
+        "the enter key is emphasized, got:\n{rendered}"
+    );
+    assert!(
+        rendered.contains("\u{1b}[1;38;5;81mesc\u{1b}[0m"),
+        "the esc key is emphasized, got:\n{rendered}"
+    );
+}
+
+#[then("the editor keys should be shown colored and bold")]
+fn review_editor_keys_emphasized(world: &mut WatnWorld) {
+    assert_review_keys_bold(world, &["⏎", "esc"]);
+}
+
+#[then("the chooser keys should be shown colored and bold")]
+fn review_chooser_keys_emphasized(world: &mut WatnWorld) {
+    assert_review_keys_bold(world, &["1-3", "⏎", "esc"]);
 }
 
 fn drive_review_key(

@@ -49,6 +49,14 @@ impl Ink {
         self.paint("2", text)
     }
 
+    fn key(&self, text: &str) -> String {
+        self.paint("1;38;5;81", text)
+    }
+
+    fn accept_key(&self, text: &str) -> String {
+        self.paint("1;38;5;114", text)
+    }
+
     fn italic_dim(&self, text: &str) -> String {
         self.paint("2;3", text)
     }
@@ -455,17 +463,33 @@ pub fn render_card_lines(
     }
 
     content.push((10, String::new()));
+    let keyed = |key: &str, label: &str| format!("{}{}", ink.key(key), ink.dim(label));
     let hints = if state.input_mode == super::panel::PanelInputMode::CommandEditor {
-        ink.dim("⏎ commit · esc discard")
+        format!("{} · {}", keyed("⏎", " commit"), keyed("esc", " discard"))
     } else if state.input_mode == super::panel::PanelInputMode::ModelChooser {
-        ink.dim("1-3 tier · ⏎ choose · esc close")
+        format!(
+            "{} · {} · {}",
+            keyed("1-3", " tier"),
+            keyed("⏎", " choose"),
+            keyed("esc", " close")
+        )
     } else if state.explain_only {
         ink.dim("esc close")
     } else {
         format!(
-            "{} · {}",
-            ink.green("⏎/a accept"),
-            ink.dim("e edit · r reject · c cancel · d disable · esc cancel")
+            "{} {}{} · {}{} · {}{} · {}{} · {}{} · {}",
+            ink.key("⏎"),
+            ink.accept_key("a"),
+            ink.dim("ccept"),
+            ink.key("e"),
+            ink.dim("dit"),
+            ink.key("r"),
+            ink.dim("eject"),
+            ink.key("c"),
+            ink.dim("ancel"),
+            ink.key("d"),
+            ink.dim("isable"),
+            ink.key("esc")
         )
     };
     content.push((30, hints));
@@ -554,8 +578,9 @@ mod tests {
         assert!(joined.contains("Command"));
         assert!(joined.contains("Flow"));
         assert!(joined.contains("Stage"));
-        assert!(joined.contains("accept"));
-        assert!(joined.contains("esc cancel"));
+        assert!(joined.contains("ccept"));
+        assert!(joined.contains("\u{1b}[1;38;5;81mesc\u{1b}[0m"));
+        assert!(joined.contains("\u{1b}[1;38;5;81me\u{1b}[0m\u{1b}[2mdit\u{1b}[0m"));
         assert!(joined.contains("\u{1b}[38;5;81m"), "labels are colored");
         assert!(joined.contains("\u{1b}[38;5;221m"), "flags are colored");
         assert!(
@@ -618,7 +643,7 @@ mod tests {
         let joined = lines.join("\n");
         assert!(joined.contains("Matches"));
         assert!(joined.contains("\u{1b}[7m"), "the highlight is reversed");
-        assert!(joined.contains("1-3 tier"));
+        assert!(joined.contains("\u{1b}[1;38;5;81m1-3\u{1b}[0m\u{1b}[2m tier\u{1b}[0m"));
 
         chooser.apply_regeneration_failure("provider exploded");
         let lines = render_card_lines(&chooser, InlineLayout::for_dimensions(80, 24), true);
