@@ -1077,6 +1077,7 @@ pub struct ReviewState {
     pub command_output: String,
     pub released: Option<String>,
     pub panel_outcome: Option<watn::review::PanelOutcome>,
+    pub delayed_purposes: bool,
 }
 
 fn review_context(intent: &str) -> watn::review::ReviewContext {
@@ -1216,10 +1217,13 @@ fn build_review_panel(world: &mut WatnWorld) {
     let command = world.review.candidate_command.clone();
     let mut candidate = watn::review::ReviewCandidate::from_command(command);
     if let Some(raw) = world.review.structured_response.clone() {
-        assert_eq!(
-            candidate.apply_response(&raw),
-            watn::review::ReviewParseResult::Ready,
-            "structured review response must validate against the derived command flow"
+        let result = candidate.apply_response(&raw);
+        assert!(
+            matches!(
+                result,
+                watn::review::ReviewParseResult::Ready | watn::review::ReviewParseResult::Loading
+            ),
+            "structured review response must validate against the derived command flow, got {result:?}"
         );
     }
     let intent = world.review.intent.clone();
@@ -1371,6 +1375,10 @@ fn review_surface_opens_complete(world: &mut WatnWorld) {
 }
 
 const REVIEW_FIXTURE_COMMAND: &str = "git log --oneline | head -5";
+
+const REVIEW_LOADING_RESPONSE: &str = r#"{"review_version":1,"command":"git log --oneline | head -5","stages":[{"stage_text":"git log --oneline"},{"stage_text":"head -5"}],"purpose_status":"loading","purpose_request":"opaque"}"#;
+
+const REVIEW_READY_RESPONSE: &str = r#"{"review_version":1,"command":"git log --oneline | head -5","stages":[{"stage_text":"git log --oneline","purpose":"List recent commits."},{"stage_text":"head -5","purpose":"Keep only the first five."}],"purpose_status":"ready"}"#;
 
 #[given(expr = "an installed Bash shortcut and a provider candidate for {string}")]
 fn review_candidate_for_intent(world: &mut WatnWorld, intent: String) {
@@ -1628,4 +1636,61 @@ fn review_cancelled(world: &mut WatnWorld) {
         world.review.released.is_none(),
         "cancellation must release no candidate"
     );
+}
+
+#[given("the structured review response supports delayed stage purposes")]
+fn review_delayed_response_supported(world: &mut WatnWorld) {
+    let mut probe = watn::review::ReviewCandidate::from_command(REVIEW_FIXTURE_COMMAND);
+    assert_eq!(
+        probe.apply_response(REVIEW_LOADING_RESPONSE),
+        watn::review::ReviewParseResult::Loading,
+        "loading response must validate with the delayed-purpose request"
+    );
+    world.review.structured_response = Some(REVIEW_LOADING_RESPONSE.to_string());
+}
+
+#[given("stage purposes are delayed")]
+fn review_stage_purposes_delayed(world: &mut WatnWorld) {
+    world.review.delayed_purposes = true;
+    assert!(
+        world.review.structured_response.is_some(),
+        "a structured loading response is required"
+    );
+}
+
+#[when("I invoke Ctrl-W with the current input")]
+fn review_invoke_current_input(world: &mut WatnWorld) {
+    let input = world.review.intent.clone();
+    review_invoke_ctrl_w(world, input);
+}
+
+#[then("the review surface should appear with stage purposes loading")]
+fn review_surface_loading(world: &mut WatnWorld) {
+    assert!(world.review.surface_open, "review surface did not open");
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().purpose_status,
+        watn::review::PurposeStatus::Loading
+    );
+    assert_review_rendered_contains(world, "loading");
+}
+
+#[when("stage purposes become available")]
+fn review_stage_purposes_available(world: &mut WatnWorld) {
+    let panel = panel_mut(world);
+    let selected = panel.selected_candidate;
+    let result = panel.candidates[selected].apply_response(REVIEW_READY_RESPONSE);
+    assert_eq!(result, watn::review::ReviewParseResult::Ready);
+    render_surface(world);
+}
+
+#[then("the review surface should update with the model-written stage purposes")]
+fn review_surface_updated_purposes(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().purpose_status,
+        watn::review::PurposeStatus::Ready
+    );
+    assert_review_rendered_contains(world, "List recent commits.");
+    assert_review_rendered_contains(world, "Keep only the first five.");
 }

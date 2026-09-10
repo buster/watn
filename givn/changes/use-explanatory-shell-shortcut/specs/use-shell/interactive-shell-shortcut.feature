@@ -103,7 +103,7 @@ Feature: Explanatory interactive shell shortcut
     When I press Escape in the review surface
     Then the review should be cancelled
 
-  @givn.added @wip
+  @givn.added
   Scenario: Stage purposes can load after a structured candidate appears
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the structured review response supports delayed stage purposes
