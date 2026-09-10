@@ -209,6 +209,9 @@ impl ReviewPanelState {
                 PanelOutcome::Continue
             }
             KeyCode::Char('e') | KeyCode::Char('E') if plain => self.begin_editor(),
+            KeyCode::Char('a') | KeyCode::Char('A') if plain => {
+                PanelOutcome::Accepted(self.candidate.clone())
+            }
             KeyCode::Char('d') | KeyCode::Char('D') if plain => {
                 PanelOutcome::DisableReviewPermanently
             }

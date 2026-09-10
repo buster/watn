@@ -3045,3 +3045,12 @@ fn review_no_alternative_generated(world: &mut WatnWorld) {
         "acceptance must not regenerate or replace the candidate"
     );
 }
+
+#[when("I press the accept shortcut")]
+fn review_press_accept_shortcut(world: &mut WatnWorld) {
+    let outcome = drive_review_key(world, crossterm::event::KeyCode::Char('a'));
+    assert!(
+        matches!(outcome, watn::review::PanelOutcome::Accepted(_)),
+        "a must accept the candidate, got {outcome:?}"
+    );
+}
