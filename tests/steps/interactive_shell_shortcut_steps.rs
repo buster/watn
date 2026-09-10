@@ -2938,3 +2938,17 @@ fn review_no_plain_panel(world: &mut WatnWorld) {
         "plain panel must not render, got:\n{rendered}"
     );
 }
+
+#[then("the review surface should not use color")]
+fn review_surface_without_color(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    assert!(
+        plain.contains('┌') && plain.contains('┘'),
+        "monochrome card frame expected, got:\n{rendered}"
+    );
+    assert!(
+        !contains_sgr(&rendered),
+        "monochrome card must not emit SGR colors, got:\n{rendered}"
+    );
+}

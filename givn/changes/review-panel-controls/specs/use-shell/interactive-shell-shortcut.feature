@@ -16,7 +16,7 @@ Feature: Review panel controls
     Then the original Bash command line should remain unchanged
     And no candidate should be released to the shell
 
-  @givn.added @wip
+  @givn.added
   Scenario: A color-incapable terminal shows the review card without color
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the terminal does not support color
