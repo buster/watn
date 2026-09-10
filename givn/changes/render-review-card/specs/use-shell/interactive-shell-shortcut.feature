@@ -32,12 +32,13 @@ Feature: Enhanced review card
     When I move to the previous stage
     Then the review surface should show only the selected stage "git log --oneline"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The card marks unsupported stage syntax
     Given an installed Bash shortcut and a provider candidate containing unsupported shell syntax
     When I invoke Ctrl-W with the current input
     Then the raw candidate should remain visible
     And unsupported command-flow portions should be marked
+    And the card should mark the unsupported stage
 
   @givn.added @wip
   Scenario: Disabling the enhanced card preserves the plain review surface

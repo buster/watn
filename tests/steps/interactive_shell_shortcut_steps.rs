@@ -2926,3 +2926,16 @@ fn review_previous_stage(world: &mut WatnWorld) {
     panel.handle_key(key(crossterm::event::KeyCode::Left));
     render_current_surface(world);
 }
+
+#[then("the card should mark the unsupported stage")]
+fn review_card_marks_unsupported(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    assert!(
+        rendered.contains("⚠ unsupported") || strip_ansi(&rendered).contains("⚠ unsupported"),
+        "card should mark the unsupported stage, got:\n{rendered}"
+    );
+    assert!(
+        rendered.contains("\u{1b}[38;5;214m"),
+        "unsupported marker should be amber, got:\n{rendered}"
+    );
+}
