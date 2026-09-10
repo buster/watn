@@ -129,7 +129,11 @@ the selected Candidate reviewable with `purpose-unavailable`; incomplete flow
 keeps raw text and marks unsupported portions. The Candidate shown for a
 command-only or invalid response is the provider's own command text: Watn
 recovers a complete non-empty command from a fenced or JSON-shaped payload and
-otherwise shows `Unavailable` without opening the surface. An enhanced Presentation adapter
+otherwise shows `Unavailable` without opening the surface. When the payload's
+trimmed stage text agrees with the locally derived stages and every stage has a
+non-empty purpose, those provider-written purposes stay visible even if the
+status word is outside the contract; provider-written commands with line breaks
+are normalized to one line before the flow is derived. An enhanced Presentation adapter
 failure retries the portable inline panel. Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.

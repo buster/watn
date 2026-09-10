@@ -152,7 +152,10 @@ purpose text. A purpose failure keeps the Candidate reviewable. A fenced or
 prose-wrapped structured response is recognized, and a JSON-shaped payload with
 a complete command keeps that provider-written command reviewable as
 `purpose-unavailable`. Rendered review values flatten line breaks and tabs so
-they occupy one inline row.
+they occupy one inline row. Provider-written stage purposes are kept only when
+their stage text trims to the locally derived stage text and every purpose is
+non-empty; missing or mismatched purposes show `purpose-unavailable` and Watn
+never authors substitute text.
 
 The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
 `Actions`. Tab cycles forward, Shift-Tab cycles backward, arrows navigate within
