@@ -40,11 +40,10 @@ Deterministic assertion contract (raw SGR, never stripped text):
 - Model chooser: `\u{1b}[1;38;5;81m` immediately before `1-3`, `⏎`, and `esc`.
 
 The accept-default step (`review_accept_is_default`) matches the green `a` in
-"accept"; the E2E `accept ·` label waits are unaffected because
-`pty_wait_for_label` checks each whitespace-delimited word independently, not
-contiguous text (the word `accept` is now split by escape codes on screen but
-still contains the plain letters between SGR runs — the wait also matches the
-intent text and the command, so it remains stable).
+"accept". With the letter split by escape codes, the old E2E `accept ·` wait no
+longer sees a contiguous `accept` word; the card wait label becomes the
+emphasized `⏎` token, which the hint renders once the card is up (the word
+`accept` alone is not a stable PTY label anymore).
 
 ## Interfaces
 
