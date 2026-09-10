@@ -91,11 +91,8 @@ the table is empty.
 
 ## Split-or-keep
 
-No scenario exceeds the deterministic long-scenario threshold.
-
-| Scenario | Decision |
-|---|---|
-| (none) | — |
+No scenario exceeds the deterministic long-scenario threshold; no split-or-keep
+decision is required for this change.
 
 ## Coverage classification
 

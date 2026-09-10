@@ -70,8 +70,8 @@ stdin, and `-x`.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| `interactive-shell-shortcut` | `EXTEND quicksetup` (advisory misroute) | `EXTEND interactive-shell-shortcut` in `use-shell` | The behavior is a shell-shortcut interaction, not setup or onboarding. |
-| Shared review interaction for direct interactive and `-x` consumers | No direct capability recommendation; ranked setup capabilities are irrelevant | `EXTEND interactive-shell-shortcut` in `use-shell`; keep consumers as interactions | The confirmed permanent owner is `use-shell`; no new user-goal root or review capability is created. |
+| `interactive-shell-shortcut` | `EXTEND quicksetup` (advisory misroute) | `EXTEND interactive-shell-shortcut` | The confirmed permanent owner is `use-shell`; the behavior is a shell-shortcut interaction, not setup or onboarding. |
+| Shared review interaction for direct interactive and `-x` consumers | No direct capability recommendation; ranked setup capabilities are irrelevant | `EXTEND interactive-shell-shortcut` | The confirmed permanent owner is `use-shell`; consumers remain interactions of that capability and no new user-goal root or review capability is created. |
 
 ## Out of Scope
 
