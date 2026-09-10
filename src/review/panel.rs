@@ -212,6 +212,7 @@ impl ReviewPanelState {
             KeyCode::Char('a') | KeyCode::Char('A') if plain => {
                 PanelOutcome::Accepted(self.candidate.clone())
             }
+            KeyCode::Char('c') | KeyCode::Char('C') if plain => PanelOutcome::Cancelled,
             KeyCode::Char('d') | KeyCode::Char('D') if plain => {
                 PanelOutcome::DisableReviewPermanently
             }

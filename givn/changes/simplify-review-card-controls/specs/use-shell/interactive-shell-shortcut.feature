@@ -63,7 +63,7 @@ Feature: Simplified review card controls
     Then the current candidate should be accepted
     And no alternative candidate should be generated
 
-  @givn.added @wip
+  @givn.added
   Scenario: The cancel shortcut cancels the review
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

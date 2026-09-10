@@ -3054,3 +3054,13 @@ fn review_press_accept_shortcut(world: &mut WatnWorld) {
         "a must accept the candidate, got {outcome:?}"
     );
 }
+
+#[when("I press the cancel shortcut")]
+fn review_press_cancel_shortcut(world: &mut WatnWorld) {
+    let outcome = drive_review_key(world, crossterm::event::KeyCode::Char('c'));
+    assert_eq!(
+        outcome,
+        watn::review::PanelOutcome::Cancelled,
+        "c must cancel the review"
+    );
+}
