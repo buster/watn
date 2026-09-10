@@ -277,27 +277,27 @@ Domain constraints:
 
 - A typed model name is usable as entered even with no suggestions.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'A typed model name works when the catalog is unavailable'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 2 steps (1 passed, 1 failed); the catalog Given stub panicked.
   ```
-- [ ] GREEN: Enter with a non-empty query and no highlight regenerates with the
+- [x] GREEN: Enter with a non-empty query and no highlight regenerates with the
   typed model; the fetch failure path yields an empty catalog. Compile and run
   the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `tests/steps/interactive_shell_shortcut_steps.rs` only (`session::fetch_catalog` drives the unavailable-catalog Given; typed-model Enter selection already lives in `src/review/panel.rs`).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'A typed model name works when the catalog is unavailable'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed); full regular 203/203.
   ```
-- [ ] REFACTOR: Keep the choose-or-type branch explicit. Rerun the exact
+- [x] REFACTOR: Keep the choose-or-type branch explicit. Rerun the exact
   targeted command.
   ```text
   command: `./run-tests.sh --name 'A typed model name works when the catalog is unavailable'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A typed model name works when the catalog is unavailable
+- [x] COMMIT: `11a5c5b93fd998ffd0cece9f9a89b755166d53f3` - feat(interactive-shell-shortcut): A typed model name works when the catalog is unavailable
 
 ### The model chooser ignores incomplete choices
 
