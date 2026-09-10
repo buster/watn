@@ -6,6 +6,181 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.3.3] - 2026-09-10
+
+### Bug Fixes
+
+- Resolve clippy lints blocking the release
+
+
+### Documentation
+
+- **usecase:** Preserve shell-completions interactions after archive merge
+
+- **readme:** Document the review card and its toggles
+
+- **readme:** Document the card-only review controls
+
+- **arc42:** Record the single review card and its controls
+
+- **arc42:** Single review card, color property, and in-panel controls
+
+- **readme:** Document persisted review panel toggles
+
+- **arc42:** Record persisted review preference
+
+- **arc42:** Record flow-first decisions, model chooser, and regeneration risk
+
+- **arc42:** Emphasize shortcut letters in the review hints
+
+
+### Features
+
+- **interactive-shell-shortcut:** The review surface explains a complex command flow
+
+- **interactive-shell-shortcut:** A complete candidate is buffered before review
+
+- **interactive-shell-shortcut:** Direct command editing preserves the original intent
+
+- **interactive-shell-shortcut:** Escape discards a direct command edit
+
+- **interactive-shell-shortcut:** Edited candidate purpose refresh failure remains reviewable
+
+- **interactive-shell-shortcut:** The compact review surface cycles three focus regions
+
+- **interactive-shell-shortcut:** Review actions use Enter and Escape
+
+- **interactive-shell-shortcut:** Stage purposes can load after a structured candidate appears
+
+- **interactive-shell-shortcut:** A command-only response shows purpose-unavailable
+
+- **interactive-shell-shortcut:** Unsupported command flow remains reviewable
+
+- **interactive-shell-shortcut:** Enhanced renderer failure falls back to the inline review surface
+
+- **interactive-shell-shortcut:** Portable review-surface failure releases no candidate
+
+- **interactive-shell-shortcut:** Provider failure preserves a selected candidate during review
+
+- **interactive-shell-shortcut:** Disabled review preserves direct Ctrl-W replacement
+
+- **interactive-shell-shortcut:** Disabled review preserves direct positional output
+
+- **interactive-shell-shortcut:** Disabled review preserves -x confirmation
+
+- **interactive-shell-shortcut:** Non-review -x preserves confirmation
+
+- **interactive-shell-shortcut:** Rephrasing starts a new candidate cycle
+
+- **interactive-shell-shortcut:** Regeneration replaces the current candidate by default
+
+- **interactive-shell-shortcut:** Higher-tier review generates a candidate at the next configured tier
+
+- **interactive-shell-shortcut:** Highest-tier review opens explicit provider catalog model selection
+
+- **interactive-shell-shortcut:** Rejected candidate returns to the current intent
+
+- **interactive-shell-shortcut:** Retained candidates can be compared and one selected
+
+- **interactive-shell-shortcut:** Interrupting an in-progress review operation preserves the selected candidate
+
+- **interactive-shell-shortcut:** Shell repaint remains owned by the line editor after review
+
+- **interactive-shell-shortcut:** A narrow terminal keeps the inline review bounded and readable
+
+- **interactive-shell-shortcut:** A markdown-fenced structured response is still explained
+
+- **interactive-shell-shortcut:** An invalid structured response with a command stays reviewable
+
+- **interactive-shell-shortcut:** A provider payload without a usable command releases nothing
+
+- **interactive-shell-shortcut:** A multiline provider payload keeps every rendered value on one row
+
+- **interactive-shell-shortcut:** An unknown purpose status keeps matching model-written purposes
+
+- **interactive-shell-shortcut:** A command broken across lines is explained on one row per stage
+
+- **interactive-shell-shortcut:** Mismatched stage text still shows purpose-unavailable
+
+- **interactive-shell-shortcut:** A provider stage split that covers the command is shown with its purposes
+
+- **interactive-shell-shortcut:** Provider stages that do not cover the command are not trusted
+
+- **interactive-shell-shortcut:** The enhanced review card frames the command, stage, and actions
+
+- **interactive-shell-shortcut:** The card shows one stage at a time and moves stages with the arrow keys
+
+- **interactive-shell-shortcut:** The card marks unsupported stage syntax
+
+- **interactive-shell-shortcut:** Disabling the enhanced card preserves the plain review surface
+
+- **interactive-shell-shortcut:** A color-incapable terminal falls back to the plain review surface
+
+- **interactive-shell-shortcut:** The card's edit shortcut opens the command editor
+
+- **interactive-shell-shortcut:** The review card is the only review panel
+
+- **interactive-shell-shortcut:** A failing review card releases no candidate
+
+- **interactive-shell-shortcut:** A color-incapable terminal shows the review card without color
+
+- **interactive-shell-shortcut:** Disabling the review panel preserves the original command handling
+
+- **interactive-shell-shortcut:** The panel can permanently disable the review
+
+- **interactive-shell-shortcut:** The -x confirmation offers to explain the command
+
+- **interactive-shell-shortcut:** Enabling the review panel from the command line persists it
+
+- **interactive-shell-shortcut:** Disabling the review panel from the command line persists it
+
+- **interactive-shell-shortcut:** The review card opens on the first command-flow stage
+
+- **interactive-shell-shortcut:** The review card exposes the direct decision shortcuts
+
+- **interactive-shell-shortcut:** Enter accepts the current candidate
+
+- **interactive-shell-shortcut:** The accept shortcut accepts the current candidate
+
+- **interactive-shell-shortcut:** The cancel shortcut cancels the review
+
+- **interactive-shell-shortcut:** Rejecting a candidate opens the model chooser
+
+- **interactive-shell-shortcut:** A configured tier can be chosen with its number
+
+- **interactive-shell-shortcut:** A model name is suggested from the provider catalog while typing
+
+- **interactive-shell-shortcut:** A typed model name works when the catalog is unavailable
+
+- **interactive-shell-shortcut:** The model chooser ignores incomplete choices
+
+- **interactive-shell-shortcut:** A failed regeneration preserves the previous candidate
+
+- **interactive-shell-shortcut:** Leaving the model chooser preserves the candidate
+
+- **interactive-shell-shortcut:** The command editor moves the insertion point with arrows and Home and End
+
+- **interactive-shell-shortcut:** Backspace and Delete remove text at the insertion point
+
+- **interactive-shell-shortcut:** The explanation card ignores review decisions
+
+- **interactive-shell-shortcut:** The review card emphasizes the decision shortcut keys
+
+- **interactive-shell-shortcut:** Emphasize shortcut letters inside the hint words
+
+- **interactive-shell-shortcut:** The model chooser explains how to choose
+
+- **interactive-shell-shortcut:** The first suggestion is ready to choose
+
+- **interactive-shell-shortcut:** The card marks nested shell syntax
+
+- **interactive-shell-shortcut:** The card marks a stage it cannot decompose
+
+
+### Refactoring
+
+- **review:** Drop the superseded derived-stage purpose match
+
 ## [0.3.1] - 2026-09-01
 
 ### Bug Fixes
@@ -547,3 +722,5 @@ Bright fireant
 [0.3.0]: https://github.com/buster/watn/compare/v0.2.1...v0.3.0
 
 [0.3.1]: https://github.com/buster/watn/compare/v0.3.0...v0.3.1
+
+[0.3.3]: https://github.com/buster/watn/compare/v0.3.2...v0.3.3
