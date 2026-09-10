@@ -13,7 +13,7 @@ Feature: Provider stage split
     And the review surface should show the stage purpose "For each commit, recursively list all files with their object hashes and extract filename and object hash"
     And the review surface should show the stage purpose "Sort the file entries and remove duplicates"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Provider stages that do not cover the command are not trusted
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider returns a review response whose stage text is not part of the command

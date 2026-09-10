@@ -2719,3 +2719,15 @@ fn review_shows_stage(world: &mut WatnWorld, stage: String) {
     );
     assert_review_rendered_contains(world, &stage);
 }
+
+#[given("the provider returns a review response whose stage text is not part of the command")]
+fn review_untrusted_stage_split(world: &mut WatnWorld) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": "df -h",
+        "stages": [{"stage_text": "not part of the command", "purpose": "Fabricated stage."}],
+        "purpose_status": "ready"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}
