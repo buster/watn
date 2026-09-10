@@ -1980,3 +1980,64 @@ fn review_history_no_evaluation_unchanged(world: &mut WatnWorld) {
         "disabled review must not evaluate the command"
     );
 }
+
+#[given("the explanatory review surface is disabled")]
+fn review_surface_disabled(world: &mut WatnWorld) {
+    let config = watn::config::types::Config {
+        review: watn::config::types::ReviewConfig { panel: false },
+        ..watn::config::types::Config::default()
+    };
+    assert!(!watn::review::resolve_review_enabled(
+        &config,
+        watn::config::types::ReviewPanelOverride::Unset,
+        true
+    ));
+    world.review = ReviewState {
+        review_disabled: true,
+        ..ReviewState::default()
+    };
+}
+
+#[given(expr = "a configured provider candidate {string}")]
+fn review_configured_candidate(world: &mut WatnWorld, command: String) {
+    world.review.candidate_command = command;
+}
+
+#[when(expr = "I ask positionally for {string}")]
+fn review_ask_positionally(world: &mut WatnWorld, question: String) {
+    assert_ne!(
+        watn::review::request_route(!world.review.review_disabled, false),
+        watn::review::RequestRoute::ReviewSurface,
+        "disabled positional request must not route through review"
+    );
+    world.review.intent = question;
+    world.review.command_output = world.review.candidate_command.clone();
+    world.review.surface_open = false;
+    world.review.panel = None;
+}
+
+#[then(expr = "the existing command-output channel should contain only {string}")]
+fn review_command_output_only(world: &mut WatnWorld, expected: String) {
+    assert_eq!(
+        world.review.command_output, expected,
+        "disabled review must keep the existing command-output contract"
+    );
+    assert_eq!(
+        watn::review::request_route(false, false),
+        watn::review::RequestRoute::DirectCommandOutput
+    );
+}
+
+#[when(expr = "I submit {string} through interactive stdin")]
+fn review_submit_stdin(world: &mut WatnWorld, question: String) {
+    world.review.intent = question;
+    world.review.command_output = world.review.candidate_command.clone();
+    world.review.surface_open = false;
+    world.review.panel = None;
+}
+
+#[then("no review surface should open")]
+fn review_no_surface_opens(world: &mut WatnWorld) {
+    assert!(!world.review.surface_open, "review surface must not open");
+    assert!(world.review.panel.is_none(), "no review panel may exist");
+}

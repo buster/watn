@@ -164,7 +164,7 @@ Feature: Explanatory interactive shell shortcut
     And no command-flow review should open
     And the existing Ctrl-W history and no-evaluation behavior should be unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabled review preserves direct positional output
     Given the explanatory review surface is disabled
     And a configured provider candidate "find . -type f"
