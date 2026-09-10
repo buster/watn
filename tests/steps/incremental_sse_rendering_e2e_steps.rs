@@ -345,7 +345,7 @@ fn start_executable_stream(world: &mut WatnWorld, question: String) {
 #[then(regex = r##"^the generated command line "([^"]+)" is visible before confirmation$"##)]
 fn command_before_confirmation(world: &mut WatnWorld, command: String) {
     wait_for_terminal_text(world, &command);
-    wait_for_terminal_text(world, "Execute now? [Y/n]");
+    wait_for_terminal_text(world, "Execute now?");
 }
 
 #[then(

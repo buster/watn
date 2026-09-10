@@ -1078,9 +1078,8 @@ pub struct ReviewState {
     pub released: Option<String>,
     pub panel_outcome: Option<watn::review::PanelOutcome>,
     pub delayed_purposes: bool,
-    pub enhanced_adapter: Option<bool>,
-    pub portable_adapter_fails: bool,
-    pub adapter: Option<watn::review::PresentationSelection>,
+    pub card_open_fails: bool,
+    pub config_path: Option<std::path::PathBuf>,
     pub bash_command_line: String,
     pub bash_history: Vec<String>,
     pub review_disabled: bool,
@@ -1094,7 +1093,6 @@ pub struct ReviewState {
     pub narrow: bool,
     pub e2e: bool,
     pub stdout_path: Option<std::path::PathBuf>,
-    pub plain_panel: bool,
     pub color_incapable: bool,
 }
 
@@ -1116,34 +1114,17 @@ fn review_layout(world: &WatnWorld) -> watn::review::InlineLayout {
     }
 }
 
-fn review_uses_card(world: &WatnWorld) -> bool {
-    !world.review.plain_panel
-        && !world.review.color_incapable
-        && world
-            .review
-            .adapter
-            .as_ref()
-            .and_then(|selection| selection.active())
-            == Some(watn::review::PresentationAdapter::Enhanced)
-}
-
 fn render_panel_state(
     rendered: &mut Vec<String>,
     state: &watn::review::ReviewPanelState,
     layout: watn::review::InlineLayout,
-    card: bool,
+    color: bool,
 ) {
     let mut terminal = watn::review::ControllingTerminal::new(Vec::new(), layout);
-    if card {
-        let lines = watn::review::render_card_lines(state, layout, true);
-        terminal
-            .render_lines(&lines)
-            .expect("render the review card through the controlling terminal");
-    } else {
-        terminal
-            .render(state)
-            .expect("render the review surface through the controlling terminal");
-    }
+    let lines = watn::review::render_card_lines(state, layout, color);
+    terminal
+        .render_lines(&lines)
+        .expect("render the review card through the controlling terminal");
     let bytes = terminal.into_writer();
     rendered.push(String::from_utf8(bytes).expect("review surface bytes are UTF-8"));
 }
@@ -1156,13 +1137,13 @@ fn render_surface(world: &mut WatnWorld) {
         .expect("review panel state")
         .clone();
     let layout = review_layout(world);
-    let card = review_uses_card(world);
+    let color = !world.review.color_incapable;
     let stage_count = state.candidate().flow.stages.len().max(1);
     let mut rendered = Vec::new();
     for stage_index in 0..stage_count {
         let mut stage_state = state.clone();
         stage_state.flow_stage = stage_index.min(stage_count - 1);
-        render_panel_state(&mut rendered, &stage_state, layout, card);
+        render_panel_state(&mut rendered, &stage_state, layout, color);
     }
     world.review.candidate = Some(state.candidate().clone());
     world.review.rendered = rendered;
@@ -1177,9 +1158,9 @@ fn render_current_surface(world: &mut WatnWorld) {
         .expect("review panel state")
         .clone();
     let layout = review_layout(world);
-    let card = review_uses_card(world);
+    let color = !world.review.color_incapable;
     let mut rendered = Vec::new();
-    render_panel_state(&mut rendered, &state, layout, card);
+    render_panel_state(&mut rendered, &state, layout, color);
     world.review.rendered = rendered;
     world.review.surface_open = true;
 }
@@ -1333,22 +1314,10 @@ fn review_invoke_disabled_ctrl_w(world: &mut WatnWorld, input: &str) {
 }
 
 fn build_review_panel(world: &mut WatnWorld) {
-    let enhanced_open = world
-        .review
-        .enhanced_adapter
-        .or_else(|| (!world.review.plain_panel).then_some(true));
-    let selection = watn::review::PresentationSelection::open(
-        enhanced_open,
-        !world.review.portable_adapter_fails,
-    );
-    world.review.adapter = Some(selection);
-    if world
-        .review
-        .adapter
-        .as_ref()
-        .is_some_and(|selection| selection.is_unavailable())
-    {
+    if world.review.card_open_fails {
         world.review.surface_open = false;
+        world.review.panel = None;
+        world.review.rendered.clear();
         return;
     }
     let candidate = match world.review.structured_response.clone() {
@@ -1915,46 +1884,11 @@ fn review_acceptance_and_cancellation_offered(world: &mut WatnWorld) {
     assert!(world.review.released.is_none());
 }
 
-#[given("the selected enhanced presentation adapter cannot open")]
-fn review_enhanced_adapter_cannot_open(world: &mut WatnWorld) {
-    world.review.enhanced_adapter = Some(false);
-}
-
-#[then("the portable inline review surface should open")]
-fn review_portable_surface_open(world: &mut WatnWorld) {
-    let selection = world.review.adapter.as_ref().expect("adapter selection");
-    assert_eq!(
-        selection.active(),
-        Some(watn::review::PresentationAdapter::Portable)
-    );
-    assert_eq!(
-        selection.attempts(),
-        &[
-            watn::review::PresentationAdapter::Enhanced,
-            watn::review::PresentationAdapter::Portable
-        ]
-    );
-    assert!(
-        world.review.surface_open,
-        "portable review surface did not open"
-    );
-    assert!(
-        !world.review.rendered.is_empty(),
-        "portable review surface rendered nothing"
-    );
-}
-
 #[then("the current candidate should remain available")]
 fn review_current_candidate_available(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
     assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
-}
-
-#[given("the portable inline review surface cannot open")]
-fn review_portable_cannot_open(world: &mut WatnWorld) {
-    world.review.enhanced_adapter = Some(false);
-    world.review.portable_adapter_fails = true;
 }
 
 #[then("the original Bash command line should remain unchanged")]
@@ -2038,10 +1972,7 @@ fn review_purpose_unavailable_or_generation_failure(world: &mut WatnWorld) {
 fn review_disabled_shortcut(world: &mut WatnWorld) {
     install_bash_shortcut(world);
     let config = watn::config::types::Config {
-        review: watn::config::types::ReviewConfig {
-            panel: false,
-            enhanced: false,
-        },
+        review: watn::config::types::ReviewConfig { panel: false },
         ..watn::config::types::Config::default()
     };
     assert!(
@@ -2098,10 +2029,7 @@ fn review_history_no_evaluation_unchanged(world: &mut WatnWorld) {
 #[given("the explanatory review surface is disabled")]
 fn review_surface_disabled(world: &mut WatnWorld) {
     let config = watn::config::types::Config {
-        review: watn::config::types::ReviewConfig {
-            panel: false,
-            enhanced: false,
-        },
+        review: watn::config::types::ReviewConfig { panel: false },
         ..watn::config::types::Config::default()
     };
     assert!(!watn::review::resolve_review_enabled(
@@ -2721,7 +2649,7 @@ fn review_multiline_fenced_response(world: &mut WatnWorld) {
 fn review_rendered_rows_are_single_line(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     let layout = review_layout(world);
-    let lines = watn::review::render_lines(panel, layout);
+    let lines = watn::review::render_card_lines(panel, layout, true);
     assert!(!lines.is_empty(), "review surface rendered no rows");
     for line in &lines {
         assert!(
@@ -2940,48 +2868,6 @@ fn review_card_marks_unsupported(world: &mut WatnWorld) {
     );
 }
 
-#[given("the enhanced review card is disabled")]
-fn review_card_disabled(world: &mut WatnWorld) {
-    let config = watn::config::types::Config {
-        review: watn::config::types::ReviewConfig {
-            panel: true,
-            enhanced: false,
-        },
-        ..watn::config::types::Config::default()
-    };
-    assert!(
-        !watn::config::types::review_enhanced(
-            &config,
-            watn::config::types::ReviewPanelOverride::Unset
-        ),
-        "persisted enhanced = false must disable the card"
-    );
-    assert!(
-        !watn::config::types::review_enhanced(
-            &config,
-            watn::config::types::ReviewPanelOverride::Disabled
-        ),
-        "the no-enhanced override must disable the card"
-    );
-    world.review.plain_panel = true;
-}
-
-#[then("the plain review surface should open")]
-fn review_plain_surface_open(world: &mut WatnWorld) {
-    assert!(!review_uses_card(world), "plain renderer must be active");
-    let rendered = review_rendered_text(world);
-    let plain = strip_ansi(&rendered);
-    assert!(
-        !plain.contains('┌') && !plain.contains('┘'),
-        "plain panel must not draw the card frame, got:\n{rendered}"
-    );
-    assert!(
-        !contains_sgr(&rendered),
-        "plain panel must not emit SGR color escapes, got:\n{rendered}"
-    );
-    assert_review_rendered_contains(world, "Accept candidate");
-}
-
 fn contains_sgr(value: &str) -> bool {
     let bytes = value.as_bytes();
     let mut index = 0;
@@ -3031,5 +2917,19 @@ fn review_command_editor_open(world: &mut WatnWorld) {
     assert!(
         panel.editor_buffer().is_some(),
         "editor buffer should be active"
+    );
+}
+
+#[then("the review surface should not show the plain panel")]
+fn review_no_plain_panel(world: &mut WatnWorld) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered);
+    assert!(
+        plain.contains('┌') && plain.contains('┘'),
+        "card frame expected, got:\n{rendered}"
+    );
+    assert!(
+        !plain.contains("Focus:") && !plain.contains("Accept candidate"),
+        "plain panel must not render, got:\n{rendered}"
     );
 }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicU64;
@@ -124,7 +124,9 @@ fn collect_features(dir: &Path) -> Vec<PathBuf> {
 }
 
 #[derive(Clone, Debug)]
-struct VecParser;
+struct VecParser {
+    removed: HashSet<String>,
+}
 
 #[derive(Clone, Debug, Default, clap::Args)]
 #[group(skip)]
@@ -142,7 +144,13 @@ impl Parser<Vec<PathBuf>> for VecParser {
             .map(|path| {
                 let env = GherkinEnv::default();
                 match Feature::parse_path(&path, env) {
-                    Ok(feature) => feature.expand_examples().map_err(parser::Error::from),
+                    Ok(mut feature) => {
+                        feature.scenarios.retain(|scenario| {
+                            !scenario.tags.iter().any(|tag| tag == "givn.removed")
+                                && !self.removed.contains(&scenario.name)
+                        });
+                        feature.expand_examples().map_err(parser::Error::from)
+                    }
                     Err(e) => Err(parser::Error::Parsing(Arc::new(e))),
                 }
             })
@@ -172,12 +180,25 @@ async fn main() {
 
     feature_files.sort();
 
+    let mut removed_titles = HashSet::new();
+    for file in &feature_files {
+        if let Ok(feature) = Feature::parse_path(file, GherkinEnv::default()) {
+            for scenario in &feature.scenarios {
+                if scenario.tags.iter().any(|tag| tag == "givn.removed") {
+                    removed_titles.insert(scenario.name.clone());
+                }
+            }
+        }
+    }
+
     let cucumber_runner = runner::Basic::<WatnWorld>::default();
     let writer = writer::Basic::stdout().normalized().summarized();
 
     let writer =
         Cucumber::<WatnWorld, VecParser, Vec<PathBuf>, _, _, cucumber::cli::Empty>::custom(
-            VecParser,
+            VecParser {
+                removed: removed_titles,
+            },
             cucumber_runner,
             writer,
         )

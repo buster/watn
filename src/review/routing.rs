@@ -37,10 +37,7 @@ mod tests {
     #[test]
     fn disabled_review_routes_to_the_existing_paths() {
         let disabled = Config {
-            review: ReviewConfig {
-                panel: false,
-                enhanced: false,
-            },
+            review: ReviewConfig { panel: false },
             ..Config::default()
         };
         assert!(!resolve_review_enabled(

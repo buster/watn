@@ -101,6 +101,7 @@ pub enum PanelOutcome {
     EditCommitted(String),
     EditDiscarded,
     Rejected,
+    DisableReviewPermanently,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -146,6 +147,7 @@ pub struct ReviewPanelState {
     pub candidate_cursor: usize,
     pub action_cursor: usize,
     pub input_mode: PanelInputMode,
+    pub explain_only: bool,
     intent_history: Vec<String>,
     configured_model: String,
     model_selection: Option<Vec<String>>,
@@ -171,6 +173,7 @@ impl ReviewPanelState {
             candidate_cursor: 0,
             action_cursor: 0,
             input_mode: PanelInputMode::Review,
+            explain_only: false,
             intent_history: Vec::new(),
             model_selection: None,
             model_cursor: 0,
@@ -315,6 +318,13 @@ impl ReviewPanelState {
                 self.focus = FocusRegion::Actions;
                 self.action_cursor = 1;
                 return self.activate_selection();
+            }
+            KeyCode::Char('d')
+                if !key
+                    .modifiers
+                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
+            {
+                return PanelOutcome::DisableReviewPermanently;
             }
             KeyCode::Enter => return self.activate_selection(),
             _ => {}
@@ -522,11 +532,6 @@ impl<W: Write> ControllingTerminal<W> {
         first_error.map_or(Ok(()), Err)
     }
 
-    pub fn render(&mut self, state: &ReviewPanelState) -> io::Result<()> {
-        let lines = render_lines(state, self.layout);
-        self.render_lines(&lines)
-    }
-
     pub fn render_lines(&mut self, lines: &[String]) -> io::Result<()> {
         if self.rows_rendered > 0 {
             let rows_rendered = self.rows_rendered;
@@ -559,7 +564,7 @@ impl<W: Write> Drop for ControllingTerminal<W> {
 pub struct InlineReviewPanel<W: Write> {
     terminal: ControllingTerminal<W>,
     pub state: ReviewPanelState,
-    card: bool,
+    color: bool,
 }
 
 impl<W: Write> InlineReviewPanel<W> {
@@ -567,28 +572,25 @@ impl<W: Write> InlineReviewPanel<W> {
         Self {
             terminal,
             state,
-            card: false,
+            color: true,
         }
     }
 
-    pub fn with_card(
+    pub fn with_color(
         terminal: ControllingTerminal<W>,
         state: ReviewPanelState,
-        card: bool,
+        color: bool,
     ) -> Self {
         Self {
             terminal,
             state,
-            card,
+            color,
         }
     }
 
     pub fn render(&mut self) -> io::Result<()> {
-        let lines = if self.card {
-            crate::review::render_card_lines(&self.state, self.terminal.layout(), true)
-        } else {
-            render_lines(&self.state, self.terminal.layout())
-        };
+        let lines =
+            crate::review::render_card_lines(&self.state, self.terminal.layout(), self.color);
         self.terminal.render_lines(&lines)
     }
 
@@ -614,127 +616,6 @@ impl<W: Write> InlineReviewPanel<W> {
     }
 }
 
-pub fn render_lines(state: &ReviewPanelState, layout: InlineLayout) -> Vec<String> {
-    let candidate = state.candidate();
-    let mut lines = Vec::new();
-    lines.push(format!(
-        "Review | intent: {}",
-        sanitize_terminal_text(&state.context.intent)
-    ));
-    lines.push(format!(
-        "Context | tier {} | {}/{}",
-        sanitize_terminal_text(&state.context.tier),
-        sanitize_terminal_text(&state.context.provider),
-        sanitize_terminal_text(&state.context.model)
-    ));
-    lines.push(format!(
-        "Flow [{}/{}]{}",
-        state
-            .flow_stage
-            .saturating_add(1)
-            .min(candidate.flow.stages.len()),
-        candidate.flow.stages.len(),
-        if candidate.flow.has_unsupported() {
-            " | unsupported syntax marked"
-        } else {
-            ""
-        }
-    ));
-
-    if let Some(stage) = candidate.flow.stages.get(state.flow_stage) {
-        lines.push(format!("> {}", sanitize_terminal_text(&stage.stage_text)));
-        if !stage.unsupported_spans.is_empty() {
-            lines.push(format!(
-                "  unsupported: {}",
-                stage
-                    .unsupported_spans
-                    .iter()
-                    .map(|span| sanitize_terminal_text(&span.text))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ));
-        }
-        let purpose = candidate
-            .stages
-            .get(state.flow_stage)
-            .and_then(|stage| stage.purpose.as_deref())
-            .map(sanitize_terminal_text)
-            .unwrap_or_else(|| candidate.purpose_status.label().to_string());
-        lines.push(format!("  purpose: {purpose}"));
-    } else {
-        lines.push("> no supported flow stages".to_string());
-    }
-    lines.push(format!(
-        "Candidate: {}",
-        sanitize_terminal_text(&candidate.command)
-    ));
-    lines.push(format!(
-        "Candidates [{}/{}]",
-        state.selected_candidate + 1,
-        state.candidates.len()
-    ));
-    if state.candidates.len() > 1 {
-        for (index, compared) in state.candidates.iter().enumerate() {
-            let context = &state.candidate_contexts[index];
-            let marker = if index == state.selected_candidate {
-                ">"
-            } else {
-                " "
-            };
-            lines.push(format!(
-                "{marker} {}. {} | tier {} | {}/{}",
-                index + 1,
-                sanitize_terminal_text(&compared.command),
-                sanitize_terminal_text(&context.tier),
-                sanitize_terminal_text(&context.provider),
-                sanitize_terminal_text(&context.model)
-            ));
-        }
-    }
-    if state.input_mode == PanelInputMode::CommandEditor {
-        lines.push(format!(
-            "Edit command: {}",
-            sanitize_terminal_text(&state.editor_buffer)
-        ));
-    } else {
-        lines.push(format!(
-            "Focus: {} | Actions: {}",
-            state.focus.label(),
-            PanelAction::ALL
-                .iter()
-                .enumerate()
-                .map(|(index, action)| {
-                    if index == state.action_cursor {
-                        format!("[{}]", action.label())
-                    } else {
-                        action.label().to_string()
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" | ")
-        ));
-    }
-    if let Some(models) = &state.model_selection {
-        lines.push(format!(
-            "Models: {}",
-            models
-                .iter()
-                .enumerate()
-                .map(|(index, model)| {
-                    if index == state.model_cursor {
-                        format!("[{model}]")
-                    } else {
-                        model.clone()
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" | ")
-        ));
-    }
-
-    wrap_lines(lines, layout.content_width.max(1), layout.max_rows as usize)
-}
-
 /// Wrap one logical value into rows of at most `width` characters.
 pub fn wrap_text(text: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
@@ -753,15 +634,6 @@ pub fn wrap_text(text: &str, width: usize) -> Vec<String> {
         remaining = &remaining[split_at..];
     }
     wrapped.push(remaining.to_string());
-    wrapped
-}
-
-fn wrap_lines(lines: Vec<String>, width: usize, max_rows: usize) -> Vec<String> {
-    let mut wrapped = Vec::new();
-    for line in lines {
-        wrapped.extend(wrap_text(&line, width));
-    }
-    wrapped.truncate(max_rows.max(1));
     wrapped
 }
 
@@ -837,9 +709,8 @@ pub fn controlling_terminal_is_usable() -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        render_lines, sanitize_terminal_text, ControllingTerminal, FocusRegion, InlineLayout,
-        PanelAction, PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation,
-        ReviewPanelState,
+        sanitize_terminal_text, ControllingTerminal, FocusRegion, InlineLayout, PanelAction,
+        PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation, ReviewPanelState,
     };
     use crate::review::ReviewCandidate;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -945,7 +816,7 @@ mod tests {
         );
         state.flow_stage = 1;
         let layout = InlineLayout::for_dimensions(40, 8);
-        let lines = render_lines(&state, layout);
+        let lines = crate::review::render_card_lines(&state, layout, true);
 
         assert!(layout.is_bounded());
         assert!(lines.len() <= layout.max_rows as usize);
@@ -1006,8 +877,9 @@ mod tests {
         let mut panel = state();
         panel.open_model_selection(vec!["model-a".to_string(), "model-b".to_string()]);
         assert!(panel.model_selection().is_some());
-        let lines = render_lines(&panel, InlineLayout::for_dimensions(80, 24));
-        assert!(lines.iter().any(|line| line.contains("Models:")));
+        let lines =
+            crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
+        assert!(lines.iter().any(|line| line.contains("Models")));
         panel.select_model("model-b", ReviewCandidate::from_command("ls -la"));
         assert_eq!(panel.candidate().command, "ls -la");
         assert!(panel.model_selection().is_none());
@@ -1064,14 +936,10 @@ mod tests {
 
         assert_eq!(super::move_cursor(0, 1, 0), 0);
         assert_eq!(super::move_cursor(0, -1, 0), 0);
+        assert_eq!(super::wrap_text("", 2), vec![String::new()]);
         assert_eq!(
-            super::wrap_lines(vec![String::new(), "abcdef".to_string()], 2, 5),
-            vec![
-                String::new(),
-                "ab".to_string(),
-                "cd".to_string(),
-                "ef".to_string()
-            ]
+            super::wrap_text("abcdef", 2),
+            vec!["ab".to_string(), "cd".to_string(), "ef".to_string()]
         );
     }
 
@@ -1120,7 +988,8 @@ mod tests {
             },
             ReviewCandidate::from_command(""),
         );
-        let lines = render_lines(&panel, InlineLayout::for_dimensions(80, 24));
+        let lines =
+            crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
         assert!(lines
             .iter()
             .any(|line| line.contains("no supported flow stages")));
@@ -1152,9 +1021,12 @@ mod tests {
     fn command_editor_rendering_and_reverse_focus_cycle_are_covered() {
         let mut panel = state();
         panel.input_mode = PanelInputMode::CommandEditor;
-        let lines = render_lines(&panel, InlineLayout::for_dimensions(80, 24));
-        assert!(lines.iter().any(|line| line.contains("Edit command:")));
-        assert!(!lines.iter().any(|line| line.contains("Focus:")));
+        panel.editor_buffer = "df -h".to_string();
+        let lines =
+            crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
+        assert!(lines.iter().any(|line| line.contains("Edit")));
+        assert!(lines.iter().any(|line| line.contains("commit")));
+        assert!(lines.iter().any(|line| line.contains("df -h")));
 
         panel.input_mode = PanelInputMode::Review;
         panel.focus = FocusRegion::Candidates;

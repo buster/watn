@@ -5,6 +5,8 @@ use crossterm::terminal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PromptResult {
+    Execute,
+    Explain,
     Cancelled,
     Interrupted,
 }
@@ -12,22 +14,31 @@ pub enum PromptResult {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Confirmation {
     Execute,
+    Explain,
     Cancelled,
     Interrupted,
 }
 
-pub fn prompt_and_execute(command: &str) -> PromptResult {
-    eprint!("Execute now? [Y/n] ");
+/// Ask for execution confirmation. When `allow_explain` is set the prompt also
+/// offers `?`, which returns [`PromptResult::Explain`] without executing.
+pub fn prompt_for_execution(command: &str, allow_explain: bool) -> PromptResult {
+    let _ = command;
+    if allow_explain {
+        eprint!("Execute now? [Y/n/?] ");
+    } else {
+        eprint!("Execute now? [Y/n] ");
+    }
     std::io::stderr().flush().ok();
 
     let confirmation = if io::stdin().is_terminal() {
-        read_terminal_confirmation()
+        read_terminal_confirmation(allow_explain)
     } else {
-        read_line_confirmation()
+        read_line_confirmation(allow_explain)
     };
 
     match confirmation {
-        Confirmation::Execute => execute(command),
+        Confirmation::Execute => PromptResult::Execute,
+        Confirmation::Explain => PromptResult::Explain,
         Confirmation::Cancelled => PromptResult::Cancelled,
         Confirmation::Interrupted => PromptResult::Interrupted,
     }
@@ -44,18 +55,18 @@ pub fn execute(command: &str) -> ! {
     std::process::exit(status.code().unwrap_or(0));
 }
 
-fn read_line_confirmation() -> Confirmation {
+fn read_line_confirmation(allow_explain: bool) -> Confirmation {
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
-        Ok(_) => confirmation_from_input(&input),
+        Ok(_) => confirmation_from_input(&input, allow_explain),
         Err(error) if error.kind() == io::ErrorKind::Interrupted => Confirmation::Interrupted,
         Err(_) => Confirmation::Cancelled,
     }
 }
 
-fn read_terminal_confirmation() -> Confirmation {
+fn read_terminal_confirmation(allow_explain: bool) -> Confirmation {
     if terminal::enable_raw_mode().is_err() {
-        return read_line_confirmation();
+        return read_line_confirmation(allow_explain);
     }
 
     let _raw_mode = RawModeGuard;
@@ -89,7 +100,7 @@ fn read_terminal_confirmation() -> Confirmation {
             }
             KeyCode::Enter => {
                 let _ = writeln!(io::stderr());
-                return confirmation_from_input(&input);
+                return confirmation_from_input(&input, allow_explain);
             }
             KeyCode::Backspace => {
                 if input.pop().is_some() {
@@ -111,7 +122,7 @@ fn read_terminal_confirmation() -> Confirmation {
     }
 }
 
-fn confirmation_from_input(input: &str) -> Confirmation {
+fn confirmation_from_input(input: &str, allow_explain: bool) -> Confirmation {
     if input.contains('\u{3}') {
         return Confirmation::Interrupted;
     }
@@ -119,6 +130,8 @@ fn confirmation_from_input(input: &str) -> Confirmation {
     let input = input.trim().to_lowercase();
     if input.is_empty() || input == "y" || input == "yes" {
         Confirmation::Execute
+    } else if allow_explain && input == "?" {
+        Confirmation::Explain
     } else {
         Confirmation::Cancelled
     }
@@ -138,20 +151,44 @@ mod tests {
 
     #[test]
     fn confirmation_accepts_empty_and_yes_answers() {
-        assert_eq!(confirmation_from_input("\n"), Confirmation::Execute);
-        assert_eq!(confirmation_from_input("Y\n"), Confirmation::Execute);
-        assert_eq!(confirmation_from_input("yes\n"), Confirmation::Execute);
+        assert_eq!(confirmation_from_input("\n", false), Confirmation::Execute);
+        assert_eq!(confirmation_from_input("Y\n", false), Confirmation::Execute);
+        assert_eq!(
+            confirmation_from_input("yes\n", false),
+            Confirmation::Execute
+        );
     }
 
     #[test]
     fn confirmation_rejects_non_yes_answers() {
-        assert_eq!(confirmation_from_input("n\n"), Confirmation::Cancelled);
-        assert_eq!(confirmation_from_input("no\n"), Confirmation::Cancelled);
-        assert_eq!(confirmation_from_input("\u{1b}"), Confirmation::Cancelled);
+        assert_eq!(
+            confirmation_from_input("n\n", false),
+            Confirmation::Cancelled
+        );
+        assert_eq!(
+            confirmation_from_input("no\n", false),
+            Confirmation::Cancelled
+        );
+        assert_eq!(
+            confirmation_from_input("\u{1b}", false),
+            Confirmation::Cancelled
+        );
+    }
+
+    #[test]
+    fn explanation_answer_is_only_available_when_allowed() {
+        assert_eq!(confirmation_from_input("?\n", true), Confirmation::Explain);
+        assert_eq!(
+            confirmation_from_input("?\n", false),
+            Confirmation::Cancelled
+        );
     }
 
     #[test]
     fn confirmation_recognizes_ctrl_c() {
-        assert_eq!(confirmation_from_input("\u{3}"), Confirmation::Interrupted);
+        assert_eq!(
+            confirmation_from_input("\u{3}", false),
+            Confirmation::Interrupted
+        );
     }
 }

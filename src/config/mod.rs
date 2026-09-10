@@ -192,6 +192,29 @@ fn resolve_default_model(config: &Config) -> Result<String, Error> {
 }
 
 pub fn save_config(config: &Config) -> Result<(), Error> {
+    save_config_at(config, &xdg_config_path())
+}
+
+/// Persistently disable the review surface at the given configuration path,
+/// preserving every other setting.
+pub fn persist_review_disabled_at(config_path: &std::path::Path) -> Result<(), Error> {
+    let mut config = if config_path.exists() {
+        let content = std::fs::read_to_string(config_path)
+            .map_err(|error| Error::ConfigError(format!("cannot read config: {error}")))?;
+        toml::from_str(&content)
+            .map_err(|error| Error::ConfigError(format!("cannot parse config: {error}")))?
+    } else {
+        Config::default()
+    };
+    config.review.panel = false;
+    save_config_at(&config, config_path)
+}
+
+pub fn persist_review_disabled() -> Result<(), Error> {
+    persist_review_disabled_at(&xdg_config_path())
+}
+
+pub fn save_config_at(config: &Config, config_path: &std::path::Path) -> Result<(), Error> {
     #[cfg(all(feature = "test-support", debug_assertions))]
     if std::env::var("WATN_TEST_FAIL_CONFIG_WRITE").as_deref() == Ok("1") {
         return Err(Error::ConfigError(
@@ -199,7 +222,6 @@ pub fn save_config(config: &Config) -> Result<(), Error> {
         ));
     }
 
-    let config_path = xdg_config_path();
     let content = toml::to_string_pretty(config)
         .map_err(|e| Error::ConfigError(format!("serialize error: {}", e)))?;
     if let Some(parent) = config_path.parent() {

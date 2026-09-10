@@ -77,19 +77,6 @@ struct Cli {
     no_review_panel: bool,
 
     #[arg(
-        long = "enhanced-review-panel",
-        conflicts_with = "no_enhanced_review_panel",
-        help = "Force the enhanced review card on for this invocation"
-    )]
-    enhanced_review_panel: bool,
-
-    #[arg(
-        long = "no-enhanced-review-panel",
-        help = "Use the plain review panel for this invocation"
-    )]
-    no_enhanced_review_panel: bool,
-
-    #[arg(
         short = 'v',
         long = "verbose",
         help = "Print provider reasoning to stderr when available"
@@ -324,18 +311,7 @@ fn main() {
     let review_enabled =
         watn::review::resolve_review_enabled(&config, review_override, review_eligible);
 
-    let enhanced_override = match watn::config::types::ReviewPanelOverride::from_flags(
-        cli.enhanced_review_panel,
-        cli.no_enhanced_review_panel,
-    ) {
-        Ok(override_value) => override_value,
-        Err(message) => {
-            eprintln!("{message}");
-            std::process::exit(2);
-        }
-    };
-    let use_card = watn::config::types::review_enhanced(&config, enhanced_override)
-        && watn::review::color_terminal_supports_card();
+    let use_color = watn::review::color_terminal_supports_card();
 
     let mut registry = ProviderRegistry::new();
     build_registry(
@@ -462,7 +438,7 @@ fn main() {
                         &model,
                         cli.execute,
                         cli.verbose,
-                        use_card,
+                        use_color,
                         &config,
                     );
                 }
@@ -518,14 +494,24 @@ fn main() {
                 std::process::exit(exit_code(&error));
             }
 
-            if cli.execute
-                && !command_text.is_empty()
-                && matches!(
-                    watn::exec::prompt_and_execute(&command_text),
-                    watn::exec::PromptResult::Interrupted
-                )
-            {
-                std::process::exit(130);
+            if cli.execute && !command_text.is_empty() {
+                let explain_allowed = watn::review::controlling_terminal_is_usable();
+                loop {
+                    match watn::exec::prompt_for_execution(&command_text, explain_allowed) {
+                        watn::exec::PromptResult::Execute => watn::exec::execute(&command_text),
+                        watn::exec::PromptResult::Explain => {
+                            run_explanation_card(
+                                &command_text,
+                                &config,
+                                provider_name,
+                                tier.unwrap_or("1"),
+                                &model,
+                            );
+                        }
+                        watn::exec::PromptResult::Cancelled => break,
+                        watn::exec::PromptResult::Interrupted => std::process::exit(130),
+                    }
+                }
             }
         }
         Err(e) => {
@@ -569,6 +555,68 @@ fn review_system_prompt() -> String {
     )
 }
 
+fn run_explanation_card(
+    command: &str,
+    config: &watn::config::types::Config,
+    provider: &str,
+    tier: &str,
+    model: &str,
+) {
+    let _ = config;
+    let candidate = watn::review::ReviewCandidate::from_command(command);
+    let context = watn::review::ReviewContext {
+        intent: "explain command".to_string(),
+        tier: tier.to_string(),
+        provider: provider.to_string(),
+        model: model.to_string(),
+    };
+    let size = crossterm::terminal::size().unwrap_or((80, 24));
+    let layout = watn::review::InlineLayout::for_dimensions(size.0, size.1);
+    let terminal = match std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("/dev/tty")
+        .map_err(|error| error.to_string())
+        .and_then(|tty| {
+            watn::review::ControllingTerminal::open(tty, layout).map_err(|error| error.to_string())
+        }) {
+        Ok(terminal) => terminal,
+        Err(error) => {
+            eprintln!("explanation unavailable: {error}");
+            return;
+        }
+    };
+    let mut state = watn::review::ReviewPanelState::new(context, candidate);
+    state.explain_only = true;
+    let mut panel = watn::review::InlineReviewPanel::with_color(
+        terminal,
+        state,
+        watn::review::color_terminal_supports_card(),
+    );
+    if let Err(error) = panel.render() {
+        eprintln!("explanation unavailable: {error}");
+        return;
+    }
+    loop {
+        let key = match crossterm::event::read() {
+            Ok(crossterm::event::Event::Key(key)) => key,
+            Ok(_) => continue,
+            Err(_) => return,
+        };
+        match panel.handle_key(key) {
+            Ok(watn::review::PanelOutcome::Continue) => {}
+            Ok(_) => {
+                let _ = panel.finish();
+                return;
+            }
+            Err(_) => {
+                let _ = panel.finish();
+                return;
+            }
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_review_path(
     response: &StreamingResponse,
@@ -579,7 +627,7 @@ fn run_review_path(
     model: &str,
     execute: bool,
     verbose: bool,
-    card: bool,
+    color: bool,
     config: &watn::config::types::Config,
 ) -> ! {
     let raw = buffer.candidate().unwrap_or_default();
@@ -613,10 +661,10 @@ fn run_review_path(
             std::process::exit(1);
         }
     };
-    let mut panel = watn::review::InlineReviewPanel::with_card(
+    let mut panel = watn::review::InlineReviewPanel::with_color(
         terminal,
         watn::review::ReviewPanelState::new(context, candidate.clone()),
-        card,
+        color,
     );
     if let Err(error) = panel.render() {
         eprintln!("review unavailable: {error}");
@@ -637,6 +685,21 @@ fn run_review_path(
             Ok(watn::review::PanelOutcome::Cancelled) => {
                 let _ = panel.finish();
                 std::process::exit(0);
+            }
+            Ok(watn::review::PanelOutcome::DisableReviewPermanently) => {
+                match watn::config::persist_review_disabled() {
+                    Ok(()) => {
+                        let _ = panel.finish();
+                        eprintln!(
+                            "review surface disabled; enable it again with --review-panel or [review] panel = true"
+                        );
+                        std::process::exit(0);
+                    }
+                    Err(error) => {
+                        eprintln!("review unavailable: {error}");
+                        let _ = panel.render();
+                    }
+                }
             }
             Ok(_) => {}
             Err(error) => {

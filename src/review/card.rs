@@ -331,19 +331,31 @@ pub fn render_card_lines(
         ),
     ));
 
+    let stage_count = state.candidate().flow.stages.len();
+    let stage_text = state
+        .candidate()
+        .flow
+        .stages
+        .get(state.flow_stage)
+        .map(|stage| stage.stage_text.clone())
+        .unwrap_or_else(|| "no supported flow stages".to_string());
     let stage_rows = wrap_capped(
-        &sanitize_terminal_text(&state.candidate().flow.stages[state.flow_stage].stage_text),
+        &sanitize_terminal_text(&stage_text),
         inner - label_width - 8,
         2,
     );
     let stage_number = format!(
         "{}/{}",
-        state.flow_stage + 1,
-        state.candidate().flow.stages.len()
+        (state.flow_stage + 1).min(stage_count.max(1)),
+        stage_count
     );
     let mut marker_on_own_row = false;
-    let unsupported_stage = state.candidate().flow.stages[state.flow_stage].support
-        == super::flow::StageSupport::Unsupported;
+    let unsupported_stage = state
+        .candidate()
+        .flow
+        .stages
+        .get(state.flow_stage)
+        .is_some_and(|stage| stage.support == super::flow::StageSupport::Unsupported);
     for (index, row) in stage_rows.iter().enumerate() {
         if index == 0 {
             let mut line = format!(
@@ -385,6 +397,19 @@ pub fn render_card_lines(
         ));
     }
 
+    if state.input_mode == super::panel::PanelInputMode::CommandEditor {
+        content.push((
+            95,
+            format!(
+                "{}   {}▏",
+                ink.label(&pad_to("Edit", label_width)),
+                ink.white(&sanitize_terminal_text(
+                    &state.editor_buffer().unwrap_or("")
+                ))
+            ),
+        ));
+    }
+
     if let Some(models) = state.model_selection() {
         content.push((
             75,
@@ -416,11 +441,17 @@ pub fn render_card_lines(
             focus_tabs(state, &ink)
         ),
     ));
-    content.push((80, action_row(state, &ink)));
-    content.push((
-        30,
-        ink.dim("←→ stages · ⇥ region · ⏎ accept · e edit · esc cancel"),
-    ));
+    if state.input_mode != super::panel::PanelInputMode::CommandEditor {
+        content.push((80, action_row(state, &ink)));
+    }
+    let hints = if state.input_mode == super::panel::PanelInputMode::CommandEditor {
+        "⏎ commit · esc discard".to_string()
+    } else if state.explain_only {
+        "esc close".to_string()
+    } else {
+        "←→ stages · ⇥ region · ⏎ accept · e edit · d disable · esc cancel".to_string()
+    };
+    content.push((30, ink.dim(&hints)));
 
     let available = max_rows.saturating_sub(2).max(3);
     while content.len() > available {
