@@ -2396,3 +2396,36 @@ fn review_only_selected_accept(world: &mut WatnWorld) {
         outcome => panic!("only the selected candidate may be accepted, got {outcome:?}"),
     }
 }
+
+#[when("I start a regeneration, purpose refresh, or provider catalog model selection")]
+fn review_start_operation(world: &mut WatnWorld) {
+    panel_mut(world).begin_operation(watn::review::ReviewOperation::Regeneration);
+}
+
+#[when("I interrupt that in-progress operation")]
+fn review_interrupt_operation(world: &mut WatnWorld) {
+    let interrupted = panel_mut(world).interrupt_operation();
+    assert_eq!(
+        interrupted,
+        Some(watn::review::ReviewOperation::Regeneration),
+        "the in-progress operation must be interruptible"
+    );
+}
+
+#[then("only that operation should be cancelled")]
+fn review_only_operation_cancelled(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.pending_operation(), None);
+    assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
+    assert!(
+        world.review.released.is_none(),
+        "interruption must release no candidate"
+    );
+}
+
+#[then("the review state should remain open")]
+fn review_state_remains_open(world: &mut WatnWorld) {
+    assert!(world.review.surface_open, "review state must remain open");
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.input_mode, watn::review::PanelInputMode::Review);
+}

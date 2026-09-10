@@ -266,7 +266,7 @@ Feature: Explanatory interactive shell shortcut
     Then it should become the selected candidate for final acceptance
     And only the selected candidate should be eligible for acceptance
 
-  @givn.added @wip
+  @givn.added
   Scenario: Interrupting an in-progress review operation preserves the selected candidate
     Given an installed Bash shortcut and a selected candidate for "show disk usage"
     When I start a regeneration, purpose refresh, or provider catalog model selection

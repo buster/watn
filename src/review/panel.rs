@@ -75,6 +75,15 @@ pub enum PanelInputMode {
     CommandEditor,
 }
 
+/// In-progress review operations that can be interrupted independently of the
+/// selected candidate and the open review state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReviewOperation {
+    Regeneration,
+    PurposeRefresh,
+    ModelSelection,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PanelOutcome {
     Continue,
@@ -133,6 +142,7 @@ pub struct ReviewPanelState {
     model_selection: Option<Vec<String>>,
     model_cursor: usize,
     pending_model: Option<String>,
+    pending_operation: Option<ReviewOperation>,
     editor_buffer: String,
     editor_original: String,
 }
@@ -156,6 +166,7 @@ impl ReviewPanelState {
             model_selection: None,
             model_cursor: 0,
             pending_model: None,
+            pending_operation: None,
             editor_buffer: String::new(),
             editor_original: String::new(),
         }
@@ -190,6 +201,20 @@ impl ReviewPanelState {
         if self.pending_model.take().is_some() {
             self.context.model = self.configured_model.clone();
         }
+    }
+
+    pub fn begin_operation(&mut self, operation: ReviewOperation) {
+        self.pending_operation = Some(operation);
+    }
+
+    pub fn pending_operation(&self) -> Option<ReviewOperation> {
+        self.pending_operation
+    }
+
+    /// Only the in-progress operation is cancelled; candidate and review state
+    /// are preserved.
+    pub fn interrupt_operation(&mut self) -> Option<ReviewOperation> {
+        self.pending_operation.take()
     }
 
     pub fn candidate(&self) -> &ReviewCandidate {
