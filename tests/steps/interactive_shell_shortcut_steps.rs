@@ -1821,3 +1821,39 @@ fn review_current_candidate_available(world: &mut WatnWorld) {
     assert_eq!(panel.candidate().command, REVIEW_FIXTURE_COMMAND);
     assert_review_rendered_contains(world, REVIEW_FIXTURE_COMMAND);
 }
+
+#[given("the portable inline review surface cannot open")]
+fn review_portable_cannot_open(world: &mut WatnWorld) {
+    world.review.portable_adapter_fails = true;
+}
+
+#[then("the original Bash command line should remain unchanged")]
+fn review_bash_line_unchanged(world: &mut WatnWorld) {
+    assert_eq!(world.review.bash_command_line, "show disk usage");
+    assert!(!world.review.surface_open, "review surface must not open");
+}
+
+#[then("no candidate should be released to the shell")]
+fn review_no_candidate_released(world: &mut WatnWorld) {
+    assert!(
+        world.review.released.is_none(),
+        "unavailable review must release no candidate"
+    );
+    assert!(
+        world.review.command_output.is_empty(),
+        "command-output channel must stay empty"
+    );
+    assert!(world.review.panel.is_none(), "no review panel may exist");
+}
+
+#[then("no new request comment should be recorded in Bash history")]
+fn review_no_history_comment(world: &mut WatnWorld) {
+    assert!(
+        !world
+            .review
+            .bash_history
+            .iter()
+            .any(|entry| entry.contains("# show disk usage")),
+        "failed review must not record a request comment"
+    );
+}

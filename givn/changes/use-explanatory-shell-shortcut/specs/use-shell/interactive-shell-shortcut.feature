@@ -138,7 +138,7 @@ Feature: Explanatory interactive shell shortcut
     Then the portable inline review surface should open
     And the current candidate should remain available
 
-  @givn.added @wip
+  @givn.added
   Scenario: Portable review-surface failure releases no candidate
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the portable inline review surface cannot open
