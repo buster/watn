@@ -190,27 +190,27 @@ Domain constraints:
 - Rejection releases nothing, keeps the Intent, and opens the chooser with the
   configured tiers and a model field.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Rejecting a candidate opens the model chooser'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed); the reject-shortcut stub panicked.
   ```
-- [ ] GREEN: Add `RejectRequested`, `ModelChooser`, `TierChoice`, the chooser
+- [x] GREEN: Add `RejectRequested`, `ModelChooser`, `TierChoice`, the chooser
   render rows, and the reject key; the step binds the chooser from harness
   tiers. Compile and run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `src/review/panel.rs` (`ModelChooser`, `TierChoice`, `RejectRequested`, `RegenerateWith`, reject and chooser keys), `src/review/card.rs` (tier/catalog/query rows, error row, chooser hints), `src/review/mod.rs` (exports), `tests/steps/interactive_shell_shortcut_steps.rs` (bindings).
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Rejecting a candidate opens the model chooser'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed); full regular 200/200; lib 71 passed.
   ```
-- [ ] REFACTOR: Keep tier ordering in `chooser_tiers`. Rerun the exact targeted
+- [x] REFACTOR: Keep tier ordering in `chooser_tiers`. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'Rejecting a candidate opens the model chooser'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): Rejecting a candidate opens the model chooser
+- [x] COMMIT: `d53e959557a08839734550f3b368362174b248ca` - feat(interactive-shell-shortcut): Rejecting a candidate opens the model chooser
 
 ### A configured tier can be chosen with its number
 
