@@ -37,6 +37,7 @@ not new interactions, so they are regular scenarios.
 
 | Finding pair | Decision |
 |---|---|
+| New "A markdown-fenced structured response is still explained" vs permanent "The review surface explains a complex command flow" | `variant` — same explanation invariant, provider payload-format variation (markdown fence plus surrounding prose) |
 | New "A provider payload without a usable command releases nothing" vs permanent "Portable review-surface failure releases no candidate" | `variant` — same no-release outcome, different precondition (response without a usable command versus portable surface that cannot open); both remain as distinct invariants |
 
 ## Split-or-keep
