@@ -18,7 +18,7 @@ Feature: Review response recovery and inline rendering safety
     And the review surface should show the success branch
     And the review surface should show each model-written stage purpose
 
-  @givn.added @wip
+  @givn.added
   Scenario: An invalid structured response with a command stays reviewable
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     And the provider returns an invalid structured review response with the command "df -h"

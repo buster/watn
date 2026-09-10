@@ -435,4 +435,22 @@ mod tests {
         assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
         assert_eq!(candidate.stage_purposes().count(), 2);
     }
+
+    #[test]
+    fn invalid_structured_payloads_recover_only_the_provider_command() {
+        let raw = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show disks."}],"purpose_status":"incomplete"}"#;
+        assert!(parse_structured_review_response(raw).is_err());
+
+        let candidate = candidate_from_provider_response(raw).unwrap();
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+        assert!(candidate.stage_purposes().all(|purpose| purpose.is_none()));
+    }
+
+    #[test]
+    fn command_text_that_merely_contains_braces_stays_a_command() {
+        let raw = "awk '{print $1}' file.txt";
+        let candidate = candidate_from_provider_response(raw).unwrap();
+        assert_eq!(candidate.command, "awk '{print $1}' file.txt");
+    }
 }

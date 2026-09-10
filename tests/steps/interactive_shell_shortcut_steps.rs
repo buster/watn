@@ -2574,3 +2574,24 @@ fn review_fenced_response(world: &mut WatnWorld, step: &cucumber::gherkin::Step)
         .to_string();
     world.review.structured_response = Some(response);
 }
+
+#[given(
+    expr = "the provider returns an invalid structured review response with the command {string}"
+)]
+fn review_invalid_response_with_command(world: &mut WatnWorld, command: String) {
+    let response = serde_json::json!({
+        "review_version": 1,
+        "command": command,
+        "stages": [{"stage_text": command}],
+        "purpose_status": "incomplete"
+    })
+    .to_string();
+    world.review.structured_response = Some(response);
+}
+
+#[then(expr = "the review surface should show the command {string}")]
+fn review_shows_command(world: &mut WatnWorld, command: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(panel.candidate().command, command);
+    assert_review_rendered_contains(world, &command);
+}
