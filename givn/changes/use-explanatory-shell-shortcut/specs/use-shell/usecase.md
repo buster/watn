@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:4b6d900ba6c894cfcbbf3713fa1f4bcadedee5814ebc8b490db094fcf4ce78ac -->
 # Use case: use-shell
 
 ## Level
