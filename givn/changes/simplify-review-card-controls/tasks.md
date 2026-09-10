@@ -415,26 +415,26 @@ Domain constraints:
 
 - Backspace and Delete act at the insertion point and never evaluate.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind the new steps with
+- [x] RED: Remove `@wip` from this scenario only. Bind the new steps with
   `unimplemented!()`. Run the exact targeted command; it must exit non-zero.
   ```text
   command: `./run-tests.sh --name 'Backspace and Delete remove text at the insertion point'`
-  output: <paste non-zero runner output>
+  output: exit 1; 1 feature / 1 scenario (1 failed) / 5 steps (4 passed, 1 failed); the Backspace stub panicked.
   ```
-- [ ] GREEN: Route Backspace and Delete through the cursor helpers. Compile and
+- [x] GREEN: Route Backspace and Delete through the cursor helpers. Compile and
   run the exact targeted command.
-  Production files changed: `<paste paths>`.
+  Production files changed: `tests/steps/interactive_shell_shortcut_steps.rs` only; cursor-aware Backspace/Delete already live in `src/review/panel.rs` from the insertion-point scenario.
   ```text
   commands: `cargo check --locked`; `./run-tests.sh --name 'Backspace and Delete remove text at the insertion point'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed); full regular 208/208.
   ```
-- [ ] REFACTOR: Keep boundary behavior uniform. Rerun the exact targeted
+- [x] REFACTOR: Keep boundary behavior uniform. Rerun the exact targeted
   command.
   ```text
   command: `./run-tests.sh --name 'Backspace and Delete remove text at the insertion point'`
-  output: <paste passing output>
+  output: exit 0; 1 feature / 1 scenario (1 passed) / 8 steps (8 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): Backspace and Delete remove text at the insertion point
+- [x] COMMIT: `13e1cd96633fd65ed6a3d9ffc48013b387cd51f6` - feat(interactive-shell-shortcut): Backspace and Delete remove text at the insertion point
 
 ### The explanation card ignores review decisions
 
