@@ -627,6 +627,23 @@ mod tests {
     use crate::review::{InlineLayout, ReviewCandidate, ReviewContext, ReviewPanelState};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+    fn strip_ansi(value: &str) -> String {
+        let mut out = String::new();
+        let mut chars = value.chars();
+        while let Some(character) = chars.next() {
+            if character == '\u{1b}' {
+                for escaped in chars.by_ref() {
+                    if escaped.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            } else {
+                out.push(character);
+            }
+        }
+        out
+    }
+
     fn state() -> ReviewPanelState {
         ReviewPanelState::new(
             ReviewContext {
@@ -739,7 +756,7 @@ mod tests {
             .position(|line| line.contains('↳'))
             .expect("purpose row");
         assert!(
-            detailed[purpose_index - 1]
+            strip_ansi(&detailed[purpose_index - 1])
                 .trim_matches(|character| character == '│' || character == ' ')
                 .is_empty(),
             "a blank row must separate command and purpose"
