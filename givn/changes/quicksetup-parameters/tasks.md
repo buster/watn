@@ -9,14 +9,14 @@ always runs; cancellation writes nothing.
 
 ## Setup
 
-- [ ] Record the baseline before any change.
+- [x] Record the baseline before any change.
   ```text
-  regular output/count: <paste>
-  e2e output/count: <paste>
-  lib output/count: <paste>
+  regular output/count: exit 0; 21 features; 220 scenarios (220 passed); 1348 steps (1348 passed)
+  e2e output/count: exit 0; 25 features; 86 scenarios (86 passed); 639 steps (639 passed)
+  lib output/count: exit 0; 84 passed; 0 failed
   ```
 
-- [ ] Prove strict mode again: remove `@wip` from the help scenario only and run
+- [x] Prove strict mode again: remove `@wip` from the help scenario only and run
   it; the undefined step must fail the scenario. Restore `@wip`.
   ```text
   command: `./run-tests.sh --name 'Quick setup documents its parameters in help'`
@@ -29,25 +29,25 @@ always runs; cancellation writes nothing.
 
 Domain constraints: the parameters are discoverable from the command surface.
 
-- [ ] RED: Remove `@wip`; bind `I run \`watn quicksetup --help\`` with
+- [x] RED: Remove `@wip`; bind `I run \`watn quicksetup --help\`` with
   `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'Quick setup documents its parameters in help'`
-  output: <paste>
+  output: exit 1 on the undefined help step (strict proof).
   ```
-- [ ] GREEN: Convert `Commands::Quicksetup` to a struct variant with the six
+- [x] GREEN: Convert `Commands::Quicksetup` to a struct variant with the six
   options and implement the help step. Production files changed:
   `src/main.rs`.
   ```text
   command: `./run-tests.sh --name 'Quick setup documents its parameters in help'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'Quick setup documents its parameters in help'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(quicksetup): Quick setup documents its parameters in help
+- [x] COMMIT: `abd5a49` - feat(quicksetup): Quick setup documents its parameters in help
 
 ### Quick setup parameters prefill the dialog with an environment credential
 

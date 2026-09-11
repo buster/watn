@@ -192,6 +192,33 @@ fn start_quicksetup_in_terminal(world: &mut WatnWorld) {
     world.pty_session = Some(session);
 }
 
+#[when("I start `watn quicksetup` with these parameters:")]
+fn start_quicksetup_with_parameters(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    isolate_quicksetup_env(world);
+    ensure_quicksetup_fixture_config(world);
+    let raw = step
+        .docstring
+        .as_deref()
+        .expect("quick setup parameter docstring");
+    let mut args: Vec<String> = vec!["quicksetup".to_string()];
+    for line in raw.lines().map(str::trim).filter(|line| !line.is_empty()) {
+        let (flag, value) = line
+            .split_once(' ')
+            .unwrap_or_else(|| panic!("parameter line needs a flag and value: {line:?}"));
+        args.push(flag.to_string());
+        args.push(value.to_string());
+    }
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let session = start_pty_session(world, &refs);
+    world.pty_session = Some(session);
+}
+
+#[when("I run `watn quicksetup --help`")]
+fn run_quicksetup_help(world: &mut WatnWorld) {
+    isolate_quicksetup_env(world);
+    run_binary_with_state(world, &["quicksetup", "--help"], None);
+}
+
 #[when(regex = r#"^I run a request for \"([^\"]+)\" without a terminal$"#)]
 fn run_request_without_terminal(world: &mut WatnWorld, question: String) {
     isolate_quicksetup_env(world);

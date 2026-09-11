@@ -41,11 +41,12 @@ fn ask_required(question: &str, suggestion: Option<&str>) -> String {
     }
 }
 
-fn ask_endpoint() -> String {
+fn ask_endpoint(default: Option<&str>) -> String {
+    let suggestion = default.unwrap_or(OPENROUTER_ENDPOINT);
     loop {
-        let answer = prompt("Completion endpoint", Some(OPENROUTER_ENDPOINT));
-        let endpoint = resolve_answer(answer, Some(OPENROUTER_ENDPOINT))
-            .unwrap_or_else(|| OPENROUTER_ENDPOINT.to_string());
+        let answer = prompt("Completion endpoint", Some(suggestion));
+        let endpoint = resolve_answer(answer, Some(suggestion))
+            .unwrap_or_else(|| suggestion.to_string());
         match normalize_endpoint(&endpoint) {
             Ok(normalized) => return normalized,
             Err(error) => println!("error: {error}"),
@@ -53,13 +54,46 @@ fn ask_endpoint() -> String {
     }
 }
 
-fn ask_credential(endpoint: &str) -> String {
-    let name = suggested_api_key_env(endpoint);
-    let suggestion = std::env::var(name)
-        .ok()
-        .filter(|value| !value.is_empty())
-        .map(|_| format!("${{{name}}}"));
+fn ask_credential(endpoint: &str, default: Option<&str>) -> String {
+    let suggestion = match default {
+        Some(value) => Some(value.to_string()),
+        None => {
+            let name = suggested_api_key_env(endpoint);
+            std::env::var(name)
+                .ok()
+                .filter(|value| !value.is_empty())
+                .map(|_| format!("${{{name}}}"))
+        }
+    };
     ask_required("API key", suggestion.as_deref())
+}
+
+/// Optional `watn quicksetup` parameters. Every value is only a suggestion for
+/// the matching question; the dialog always runs.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct QuickSetupDefaults {
+    pub url: Option<String>,
+    pub key: Option<String>,
+    pub model: Option<String>,
+    pub model_small: Option<String>,
+    pub model_normal: Option<String>,
+    pub model_thinking: Option<String>,
+}
+
+impl QuickSetupDefaults {
+    fn normalized(self) -> Self {
+        fn clean(value: Option<String>) -> Option<String> {
+            value.filter(|value| !value.trim().is_empty())
+        }
+        Self {
+            url: clean(self.url),
+            key: clean(self.key),
+            model: clean(self.model),
+            model_small: clean(self.model_small),
+            model_normal: clean(self.model_normal),
+            model_thinking: clean(self.model_thinking),
+        }
+    }
 }
 
 fn ask_model(question: &str, suggestion: Option<&str>) -> String {
@@ -150,20 +184,46 @@ fn install_shell_integrations(shells: &[Shell]) -> Result<(), Error> {
     }
 }
 
+/// Run the plain-line quick setup with no parameter prefills.
+pub fn run() -> Result<(), Error> {
+    run_with_defaults(QuickSetupDefaults::default())
+}
+
 /// Run the plain-line quick setup. Asks for the endpoint, credential, three
 /// model strengths, and shell integrations; saves the configuration only at
 /// the final confirm and then installs the chosen shell integrations.
+/// Optional parameter defaults prefill the questions without skipping them.
 /// Interrupts (Ctrl-C) terminate the process before anything is written.
-pub fn run() -> Result<(), Error> {
+pub fn run_with_defaults(defaults: QuickSetupDefaults) -> Result<(), Error> {
     println!("No configuration file found — starting quick setup.");
 
-    let endpoint = ask_endpoint();
-    let credential = ask_credential(&endpoint);
-    let small_suggestion =
-        (endpoint == OPENROUTER_ENDPOINT).then_some(OPENROUTER_SUGGESTED_SMALL_MODEL);
-    let small = ask_model("Small model", small_suggestion);
-    let normal = ask_model("Normal model", Some(&small));
-    let thinking = ask_model("Thinking model", Some(&small));
+    let defaults = defaults.normalized();
+    let endpoint = ask_endpoint(defaults.url.as_deref());
+    let credential = ask_credential(&endpoint, defaults.key.as_deref());
+    let small_suggestion = defaults
+        .model_small
+        .as_deref()
+        .or(defaults.model.as_deref())
+        .map(str::to_string)
+        .or_else(|| {
+            (endpoint == OPENROUTER_ENDPOINT)
+                .then(|| OPENROUTER_SUGGESTED_SMALL_MODEL.to_string())
+        });
+    let small = ask_model("Small model", small_suggestion.as_deref());
+    let normal_suggestion = defaults
+        .model_normal
+        .as_deref()
+        .or(defaults.model.as_deref())
+        .unwrap_or(&small)
+        .to_string();
+    let normal = ask_model("Normal model", Some(&normal_suggestion));
+    let thinking_suggestion = defaults
+        .model_thinking
+        .as_deref()
+        .or(defaults.model.as_deref())
+        .unwrap_or(&small)
+        .to_string();
+    let thinking = ask_model("Thinking model", Some(&thinking_suggestion));
     let shells = ask_shells(shells_available_on_path());
 
     save_configuration(&endpoint, &credential, [&small, &normal, &thinking])?;

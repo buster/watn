@@ -120,7 +120,32 @@ enum Commands {
     #[command(
         about = "Configure provider, models, and shell integrations with a minimal question flow"
     )]
-    Quicksetup,
+    Quicksetup {
+        #[arg(long = "url", value_name = "URL", help = "Prefill the completion endpoint")]
+        url: Option<String>,
+        #[arg(
+            long = "key",
+            value_name = "KEY",
+            help = "Prefill the credential, literal or ${ENV_VAR}"
+        )]
+        key: Option<String>,
+        #[arg(
+            long = "model",
+            value_name = "MODEL",
+            help = "Prefill the small, normal, and thinking models"
+        )]
+        model: Option<String>,
+        #[arg(long = "model-small", value_name = "MODEL", help = "Prefill the small model")]
+        model_small: Option<String>,
+        #[arg(long = "model-normal", value_name = "MODEL", help = "Prefill the normal model")]
+        model_normal: Option<String>,
+        #[arg(
+            long = "model-thinking",
+            value_name = "MODEL",
+            help = "Prefill the thinking model"
+        )]
+        model_thinking: Option<String>,
+    },
     #[command(
         about = "Generate a shell completion script on stdout for the caller to install or source"
     )]
@@ -211,7 +236,21 @@ fn main() {
             }
             Commands::Provider => run_provider_setup_command(),
             Commands::Shell => run_shell_setup_command(),
-            Commands::Quicksetup => run_quicksetup_command(),
+            Commands::Quicksetup {
+                url,
+                key,
+                model,
+                model_small,
+                model_normal,
+                model_thinking,
+            } => run_quicksetup_command(watn::quicksetup::QuickSetupDefaults {
+                url: url.clone(),
+                key: key.clone(),
+                model: model.clone(),
+                model_small: model_small.clone(),
+                model_normal: model_normal.clone(),
+                model_thinking: model_thinking.clone(),
+            }),
             Commands::Completions { shell } => run_completions(shell),
         }
         return;
@@ -1128,7 +1167,7 @@ fn run_models_command(
     }
 }
 
-fn run_quicksetup_command() {
+fn run_quicksetup_command(defaults: watn::quicksetup::QuickSetupDefaults) {
     if !std::io::stdin().is_terminal() {
         eprintln!("Run `watn quicksetup` in a terminal to configure watn.");
         std::process::exit(1);
@@ -1140,7 +1179,7 @@ fn run_quicksetup_command() {
             std::process::exit(exit_code(&error));
         }
     };
-    if let Err(error) = watn::quicksetup::run() {
+    if let Err(error) = watn::quicksetup::run_with_defaults(defaults) {
         eprintln!("{}", error);
         std::process::exit(exit_code(&error));
     }

@@ -62,7 +62,7 @@ Feature: Quick setup parameters
     And the config file should contain normal model "~anthropic/claude-haiku-latest:nitro"
     And the config file should contain thinking model "deepseek/deepseek-v4-pro"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Quick setup documents its parameters in help
     When I run `watn quicksetup --help`
     Then the exit status should be 0
