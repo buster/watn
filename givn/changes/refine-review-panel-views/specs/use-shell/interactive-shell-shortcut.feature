@@ -158,7 +158,7 @@ Feature: Refined review panel views
     And the terminal should show "watn --review-panel"
     And watn should exit successfully
 
-  @e2e @givn.added @wip
+  @e2e @givn.added
   Scenario: The review surface switches configure without a request
     Given a configured provider with candidate "df -h"
     And the persisted review surface is enabled

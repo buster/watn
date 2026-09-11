@@ -431,25 +431,27 @@ persist the requested value when a config exists, keep stdout empty, print the
 applied state to stderr, and exit 0; a clean machine writes nothing and keeps
 its onboarding path.
 
-- [ ] RED: Remove `@wip`; bind the no-request run steps with
+- [x] RED: Remove `@wip`; bind the no-request run steps with
   `unimplemented!()`. Run the E2E command targeted at the scenario; non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'The review surface switches configure without a request'`
-  output: <paste>
+  output: undefined-step failure before the step definitions existed (strict mode).
   ```
-- [ ] GREEN: Implement the flag-only branch in `src/main.rs` (stdin read once,
+- [x] GREEN: Implement the flag-only branch in `src/main.rs` (stdin read once,
   persist only when a config exists, stderr confirmation, error exit on persist
-  failure) and the step definitions. Production files changed: `src/main.rs`.
+  failure) and the step definitions. Production files changed: `src/main.rs`
+  (landed with the previous commit's file edit); harness steps in
+  `tests/steps/interactive_shell_shortcut_e2e_steps.rs`.
   ```text
   command: `./run-tests.sh --e2e --name 'The review surface switches configure without a request'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 10 steps (10 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --e2e --name 'The review surface switches configure without a request'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 10 steps (10 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The review surface switches configure without a request
+- [x] COMMIT: `adb3372` - feat(interactive-shell-shortcut): The review surface switches configure without a request
 
 ## Final verification
 
