@@ -5,7 +5,7 @@ Feature: Polished review detail block
   Scenario: The accept shortcut accepts the current candidate
     Given this scenario was removed by polish-review-detail-block
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The review card exposes the decision shortcuts
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

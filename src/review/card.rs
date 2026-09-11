@@ -54,10 +54,6 @@ impl Ink {
         self.paint("1;38;5;81", text)
     }
 
-    fn accept_key(&self, text: &str) -> String {
-        self.paint("1;38;5;114", text)
-    }
-
     fn yellow(&self, text: &str) -> String {
         self.paint("38;5;221", text)
     }
@@ -395,17 +391,12 @@ fn hints(state: &ReviewPanelState, detailed: bool, ink: &Ink) -> String {
         super::panel::PanelInputMode::Review if state.explain_only => ink.dim("esc close"),
         super::panel::PanelInputMode::Review if detailed => {
             let parts = [
-                format!(
-                    "{} {}{}",
-                    ink.key("⏎"),
-                    ink.accept_key("a"),
-                    ink.dim("ccept")
-                ),
+                format!("{} {}", ink.key("⏎"), ink.dim("accept")),
                 format!("{}{}", ink.key("↑↓"), ink.dim(" stage")),
                 format!("{}{}", ink.key("e"), ink.dim("dit")),
                 format!("{}{}", ink.key("r"), ink.dim("eject")),
                 format!("{}{}", ink.key("d/?"), ink.dim(" simple")),
-                format!("{}{}", ink.key("D"), ink.dim(" disable")),
+                format!("{}{}", ink.key("D"), ink.dim(" disable review")),
                 ink.key("esc"),
             ];
             parts.join(&ink.dim(" · "))

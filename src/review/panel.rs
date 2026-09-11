@@ -477,9 +477,6 @@ impl ReviewPanelState {
                 self.details = true;
                 self.begin_editor()
             }
-            KeyCode::Char('a') | KeyCode::Char('A') if plain => {
-                PanelOutcome::Accepted(self.candidate.clone())
-            }
             KeyCode::Char('c') | KeyCode::Char('C') if plain => PanelOutcome::Cancelled,
             KeyCode::Char('r') | KeyCode::Char('R') if plain => {
                 self.details = true;
@@ -960,6 +957,24 @@ mod tests {
             PanelOutcome::Continue
         );
         assert!(!toggle.details, "? returns to the simple review view");
+    }
+
+    #[test]
+    fn the_accept_alias_is_gone() {
+        let mut panel = state();
+        assert_eq!(
+            panel.handle_key(key(KeyCode::Char('a'))),
+            PanelOutcome::Continue
+        );
+        assert_eq!(
+            panel.handle_key(key(KeyCode::Char('A'))),
+            PanelOutcome::Continue
+        );
+        assert_eq!(panel.input_mode, PanelInputMode::Review);
+        assert!(matches!(
+            panel.handle_key(key(KeyCode::Enter)),
+            PanelOutcome::Accepted(_)
+        ));
     }
 
     #[test]

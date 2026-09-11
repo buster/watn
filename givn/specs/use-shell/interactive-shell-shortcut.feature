@@ -704,8 +704,8 @@ Feature: Interactive shell shortcut for watn
     And  the review surface should show "edit"
     And  the review surface should show "reject"
     And  the review surface should not show "cancel"
-    And  the review surface should show "disable"
-    And  accept should be shown as the default decision
+    And  the review surface should show "disable review"
+    And  accept should be shown with the enter key
 
   Scenario: The model chooser explains how to choose
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"

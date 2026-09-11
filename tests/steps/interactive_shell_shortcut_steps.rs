@@ -2977,13 +2977,16 @@ fn review_surface_shows(world: &mut WatnWorld, needle: String) {
     assert_review_rendered_contains(world, &needle);
 }
 
-#[then("accept should be shown as the default decision")]
-fn review_accept_is_default(world: &mut WatnWorld) {
+#[then("accept should be shown with the enter key")]
+fn review_accept_is_enter(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
-    let sequence = "\u{1b}[1;38;5;114ma\u{1b}[0m\u{1b}[2mccept\u{1b}[0m";
     assert!(
-        rendered.contains(sequence),
-        "the a in accept should be bold green as the default decision, got:\n{rendered}"
+        rendered.contains("\u{1b}[1;38;5;81m⏎\u{1b}[0m \u{1b}[2maccept\u{1b}[0m"),
+        "the accept hint should pair Enter with accept, got:\n{rendered}"
+    );
+    assert!(
+        !rendered.contains("\u{1b}[1;38;5;114ma\u{1b}[0m"),
+        "the green a accept alias must be gone, got:\n{rendered}"
     );
 }
 
@@ -3004,7 +3007,7 @@ fn review_decision_keys_emphasized(world: &mut WatnWorld) {
     for (key, rest) in [
         ("e", "dit"),
         ("r", "eject"),
-        ("D", " disable"),
+        ("D", " disable review"),
         ("d/?", " simple"),
     ] {
         let sequence = format!("\u{1b}[1;38;5;81m{key}\u{1b}[0m\u{1b}[2m{rest}\u{1b}[0m");
@@ -3013,10 +3016,6 @@ fn review_decision_keys_emphasized(world: &mut WatnWorld) {
             "the {key:?} in {key}{rest} should be bold and colored, got:\n{rendered}"
         );
     }
-    assert!(
-        rendered.contains("\u{1b}[1;38;5;114ma\u{1b}[0m\u{1b}[2mccept\u{1b}[0m"),
-        "the a in accept keeps its green default emphasis, got:\n{rendered}"
-    );
     assert!(
         rendered.contains("\u{1b}[1;38;5;81m⏎\u{1b}[0m"),
         "the enter key is emphasized, got:\n{rendered}"
@@ -3614,7 +3613,7 @@ fn editor_text_at_removed(world: &mut WatnWorld) {
 
 #[when("I press the accept shortcut on the explanation card")]
 fn review_explain_accept_shortcut(world: &mut WatnWorld) {
-    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('a')));
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('r')));
     assert_eq!(
         outcome,
         watn::review::PanelOutcome::Continue,
