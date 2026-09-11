@@ -10,7 +10,7 @@ Feature: Keyboard-driven model picker
     And  the displayed price for "model-a" is "$0.15/1M in, $0.60/1M out"
     And  the entry for "model-b" shows no price
 
-  @givn.added @wip
+  @givn.added
   Scenario: Interactive model table shows published prices per million tokens
     Given  a configured provider with a priced catalog:
       | model        | input | output |

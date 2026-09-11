@@ -83,6 +83,25 @@ fn configured_provider_with_catalog_models(
     world.pending_mock_returned_models = vec![first, second, third];
 }
 
+#[given("a configured provider with a priced catalog:")]
+fn configured_provider_with_priced_catalog(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let mut models = Vec::new();
+    let mut prices = Vec::new();
+    if let Some(table) = &step.table {
+        for row in table.rows.iter().skip(1) {
+            let model = row[0].clone();
+            let input: f64 = row[1].parse().expect("catalog input price per million");
+            let output: f64 = row[2].parse().expect("catalog output price per million");
+            models.push(model.clone());
+            prices.push((model, input, output));
+        }
+    }
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+    world.pending_mock_returned_models = models;
+    world.pending_mock_model_prices = prices;
+}
+
 #[given(regex = r##"^a configured provider with catalog models "([^"]+)" and "([^"]+)"$"##)]
 fn configured_provider_with_two_catalog_models(
     world: &mut WatnWorld,

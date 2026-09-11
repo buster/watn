@@ -154,6 +154,7 @@ fn setup_chat_completion_mock(
 fn setup_models_mock(
     server_ref: &httpmock::MockServer,
     models: &[String],
+    prices: &[(String, f64, f64)],
     fail: bool,
 ) -> Option<usize> {
     let mock = if fail {
@@ -163,11 +164,21 @@ fn setup_models_mock(
         })
     } else {
         let models_clone = models.to_vec();
+        let prices_clone = prices.to_vec();
         server_ref.mock(move |when, then| {
             when.method(Method::GET).path("/models");
             let data: Vec<serde_json::Value> = models_clone
                 .iter()
-                .map(|id| serde_json::json!({"id": id}))
+                .map(|id| match prices_clone.iter().find(|(model, _, _)| model == id) {
+                    Some((_, input, output)) => serde_json::json!({
+                        "id": id,
+                        "pricing": {
+                            "prompt": format!("{}", input / 1_000_000.0),
+                            "completion": format!("{}", output / 1_000_000.0)
+                        }
+                    }),
+                    None => serde_json::json!({"id": id}),
+                })
                 .collect();
             then.status(200)
                 .header("Content-Type", "application/json")
@@ -311,6 +322,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 world.models_mock_id = setup_models_mock(
                     server,
                     &world.pending_mock_returned_models,
+                    &world.pending_mock_model_prices,
                     world.pending_mock_models_fail,
                 );
             }
@@ -366,7 +378,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
 
                 if world.pending_mock_returned_models.is_empty() && raw.contains("[litellm]") {
                     let default_models = vec!["test-model".to_string()];
-                    world.models_mock_id = setup_models_mock(server, &default_models, false);
+                    world.models_mock_id = setup_models_mock(server, &default_models, &[], false);
                     world.pending_mock_returned_models = default_models;
                 }
             }
@@ -382,6 +394,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 world.models_mock_id = setup_models_mock(
                     server,
                     &world.pending_mock_returned_models,
+                    &world.pending_mock_model_prices,
                     world.pending_mock_models_fail,
                 );
             }
@@ -447,7 +460,7 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                 has_config = true;
                 if raw.contains("[litellm]") {
                     let models = vec!["test-model".to_string()];
-                    world.models_mock_id = setup_models_mock(server_ref, &models, false);
+                    world.models_mock_id = setup_models_mock(server_ref, &models, &[], false);
                 }
             } else {
                 config_content = build_config(

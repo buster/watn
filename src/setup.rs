@@ -1805,7 +1805,7 @@ impl SetupWizard {
             ],
         )
         .header(
-            Row::new(["Model", "Context", "Pricing", "Features"])
+            Row::new(["Model", "Context", "Pricing ($/1M)", "Features"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(setup_block(title, self.model_focus == ModelFocus::Table))

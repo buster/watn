@@ -65,16 +65,16 @@ minimal guarantee (no corruption). Added scenario.
 Capability `ratatui-model-picker`. Guarantee: catalog price shown in the
 persisted unit. Modified scenario.
 
-- [ ] RED — remove `@wip` from this scenario only; run targeted; the new
-      per-million display assertion must fail non-zero. Evidence: _pending_
-- [ ] GREEN — production: normalized value flows through
+- [x] RED — remove `@wip` from this scenario only; run targeted; the new
+      per-million display assertion must fail non-zero. Evidence: `./run-tests.sh --name "Model entry shows additional metadata when available"` → `2 scenarios (1 passed, 1 failed)`, `Step doesn't match any function`, exit 1.
+- [x] GREEN — production: normalized value flows through
       `format_model_entry`; tests: `provider_with_models_pricing` and the
       displayed-price assertion in `tests/steps/ask_steps.rs`.
-      Evidence: _pending_
-- [ ] REFACTOR — remove stale per-token fixture assumptions; no behavior
-      change. Evidence: _pending_
-- [ ] COMMIT — `feat(ratatui-model-picker): Model entry shows additional metadata when available`.
-      Hash: _pending_
+      Evidence: targeted run → `2 scenarios (2 passed)`, `9 steps (9 passed)`, exit 0. Files: `tests/steps/ask_steps.rs`, `specs/ratatui-model-picker/ratatui-model-picker.feature`.
+- [x] REFACTOR — remove stale per-token fixture assumptions; no behavior
+      change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0.
+- [x] COMMIT — `feat(ratatui-model-picker): Model entry shows additional metadata when available`.
+      Hash: 3aadc73
 
 ## Scenario: Interactive model table shows published prices per million tokens
 

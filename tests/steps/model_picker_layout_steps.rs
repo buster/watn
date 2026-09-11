@@ -88,6 +88,34 @@ fn model_picker_table_columns(world: &mut WatnWorld) {
     }
 }
 
+#[then(expr = "the model table should show {string}")]
+fn model_table_shows(world: &mut WatnWorld, expected: String) {
+    let session = world
+        .pty_session
+        .as_ref()
+        .expect("model picker PTY session");
+    let output = pty_snapshot(session);
+    assert!(
+        output.contains(&expected),
+        "expected model table to show '{}', got: {output:?}",
+        expected
+    );
+}
+
+#[then(expr = "the model table header should show {string}")]
+fn model_table_header_shows(world: &mut WatnWorld, expected: String) {
+    let session = world
+        .pty_session
+        .as_ref()
+        .expect("model picker PTY session");
+    let output = pty_snapshot(session);
+    assert!(
+        output.contains(&expected),
+        "expected model table header to show '{}', got: {output:?}",
+        expected
+    );
+}
+
 #[then("the model picker should show a scrollbar for the model list")]
 fn model_picker_scrollbar(world: &mut WatnWorld) {
     let session = world

@@ -47,6 +47,7 @@ pub struct WatnWorld {
     pub pending_mock_usage: Option<bool>,
     pub pending_mock_auth_fail: bool,
     pub pending_mock_returned_models: Vec<String>,
+    pub pending_mock_model_prices: Vec<(String, f64, f64)>,
     pub pending_mock_delay_ms: Option<u64>,
     pub pending_mock_reasoning: Option<String>,
     pub pending_mock_no_reasoning_assert: bool,
