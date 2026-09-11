@@ -33,7 +33,7 @@ Feature: Refined review panel views
     Then the stage "git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' --buffer --unordered" should continue on a following stack row
     And the last stack row of that stage should end with the "|" separator
 
-  @givn.added @wip
+  @givn.added
   Scenario: The selected stage is marked and its purpose follows the arrow keys
     Given an installed Bash shortcut and a provider candidate "git log --oneline | head -5"
     And the provider returns this structured review response:

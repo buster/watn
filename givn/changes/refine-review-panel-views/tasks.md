@@ -137,25 +137,26 @@ Domain constraints: the selected stage carries an amber arrow; the selected
 Stage purpose appears below the stack; arrows change the selection and the
 purpose follows; in the simple view the marker replaces the plain indent.
 
-- [ ] RED: Remove `@wip`; bind the arrow and purpose-placement steps with
+- [x] RED: Remove `@wip`; bind the arrow and purpose-placement steps with
   `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'The selected stage is marked and its purpose follows the arrow keys'`
-  output: <paste>
+  output: undefined-step failure under strict mode before the step bodies existed.
   ```
-- [ ] GREEN: Render the arrow on the selected stage row and move the purpose
+- [x] GREEN: Render the arrow on the selected stage row and move the purpose
   rows below the stack in both views; implement the two steps. Production files
-  changed: `src/review/card.rs`.
+  changed: `src/review/card.rs`; implementation shipped with the
+  shared-renderer foundation in `d51a93f`.
   ```text
   command: `./run-tests.sh --name 'The selected stage is marked and its purpose follows the arrow keys'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 8 steps (8 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'The selected stage is marked and its purpose follows the arrow keys'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 8 steps (8 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The selected stage is marked and its purpose follows the arrow keys
+- [x] COMMIT: `05b46eb` - feat(interactive-shell-shortcut): The selected stage is marked and its purpose follows the arrow keys
 
 ### The purpose below the stack is marked and readable
 
