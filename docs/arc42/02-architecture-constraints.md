@@ -36,6 +36,7 @@
 | Constraint | Motivation |
 |---|---|
 | Single binary distribution | `cargo build --release` produces one executable for the selected target; its target-dependent runtime libraries must be available at deployment time |
+| Git-backed archive boundary | `givn archive` is forward-only and requires the project to be a Git worktree whose root is the project root, committed before the archive starts; archives published before 0.7.0 stay historical without a verification receipt |
 
 ## Conventions
 
@@ -53,3 +54,4 @@
 | Reserved completion token is explicit | The unquoted first token `completions` dispatches to the completion subcommand; question text beginning with that token must be quoted or passed after `--` |
 | Stable specification ownership | Active behavior is stored under `givn/specs/<usecase-id>/` or `givn/specs/fragments/`; each capability has exactly one declared owner and historical `givn/archive/` content is not rewritten by active migrations |
 | Migration evidence is preserved | A specification migration must retain scenario identity, behavior hashes, E2E mappings, interaction coverage, and source/branch coverage unless an explicit ledger entry records retirement |
+| Verification results are runner-derived and fail-closed | Each configured scope writes one JSON result to `GIVN_RESULT_FILE` from the runner's own scenario counts; a missing, malformed, failed, skipped, zero, or non-reconciling result blocks the archive, and `givn check review` no longer runs the suite |

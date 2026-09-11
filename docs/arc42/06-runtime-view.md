@@ -1031,13 +1031,18 @@ sequenceDiagram
     Maintainer->>Givn: archive --change watn-consolidation
     Givn->>Specs: apply removed/added changes atomically
     Givn->>Runner: run verify and verify-e2e hooks
-    Runner-->>Givn: green permanent and delta scenarios
+    Runner-->>Givn: per-scope result JSON (GIVN_RESULT_FILE)
     Givn-->>Maintainer: archived change and merged tree
 ```
 
 The flow must not contact an LLM provider. Retrieval results, when available,
 are advisory evidence; deterministic title/shape/subset findings and explicit
 human dispositions control the archive gate.
+
+Each configured scope writes its runner-derived result to `GIVN_RESULT_FILE`.
+Givn rejects a missing, malformed, failed, skipped, zero, or non-reconciling
+result before the change is published; the resulting archive receipt is the
+execution evidence, and legacy archives without a receipt remain historical.
 
 The review and archive fixture scenarios belong to Givn's own repository and
 are not part of Watn's runtime or acceptance runner. Watn consumes the
