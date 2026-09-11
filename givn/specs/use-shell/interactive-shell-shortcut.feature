@@ -8,28 +8,6 @@ Feature: Interactive shell shortcut for watn
     And  the generated Zsh configuration should pass a Zsh syntax check
     And  the generated Fish configuration should pass a Fish syntax check
 
-  Scenario: Enter accepts the default decline for shortcut setup
-    Given  Bash, Zsh, and Fish configuration files with existing user content
-    And  a snapshot of every shell configuration file
-    When  I press Enter to accept the default decline on the optional shortcut question
-    Then  every shell configuration file should match its snapshot byte-for-byte
-
-  Scenario: Selecting no shells leaves shell configuration unchanged
-    Given  Bash, Zsh, and Fish configuration files with existing user content
-    And  a snapshot of every shell configuration file
-    When  I answer `y` to the optional shortcut question
-    And  I select no shells in the shortcut multi-select
-    Then  every shell configuration file should match its snapshot byte-for-byte
-
-  Scenario: The shell basename alone controls shortcut preselection
-    Given  `SHELL` is "/usr/local/bin/bash"
-    And  Zsh and Fish target files already exist
-    When  the shell shortcut choices are shown
-    Then  Bash should be preselected
-    And  Zsh and Fish should remain available and unselected
-    When  I select Zsh and Fish as well
-    Then  Bash, Zsh, and Fish should all be selected
-
   Scenario: Multiple selected shells are installed independently
     Given  Bash, Zsh, and Fish configuration paths in an isolated home
     When  I install the shell shortcut for Bash, Zsh, and Fish

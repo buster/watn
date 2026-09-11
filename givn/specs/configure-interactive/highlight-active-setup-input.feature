@@ -36,7 +36,7 @@ Feature: Highlight the active setup input
     Then  the setup wizard should show the reasoning input with a green border
 
   @e2e
-  Scenario: The green border follows optional shortcut focus
+  Scenario: The green border follows the shell lists
     Given  no config file exists
     And  no supported provider environment variable is set
     And  the ephemeral E2E transport returns models ["model-small", "model-middle", "model-large"] for "/models"
@@ -48,8 +48,6 @@ Feature: Highlight the active setup input
     And  choose "model-small" and "model-middle" with Enter
     And  I type "model-large" on the Thinking Model page
     And  I confirm the Thinking Model selection and configure the shortcut
-    Then  the setup wizard should show the shortcut question with a green border
-    And  the inactive shell selection should retain its default border styling
-    When  I enable shortcut configuration
     Then  the setup wizard should show shell selection with a green border
-    And  the inactive shortcut question should retain its default border styling
+    When  I advance past the completion selection
+    Then  the setup wizard should show shell selection with a green border

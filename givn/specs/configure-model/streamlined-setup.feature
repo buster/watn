@@ -167,9 +167,10 @@ Feature: Streamlined setup flow
 
   @e2e
   Scenario: Shell setup independently configures completion and Ctrl-W integrations
-    Given  no Watn-managed shell integrations are installed
+    Given  the shell binaries on PATH are "bash"
+    And  no Watn-managed shell integrations are installed
     When  I start `watn shell` in a terminal
-    Then  shell setup should show independent completion and Ctrl-W questions
+    Then  shell setup should show the completion and Ctrl-W shell lists
     And  the shell choices should include only Bash, Fish, and Zsh
     When  I choose Bash for completion
     And  choose Zsh for the Ctrl-W shortcut
@@ -179,7 +180,8 @@ Feature: Streamlined setup flow
     And  Fish should remain unchanged
 
   Scenario: Shell setup prefills installed integrations and removes only managed blocks when deselected
-    Given  Bash contains a valid Watn-managed completion block
+    Given  the shell binaries on PATH are "bash"
+    And  Bash contains a valid Watn-managed completion block
     And  Bash contains user-owned shell content
     When  I start `watn shell` in a terminal
     Then  Bash completion should be selected
@@ -188,7 +190,8 @@ Feature: Streamlined setup flow
     And  the user-owned shell content should remain
 
   Scenario: Shell setup refuses malformed managed markers
-    Given  Bash contains duplicated Watn completion markers
+    Given  the shell binaries on PATH are "bash"
+    And  Bash contains duplicated Watn completion markers
     When  I deselect Bash completion in shell setup
     Then  shell setup should report a malformed managed block
     And  the Bash file should remain unchanged
@@ -402,13 +405,6 @@ Feature: Streamlined setup flow
     When  I enter custom reasoning "x-high"
     Then  the selected reasoning should be exactly "x-high"
 
-  Scenario: Declining shell setup performs no target inspection or write
-    Given  no shell integration choice has been accepted
-    And  shell target files do not exist
-    When  I decline both shell integration questions
-    Then  no shell target file should be inspected or created
-    And  no configuration field should change
-
   Scenario: Shell removal preserves bytes outside the managed block
     Given  Bash contains a valid Watn completion block surrounded by user content
     And  the original Bash bytes are recorded
@@ -436,3 +432,35 @@ Feature: Streamlined setup flow
     Then  setup should report a configuration error
     And  no shell operation should begin
     And  the previous configuration should remain unchanged
+  Scenario: Declining shell setup writes no shell target
+    Given  no shell binaries are on PATH
+    And  no shell integration choice has been accepted
+    And  shell target files do not exist
+    When  I advance through both shell integration pages without a selection
+    Then  no shell target file should be inspected or created
+    And  no configuration field should change
+
+  Scenario: Detected shells are preselected on the shell pages
+    Given  the shell binaries on PATH are "bash" and "zsh"
+    And  no Watn-managed shell integrations are installed
+    When  I start `watn shell` in a terminal
+    Then  no shell opt-in question should be shown
+    And  Bash completion should be selected
+    And  Zsh completion should be selected
+    And  Fish completion should be unselected
+    When  I accept the completion selection
+    And  I accept the Ctrl-W selection
+    Then  shell setup should exit successfully
+    And  Bash should contain a Watn-managed completion block
+    And  Zsh should contain a Watn-managed Ctrl-W block
+    And  Fish should remain unchanged
+
+  Scenario: A managed shell without a binary stays selected
+    Given  no shell binaries are on PATH
+    And  Bash contains a valid Watn-managed completion block
+    When  I start `watn shell` in a terminal
+    Then  Bash completion should be selected
+    When  I accept the completion selection
+    And  I accept the Ctrl-W selection
+    Then  shell setup should exit successfully
+    And  Bash should contain a Watn-managed completion block
