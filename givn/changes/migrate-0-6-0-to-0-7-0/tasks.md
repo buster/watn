@@ -80,5 +80,6 @@ Givn's gate is fail-closed.
   fabrication audit (0 empty step bodies across 31 files), the Arc42
   conformance table, `README-IMPACT: none`, and `REVIEW: PASS`;
   `givn check review --change migrate-0-6-0-to-0-7-0` exits 0.
-- [ ] Archive this change; the receipt must show both scopes passed (or e2e
-  `not_applicable`) and `status: "proven"`.
+- Completion boundary: this change is done only when `givn archive` succeeds
+  and `givn/archive/migrate-0-6-0-to-0-7-0/verification.json` shows both scopes
+  passed (or e2e `not_applicable`) with `status: "proven"`.
