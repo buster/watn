@@ -47,17 +47,25 @@ Givn's gate is fail-closed.
   outside Givn. Evidence: command and passing output.
   `./run-tests.sh` reported `21 features`, `222 scenarios (222 passed)`,
   `1366 steps (1366 passed)`, exit 0; the temporary feature was removed.
-- [ ] COMMIT: `<hash>` — `fix(givn): fail closed on runner parsing and hook errors`.
+- [x] COMMIT: `6c52d08` — `fix(givn): fail closed on runner parsing and hook errors`.
 
 ## Evidence and validation
 
-- [ ] Write `runner-result-contract.md` with the scope inventory table
+- [x] Write `runner-result-contract.md` with the scope inventory table
   (regular, e2e), the before/after commands, and the sample result JSON.
-  Evidence: file present in the change directory.
-- [ ] Validate the regular scope manually with a temporary result file and
-  confirm the JSON parses and reconciles. Evidence: command and JSON output.
-- [ ] Validate the e2e scope manually with a temporary result file and confirm
-  the JSON parses and reconciles. Evidence: command and JSON output.
+  Evidence: `givn/changes/migrate-0-6-0-to-0-7-0/runner-result-contract.md`
+  contains the two scope rows, the pre-fix malformed-feature evidence, the
+  post-fix exit-1 evidence, and both sample results.
+- [x] Validate the regular scope manually with a temporary result file and
+  confirm the JSON parses and reconciles. Evidence:
+  `result=$(mktemp); GIVN_RESULT_FILE="$result" ./run-tests.sh` reported
+  `222 scenarios (222 passed)`, exit 0, and wrote
+  `{"failed":0,"passed":222,"scope":"regular","skipped":0,"total":222}`.
+- [x] Validate the e2e scope manually with a temporary result file and confirm
+  the JSON parses and reconciles. Evidence:
+  `result=$(mktemp); GIVN_RESULT_FILE="$result" ./run-tests.sh --e2e` reported
+  `88 scenarios (88 passed)`, exit 0, and wrote
+  `{"failed":0,"passed":88,"scope":"e2e","skipped":0,"total":88}`.
 - [ ] COMMIT: `<hash>` — `docs(givn): record migrate-0-6-0-to-0-7-0 runner result contract`.
 
 ## Final gates
