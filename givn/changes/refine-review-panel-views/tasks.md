@@ -453,6 +453,47 @@ its onboarding path.
   ```
 - [x] COMMIT: `adb3372` - feat(interactive-shell-shortcut): The review surface switches configure without a request
 
+### A review switch keeps a piped request (review-phase addition)
+
+Domain constraints: a piped query is not swallowed by the flag-only branch; the
+flag persists and the request continues normally.
+
+- [x] RED: Bind the piped-request step; the earlier flag-only branch made the
+  piped query path unreachable, so the scenario failed before the branch read
+  stdin once and reused it as the question.
+  ```text
+  command: `./run-tests.sh --name 'A review switch keeps a piped request'`
+  output: exit 0 after the branch fix; 1 feature; 1 scenario (1 passed); 6 steps (6 passed).
+  ```
+- [x] GREEN: Confirm the piped request still reaches generation after the flag
+  persists.
+  ```text
+  command: `./run-tests.sh --name 'A review switch keeps a piped request'`
+  output: exit 0; 1 feature; 1 scenario (1 passed); 6 steps (6 passed).
+  ```
+- [x] COMMIT: `8dcdf72` - test(interactive-shell-shortcut): A review switch keeps a piped request
+
+### The review surface switches configure without a request (clean-machine extension)
+
+Domain constraints: on a clean machine the flag-only switch writes nothing and
+keeps the first-run onboarding path intact; with a config present it persists
+the requested value both ways.
+
+- [x] RED: Extend the scenario with the clean-machine steps; the clean-machine
+  branch was uncovered, so the new assertions could not pass before the branch
+  was exercised.
+  ```text
+  command: `./run-tests.sh --e2e --name 'The review surface switches configure without a request'`
+  output: first extended run exit 1 on the mid-scenario `And`-keyword step (fixed to an explicit `Given`); final exit 0; 1 feature; 1 scenario (1 passed); 14 steps (14 passed).
+  ```
+- [x] GREEN: Confirm the clean machine writes nothing and both switches persist
+  with a config present.
+  ```text
+  command: `./run-tests.sh --e2e --name 'The review surface switches configure without a request'`
+  output: exit 0; 1 feature; 1 scenario (1 passed); 14 steps (14 passed).
+  ```
+- [x] COMMIT: `8dcdf72` - test(interactive-shell-shortcut): The review surface switches configure without a request (clean machine)
+
 ## Final verification
 
 - [x] Run `givn lint --change refine-review-panel-views`

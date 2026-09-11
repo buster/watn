@@ -158,10 +158,23 @@ Feature: Refined review panel views
     And the terminal should show "watn --review-panel"
     And watn should exit successfully
 
+  @givn.added @wip
+  Scenario: A review switch keeps a piped request
+    Given a configured provider with candidate "df -h"
+    And the persisted review surface is disabled
+    When I run watn with --review-panel and the piped request "show disk usage"
+    Then the exit status should be 0
+    And the output should contain "df -h"
+    And the review surface should be enabled in the configuration
+
   @e2e @givn.added
   Scenario: The review surface switches configure without a request
     Given a configured provider with candidate "df -h"
-    And the persisted review surface is enabled
+    When I run watn without a request with --review-panel on a clean machine
+    Then the exit status should be 0
+    And the command-output channel should remain empty
+    And no review configuration should be written
+    Given the persisted review surface is enabled
     When I run watn without a request with --no-review-panel
     Then the exit status should be 0
     And the command-output channel should remain empty

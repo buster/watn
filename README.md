@@ -121,14 +121,18 @@ confirmation.
 
 ### Review surface
 
-The review surface opens on the controlling terminal after a complete candidate:
-the command flow with exact stage text and a model-written purpose per stage,
-plus the review actions. Nothing reaches stdout unless you accept. Arrow keys
-move the selected stage; `Enter` or `a` accepts, `e` opens the command editor,
-`r` rejects and opens the model chooser, `c` cancels, `d` disables the surface
-permanently, and `Escape` closes without releasing anything. `--review-panel`
-and `--no-review-panel` persist the choice they set. Direct edits commit with
-`Enter`, discard with `Escape`, and still require final acceptance.
+The review surface opens on the controlling terminal after a complete candidate
+in a simple default view: the model name, the command flow as a stage stack with
+every part on its own row and its separator shown at the end of the preceding
+row, and the selected stage's short description. Arrow keys move the selected
+stage; `Enter` accepts, `d` or `?` switches to the detailed view, and `Escape`
+cancels. The detailed view adds the intent, the flow position, the command
+editor (`e`), the model chooser (`r`), and the full decision hints. `D` disables
+the surface permanently: watn ends, prints the current command, and names
+`watn --review-panel` on stderr. `--review-panel` and `--no-review-panel`
+persist the choice they set; without a question they only persist and exit.
+Direct edits commit with `Enter`, discard with `Escape`, and still require final
+acceptance.
 
 ### Shell shortcut
 

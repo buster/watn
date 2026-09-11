@@ -271,6 +271,32 @@ fn e2e_run_flag_only_disable(world: &mut WatnWorld) {
     super::run_binary_with_state(world, &["--no-review-panel"], Some(""));
 }
 
+fn e2e_persisted_config_path(world: &WatnWorld) -> std::path::PathBuf {
+    let xdg = world
+        .env_vars
+        .get("XDG_CONFIG_HOME")
+        .expect("isolated XDG_CONFIG_HOME");
+    std::path::Path::new(xdg).join("watn").join("config.toml")
+}
+
+#[when("I run watn without a request with --review-panel on a clean machine")]
+fn e2e_run_flag_only_clean_machine(world: &mut WatnWorld) {
+    super::ensure_test_env(world);
+    let path = e2e_persisted_config_path(world);
+    let _ = std::fs::remove_file(&path);
+    super::run_binary_with_state(world, &["--review-panel"], Some(""));
+}
+
+#[then("no review configuration should be written")]
+fn e2e_no_review_configuration(world: &mut WatnWorld) {
+    let path = e2e_persisted_config_path(world);
+    assert!(
+        !path.exists(),
+        "a clean machine must not create a review configuration, got {}",
+        path.display()
+    );
+}
+
 #[when("I run watn without a request with --review-panel")]
 fn e2e_run_flag_only_enable(world: &mut WatnWorld) {
     super::run_binary_with_state(world, &["--review-panel"], Some(""));

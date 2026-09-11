@@ -2945,6 +2945,11 @@ fn review_run_with_enable_flag(world: &mut WatnWorld, question: String) {
     super::run_binary_with_state(world, &["--review-panel", &question], None);
 }
 
+#[when(expr = "I run watn with --review-panel and the piped request {string}")]
+fn review_run_with_enable_flag_and_stdin(world: &mut WatnWorld, question: String) {
+    super::run_binary_with_state(world, &["--review-panel"], Some(&format!("{question}\n")));
+}
+
 #[when(expr = "I run watn with --no-review-panel for {string}")]
 fn review_run_with_disable_flag(world: &mut WatnWorld, question: String) {
     super::run_binary_with_state(world, &["--no-review-panel", &question], None);
