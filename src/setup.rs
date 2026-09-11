@@ -262,6 +262,7 @@ pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(
         let Some(choice) = choice else {
             continue;
         };
+        capture_catalog_price(&mut updated, &choice.model);
         match index {
             0 => {
                 updated.tiers.small = Some(choice.model.id.clone());

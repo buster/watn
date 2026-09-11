@@ -998,6 +998,57 @@ fn ephemeral_e2e_models_transport(world: &mut WatnWorld, models: String, path: S
         .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
 }
 
+#[given("the ephemeral E2E transport returns priced models:")]
+fn ephemeral_e2e_priced_models_transport(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let mut models = Vec::new();
+    let mut prices = Vec::new();
+    if let Some(table) = &step.table {
+        for row in table.rows.iter().skip(1) {
+            let model = row[0].clone();
+            let input: f64 = row[1].parse().expect("catalog input price per million");
+            let output: f64 = row[2].parse().expect("catalog output price per million");
+            models.push(model.clone());
+            prices.push((model, input, output));
+        }
+    }
+    world.pending_mock_returned_models = models.clone();
+    world.pending_mock_model_prices = prices.clone();
+    world.mock_server = MockServerWrap(Some(httpmock::MockServer::start()), None);
+    let (base_url, mock_id) = {
+        let server = world.mock_server.0.as_ref().expect("mock server");
+        let base_url = format!("http://127.0.0.1:{}", server.port());
+        let data: Vec<serde_json::Value> = models
+            .iter()
+            .map(|id| match prices.iter().find(|(model, _, _)| model == id) {
+                Some((_, input, output)) => serde_json::json!({
+                    "id": id,
+                    "pricing": {
+                        "prompt": format!("{}", input / 1_000_000.0),
+                        "completion": format!("{}", output / 1_000_000.0)
+                    }
+                }),
+                None => serde_json::json!({"id": id}),
+            })
+            .collect();
+        let mock_id = server
+            .mock(|when, then| {
+                when.method(httpmock::Method::GET).path("/models");
+                then.status(200)
+                    .header("Content-Type", "application/json")
+                    .body(serde_json::json!({"data": data}).to_string());
+            })
+            .id;
+        (base_url, mock_id)
+    };
+    world.models_mock_id = Some(mock_id);
+    world
+        .pending_config
+        .insert("e2e_models_mock".to_string(), mock_id.to_string());
+    world
+        .env_vars
+        .insert("WATN_TEST_ENDPOINT_OVERRIDE".to_string(), base_url);
+}
+
 #[when(regex = r#"^I start `watn provider` in a terminal$"#)]
 fn start_provider_in_terminal(world: &mut WatnWorld) {
     let session = start_pty_session(world, &["provider"]);

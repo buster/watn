@@ -2,7 +2,7 @@
 
 Feature: Streamlined setup flow
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Coordinated setup completes provider models reasoning and shell choices
     Given  no config file exists
     And  no supported provider environment variable is set

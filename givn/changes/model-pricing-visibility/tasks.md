@@ -108,22 +108,24 @@ same normalized price as the list. Added scenario.
   subset of `verify.command` via its `@e2e and not @wip` tag filter.
 
   Evidence (full-run vs e2e-run scenario counts, e2e strictly less):
-  _pending_
+  `./run-tests.sh` → `22 features, 221 scenarios (221 passed)`, exit 0.
+  `./run-tests.sh --e2e` → `24 features, 88 scenarios (88 passed)`, exit 0.
+  88 < 221, tag filter proven.
 
 ## Scenario: Models setup configures all three roles from an available catalog
 
 Capability `streamlined-setup`. Use-case guarantee: Main flow 4 across the
 focused model write path. Modified `@e2e` scenario.
 
-- [ ] RED — remove `@wip` from this scenario only; run e2e targeted; the
+- [x] RED — remove `@wip` from this scenario only; run e2e targeted; the
       priced given and pricing assertions must fail non-zero.
-      Evidence: _pending_
-- [ ] GREEN — production: `apply_models_result` calls
+      Evidence: `./run-tests.sh --e2e --name "Models setup configures all three roles from an available catalog"` → `2 scenarios (1 passed, 1 failed)`, `expected pricing for 'small-model', got: {}`, exit 1.
+- [x] GREEN — production: `apply_models_result` calls
       `capture_catalog_price`; tests: priced-catalog given and config
-      assertion steps drive the real PTY flow. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT — `test(e2e): Models setup configures all three roles from an available catalog`.
-      Hash: _pending_
+      assertion steps drive the real PTY flow. Evidence: targeted run → `2 scenarios (2 passed)`, `25 steps (25 passed)`, exit 0. Files: `src/setup.rs`, `specs/streamlined-setup/streamlined-setup.feature`.
+- [x] REFACTOR — no behavior change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0.
+- [x] COMMIT — `test(e2e): Models setup configures all three roles from an available catalog`.
+      Hash: 10667bf
 
 ## Scenario: Coordinated setup completes provider models reasoning and shell choices
 
