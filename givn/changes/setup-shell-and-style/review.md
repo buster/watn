@@ -104,13 +104,21 @@ ownership matches the proposal routing; no Persona was invented or promoted.
 
 ## Overlap dispositions
 
-| Finding pair | Decision | Rationale |
+| Scenario A | Scenario B | Disposition |
 |---|---|---|
-| `Shell setup independently configures completion and Ctrl-W integrations` ↔ `Detected shells are preselected on the shell pages` | variant | The first proves independent install outcomes; the second proves PATH preselection markers and accept-all behavior on the same action. |
-| `Declining shell setup performs no target inspection or write` (removed) ↔ `Declining shell setup writes no shell target` (added) | boundary | Supersession: the contract is corrected from "no inspection" (preselection always reads managed blocks) to "no write or creation", and the new scenario drives the real wizard. |
-| `The green border follows optional shortcut focus` (removed) ↔ `The green border follows the shell lists` (added) | boundary | Supersession: the question-to-list transition no longer exists; the replacement asserts focus on both shell lists. |
-| `A managed shell without a binary stays selected` ↔ `Shell setup independently configures completion and Ctrl-W integrations` | variant | Distinct invariant: managed-block preselection when `PATH` detection is empty. |
-| Permanent and delta scenarios sharing a title | duplicate | The `@givn.modified` merge mechanism runs both during the change; archive replaces the permanent body. |
+| Shell setup independently configures completion and Ctrl-W integrations | Detected shells are preselected on the shell pages | variant |
+| Declining shell setup performs no target inspection or write | Declining shell setup writes no shell target | boundary |
+
+The first pair is a variant: the independent-configuration scenario proves
+selective install outcomes, while the preselection scenario proves PATH marker
+state and accept-all behavior for the same action. The second pair is a
+removed/added supersession: the contract is corrected from "no inspection"
+(preselection always reads managed blocks) to "no write or creation", and the
+replacement drives the real wizard. The highlight-focus replacement
+(`The green border follows the shell lists`) is a subset-boundary supersession
+of the retired question-to-list scenario, and
+`A managed shell without a binary stays selected` is a variant covering
+managed-block preselection when PATH detection is empty; both are retained.
 
 ## Split-or-keep
 
