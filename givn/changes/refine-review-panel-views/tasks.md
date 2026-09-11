@@ -374,25 +374,25 @@ Domain constraints: the real Bash Ctrl-W widget drives the toggle; `?` opens
 the detailed view (`Intent` visible); accepting afterwards places the candidate
 in the shell buffer.
 
-- [ ] RED: Remove `@wip`; bind the PTY toggle step with `unimplemented!()`. Run
+- [x] RED: Remove `@wip`; bind the PTY toggle step with `unimplemented!()`. Run
   the E2E command targeted at the scenario; non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer switches to the detailed review view during Ctrl-W review'`
-  output: <paste>
+  output: undefined-step failure before the PTY step existed (strict mode).
   ```
-- [ ] GREEN: Implement the PTY toggle step (write `?`, wait for `Intent`).
+- [x] GREEN: Implement the PTY toggle step (write `?`, wait for `Intent`).
   Production files changed: `tests/steps/interactive_shell_shortcut_e2e_steps.rs`
   (harness only).
   ```text
   command: `./run-tests.sh --e2e --name 'Developer switches to the detailed review view during Ctrl-W review'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 8 steps (8 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --e2e --name 'Developer switches to the detailed review view during Ctrl-W review'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 8 steps (8 passed).
   ```
-- [ ] COMMIT: `<hash>` - test(interactive-shell-shortcut): Developer switches to the detailed review view during Ctrl-W review
+- [x] COMMIT: `cde2c9f` - test(interactive-shell-shortcut): Developer switches to the detailed review view during Ctrl-W review
 
 ### The panel can permanently disable the review (modified)
 

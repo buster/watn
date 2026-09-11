@@ -136,14 +136,14 @@ Feature: Refined review panel views
     And the command stack should mark the selected stage "a" with an arrow
     And arrow navigation should reach every command-flow stage
 
-  @e2e @givn.added @wip
+  @e2e @givn.added
   Scenario: Developer switches to the detailed review view during Ctrl-W review
     Given an installed Bash shortcut and a provider candidate for "inspect recent log changes"
     And the candidate has a visible command flow with model-written stage purposes
     When I invoke Ctrl-W with current input "inspect recent log changes"
     And I switch to the detailed view in the review surface
-    Then the detailed review should show the intent
-    And the detailed review should show the stage navigation hint
+    Then the review surface should show the detailed view
+    And the review surface should show the stage navigation hint
     When I accept the selected candidate in the review surface
     Then the Bash command line should contain the accepted candidate
 

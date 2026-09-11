@@ -174,6 +174,32 @@ impl Cli {
     }
 }
 
+/// A review-panel switch without a question only persists the setting; a clean
+/// machine keeps its first-run onboarding path untouched.
+fn apply_review_switch(enabled: bool) -> ! {
+    if !watn::config::config_file_exists() {
+        eprintln!(
+            "review surface {} by default; no configuration to update",
+            if enabled { "enabled" } else { "disabled" }
+        );
+        std::process::exit(0);
+    }
+    match watn::config::persist_review_panel(enabled) {
+        Ok(()) => {
+            eprintln!(
+                "review surface {}",
+                if enabled { "enabled" } else { "disabled" }
+            );
+            std::process::exit(0);
+        }
+        Err(error) => {
+            let code = exit_code(&error);
+            eprintln!("{error}");
+            std::process::exit(code);
+        }
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -191,10 +217,24 @@ fn main() {
         return;
     }
 
+    let mut pending_stdin_question: Option<String> = None;
+    if cli.question.is_empty() && (cli.review_panel || cli.no_review_panel) {
+        if std::io::stdin().is_terminal() {
+            apply_review_switch(cli.review_panel);
+        }
+        let mut buf = String::new();
+        std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf).unwrap_or_default();
+        if buf.trim().is_empty() {
+            apply_review_switch(cli.review_panel);
+        }
+        pending_stdin_question = Some(buf.trim().to_string());
+    }
+
     let question = match &cli.question {
         q if !q.is_empty() => q.join(" "),
-        _ => {
-            if !std::io::stdin().is_terminal() {
+        _ => match pending_stdin_question {
+            Some(question) => question,
+            None if !std::io::stdin().is_terminal() => {
                 let mut buf = String::new();
                 std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf).unwrap_or_default();
                 if buf.trim().is_empty() {
@@ -203,12 +243,13 @@ fn main() {
                     std::process::exit(1);
                 }
                 buf.trim().to_string()
-            } else {
+            }
+            None => {
                 eprintln!("Usage: watn <question>");
                 eprintln!("   or: echo \"question\" | watn");
                 std::process::exit(1);
             }
-        }
+        },
     };
 
     let mut config = match load_config() {
@@ -766,11 +807,13 @@ fn run_review_path(
                 std::process::exit(0);
             }
             Ok(watn::review::PanelOutcome::DisableReviewPermanently) => {
+                let command = panel.state.candidate().command.clone();
                 match watn::config::persist_review_panel(false) {
                     Ok(()) => {
                         let _ = panel.finish();
+                        println!("{command}");
                         eprintln!(
-                            "review surface disabled; enable it again with --review-panel or [review] panel = true"
+                            "review surface disabled — re-enable with: watn --review-panel"
                         );
                         std::process::exit(0);
                     }

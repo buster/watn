@@ -208,6 +208,83 @@ fn e2e_accept_candidate(world: &mut WatnWorld) {
     let _ = finish_pty_session(world, session);
 }
 
+#[when("I switch to the detailed view in the review surface")]
+fn e2e_switch_to_detailed_view(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("PTY session");
+    pty_wait_for_label(session, "⏎");
+    pty_write(session, "?");
+    pty_wait_for_label(session, "Intent");
+}
+
+#[then("the review surface should show the detailed view")]
+fn e2e_shows_detailed_view(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("PTY session");
+    let output = super::pty_snapshot(session);
+    assert!(
+        output.contains("Intent"),
+        "the detailed view should show Intent, got: {output:?}"
+    );
+}
+
+#[then("the review surface should show the stage navigation hint")]
+fn e2e_shows_stage_navigation_hint(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("PTY session");
+    let output = super::pty_snapshot(session);
+    assert!(
+        output.contains("↑↓") && output.contains("stage"),
+        "the detailed view should name the stage navigation, got: {output:?}"
+    );
+}
+
+#[when("I press the disable-review decision in the review surface")]
+fn e2e_press_disable(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("e2e direct PTY session");
+    pty_write(session, "D");
+    let session = world.pty_session.take().expect("e2e direct PTY session");
+    let _ = finish_pty_session(world, session);
+    if let Some(path) = &world.review.stdout_path {
+        world.review.command_output = std::fs::read_to_string(path).unwrap_or_default();
+    }
+}
+
+#[then("watn should exit successfully")]
+fn e2e_exit_successfully(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(0),
+        "watn should exit successfully, got {:?}",
+        world.exit_status
+    );
+}
+
+#[then(expr = "the terminal should show {string}")]
+fn e2e_terminal_shows(world: &mut WatnWorld, needle: String) {
+    let output = world.output.as_deref().unwrap_or_default();
+    assert!(
+        output.contains(&needle),
+        "the terminal should show {needle:?}, got: {output:?}"
+    );
+}
+
+#[when("I run watn without a request with --no-review-panel")]
+fn e2e_run_flag_only_disable(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["--no-review-panel"], Some(""));
+}
+
+#[when("I run watn without a request with --review-panel")]
+fn e2e_run_flag_only_enable(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["--review-panel"], Some(""));
+}
+
+#[then("the command-output channel should remain empty")]
+fn e2e_output_channel_empty(world: &mut WatnWorld) {
+    assert_eq!(
+        world.output.as_deref().unwrap_or_default(),
+        "",
+        "the command-output channel must stay empty"
+    );
+}
+
 #[then("the Bash command line should contain the accepted candidate")]
 fn e2e_bash_line_contains_candidate(world: &mut WatnWorld) {
     assert!(
