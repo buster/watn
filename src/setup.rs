@@ -246,6 +246,12 @@ pub fn run_with_config(
     result
 }
 
+pub fn capture_catalog_price(config: &mut Config, entry: &ModelEntry) {
+    if let Some(pricing) = &entry.pricing {
+        config.pricing.insert(entry.id.clone(), pricing.clone());
+    }
+}
+
 pub fn apply_result(config: &mut Config, result: &SetupWizardResult) -> Result<(), Error> {
     let mut updated = config.clone();
     config::update_provider_draft(&mut updated, &result.provider);

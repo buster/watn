@@ -6,7 +6,7 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
 
 ## Setup
 
-- [ ] Confirm the runner and strict mode.
+- [x] Confirm the runner and strict mode.
 
   `givn/commands.yaml` already declares `verify.command: "./run-tests.sh"`
   and `verify.e2e_command: "./run-tests.sh --e2e"`. Strict mode is
@@ -19,7 +19,8 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
   `tests/steps/provider_setup_steps.rs`.
 
   Evidence (proof of strictness — undefined step must exit non-zero):
-  _pending_
+  `./run-tests.sh --name "Non-terminal model assignment records catalog prices"`
+  → `1 scenario (1 failed)`, `Step doesn't match any function`, `exit status: 1`.
 
 ---
 
@@ -29,18 +30,18 @@ Capability `models`. Use-case guarantees: Main flow 1–2 (discover, assign),
 display of the chosen model metadata. Modified scenario in
 `specs/models/models.feature`.
 
-- [ ] RED — remove `@wip` from this scenario only; run it targeted. Undefined
+- [x] RED — remove `@wip` from this scenario only; run it targeted. Undefined
       steps (the added `stderr should not contain "$-"` assertion) must fail
-      non-zero. Evidence: _pending_
-- [ ] GREEN — production: `src/models/list.rs` (single parse path, per-token
+      non-zero. Evidence: `./run-tests.sh --name "Model picker shows metadata when available"` → `2 scenarios (1 passed, 1 failed)`, exit 1; failure: expected `$0.15/1M in, $0.60/1M out`, got `$0.15/1K in, $0.60/1K out`.
+- [x] GREEN — production: `src/models/list.rs` (single parse path, per-token
       to $/1M normalization, both-components rule, six-decimal rounding) and
       `src/models/mod.rs` (per-1M `format_model_entry`). Tests: rich fixture
       per-token values, sentinel and bare rows, new stderr assertion.
-      Evidence: _pending_
-- [ ] REFACTOR — dedupe `fetch_models` onto `parse_model_data`; no behavior
-      change. Evidence: _pending_
-- [ ] COMMIT — `feat(models): Model picker shows metadata when available`.
-      Hash: _pending_
+      Evidence: `./run-tests.sh --name "Model picker shows metadata when available"` → `2 scenarios (2 passed)`, `8 steps (8 passed)`, exit 0. Files: `src/models/list.rs`, `src/models/mod.rs`, `tests/steps/ask_steps.rs`, `specs/models/models.feature`.
+- [x] REFACTOR — dedupe `fetch_models` onto `parse_model_data`; no behavior
+      change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0; `cargo test --lib` → `86 passed`.
+- [x] COMMIT — `feat(models): Model picker shows metadata when available`.
+      Hash: 5366fff
 
 ## Scenario: Non-terminal model assignment records catalog prices
 

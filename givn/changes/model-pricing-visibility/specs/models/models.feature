@@ -10,7 +10,7 @@ Feature: Model explorer
     And  stderr should contain "$0.15/1M in, $0.60/1M out"
     And  stderr should not contain "$-"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-terminal model assignment records catalog prices
     Given  a configured provider "test" with models endpoint returning rich metadata
     And  the config file records pricing for "model-a" at 9.99 input and 9.99 output per million tokens

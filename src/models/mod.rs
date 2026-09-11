@@ -110,6 +110,9 @@ pub fn run_models_result(
         thinking: Some(thinking.id.clone()),
         reasoning,
     };
+    for entry in [&small, &normal, &thinking] {
+        crate::setup::capture_catalog_price(&mut updated, entry);
+    }
 
     if let Err(e) = save_config(&updated) {
         return ModelSetupResult::Failed(e);

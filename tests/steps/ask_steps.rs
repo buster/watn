@@ -159,6 +159,18 @@ fn pricing_configured_given(w: &mut WatnWorld) {
     w.pending_mock_usage = Some(true);
 }
 
+#[given(expr = "the config file records pricing for {string} at {float} input and {float} output per million tokens")]
+fn config_records_pricing_given(w: &mut WatnWorld, model: String, input: f64, output: f64) {
+    let raw = w.raw_config.get_or_insert_with(String::new);
+    if !raw.contains("[pricing]") {
+        raw.push_str("\n\n[pricing]");
+    }
+    raw.push_str(&format!(
+        "\n\"{}\" = {{ input = {}, output = {} }}",
+        model, input, output
+    ));
+}
+
 #[given("no config file exists")]
 fn no_config_file(w: &mut WatnWorld) {
     w.pending_mock_no_config_file = true;
@@ -844,6 +856,47 @@ fn config_contains_tier_assignments(w: &mut WatnWorld) {
         content.contains("thinking = \""),
         "config should have thinking tier, got: {}",
         content
+    );
+}
+
+fn stored_config(w: &WatnWorld) -> watn::config::types::Config {
+    let dir = w.temp_dir.as_ref().expect("no temp dir");
+    let config_path = dir.path().join("watn").join("config.toml");
+    let content = std::fs::read_to_string(&config_path).expect("config file should exist");
+    toml::from_str(&content).expect("parse config")
+}
+
+#[then(expr = "the config file should record pricing for {string} at {float} input and {float} output per million tokens")]
+fn config_should_record_pricing(w: &mut WatnWorld, model: String, input: f64, output: f64) {
+    let config = stored_config(w);
+    let pricing = config
+        .pricing
+        .get(&model)
+        .unwrap_or_else(|| panic!("expected pricing for '{}', got: {:?}", model, config.pricing));
+    assert!(
+        (pricing.input - input).abs() < 1e-9,
+        "expected input {} for '{}', got {}",
+        input,
+        model,
+        pricing.input
+    );
+    assert!(
+        (pricing.output - output).abs() < 1e-9,
+        "expected output {} for '{}', got {}",
+        output,
+        model,
+        pricing.output
+    );
+}
+
+#[then(expr = "the config file should not record pricing for {string}")]
+fn config_should_not_record_pricing(w: &mut WatnWorld, model: String) {
+    let config = stored_config(w);
+    assert!(
+        !config.pricing.contains_key(&model),
+        "expected no pricing for '{}', got: {:?}",
+        model,
+        config.pricing
     );
 }
 
