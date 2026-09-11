@@ -42,7 +42,7 @@ Feature: Quick setup parameters
     And the config file should contain normal model "google/gemini-3.7-flash"
     And the config file should contain thinking model "google/gemini-3.7-flash"
 
-  @e2e @givn.added @wip
+  @e2e @givn.added
   Scenario: Tier parameters override the shared model prefill
     Given no watn configuration exists
     And provider requests are captured by a sentinel
