@@ -861,6 +861,20 @@ mod tests {
     }
 
     #[test]
+    fn flow_strip_marks_a_non_selected_unsupported_stage() {
+        let mut state = state();
+        state.candidate = ReviewCandidate::from_command("printf one; cat < input");
+        state.flow_stage = 0;
+        state.details = true;
+        let lines = render_card_lines(&state, InlineLayout::for_dimensions(100, 40), true);
+        let joined = lines.join("\n");
+        assert!(
+            joined.contains("\u{1b}[38;5;214m2\u{1b}[0m"),
+            "a non-selected unsupported stage keeps the amber flow number, got:\n{joined}"
+        );
+    }
+
+    #[test]
     fn a_narrow_stack_windows_around_the_selected_stage() {
         let mut state = state();
         state.candidate =

@@ -158,7 +158,7 @@ Feature: Refined review panel views
     And the terminal should show "watn --review-panel"
     And watn should exit successfully
 
-  @givn.added @wip
+  @givn.added
   Scenario: A review switch keeps a piped request
     Given a configured provider with candidate "df -h"
     And the persisted review surface is disabled
