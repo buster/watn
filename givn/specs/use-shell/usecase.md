@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:d3bebbeb57b99ff9c464150b0b8459b7cbe05f035747c47f0206948ebc25ff84 -->
+<!-- givn:base-sha256:f2609f0901b7a0885364127404f4f04e3d26d36e6955d607cc73321c9a70284f -->
 # Use case: use-shell
 
 ## Level
@@ -35,7 +35,7 @@ command request.
    transient review surface after the candidate exists.
 4. Show the candidate's command flow, exact stage text, and model-written stage
    purposes or purpose-unavailable status.
-5. Let the developer inspect the command flow, accept, edit at the insertion point, reject and regenerate with another model, cancel, rephrase, escalate, or interrupt an in-progress operation.
+5. Let the developer inspect the command flow in a simple or detailed view, accept, edit at the insertion point, reject and regenerate with another model, cancel, rephrase, escalate, or interrupt an in-progress operation.
 6. Require explicit final acceptance before releasing a candidate.
 7. Route the accepted candidate to the existing consumer: replace the shell
    buffer for Ctrl-W, use the existing command-output channel for direct paths,
@@ -56,6 +56,8 @@ command request.
 - The review surface is small, transient, and inline; it does not switch to a full-screen alternate-screen interface.
 - The existing progress line appears before the review surface.
 - The review surface is enabled by default, configurable persistently, overridable per invocation, and may select an enhanced presentation adapter automatically.
+- The review surface opens in a simple view that names only the model, stacks the command-flow stages with their separators, and shows the selected stage's purpose; a direct shortcut switches to the detailed view and back.
+- Permanently disabling the review releases the current candidate to the command-output channel, tells the developer how to re-enable it, and ends the invocation; the review-panel switches without a request only persist the setting.
 - Eligible review output is buffered until final acceptance.
 - Review decisions are direct shortcuts; the command flow is active when the card opens and Enter accepts the current candidate.
 - Review-surface text is rendered through the controlling-terminal channel; accepted command text remains the only command-output channel content.
@@ -67,7 +69,7 @@ command request.
 ## Examples
 
 - Ctrl-W records the original request as a history comment and replaces the buffer with the accepted candidate.
-- A complex `git log | xargs git show && printf` candidate shows its stages and purposes in the review surface.
+- A complex `git log | xargs git show && printf` candidate shows its stages and purposes in the simple review view and in the detailed view.
 - A cancelled review preserves the original buffer and history.
 - Rephrasing replaces the visible active intent and starts a new candidate cycle; the prior intent remains only in current-review history.
 - Rejecting a candidate opens a model chooser with the configured tiers, a model field, and provider catalog suggestions; choosing one regenerates the candidate.
@@ -105,6 +107,9 @@ evaluation.
 | interactive-shell-shortcut | inspect generated Bash widget | The generated Bash widget keeps the request visible and does not evaluate the command |
 | interactive-shell-shortcut | use Fish Ctrl-W shortcut | Fish replaces the buffer with the generated command after Ctrl-W |
 | interactive-shell-shortcut | review and accept a generated candidate from Ctrl-W | Developer accepts an explained candidate from Ctrl-W |
+| interactive-shell-shortcut | switch to the detailed review view during a Ctrl-W review | Developer switches to the detailed review view during Ctrl-W review |
+| interactive-shell-shortcut | disable the review surface from a candidate review | The panel can permanently disable the review |
+| interactive-shell-shortcut | configure the review surface from the command line without a request | The review surface switches configure without a request |
 | interactive-shell-shortcut | cancel a candidate review from Ctrl-W | Developer cancels a review without changing the shell buffer |
 | interactive-shell-shortcut | review and accept a direct interactive request | Developer accepts a candidate from an interactive terminal request |
 | interactive-shell-shortcut | review and execute an accepted eligible -x candidate | Developer accepts an eligible -x candidate and it executes once |

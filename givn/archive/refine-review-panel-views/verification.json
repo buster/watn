@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "change": "refine-review-panel-views",
+  "status": "pending",
+  "candidate_commit": null,
+  "tested_commit": null,
+  "scopes": {},
+  "coverage": null,
+  "started_at_unix": 1789105412,
+  "finished_at_unix": null
+}
