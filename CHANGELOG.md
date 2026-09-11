@@ -6,6 +6,55 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-11
+
+### Bug Fixes
+
+- **interactive-shell-shortcut:** Keep the raw candidate visible in the stage stack
+
+
+### Features
+
+- **interactive-shell-shortcut:** The simple review view names only the model without provider or tier
+
+- **interactive-shell-shortcut:** The simple view stacks the command flow with its separators
+
+- **interactive-shell-shortcut:** A long stage continues on the next stack rows and keeps its separator
+
+- **interactive-shell-shortcut:** The selected stage is marked and its purpose follows the arrow keys
+
+- **interactive-shell-shortcut:** The purpose below the stack is marked and readable
+
+- **interactive-shell-shortcut:** The view toggle switches between the simple and detailed reviews
+
+- **interactive-shell-shortcut:** A stage longer than the stack window is truncated with a marker
+
+- **interactive-shell-shortcut:** A narrow terminal keeps the inline review bounded and readable
+
+- **interactive-shell-shortcut:** The panel can permanently disable the review
+
+- **interactive-shell-shortcut:** The review surface switches configure without a request
+
+- **interactive-shell-shortcut:** Unsupported command flow remains reviewable without a marker
+
+- **interactive-shell-shortcut:** The review card stops advertising cancel
+
+- **interactive-shell-shortcut:** The detailed view drops the flow and stage rows
+
+- **interactive-shell-shortcut:** The panel reports its disable clearly
+
+- **quicksetup:** Quick setup documents its parameters in help
+
+- **quicksetup:** Quick setup parameters prefill the dialog
+
+- **quicksetup:** A small-model parameter seeds the remaining tiers
+
+- **quicksetup:** Tier parameters override the shared model prefill
+
+- **interactive-shell-shortcut:** The review card exposes the enter accept and disable-review wording
+
+- **interactive-shell-shortcut:** The detailed view shares the simple command block
+
 ## [0.3.3] - 2026-09-10
 
 ### Bug Fixes
@@ -724,3 +773,5 @@ Bright fireant
 [0.3.1]: https://github.com/buster/watn/compare/v0.3.0...v0.3.1
 
 [0.3.3]: https://github.com/buster/watn/compare/v0.3.2...v0.3.3
+
+[0.4.0]: https://github.com/buster/watn/compare/v0.3.3...v0.4.0
