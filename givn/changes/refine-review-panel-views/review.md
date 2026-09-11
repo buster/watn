@@ -86,11 +86,26 @@ UBIQUITOUS LANGUAGE: CLEAN
 
 ## Overlap dispositions
 
-| Finding pair | Decision | Disposition |
+| Scenario A | Scenario B | Disposition |
 |---|---|---|
-| `Developer switches to the detailed review view during Ctrl-W review` vs `Developer accepts an explained candidate from Ctrl-W` | variant | The shared prefix is the Ctrl-W invoke; the toggle scenario adds the `?` decision, the `Intent` assertion, and the navigation hint, and is the inventory evidence for the view-switch action |
-| `Developer rejects a candidate and regenerates with another model` vs `The panel can permanently disable the review` | boundary | They share only generic direct-request setup; one rejects and regenerates, the other disables, releases, and exits. Different side effects and outcomes |
-| Removed `The card shows one stage at a time and moves stages with the arrow keys` vs added stack scenarios | supersession | The stack scenarios own the new observable contract: all stages visible, selected stage marked, purpose follows navigation; the removed scenario's single-stage claim is no longer true |
+| Enabling the review panel from the command line persists it | A review switch keeps a piped request | variant |
+
+The shape match shares only the flag-plus-request setup; the piped scenario
+proves a stdin question is not swallowed by the flag-only branch, while the
+positional scenario proves the flag persists before generation.
+
+Two advisory subset notices remain and are accepted as boundaries: "Developer
+switches to the detailed review view during Ctrl-W review" is a subset shape of
+"Developer accepts an explained candidate from Ctrl-W" but adds the `?`
+decision and the detailed-view assertions; "Developer rejects a candidate and
+regenerates with another model" shares only generic direct-request setup with
+"The panel can permanently disable the review", which disables, releases, and
+exits.
+
+Removed+added: the removed "The card shows one stage at a time and moves stages
+with the arrow keys" is superseded by the added stack scenarios, which own the
+new observable contract (all stages visible, selected stage marked, purpose
+follows navigation).
 
 ## Split-or-keep
 
