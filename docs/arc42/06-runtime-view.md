@@ -141,7 +141,7 @@ split then becomes the displayed Command flow. The card opens in a simple view
 that names the model short name, stacks the command flow with separators and a
 selected-stage arrow, and shows the selected stage's marked purpose below the
 stack; `d` or `?` switches to the detailed view and back. Arrows move stages in
-both views, Enter or `a` accepts, `e` edits in the detailed view, `r` rejects in
+both views, Enter accepts, `e` edits in the detailed view, `r` rejects in
 the detailed view, and `c` or Escape cancels. Rejecting opens the model chooser with the configured tiers,
 a typed model field, and provider-catalog suggestions that load without
 blocking; choosing a tier or model regenerates the Candidate and returns to the

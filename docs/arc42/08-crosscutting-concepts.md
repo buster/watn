@@ -136,15 +136,15 @@ because the shell widget captures stdout as the command-output channel. The
 surface restores cursor visibility, raw input mode, and occupied rows before
 returning control to the shell line editor.
 
-Review decisions are explicit: the card opens on the command flow, Enter or `a`
-accepts, `e` edits, `r` rejects, `c` or Escape cancels, and `d` disables
-permanently. Direct edits preserve the original Intent and refresh Command flow
+Review decisions are explicit: the card opens on the command flow, Enter
+accepts, `e` edits, `r` rejects, `c` or Escape cancels, `d`/`?` switches
+the view, and `D` disables the review. Direct edits preserve the original Intent and refresh Command flow
 and Purpose status. Rejection releases nothing and opens the model chooser;
 choosing a configured tier or a typed or catalog-suggested model regenerates the
 Candidate, and a failed regeneration keeps the previous Candidate and reports
 the failure. Cancellation and failure preserve input; review display and buffer
 replacement never evaluate a Candidate. A card that cannot open returns `Unavailable` and releases no
-Candidate. A `d` decision inside the card writes `[review] panel = false`
+Candidate. A `D` decision inside the card writes `[review] panel = false`
 through the atomic configuration save path. A set `--review-panel` or
 `--no-review-panel` override records the same setting before generation, so the
 last chosen preference survives; a failed write warns without changing the
@@ -170,9 +170,9 @@ The review card paints colors only when the terminal supports them
 otherwise the same card renders monochrome. Color is presentation only and
 never changes command, stage, or purpose text.
 
-The exact keyboard contract uses three focus regions: `Flow`, `Candidates`, and
-`Actions`. Tab cycles forward, Shift-Tab cycles backward, arrows navigate within
-the focused region, and Enter activates. Escape cancels the review. A separate
+The exact keyboard contract has no focus regions: the stage stack is active
+when the card opens, arrows move the selected stage, Enter accepts, Escape (or
+`c`) cancels, `d`/`?` toggles the view, and `D` disables the review. A separate
 command editor uses Enter to commit and Escape to discard; those editor keys do
 not accept or cancel the review.
 
