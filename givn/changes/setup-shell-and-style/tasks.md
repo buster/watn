@@ -15,148 +15,164 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
   failed/skipped. The runner filters `@givn.removed` scenarios before
   execution, so removed permanent scenarios do not run during this change.
 
-  Evidence (undefined step must exit non-zero):
-  `./run-tests.sh --name "Detected shells are preselected on the shell pages"` before implementation → `Step doesn't match any function`, exit 1.
+  Evidence (undefined step exits non-zero):
+  `./run-tests.sh --name "Detected shells are preselected on the shell pages"`
+  before implementation → `Step doesn't match any function`, exit 1.
 
 ---
 
 ## Scenario: Detected shells are preselected on the shell pages
 
-Capability `streamlined-setup`. Core behavior: list-first pages, PATH
-preselection, `●`/`○` markers, Enter applies.
-
-- [x] RED — remove `@wip` (none: added scenarios run when implemented); run
-      targeted; new givens/steps must fail non-zero. Evidence: undefined given, exit 1 (setup proof run).
-- [ ] GREEN — production: remove `ShellInstallFocus`, list-first key handling,
+- [x] RED — run targeted; new givens/steps undefined, exit 1. Evidence: setup
+      proof run above.
+- [x] GREEN — production: removed `ShellInstallFocus`, list-first key handling,
       preselection from `shells_available_on_path` plus managed blocks,
-      `enabled` at advance, `●`/`○` shell markers, delete
-      `ShellEnvironment::detected_shells`; tests: PATH-fixture given, isolated
-      HOME/XDG and `NO_COLOR` handling in `start_pty_command`, new shell steps
-      in `streamlined_setup_steps.rs`. Evidence: _pending_
-- [x] REFACTOR — removed the question key-inner helper with the focus enum; no behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`, exit 0; `cargo test --lib` → `86 passed`.
+      `enabled` at advance, `●`/`○` markers; tests: PATH-fixture given,
+      isolated HOME/XDG and `NO_COLOR` handling in `start_pty_command`, new
+      shell steps. Evidence: targeted run → `1 scenario (1 passed)`,
+      `13 steps (13 passed)`, exit 0. Files: `src/setup.rs`,
+      `tests/steps/mod.rs`, `tests/features_runner.rs`,
+      `tests/steps/streamlined_setup_steps.rs`,
+      `specs/configure-model/streamlined-setup.feature`.
+- [x] REFACTOR — removed the question key-inner helper with the focus enum; no
+      behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`,
+      exit 0; `cargo test --lib` → `86 passed`.
 - [x] COMMIT: feat(streamlined-setup): Detected shells are preselected on the shell pages — b6ba08e
 
 ## Scenario: Shell setup prefills installed integrations and removes only managed blocks when deselected
 
-Capability `streamlined-setup`. Modified scenario.
-
-- [ ] RED — run targeted; the list-first deselect flow must fail non-zero
-      before the step glue matches it. Evidence: _pending_
-- [ ] GREEN — deselect step toggles the preselected Bash row without a `y`;
-      managed block removal. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(streamlined-setup): Shell setup prefills installed integrations and removes only managed blocks when deselected — _pending_
+- [x] RED — mutation proof: forcing `enabled=false` leaves the managed block in
+      place and the scenario fails (`2 scenarios (2 failed)`, exit 1); restored
+      from git.
+- [x] GREEN — list-first deselect flow without `y`; managed block removal.
+      Evidence: targeted run → `2 scenarios (2 passed)`, `15 steps`, exit 0.
+      Production shared with b6ba08e; step glue in b6ba08e.
+- [x] REFACTOR — no behavior change. Evidence: targeted re-run → `2 scenarios
+      (2 passed)`, exit 0.
+- [x] COMMIT: feat(streamlined-setup): Shell setup prefills installed integrations and removes only managed blocks when deselected — b6ba08e, 20d1e59
 
 ## Scenario: Shell setup refuses malformed managed markers
 
-Capability `streamlined-setup`. Modified scenario.
-
-- [ ] RED — run targeted; `y`-based step must fail or mismatch.
-      Evidence: _pending_
-- [ ] GREEN — PATH `bash` fixture, toggle Bash off explicitly, Enter, malformed
-      report unchanged. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(streamlined-setup): Shell setup refuses malformed managed markers — _pending_
+- [x] RED — mutation proof: with `enabled=false` the malformed-marker error is
+      never reported and the scenario fails (`2 scenarios (2 failed)`, exit 1);
+      restored from git.
+- [x] GREEN — PATH `bash` fixture, explicit toggle-off, Enter, malformed
+      report. Evidence: targeted run → `2 scenarios (2 passed)`, `9 steps`,
+      exit 0. Production and step glue shared with b6ba08e.
+- [x] REFACTOR — no behavior change. Evidence: targeted re-run → `2 scenarios
+      (2 passed)`, exit 0.
+- [x] COMMIT: feat(streamlined-setup): Shell setup refuses malformed managed markers — b6ba08e
 
 ## Scenario: Declining shell setup writes no shell target
 
-Capability `streamlined-setup`. Added replacement for the removed
-inspection-phase scenario.
-
-- [ ] RED — run targeted; new given/steps undefined. Evidence: _pending_
-- [ ] GREEN — empty PATH, no blocks, `enabled=false` on both pages; drive
-      through Review; assert no target creation and unchanged config.
-      Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(streamlined-setup): Declining shell setup writes no shell target — _pending_
+- [x] RED — mutation proof: forcing every shell preselected creates
+      `home/.bashrc` and the scenario fails (`1 scenario (1 failed)`, exit 1);
+      restored from git.
+- [x] GREEN — empty PATH, no blocks, `enabled=false` on both pages, Review
+      confirm; no target creation, config unchanged. Evidence: targeted run →
+      `1 scenario (1 passed)`, `6 steps`, exit 0. Production shared with
+      b6ba08e; new givens/steps in b6ba08e.
+- [x] REFACTOR — no behavior change. Evidence: targeted re-run → `1 scenario
+      (1 passed)`, exit 0.
+- [x] COMMIT: feat(streamlined-setup): Declining shell setup writes no shell target — b6ba08e
 
 ## Scenario: A managed shell without a binary stays selected
 
-Capability `streamlined-setup`. Added scenario.
-
-- [ ] RED — run targeted; new steps undefined. Evidence: _pending_
-- [ ] GREEN — managed block alone drives preselection when PATH is empty.
-      Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(streamlined-setup): A managed shell without a binary stays selected — _pending_
+- [x] RED — mutation proof: ignoring managed blocks leaves Bash `○` and the
+      scenario fails (`1 scenario (1 failed)`, exit 1); restored from git.
+- [x] GREEN — managed block alone drives preselection with empty PATH.
+      Evidence: targeted run → `1 scenario (1 passed)`, `8 steps`, exit 0.
+      Production shared with b6ba08e.
+- [x] REFACTOR — no behavior change. Evidence: targeted re-run → `1 scenario
+      (1 passed)`, exit 0.
+- [x] COMMIT: feat(streamlined-setup): A managed shell without a binary stays selected — b6ba08e
 
 ## Scenario: Setup surfaces use the review visual language
 
-Capability `unified-setup-wizard`. Added scenario.
-
-- [ ] RED — run targeted; new style steps undefined. Evidence: _pending_
-- [ ] GREEN — `SetupInk`, dim default-foreground borders, `watn · setup`
+- [x] RED — targeted run before the style implementation → undefined style
+      step, exit 1.
+- [x] GREEN — `SetupInk`, dim default-foreground borders, `watn · setup`
       frame, `◆` active tab, `▶` markers, bold-key/dim-label hints, cyan
-      labels; tests in `setup_wizard_steps.rs` and the model-table step update
-      in `ask_steps.rs`. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(unified-setup-wizard): Setup surfaces use the review visual language — _pending_
+      labels; test steps in `setup_wizard_steps.rs` and the model-table marker
+      update in `ask_steps.rs`. Evidence: targeted run → `1 scenario
+      (1 passed)`, `6 steps`, exit 0.
+- [x] REFACTOR — removed the unused palette method and fixed affected test
+      assertions (reasoning label stripping, shell-removal cleanup, save-prompt
+      wording); full regular suite green. Evidence: `224 scenarios (224
+      passed)`.
+- [x] COMMIT: feat(unified-setup-wizard): Setup surfaces use the review visual language — ed39095
 
 ## Scenario: Setup warnings use amber attention markup
 
-Capability `unified-setup-wizard`. Added scenario.
-
-- [ ] RED — run targeted; warning markup step undefined. Evidence: _pending_
-- [ ] GREEN — validation and manual-catalog notices render `⚠` in amber; new
-      then-step. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(unified-setup-wizard): Setup warnings use amber attention markup — _pending_
+- [x] RED — full-run evidence: `Then the setup warning should be marked with
+      "⚠" in amber` failed as an undefined step before the binding existed.
+- [x] GREEN — manual-catalog notice and validation render `⚠` in indexed 214.
+      Evidence: targeted run → `1 scenario (1 passed)`, `3 steps`, exit 0.
+      Production shared with ed39095.
+- [x] REFACTOR — no behavior change.
+- [x] COMMIT: feat(unified-setup-wizard): Setup warnings use amber attention markup — ed39095
 
 ## Scenario: Setup renders readable text without color support
 
-Capability `unified-setup-wizard`. Added scenario.
-
-- [ ] RED — run targeted; color-capability given and assertion undefined.
-      Evidence: _pending_
-- [ ] GREEN — `SetupInk` returns default styles when
-      `terminal_supports_color` is false; harness `NO_COLOR` handling; assert
-      no indexed color sequences while `◆` remains. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: feat(unified-setup-wizard): Setup renders readable text without color support — _pending_
+- [x] RED — mutation proof: forcing `SetupInk::new(true)` emits indexed colors
+      under `NO_COLOR` and fails the indexed-color assertion; restored.
+- [x] GREEN — `SetupInk` returns default styles when
+      `terminal_supports_color` is false. Evidence: targeted run → `1 scenario
+      (1 passed)`, `5 steps`, exit 0. Production shared with ed39095.
+- [x] REFACTOR — no behavior change.
+- [x] COMMIT: feat(unified-setup-wizard): Setup renders readable text without color support — ed39095
 
 ---
 
 ## E2E setup
 
-- [ ] Confirm the e2e environment and filter.
+- [x] Confirm the e2e environment and filter.
 
   In-process `httpmock` twins, PTY at 120x40, isolated HOME/XDG in the child
-  env, prompt/catalog mocks. E2E step bindings for the shell flow live in
+  env, prompt/catalog mocks. E2E bindings live in
   `tests/steps/streamlined_setup_e2e_steps.rs` and
-  `tests/steps/highlight_active_setup_input_steps.rs`;
-  `verify.e2e_command` remains a strict subset of `verify.command`.
+  `tests/steps/highlight_active_setup_input_steps.rs`.
 
-  Evidence (full vs e2e scenario counts): _pending_
+  Evidence (full vs e2e scenario counts, e2e strictly less):
+  `./run-tests.sh` → `22 features, 224 scenarios (224 passed)`, exit 0.
+  `./run-tests.sh --e2e` → `26 features, 89 scenarios (89 passed)`, exit 0.
+  89 < 224, tag filter proven.
 
 ## Scenario: Shell setup independently configures completion and Ctrl-W integrations
 
-Capability `streamlined-setup`. Modified `@e2e` scenario.
-
-- [ ] RED — run e2e targeted; PATH fixture and list-first steps must fail.
-      Evidence: _pending_
-- [ ] GREEN — choose-Bash step clears other selected rows and keeps Bash;
-      choose-Zsh step toggles Zsh; Review confirm. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: test(e2e): Shell setup independently configures completion and Ctrl-W integrations — _pending_
+- [x] RED — e2e targeted before the step rewrite → both delta and permanent
+      fail (`Bash should contain a Watn-managed completion block`,
+      `2 scenarios (2 failed)`, exit 1).
+- [x] GREEN — `choose_only_shell` clears other selected rows, keeps Bash /
+      selects Zsh, Review confirm. Evidence: e2e targeted run → `2 scenarios
+      (2 passed)`, `21 steps`, exit 0.
+- [x] REFACTOR — no behavior change. Evidence: full e2e suite green.
+- [x] COMMIT: test(e2e): Shell setup independently configures completion and Ctrl-W integrations — df520cb
 
 ## Scenario: The green border follows the shell lists
 
-Capability `highlight-active-setup-input`. Added `@e2e` replacement.
-
-- [ ] RED — run e2e targeted; new focus steps undefined. Evidence: _pending_
-- [ ] GREEN — completion list and shortcut list both render the green focused
-      border; remove the question-focus step bindings. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT: test(e2e): The green border follows the shell lists — _pending_
+- [x] RED — e2e targeted; `I advance past the completion selection` undefined,
+      exit 1.
+- [x] GREEN — completion list and shortcut list both render the green focused
+      border; question-focus bindings removed. Evidence: e2e targeted run →
+      `1 scenario (1 passed)`, `14 steps`, exit 0.
+- [x] REFACTOR — removed the retired question/inactive step bindings and the
+      unused `detected_shells` helper and its test-only use-shell steps; full
+      suites green. Evidence: regular `224 passed`, e2e `89 passed`.
+- [x] COMMIT: test(e2e): The green border follows the shell lists — 8bb02b9
 
 ---
 
 ## Removals and final checks
 
-- [ ] Removed scenarios and dead steps cleaned: `@givn.removed` scenarios are
+- [x] Removed scenarios and dead steps cleaned: `@givn.removed` scenarios are
       filtered by the runner; step bindings used only by them are deleted from
       `interactive_shell_shortcut_steps.rs` and
-      `highlight_active_setup_input_steps.rs`. Evidence: _pending_
-- [ ] Full regular suite green: `./run-tests.sh`. Evidence: _pending_
-- [ ] Full e2e suite green: `./run-tests.sh --e2e`. Evidence: _pending_
-- [ ] No empty/no-op step bodies introduced. Evidence: _pending_
+      `highlight_active_setup_input_steps.rs`; `ShellEnvironment::detected_shells`
+      removed. Evidence: commit 8bb02b9; full suites green.
+- [x] Full regular suite green: `./run-tests.sh` → `22 features, 224 scenarios
+      (224 passed), 1377 steps`, exit 0.
+- [x] Full e2e suite green: `./run-tests.sh --e2e` → `26 features, 89 scenarios
+      (89 passed), 680 steps`, exit 0.
+- [x] No empty/no-op step bodies introduced: grep for `unimplemented!`/`todo!`
+      returns none in touched step files.

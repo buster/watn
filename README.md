@@ -150,10 +150,13 @@ acceptance.
 
 ### Shell shortcut
 
-Setup can install an optional Ctrl-W widget for Bash, Zsh, and Fish. It reads
-the current shell buffer, calls `watn -- "$question"`, records the question in
-shell history as a `#` comment, and replaces the buffer with the accepted
-command without evaluating it.
+Setup can install an optional Ctrl-W widget for Bash, Zsh, and Fish. The shell
+completion and Ctrl-W pages list the shells directly: every shell whose binary
+is on `PATH` (and every shell that already has a watn block) is preselected,
+Space toggles the highlighted shell, and Enter applies the shown selection. It
+reads the current shell buffer, calls `watn -- "$question"`, records the
+question in shell history as a `#` comment, and replaces the buffer with the
+accepted command without evaluating it.
 
 ## Configuration
 
