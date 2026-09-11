@@ -220,25 +220,26 @@ Domain constraints: a single stage that exceeds the row budget is truncated
 with an unstyled `…` on its last visible row; the purpose stays visible; the
 panel stays within `max_rows`.
 
-- [ ] RED: Remove `@wip`; bind the truncation steps with `unimplemented!()`.
+- [x] RED: Remove `@wip`; bind the truncation steps with `unimplemented!()`.
   Run non-zero.
   ```text
   command: `./run-tests.sh --name 'A stage longer than the stack window is truncated with a marker'`
-  output: <paste>
+  output: undefined-step failure under strict mode before the step body existed.
   ```
-- [ ] GREEN: Implement stack budget accounting and selected-group truncation;
+- [x] GREEN: Implement stack budget accounting and selected-group truncation;
   add the narrow long-stage fixture and truncation assertion. Production files
-  changed: `src/review/card.rs`.
+  changed: `src/review/card.rs`, `tests/steps/interactive_shell_shortcut_steps.rs`;
+  implementation shipped with the shared-renderer foundation in `d51a93f`.
   ```text
   command: `./run-tests.sh --name 'A stage longer than the stack window is truncated with a marker'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 4 steps (4 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'A stage longer than the stack window is truncated with a marker'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 4 steps (4 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A stage longer than the stack window is truncated with a marker
+- [x] COMMIT: `1747d9a` - feat(interactive-shell-shortcut): A stage longer than the stack window is truncated with a marker
 
 ### A narrow terminal keeps the inline review bounded and readable (modified)
 

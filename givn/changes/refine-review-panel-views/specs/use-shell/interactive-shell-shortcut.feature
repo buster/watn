@@ -75,7 +75,7 @@ Feature: Refined review panel views
     When I switch back to the simple view
     Then the review surface should be in the simple view
 
-  @givn.added @wip
+  @givn.added
   Scenario: A stage longer than the stack window is truncated with a marker
     Given an installed Bash shortcut and a provider candidate with one stage longer than the terminal
     When I invoke Ctrl-W with current input "inspect recent log changes"
