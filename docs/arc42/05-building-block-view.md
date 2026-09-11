@@ -103,7 +103,7 @@ plain-line question flow without the ratatui coordinator.
 
 | Element | Responsibility |
 |---|---|
-| `quicksetup` module | Owns the five-question sequence (endpoint, credential, small/normal/thinking models), suggestion resolution, empty-accepts-suggestion input handling, local-only validation, and the closing config-path message |
+| `quicksetup` module | Owns the question sequence (endpoint, credential, small/normal/thinking models), optional `--url`/`--key`/`--model`/tier parameter prefills, suggestion resolution, empty-accepts-suggestion input handling, local-only validation, and the closing config-path message |
 | Shell selection rows | One multiple-choice list over Bash/Zsh/Fish, pre-selected from PATH-based availability; a selected shell receives both managed blocks |
 | Persistence seam reuse | Builds the provider draft through the shared migration path, saves one atomic snapshot, then installs completion and Ctrl-W blocks per selected shell; nothing is written before the final confirm |
 

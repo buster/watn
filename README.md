@@ -43,18 +43,30 @@ release is created with the changelog; no prebuilt executables are attached.
 
 ## Quick setup
 
-On first use without a configuration file, watn starts quick setup. Run it
-explicitly with:
-
 ```sh
-watn quicksetup
+cargo install watn
+watn quicksetup --url https://openrouter.ai/api/v1 --key '${OPENROUTER_API_KEY}' --model '~anthropic/claude-haiku-latest:nitro'
+watn "find the 5 largest files in the commit history"
 ```
 
-It asks for the completion endpoint, the credential, one model for each of the
-small, normal, and thinking tiers, and which shell integrations to install. An
-empty answer accepts the suggestion shown. Everything is validated locally; no
-network request is made. Ctrl-C leaves an existing configuration unchanged;
-completing an explicit quick setup overwrites it.
+On first use without a configuration file, watn starts quick setup. Parameters
+are optional and prefill the questions: `--url` the completion endpoint,
+`--key` the credential (a single-quoted `${ENV_VAR}` value is stored as an
+environment reference), `--model` the small, normal, and thinking tiers, and
+`--model-small`, `--model-normal`, or `--model-thinking` one tier each. Every
+question is still asked, an empty answer accepts the suggestion shown, and the
+shell-integration choice always runs. Without parameters the flow is unchanged:
+it asks for the endpoint, the credential, one model per tier, and which shell
+integrations to install. Everything is validated locally; no network request is
+made. Ctrl-C leaves an existing configuration unchanged; completing an explicit
+quick setup overwrites it.
+
+```sh
+watn quicksetup --url https://openrouter.ai/api/v1 --key 'sk-abc123' --model-small 'google/gemini-3.7-flash'
+```
+
+A literal key in `--key` is visible in shell history and process listings; keep
+the single-quoted `${ENV_VAR}` form for regular use.
 
 ## Setup
 

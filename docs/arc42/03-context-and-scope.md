@@ -24,7 +24,7 @@ graph TB
     CLI -->|"completion script on stdout"| CompletionCaller
     CompletionCaller -->|"install or source"| ShellParser
     User -->|"keyboard input (arrows / PageUp / PageDown / Enter / Escape / Tab / Ctrl-R) in SetupWizard pages"| CLI
-    User -->|"plain-line quick setup answers (endpoint, credential, models, shell selection)"| CLI
+    User -->|"plain-line quick setup answers (endpoint, credential, models, shell selection) with optional parameter prefills"| CLI
     User -->|"optional shortcut selection after final setup confirmation"| CLI
     CLI -->|"write provider endpoint and credential representation"| Config
     CLI -->|"marked shortcut block and reload report"| ShellStartup

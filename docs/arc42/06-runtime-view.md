@@ -722,7 +722,7 @@ sequenceDiagram
     participant Config as Config
     participant Shells as Shell startup files
 
-    User->>CLI: watn quicksetup (or first-run trigger)
+    User->>CLI: watn quicksetup [--url/--key/--model/--model-small/--model-normal/--model-thinking] (or first-run trigger)
     CLI-->>User: "no configuration found; starting quick setup"
     CLI->>User: endpoint question (suggestion: OpenRouter URL)
     User-->>CLI: accept or enter endpoint
@@ -740,8 +740,9 @@ sequenceDiagram
 **Steps:**
 1. Announce that no configuration was found and that the quick setup starts
    (automatic first-run path).
-2. Ask each plain-line question in order; an empty answer accepts the
-   bracketed suggestion; invalid endpoints and empty required models re-ask.
+2. Ask each plain-line question in order; optional parameters prefill the
+   bracketed suggestions, an empty answer accepts the suggestion, and invalid
+   endpoints and empty required models re-ask.
 3. Never contact the network: no endpoint probe, no catalog request.
 4. On confirm, save the configuration atomically (reasoning stays unset),
    then install both managed blocks for every selected shell.
