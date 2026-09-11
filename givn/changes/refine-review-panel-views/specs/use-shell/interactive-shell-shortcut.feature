@@ -47,7 +47,7 @@ Feature: Refined review panel views
     Then the command stack should mark the selected stage "head -5" with an arrow
     And the stage purpose "Keep the first five." should appear below the stage stack
 
-  @givn.added @wip
+  @givn.added
   Scenario: The purpose below the stack is marked and readable
     Given an installed Bash shortcut and a provider candidate "git log --oneline | head -5"
     And the provider returns this structured review response:

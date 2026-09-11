@@ -164,26 +164,27 @@ Domain constraints: the purpose row carries a cyan `↳`, uses the brighter
 non-dim style, and sits below the selected stage's stack rows; purpose status
 text takes the same place when no purpose is available.
 
-- [ ] RED: Remove `@wip`; bind the styling step with `unimplemented!()`. Run
+- [x] RED: Remove `@wip`; bind the styling step with `unimplemented!()`. Run
   non-zero.
   ```text
   command: `./run-tests.sh --name 'The purpose below the stack is marked and readable'`
-  output: <paste>
+  output: undefined-step failure under strict mode before the step body existed.
   ```
-- [ ] GREEN: Add `Ink::purpose_marker` (`38;5;81`) and `Ink::purpose`
+- [x] GREEN: Add `Ink::purpose_marker` (`38;5;81`) and `Ink::purpose`
   (`38;5;252`), remove dim/italic from the purpose rows, and assert marker,
   style, absence of the dim SGR, and row order. Production files changed:
-  `src/review/card.rs`.
+  `src/review/card.rs`; implementation shipped with the shared-renderer
+  foundation in `d51a93f`.
   ```text
   command: `./run-tests.sh --name 'The purpose below the stack is marked and readable'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 4 steps (4 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'The purpose below the stack is marked and readable'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 4 steps (4 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The purpose below the stack is marked and readable
+- [x] COMMIT: `a1722ac` - feat(interactive-shell-shortcut): The purpose below the stack is marked and readable
 
 ### The view toggle switches between the simple and detailed reviews
 
