@@ -402,7 +402,6 @@ fn hints(state: &ReviewPanelState, detailed: bool, ink: &Ink) -> String {
                 format!("{}{}", ink.key("↑↓"), ink.dim(" stage")),
                 format!("{}{}", ink.key("e"), ink.dim("dit")),
                 format!("{}{}", ink.key("r"), ink.dim("eject")),
-                format!("{}{}", ink.key("c"), ink.dim("ancel")),
                 format!("{}{}", ink.key("d/?"), ink.dim(" simple")),
                 format!("{}{}", ink.key("D"), ink.dim(" disable")),
                 ink.key("esc"),
@@ -414,7 +413,7 @@ fn hints(state: &ReviewPanelState, detailed: bool, ink: &Ink) -> String {
                 format!("{} {}", ink.key("⏎"), ink.dim("accept")),
                 format!("{} {}", ink.key("↑↓"), ink.dim("stage")),
                 format!("{} {}", ink.key("d/?"), ink.dim("details")),
-                format!("{} {}", ink.key("esc"), ink.dim("cancel")),
+                ink.key("esc"),
             ];
             parts.join(&ink.dim(" · "))
         }

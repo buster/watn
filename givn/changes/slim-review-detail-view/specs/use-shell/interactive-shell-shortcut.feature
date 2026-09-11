@@ -13,7 +13,7 @@ Feature: Slim review detail view
     And the review surface should not mark undecomposed stages
     And the review surface should still offer final acceptance and cancellation
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The review card exposes the decision shortcuts
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

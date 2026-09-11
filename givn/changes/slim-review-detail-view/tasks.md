@@ -62,26 +62,26 @@ amber ellipsis and support labels are gone; acceptance and cancellation remain.
 Domain constraints: the detailed hints expose accept, edit, reject, and
 disable; `cancel` is no longer advertised although Escape still cancels.
 
-- [ ] RED: Remove `@wip`; synchronize the permanent body; bind the negative
+- [x] RED: Remove `@wip`; synchronize the permanent body; bind the negative
   `not show "cancel"` step with `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the decision shortcuts'`
-  output: <paste>
+  output: undefined-step failure under strict mode before the negative step existed.
   ```
-- [ ] GREEN: Drop the `cancel` hint from both view hint builders; implement the
+- [x] GREEN: Drop the `cancel` hint from both view hint builders; implement the
   ANSI-stripped negative step; rewrite the acceptance/cancellation step to the
   `esc` hint plus the `Cancelled` outcome; update the emphasis step keys.
   Production files changed: `src/review/card.rs`.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the decision shortcuts'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the decision shortcuts'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The review card stops advertising cancel
+- [x] COMMIT: `0329b13` - feat(interactive-shell-shortcut): The review card stops advertising cancel
 
 ### The view toggle switches between the simple and detailed reviews (modified)
 

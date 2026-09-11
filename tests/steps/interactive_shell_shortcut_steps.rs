@@ -1808,8 +1808,29 @@ fn review_surface_has_no_undecomposed_marker(world: &mut WatnWorld) {
 #[then("the review surface should still offer final acceptance and cancellation")]
 fn review_acceptance_and_cancellation_offered(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "accept");
-    assert_review_rendered_contains(world, "cancel");
+    assert_review_rendered_contains(world, "esc");
     assert!(world.review.released.is_none());
+    let mut panel = world.review.panel.clone().expect("review panel state");
+    assert_eq!(
+        panel.handle_key(key(crossterm::event::KeyCode::Esc)),
+        watn::review::PanelOutcome::Cancelled,
+        "Escape must cancel the review"
+    );
+}
+
+#[then(expr = "the review surface should not show {string}")]
+fn review_surface_does_not_show(world: &mut WatnWorld, needle: String) {
+    let rendered = review_rendered_text(world);
+    let plain = strip_ansi(&rendered).replace("\r\n", "");
+    let collapsed = collapse_whitespace(&plain);
+    let dense: String = plain.split_whitespace().collect();
+    let needle_dense: String = needle.split_whitespace().collect();
+    assert!(
+        !plain.contains(&needle)
+            && !collapsed.contains(&collapse_whitespace(&needle))
+            && !dense.contains(&needle_dense),
+        "the review surface should not show {needle:?}, got:\n{rendered}"
+    );
 }
 
 #[then("the current candidate should remain available")]
@@ -3011,7 +3032,6 @@ fn review_decision_keys_emphasized(world: &mut WatnWorld) {
     for (key, rest) in [
         ("e", "dit"),
         ("r", "eject"),
-        ("c", "ancel"),
         ("D", " disable"),
         ("d/?", " simple"),
     ] {

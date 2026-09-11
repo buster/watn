@@ -702,7 +702,7 @@ Feature: Interactive shell shortcut for watn
     Then  the review surface should show "accept"
     And  the review surface should show "edit"
     And  the review surface should show "reject"
-    And  the review surface should show "cancel"
+    And  the review surface should not show "cancel"
     And  the review surface should show "disable"
     And  accept should be shown as the default decision
 
