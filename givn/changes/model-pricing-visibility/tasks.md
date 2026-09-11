@@ -96,7 +96,7 @@ same normalized price as the list. Added scenario.
 
 ## E2E setup
 
-- [ ] Confirm the e2e environment and filter.
+- [x] Confirm the e2e environment and filter.
 
   No external service or container is required: every provider is an
   in-process `httpmock` twin on `127.0.0.1`, and PTY flows use
