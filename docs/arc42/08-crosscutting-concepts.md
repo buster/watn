@@ -505,6 +505,19 @@ runner afterward. The review disposition is the human audit trail: it names
 the retained contract and prevents a consolidation from being justified only
 by a green test count.
 
+## Archive verification contract
+
+`givn archive` is forward-only and Git-backed: the project must be a committed
+Git worktree rooted at the project root before the archive starts. Each
+configured verification scope writes one JSON result to `GIVN_RESULT_FILE` from
+the runner's own scenario counts (`scope`, `total`, `passed`, `failed`,
+`skipped`); counts are never hardcoded or inferred from the exit code. The gate
+is fail-closed: a missing file, malformed JSON, wrong scope, `total == 0`,
+`failed != 0`, `skipped != 0`, or a non-reconciling sum blocks publication. The
+archive receipt is the execution evidence, `givn check review` no longer runs
+the test suite, and archives published before 0.7.0 stay historical without a
+receipt.
+
 ## Specification migration integrity
 
 The active corpus has one stable owner for every capability. Use-case documents

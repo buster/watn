@@ -123,3 +123,5 @@
 | Model short name | The final `/`-separated identifier segment of the configured model with any leading `~` and `:` variant suffix removed, shown in the simple review view frame |
 | Shell preselection | The initial completion and Ctrl-W selection: a shell is selected when its binary is present on `PATH` or its target already holds a watn-managed block; the shown selection is the desired state applied on Enter |
 | Setup visual language | The shared symbols (`◆`, `▶`, `●`, `○`, `↳`, `⚠`), emphasis, color roles, and bold-key/dim-label hints used by every setup page, matching the review panel; disabled as a whole when the terminal does not support color |
+| Verification result | The machine-readable per-scope JSON (`scope`, `total`, `passed`, `failed`, `skipped`) written by the runner to `GIVN_RESULT_FILE`; counts come from the runner, never from the exit code |
+| Archive receipt | The `givn/archive/<id>/verification.json` record proving each scope's verification result; archives published before Givn 0.7.0 have no receipt and remain historical |
