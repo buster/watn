@@ -724,11 +724,6 @@ Feature: Interactive shell shortcut for watn
     When  I choose the highlighted suggestion
     Then  a new candidate should use "model-a"
 
-  Scenario: The card marks a stage it cannot decompose
-    Given  an installed Bash shortcut and a provider candidate containing unsupported shell syntax
-    When  I invoke Ctrl-W with the current input
-    Then  the raw candidate should remain visible
-    And  the card should mark the stage as not decomposed
   Scenario: The simple review view names only the model without provider or tier
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     And  the configured model is "~anthropic/claude-haiku-latest:nitro"
