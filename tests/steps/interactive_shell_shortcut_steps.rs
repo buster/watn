@@ -3007,7 +3007,8 @@ fn review_decision_keys_emphasized(world: &mut WatnWorld) {
         ("e", "dit"),
         ("r", "eject"),
         ("c", "ancel"),
-        ("d", "isable"),
+        ("D", " disable"),
+        ("d/?", " simple"),
     ] {
         let sequence = format!("\u{1b}[1;38;5;81m{key}\u{1b}[0m\u{1b}[2m{rest}\u{1b}[0m");
         assert!(

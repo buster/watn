@@ -321,24 +321,24 @@ detailed view; the current intent stays unchanged.
 Domain constraints: the detailed hints keep the emphasized decision keys; the
 editor and chooser key hints remain emphasized in their sub-modes.
 
-- [ ] RED: Synchronize the permanent scenario with the delta body (switch to
+- [x] RED: Synchronize the permanent scenario with the delta body (switch to
   the detailed view first). Run non-zero while the simple hints lack the keys.
   ```text
   command: `./run-tests.sh --name 'The review card emphasizes the decision shortcut keys'`
-  output: <paste>
+  output: first synchronized run exit 1: the emphasis step still asserted the old `d isable` hint; retargeted to `D disable` and `d/? simple`. 2 scenarios failed on that step before the fix.
   ```
-- [ ] GREEN: Confirm the detailed hints and sub-mode hints render the emphasized
+- [x] GREEN: Confirm the detailed hints and sub-mode hints render the emphasized
   keys.
   ```text
   command: `./run-tests.sh --name 'The review card emphasizes the decision shortcut keys'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'The review card emphasizes the decision shortcut keys'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] COMMIT: `<hash>` - test(interactive-shell-shortcut): The review card emphasizes the decision shortcut keys (view sync)
+- [x] COMMIT: `9f16f3f` - test(interactive-shell-shortcut): The review card emphasizes the decision shortcut keys (view sync)
 
 ### The review card exposes the decision shortcuts (modified)
 

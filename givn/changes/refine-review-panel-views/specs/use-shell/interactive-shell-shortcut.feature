@@ -103,7 +103,7 @@ Feature: Refined review panel views
     And its tier and provider/model context should be visible
     And the current intent should remain unchanged
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The review card emphasizes the decision shortcut keys
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

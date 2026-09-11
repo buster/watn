@@ -696,6 +696,7 @@ Feature: Interactive shell shortcut for watn
   Scenario: The review card emphasizes the decision shortcut keys
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     When  I open the review surface
+    And  I switch to the detailed view
     Then  the decision keys should be shown colored and bold
     When  I press the edit shortcut
     Then  the editor keys should be shown colored and bold
