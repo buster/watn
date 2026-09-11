@@ -3,7 +3,7 @@
 ## Fabrication audit
 
 - **@e2e tag integrity**: both modified e2e scenarios in
-  `givn/changes/model-pricing-visibility/specs/streamlined-setup/streamlined-setup.feature`
+  `givn/changes/model-pricing-visibility/specs/configure-model/streamlined-setup.feature`
   carry `@givn.modified @e2e`; no `@e2e` tag was removed or downgraded.
 - **Empty/no-op step bodies**: 0 found. Scanned `tests/steps/*.rs` (31
   files) and `src/**/*.rs` for `{}`/whitespace-only bodies and
@@ -132,9 +132,13 @@ No shape-match findings were reported by `givn lint` for this change.
 
 ## Split-or-keep
 
-| Long scenario | Decision | Rationale |
-|---|---|---|
-| Coordinated setup completes provider models reasoning and shell choices | keep | It is the canonical coordinated-setup e2e; the change extends its existing assertions for captured prices instead of adding a parallel scenario, preserving one E2E per action. |
+| Scenario | Decision |
+|---|---|
+| `Coordinated setup completes provider models reasoning and shell choices` | keep |
+
+Justification: it is the canonical coordinated-setup e2e; the change extends
+its existing assertions for captured prices instead of adding a parallel
+scenario, preserving one E2E per action.
 
 ## README impact decision
 

@@ -28,7 +28,7 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
 
 Capability `models`. Use-case guarantees: Main flow 1–2 (discover, assign),
 display of the chosen model metadata. Modified scenario in
-`specs/models/models.feature`.
+`specs/configure-model/models.feature`.
 
 - [x] RED — remove `@wip` from this scenario only; run it targeted. Undefined
       steps (the added `stderr should not contain "$-"` assertion) must fail
@@ -37,7 +37,7 @@ display of the chosen model metadata. Modified scenario in
       to $/1M normalization, both-components rule, six-decimal rounding) and
       `src/models/mod.rs` (per-1M `format_model_entry`). Tests: rich fixture
       per-token values, sentinel and bare rows, new stderr assertion.
-      Evidence: `./run-tests.sh --name "Model picker shows metadata when available"` → `2 scenarios (2 passed)`, `8 steps (8 passed)`, exit 0. Files: `src/models/list.rs`, `src/models/mod.rs`, `tests/steps/ask_steps.rs`, `specs/models/models.feature`.
+      Evidence: `./run-tests.sh --name "Model picker shows metadata when available"` → `2 scenarios (2 passed)`, `8 steps (8 passed)`, exit 0. Files: `src/models/list.rs`, `src/models/mod.rs`, `tests/steps/ask_steps.rs`, `specs/configure-model/models.feature`.
 - [x] REFACTOR — dedupe `fetch_models` onto `parse_model_data`; no behavior
       change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0; `cargo test --lib` → `86 passed`.
 - [x] COMMIT: feat(models): Model picker shows metadata when available — 5366fff
@@ -53,7 +53,7 @@ minimal guarantee (no corruption). Added scenario.
 - [x] GREEN — production: `capture_catalog_price` in `src/setup.rs` and its
       call in `src/models/mod.rs::run_models_result` before `save_config`.
       Tests: new given/then bindings in `tests/steps/ask_steps.rs`.
-      Evidence: targeted run → `1 scenario (1 passed)`, `9 steps (9 passed)`, exit 0. Files: `src/setup.rs`, `src/models/mod.rs`, `tests/steps/ask_steps.rs`, `specs/models/models.feature`.
+      Evidence: targeted run → `1 scenario (1 passed)`, `9 steps (9 passed)`, exit 0. Files: `src/setup.rs`, `src/models/mod.rs`, `tests/steps/ask_steps.rs`, `specs/configure-model/models.feature`.
 - [x] REFACTOR — share the capture rule with the other write paths' call
       shape; no behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`, exit 0; `cargo test --lib` → `86 passed`.
 - [x] COMMIT: feat(models): Non-terminal model assignment records catalog prices — 4557110
@@ -68,7 +68,7 @@ persisted unit. Modified scenario.
 - [x] GREEN — production: normalized value flows through
       `format_model_entry`; tests: `provider_with_models_pricing` and the
       displayed-price assertion in `tests/steps/ask_steps.rs`.
-      Evidence: targeted run → `2 scenarios (2 passed)`, `9 steps (9 passed)`, exit 0. Files: `tests/steps/ask_steps.rs`, `specs/ratatui-model-picker/ratatui-model-picker.feature`.
+      Evidence: targeted run → `2 scenarios (2 passed)`, `9 steps (9 passed)`, exit 0. Files: `tests/steps/ask_steps.rs`, `specs/configure-model/ratatui-model-picker.feature`.
 - [x] REFACTOR — remove stale per-token fixture assumptions; no behavior
       change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0.
 - [x] COMMIT: feat(ratatui-model-picker): Model entry shows additional metadata when available — 3aadc73
@@ -83,7 +83,7 @@ same normalized price as the list. Added scenario.
       non-zero. Evidence: `./run-tests.sh --name "Interactive model table shows published prices per million tokens"` → `1 scenario (1 failed)`, `Step doesn't match any function`, exit 1.
 - [x] GREEN — production: `src/setup.rs::draw_model` cell and header;
       tests: priced-catalog table given and table assertion steps.
-      Evidence: targeted run → `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0. Files: `src/setup.rs`, `tests/steps/model_picker_layout_steps.rs`, `tests/steps/streamlined_setup_steps.rs`, `tests/steps/mod.rs`, `tests/features_runner.rs`, `specs/ratatui-model-picker/ratatui-model-picker.feature`.
+      Evidence: targeted run → `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0. Files: `src/setup.rs`, `tests/steps/model_picker_layout_steps.rs`, `tests/steps/streamlined_setup_steps.rs`, `tests/steps/mod.rs`, `tests/features_runner.rs`, `specs/configure-model/ratatui-model-picker.feature`.
 - [x] REFACTOR — reuse the priced-catalog given between this scenario and
       the e2e; no behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`, exit 0; `cargo test --lib` → `86 passed`.
 - [x] COMMIT: feat(ratatui-model-picker): Interactive model table shows published prices per million tokens — 188ea65
@@ -118,7 +118,7 @@ focused model write path. Modified `@e2e` scenario.
       Evidence: `./run-tests.sh --e2e --name "Models setup configures all three roles from an available catalog"` → `2 scenarios (1 passed, 1 failed)`, `expected pricing for 'small-model', got: {}`, exit 1.
 - [x] GREEN — production: `apply_models_result` calls
       `capture_catalog_price`; tests: priced-catalog given and config
-      assertion steps drive the real PTY flow. Evidence: targeted run → `2 scenarios (2 passed)`, `25 steps (25 passed)`, exit 0. Files: `src/setup.rs`, `specs/streamlined-setup/streamlined-setup.feature`.
+      assertion steps drive the real PTY flow. Evidence: targeted run → `2 scenarios (2 passed)`, `25 steps (25 passed)`, exit 0. Files: `src/setup.rs`, `specs/configure-model/streamlined-setup.feature`.
 - [x] REFACTOR — no behavior change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0.
 - [x] COMMIT: test(e2e): Models setup configures all three roles from an available catalog — 10667bf
 
@@ -132,7 +132,7 @@ coordinated final-confirmation write path. Modified `@e2e` scenario.
       Evidence: `./run-tests.sh --e2e --name "Coordinated setup completes provider models reasoning and shell choices"` → `2 scenarios (1 passed, 1 failed)`, `Step doesn't match any function`, exit 1.
 - [x] GREEN — production: `apply_result` calls `capture_catalog_price`;
       tests: priced ephemeral-transport given in
-      `tests/steps/provider_setup_steps.rs`. Evidence: targeted run → `2 scenarios (2 passed)`, `41 steps (41 passed)`, exit 0. Files: `src/setup.rs`, `tests/steps/provider_setup_steps.rs`, `specs/streamlined-setup/streamlined-setup.feature`.
+      `tests/steps/provider_setup_steps.rs`. Evidence: targeted run → `2 scenarios (2 passed)`, `41 steps (41 passed)`, exit 0. Files: `src/setup.rs`, `tests/steps/provider_setup_steps.rs`, `specs/configure-model/streamlined-setup.feature`.
 - [x] REFACTOR — no behavior change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0.
 - [x] COMMIT: test(e2e): Coordinated setup completes provider models reasoning and shell choices — c613209
 
@@ -165,6 +165,6 @@ Classified bucket 2 (missing test coverage) and resolved.
       `expected no pricing in output`, exit 1. Guard restored.
 - [x] GREEN — `./run-tests.sh --name "A partial catalog price is not recorded"`
       → `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0. Files:
-      `specs/models/models.feature`, `tests/steps/ask_steps.rs`.
+      `specs/configure-model/models.feature`, `tests/steps/ask_steps.rs`.
 - [x] REFACTOR — no behavior change; branch unchanged from 5366fff.
 - [x] COMMIT: test(models): A partial catalog price is not recorded — 835accf
