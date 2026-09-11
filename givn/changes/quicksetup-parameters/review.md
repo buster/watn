@@ -59,12 +59,18 @@ UBIQUITOUS LANGUAGE: CLEAN
 
 ## Overlap dispositions
 
-No deterministic shape match is reported for this change. The advisory subset
-notice compares the permanent "Provider setup does not probe the catalog" with
-"Quick setup parameters prefill the dialog with an environment credential":
-both assert that no catalog request happens, but the prefill scenario owns the
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| A small-model parameter seeds the remaining tiers | Tier parameters override the shared model prefill | variant |
+
+Both run a parameterized PTY dialog, but the first proves the accepted-small
+fallback for the remaining tiers while the second proves explicit per-tier
+overrides winning over the shared `--model`. The advisory subset notice
+compares the permanent "Provider setup does not probe the catalog" with "Quick
+setup parameters prefill the dialog with an environment credential": both
+assert that no catalog request happens, but the prefill scenario owns the
 parameterized dialog and the provider-setup scenario owns the focused provider
-flow, so the overlap is a boundary.
+flow, so that overlap is a boundary.
 
 ## Split-or-keep
 
