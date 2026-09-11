@@ -81,16 +81,16 @@ persisted unit. Modified scenario.
 Capability `ratatui-model-picker`. Guarantee: the terminal table shows the
 same normalized price as the list. Added scenario.
 
-- [ ] RED — remove `@wip` from this scenario only; run targeted; the new
+- [x] RED — remove `@wip` from this scenario only; run targeted; the new
       table/header assertions and priced-catalog table given must fail
-      non-zero. Evidence: _pending_
-- [ ] GREEN — production: `src/setup.rs::draw_model` cell and header;
+      non-zero. Evidence: `./run-tests.sh --name "Interactive model table shows published prices per million tokens"` → `1 scenario (1 failed)`, `Step doesn't match any function`, exit 1.
+- [x] GREEN — production: `src/setup.rs::draw_model` cell and header;
       tests: priced-catalog table given and table assertion steps.
-      Evidence: _pending_
-- [ ] REFACTOR — reuse the priced-catalog given between this scenario and
-      the e2e; no behavior change. Evidence: _pending_
-- [ ] COMMIT — `feat(ratatui-model-picker): Interactive model table shows published prices per million tokens`.
-      Hash: _pending_
+      Evidence: targeted run → `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0. Files: `src/setup.rs`, `tests/steps/model_picker_layout_steps.rs`, `tests/steps/streamlined_setup_steps.rs`, `tests/steps/mod.rs`, `tests/features_runner.rs`, `specs/ratatui-model-picker/ratatui-model-picker.feature`.
+- [x] REFACTOR — reuse the priced-catalog given between this scenario and
+      the e2e; no behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`, exit 0; `cargo test --lib` → `86 passed`.
+- [x] COMMIT — `feat(ratatui-model-picker): Interactive model table shows published prices per million tokens`.
+      Hash: 188ea65
 
 ---
 

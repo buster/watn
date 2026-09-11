@@ -331,6 +331,7 @@ pub fn apply_models_result(config: &mut Config, result: &SetupWizardResult) -> R
             continue;
         };
         changed_tiers = true;
+        capture_catalog_price(&mut updated, &choice.model);
         match index {
             0 => {
                 updated.tiers.small = Some(choice.model.id.clone());

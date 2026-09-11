@@ -31,7 +31,7 @@ Feature: Streamlined setup flow
     And  the config file should record pricing for "normal-model" at 2.50 input and 10.00 output per million tokens
     And  the config file should record pricing for "thinking-model" at 1.10 input and 4.40 output per million tokens
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Models setup configures all three roles from an available catalog
     Given  a configured provider with a priced catalog:
       | model          | input | output |
