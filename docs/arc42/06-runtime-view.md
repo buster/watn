@@ -126,7 +126,8 @@ sequenceDiagram
 Cancellation, portable-panel failure, empty output, generation failure, and
 rejection release no Candidate. A structured-response or purpose failure keeps
 the selected Candidate reviewable with `purpose-unavailable`; incomplete flow
-keeps raw text and marks unsupported portions. The Candidate shown for a
+keeps the raw text and tracks unsupported portions internally without marking
+them in the surface. The Candidate shown for a
 command-only or invalid response is the provider's own command text: Watn
 recovers a complete non-empty command from a fenced or JSON-shaped payload and
 otherwise shows `Unavailable` without opening the surface. When the payload's
