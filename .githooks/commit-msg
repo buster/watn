@@ -1,0 +1,15 @@
+#!/bin/sh
+set -u
+
+# Human commits and harnesses without context remain untouched.
+if [ -z "${GIVN_ATTRIBUTION_ACTIVE:-}" ]; then
+    exit 0
+fi
+
+# Attribution is best effort. A missing installed binary must not block Git.
+if ! command -v givn >/dev/null 2>&1; then
+    exit 0
+fi
+
+givn attribution stamp --message-file "$1" >/dev/null 2>&1 || true
+exit 0
