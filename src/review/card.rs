@@ -227,6 +227,20 @@ fn purpose_text(state: &ReviewPanelState) -> String {
         .unwrap_or_else(|| candidate.purpose_status.label().to_string())
 }
 
+/// The user-facing instruction printed on stderr before a permanently released
+/// candidate. The escaped version is only used on a color-capable terminal.
+pub fn disable_hint(use_color: bool) -> String {
+    let label = "⚠ review panel disabled";
+    let command = "watn --review-panel";
+    if use_color {
+        format!(
+            "\u{1b}[1;38;5;214m{label}\u{1b}[0m — re-enable with: \u{1b}[1;97m{command}\u{1b}[0m"
+        )
+    } else {
+        format!("{label} — re-enable with: {command}")
+    }
+}
+
 /// The model label used by the simple view: the last `/`-separated identifier
 /// segment, without a leading routing marker or a `:` variant suffix.
 pub fn model_short_name(model: &str) -> String {
@@ -849,5 +863,17 @@ mod tests {
         assert_eq!(super::visible_len("a漢b"), 4);
         assert_eq!(super::visible_len("\u{1b}[97m漢\u{1b}[0m"), 2);
         assert_eq!(super::pad_to("漢", 4), "漢  ");
+    }
+
+    #[test]
+    fn disable_hint_names_the_disabled_surface_with_and_without_color() {
+        assert_eq!(
+            super::disable_hint(false),
+            "⚠ review panel disabled — re-enable with: watn --review-panel"
+        );
+        assert_eq!(
+            super::disable_hint(true),
+            "\u{1b}[1;38;5;214m⚠ review panel disabled\u{1b}[0m — re-enable with: \u{1b}[1;97mwatn --review-panel\u{1b}[0m"
+        );
     }
 }

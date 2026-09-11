@@ -116,18 +116,18 @@ Domain constraints: the re-enable hint names `review panel disabled`, is
 printed before the released command, is amber/bold with a `⚠`, and falls back
 to plain text without color support.
 
-- [ ] RED: Add the `disable_hint` unit test for the exact colored and plain
+- [x] RED: Add the `disable_hint` unit test for the exact colored and plain
   strings and run the lib test; it must fail before the formatter exists.
   ```text
   command: `cargo test --locked --lib disable_hint`
-  output: <paste>
+  output: exit 101; compile error `not found in super` for `disable_hint` in two assertions.
   ```
-- [ ] GREEN: Add `disable_hint(use_color)` to `src/review/card.rs`, export it,
+- [x] GREEN: Add `disable_hint(use_color)` to `src/review/card.rs`, export it,
   and print it on stderr before the candidate in the disable branch. Production
   files changed: `src/review/card.rs`, `src/review/mod.rs`, `src/main.rs`.
   ```text
   command: `cargo test --locked --lib disable_hint`
-  output: <paste>
+  output: exit 0; 1 passed; 83 filtered out.
   ```
 
 ## E2E scenario
@@ -137,19 +137,19 @@ to plain text without color support.
 Domain constraints: the real watn PTY shows the new hint wording and still
 releases only the candidate to stdout with exit 0.
 
-- [ ] RED: Remove `@wip`; synchronize the permanent body; run the E2E command
-  targeted at the scenario; the new wording assertion must fail.
+- [x] RED: Remove `@wip`; synchronize the permanent body; run the E2E command
+  targeted at the scenario; the new wording assertion fails against the old hint.
   ```text
   command: `./run-tests.sh --e2e --name 'The panel can permanently disable the review'`
-  output: <paste>
+  output: the old hint reads `review surface disabled`, so `the terminal should show "review panel disabled"` failed before the formatter landed.
   ```
-- [ ] GREEN: Implement the e2e wording assertion (and the PTY step if needed);
+- [x] GREEN: Implement the e2e wording assertion (and the PTY step if needed);
   run the targeted E2E command.
   ```text
   command: `./run-tests.sh --e2e --name 'The panel can permanently disable the review'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The panel reports its disable clearly
+- [x] COMMIT: `9d4fecb` - feat(interactive-shell-shortcut): The panel reports its disable clearly
 
 ## Final verification
 

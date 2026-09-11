@@ -44,7 +44,7 @@ Feature: Slim review detail view
     When I switch back to the simple view
     Then the review surface should be in the simple view
 
-  @e2e @givn.modified @wip
+  @e2e @givn.modified
   Scenario: The panel can permanently disable the review
     Given a configured provider candidate "git log --oneline | head -5"
     When I ask interactively for "inspect recent commits"

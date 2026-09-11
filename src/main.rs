@@ -811,10 +811,8 @@ fn run_review_path(
                 match watn::config::persist_review_panel(false) {
                     Ok(()) => {
                         let _ = panel.finish();
+                        eprintln!("{}", watn::review::disable_hint(color));
                         println!("{command}");
-                        eprintln!(
-                            "review surface disabled — re-enable with: watn --review-panel"
-                        );
                         std::process::exit(0);
                     }
                     Err(error) => {

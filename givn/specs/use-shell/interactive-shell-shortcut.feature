@@ -519,6 +519,7 @@ Feature: Interactive shell shortcut for watn
     And  I press the disable-review decision in the review surface
     Then  the review surface should be disabled in the configuration
     And  normal command output should contain only "git log --oneline | head -5"
+    And  the terminal should show "review panel disabled"
     And  the terminal should show "watn --review-panel"
     And  watn should exit successfully
 
