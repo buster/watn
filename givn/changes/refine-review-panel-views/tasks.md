@@ -75,7 +75,7 @@ the provider or tier; `d`/`?` switch views; `D` disables in both views.
   command: `./run-tests.sh --name 'The simple review view names only the model without provider or tier'`
   output: exit 0; 1 feature; 1 scenario (1 passed); 5 steps (5 passed). No further behaviour change; the shared renderer helpers (separators, purpose, windowing) were introduced in this commit because the simple view needs them together.
   ```
-- [x] COMMIT: `PENDING` - feat(interactive-shell-shortcut): The simple review view names only the model without provider or tier
+- [x] COMMIT: `d51a93f` - feat(interactive-shell-shortcut): The simple review view names only the model without provider or tier
 
 ### The simple view stacks the command flow with its separators
 
@@ -83,26 +83,27 @@ Domain constraints: every Stage on its own row group; the operator that joined
 two stages is shown at the end of the preceding stage's last row; the final
 stage has no separator; the command is never rewritten.
 
-- [ ] RED: Remove `@wip`; bind the stack/separator steps with
+- [x] RED: Remove `@wip`; bind the stack/separator steps with
   `unimplemented!()`. Run the single-scenario command; non-zero.
   ```text
   command: `./run-tests.sh --name 'The simple view stacks the command flow with its separators'`
-  output: <paste>
+  output: exit 1 in the strict-mode proof run: undefined step "the command stack should show the stage ..." failed the scenario instead of passing silently.
   ```
-- [ ] GREEN: Add `CommandStage.separator` with `following_separator`; render
+- [x] GREEN: Add `CommandStage.separator` with `following_separator`; render
   the stack in the simple view (and replace the detailed `Command` row with the
   stack); implement separator/stack steps. Production files changed:
-  `src/review/flow.rs`, `src/review/card.rs`.
+  `src/review/flow.rs`, `src/review/card.rs`; implementation shipped with the
+  shared-renderer foundation in `d51a93f`.
   ```text
   command: `./run-tests.sh --name 'The simple view stacks the command flow with its separators'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 7 steps (7 passed).
   ```
-- [ ] REFACTOR: Share one stage-row builder between both views; rerun.
+- [x] REFACTOR: Share one stage-row builder between both views; rerun.
   ```text
   command: `./run-tests.sh --name 'The simple view stacks the command flow with its separators'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 7 steps (7 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The simple view stacks the command flow with its separators
+- [x] COMMIT: `PENDING` - feat(interactive-shell-shortcut): The simple view stacks the command flow with its separators
 
 ### A long stage continues on the next stack rows and keeps its separator
 

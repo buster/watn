@@ -13,7 +13,7 @@ Feature: Refined review panel views
     Then the review frame should name the model "claude-haiku-latest"
     And the review frame should not name the provider "loopback" or a tier
 
-  @givn.added @wip
+  @givn.added
   Scenario: The simple view stacks the command flow with its separators
     Given an installed Bash shortcut and a provider candidate "git log --oneline | head -5"
     And the provider returns this structured review response:
