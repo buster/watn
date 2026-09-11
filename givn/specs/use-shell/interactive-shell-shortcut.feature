@@ -787,6 +787,7 @@ Feature: Interactive shell shortcut for watn
     Then  the detailed review should show the intent
     And  the detailed review should show the command stack
     And  the detailed review should show the stage navigation hint
+    And  the detailed review should not show the flow or stage labels
     When  I move to the next stage
     Then  the command stack should mark the selected stage "head -5" with an arrow
     When  I switch back to the simple view

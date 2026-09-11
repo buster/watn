@@ -2420,14 +2420,6 @@ fn review_bounded_panel(world: &mut WatnWorld) {
     }
 }
 
-#[then("it should show a compact command-flow overview and one readable selected stage")]
-fn review_compact_overview(world: &mut WatnWorld) {
-    let panel = world.review.panel.as_ref().expect("review panel state");
-    assert_eq!(panel.flow_stage, 0);
-    assert_eq!(panel.candidate().flow.stages[0].stage_text, "a");
-    assert_review_rendered_contains(world, "⋮");
-    assert_review_rendered_contains(world, "a");
-}
 
 #[then("arrow navigation should reach every command-flow stage")]
 fn review_arrow_reaches_every_stage(world: &mut WatnWorld) {
@@ -2666,32 +2658,6 @@ fn review_shows_key_hints(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "accept");
 }
 
-#[then(expr = "the review surface should show only the selected stage {string}")]
-fn review_only_selected_stage(world: &mut WatnWorld, stage: String) {
-    let (index, count, selected) = {
-        let panel = world.review.panel.as_ref().expect("review panel state");
-        (
-            panel.flow_stage,
-            panel.candidate().flow.stages.len(),
-            panel.candidate().flow.stages[panel.flow_stage]
-                .stage_text
-                .clone(),
-        )
-    };
-    assert_eq!(selected, stage, "selected stage should be {stage:?}");
-    render_current_surface(world);
-    let rendered = review_rendered_text(world);
-    let plain = strip_ansi(&rendered)
-        .replace("\r\n", "")
-        .replace(['│', '┌', '┐', '└', '┘', '─'], " ");
-    let collapsed = collapse_whitespace(&plain);
-    assert!(
-        collapsed.contains(&format!("Stage {}/{} {stage}", index + 1, count)),
-        "card should show the selected stage {stage:?} as stage {}/{}, got:\n{rendered}",
-        index + 1,
-        count
-    );
-}
 
 #[when("I move to the next stage")]
 fn review_next_stage(world: &mut WatnWorld) {
@@ -4017,6 +3983,17 @@ fn review_detailed_shows_stack(world: &mut WatnWorld) {
 #[then("the detailed review should show the stage navigation hint")]
 fn review_detailed_shows_navigation_hint(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "↑↓ stage");
+}
+
+#[then("the detailed review should not show the flow or stage labels")]
+fn review_detailed_has_no_flow_or_stage_labels(world: &mut WatnWorld) {
+    let joined = plain_card_lines(world).join("\n");
+    for absent in ["Flow", "Stage", "supported", "unsupported"] {
+        assert!(
+            !joined.contains(absent),
+            "the detailed view must not show {absent:?}, got:\n{joined}"
+        );
+    }
 }
 
 #[given("an installed Bash shortcut and a provider candidate with one stage longer than the terminal")]

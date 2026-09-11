@@ -1105,7 +1105,7 @@ mod tests {
             crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
         assert!(lines
             .iter()
-            .any(|line| line.contains("no supported flow stages")));
+            .any(|line| line.contains("no flow stages")));
     }
 
     #[test]

@@ -25,7 +25,7 @@ Feature: Slim review detail view
     And the review surface should show "disable"
     And accept should be shown as the default decision
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The view toggle switches between the simple and detailed reviews
     Given an installed Bash shortcut and a provider candidate "git log --oneline | head -5"
     And the provider returns this structured review response:

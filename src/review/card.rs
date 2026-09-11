@@ -227,25 +227,6 @@ fn purpose_text(state: &ReviewPanelState) -> String {
         .unwrap_or_else(|| candidate.purpose_status.label().to_string())
 }
 
-fn flow_strip(state: &ReviewPanelState, ink: &Ink) -> String {
-    let stages = &state.candidate().flow.stages;
-    stages
-        .iter()
-        .enumerate()
-        .map(|(index, stage)| {
-            let number = (index + 1).to_string();
-            if index == state.flow_stage {
-                ink.paint("7", &ink.white(&number))
-            } else if stage.support == super::flow::StageSupport::Unsupported {
-                ink.amber(&number)
-            } else {
-                ink.dim(&number)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" · ")
-}
-
 /// The model label used by the simple view: the last `/`-separated identifier
 /// segment, without a leading routing marker or a `:` variant suffix.
 pub fn model_short_name(model: &str) -> String {
@@ -327,7 +308,7 @@ fn stack_window_rows(
 ) -> Vec<String> {
     let stages = &state.candidate().flow.stages;
     if stages.is_empty() {
-        return vec![format!("    {}", ink.dim("no supported flow stages"))];
+        return vec![format!("    {}", ink.dim("no flow stages"))];
     }
     let selected = state.flow_stage.min(stages.len() - 1);
     let groups: Vec<Vec<String>> = (0..stages.len())
@@ -465,7 +446,7 @@ pub fn render_card_lines(
         .take(2)
         .collect();
 
-    let essential_rows = purpose_rows.len() + if detailed { 7 } else { 4 };
+    let essential_rows = purpose_rows.len() + 4;
     let stack_budget = available.saturating_sub(essential_rows).max(1);
 
     let base = if detailed {
@@ -503,42 +484,6 @@ pub fn render_card_lines(
     }
 
     if detailed {
-        content.push((10, String::new()));
-        content.push((
-            60,
-            format!(
-                "{}   {}",
-                ink.label(&pad_to("Flow", label_width)),
-                flow_strip(state, &ink)
-            ),
-        ));
-        let stage_count = state.candidate().flow.stages.len().max(1);
-        let stage_number = format!(
-            "{}/{}",
-            (state.flow_stage + 1).min(stage_count),
-            stage_count
-        );
-        let unsupported = state
-            .candidate()
-            .flow
-            .stages
-            .get(state.flow_stage)
-            .is_some_and(|stage| stage.support == super::flow::StageSupport::Unsupported);
-        let support = if unsupported {
-            ink.amber("unsupported")
-        } else {
-            ink.green("supported")
-        };
-        content.push((
-            55,
-            format!(
-                "{}   {}  {}",
-                ink.label(&pad_to("Stage", label_width)),
-                ink.dim(&stage_number),
-                support
-            ),
-        ));
-
         if state.input_mode == super::panel::PanelInputMode::CommandEditor {
             let buffer = sanitize_terminal_text(state.editor_buffer().unwrap_or(""));
             let cursor = super::panel::char_index_to_byte(&buffer, state.editor_cursor());
@@ -758,9 +703,13 @@ mod tests {
         assert!(joined.contains("watn"));
         assert!(joined.contains("Intent"));
         assert!(joined.contains("Command"));
-        assert!(joined.contains("Flow"));
-        assert!(joined.contains("Stage"));
         assert!(joined.contains("ccept"));
+        for absent in ["Flow", "Stage", "supported", "unsupported"] {
+            assert!(
+                !joined.contains(absent),
+                "the detailed view must not show {absent:?}, got:\n{joined}"
+            );
+        }
         assert!(joined.contains("\u{1b}[1;38;5;81mesc\u{1b}[0m"));
         assert!(joined.contains("\u{1b}[1;38;5;81me\u{1b}[0m\u{1b}[2mdit\u{1b}[0m"));
         assert!(joined.contains("\u{1b}[38;5;81m"), "labels are colored");
@@ -850,20 +799,6 @@ mod tests {
         assert!(lines.len() <= 7, "card rows: {}", lines.len());
         assert!(!lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
         assert!(!lines.iter().any(|line| line.contains('\n')));
-    }
-
-    #[test]
-    fn flow_strip_marks_a_non_selected_unsupported_stage() {
-        let mut state = state();
-        state.candidate = ReviewCandidate::from_command("printf one; cat < input");
-        state.flow_stage = 0;
-        state.details = true;
-        let lines = render_card_lines(&state, InlineLayout::for_dimensions(100, 40), true);
-        let joined = lines.join("\n");
-        assert!(
-            joined.contains("\u{1b}[38;5;214m2\u{1b}[0m"),
-            "a non-selected unsupported stage keeps the amber flow number, got:\n{joined}"
-        );
     }
 
     #[test]

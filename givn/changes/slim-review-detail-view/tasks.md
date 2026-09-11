@@ -88,26 +88,27 @@ disable; `cancel` is no longer advertised although Escape still cancels.
 Domain constraints: the detailed view keeps Intent, stack, purpose, and hints,
 and no longer renders flow or stage labels; the row budget stays correct.
 
-- [ ] RED: Remove `@wip`; synchronize the permanent body; bind the label
+- [x] RED: Remove `@wip`; synchronize the permanent body; bind the label
   absence step with `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'The view toggle switches between the simple and detailed reviews'`
-  output: <paste>
+  output: undefined-step failure under strict mode before the label-absence step existed.
   ```
-- [ ] GREEN: Delete `flow_strip`, the `Flow` and `Stage` rows, and the blank
+- [x] GREEN: Delete `flow_strip`, the `Flow` and `Stage` rows, and the blank
   before them; set `essential_rows` to `purpose + 4`; change the empty-flow
   placeholder to `no flow stages`; implement the label-absence step. Production
   files changed: `src/review/card.rs`.
   ```text
   command: `./run-tests.sh --name 'The view toggle switches between the simple and detailed reviews'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 26 steps (26 passed).
   ```
-- [ ] REFACTOR: Update the detailed-card and panel unit tests; rerun.
+- [x] REFACTOR: Update the detailed-card and panel unit tests; delete the dead
+  `review_compact_overview` and `show only the selected stage` steps; rerun.
   ```text
   command: `./run-tests.sh --name 'The view toggle switches between the simple and detailed reviews'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 26 steps (26 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The detailed view drops the flow and stage rows
+- [x] COMMIT: `0bd83a2` - feat(interactive-shell-shortcut): The detailed view drops the flow and stage rows
 
 ### The review panel reports its disable clearly
 
