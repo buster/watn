@@ -127,10 +127,10 @@ plain-line question flow without the ratatui coordinator.
 
 | Element | Responsibility |
 |---|---|
-| `ModelExplorer` | Query the selected provider's `/models` endpoint (with optional `?search=` and pagination params), reject unusable identifiers, and expose catalog completeness/status |
+| `ModelExplorer` | Query the selected provider's `/models` endpoint (with optional `?search=` and pagination params), reject unusable identifiers, expose catalog completeness/status, and normalize each per-token catalog price to the persisted $/1M unit; a missing or negative component yields no price |
 | `SetupWizard` model questions | Own separate model and reasoning questions, page event loop, visible query, focused-widget border styling, search-worker lifecycle, manual fallback, and final review boundary |
 | `model-picker` | Provides model-search and local-filter logic; the wizard selects the complete-catalog local path or incomplete-catalog remote path, and remote results use a stale-generation guard |
-| `ConfigWriter` | Serialize a candidate snapshot atomically, persist selected tier assignments and verbatim reasoning strings, enforce Unix mode `0600`, and preserve unrelated fields |
+| `ConfigWriter` | Serialize a candidate snapshot atomically, persist selected tier assignments, verbatim reasoning strings, and captured per-million prices, enforce Unix mode `0600`, and preserve unrelated fields |
 
 ### Exec
 

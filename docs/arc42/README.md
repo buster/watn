@@ -17,7 +17,9 @@ is retained as unrelated configuration but is not contacted by setup or model
 discovery. Credential sources remain literal values or exact environment
 references. Reasoning accepts any non-empty value verbatim, with `off` as the
 only omission sentinel, and stale search generations cannot overwrite results
-from newer user-entered searches.
+from newer user-entered searches. Catalog prices published per token are
+displayed per million tokens and captured into `[pricing]` for each chosen
+model, so cost display follows a model assignment without manual price entry.
 The outbound transport boundary keeps configured endpoints authoritative for
 normal and release-profile binaries; only a debug `test-support` binary may
 route requests to a loopback test twin, and that route is never persisted or

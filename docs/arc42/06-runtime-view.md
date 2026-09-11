@@ -800,7 +800,7 @@ sequenceDiagram
         User->>Wizard: Enter or Tab
     end
     User->>Wizard: review and final confirmation
-    Wizard->>Config: atomically persist provider, catalog, tiers, and reasoning
+    Wizard->>Config: atomically persist provider, catalog, tiers, reasoning, and captured per-million prices
     Wizard-->>User: saved setup result
 ```
 
@@ -821,17 +821,21 @@ sequenceDiagram
     CLI->>Config: load active provider and provider-local catalog state
     Config-->>CLI: catalog endpoint + raw provider credential; legacy section unchanged
     CLI->>Catalog: GET /models or paginated /models with provider Bearer key
-    Catalog-->>CLI: model metadata
+    Catalog-->>CLI: model metadata including per-token catalog prices
     CLI-->>Legacy: no discovery request
     User->>CLI: assign small, normal, and thinking tiers
-    CLI->>Config: save tier assignments only
+    CLI->>Config: save tier assignments and captured per-million prices
     Note over CLI,Provider: Later chat requests still use Provider, never Catalog
 ```
 
 The source is resolved once per discovery operation. The selected provider's
 credential is expanded at request time. Search and pagination reuse the same
 provider-local endpoint and credential policy. The legacy LiteLLM section is
-preserved as unrelated configuration and receives zero requests.
+preserved as unrelated configuration and receives zero requests. A chosen
+model's per-token catalog price is normalized to $/1M during catalog parsing
+and recorded as its pricing entry; a missing or negative component means the
+model has no catalog price, so nothing is shown or recorded, and entries for
+unchosen models are preserved.
 
 ## Scenario: Catalog failure before coordinated confirmation
 

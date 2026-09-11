@@ -78,6 +78,7 @@
 | R-075 | Direct, Ctrl-W, and `-x` consumers may accidentally share the wrong output or authorization boundary | Medium | High | Keep the consumer routing matrix explicit, resolve review eligibility before generation, and assert direct stdout, Ctrl-W history/buffer, disabled paths, and eligible/non-review `-x` separately |
 | R-077 | Regeneration after rejection can fail or return an unusable candidate, and provider-catalog suggestions can be unavailable | Medium | Medium | Keep the previous candidate and review state on failure, report the failure in the card, release nothing, and degrade the chooser to configured tiers and typed model names when the catalog is unavailable |
 | R-078 | A permanent review disable may release a Candidate the developer did not intend to use | Low | Low | The release follows an explicit `D` decision, ends the invocation immediately, never executes the Candidate, and names the re-enable switch on stderr |
+| R-079 | A catalog may publish pricing in a shape or unit other than the OpenRouter-style per-token fields, and a captured price would then be wrong | Low | Medium | Parse only the documented `pricing.prompt`/`pricing.completion` fields, treat negative components as absent, keep `CatalogPrice` separate from the persisted `ModelPricing` unit, and cover the conversion with a live-catalog-derived fixture |
 
 ## Technical debt
 

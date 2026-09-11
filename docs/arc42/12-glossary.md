@@ -15,7 +15,9 @@
 | Raw output | Plain text without ANSI escape codes; suitable for scripting and pipes |
 | TTY detection | Runtime check of whether stdin is a terminal (interactive) or a pipe (scripting); automatic onboarding requires an implicit selection and a TTY |
 | Tokens/second | Completion tokens divided by wall-clock seconds from the first non-DONE SSE data event, before decoding, to the DONE marker |
-| Pricing | Per-model cost configuration ($/1M input tokens, $/1M output tokens) stored in config |
+| Pricing | Per-model cost configuration ($/1M input tokens, $/1M output tokens) stored in config; written manually or by Price capture |
+| Catalog price | The provider-quoted price for a catalog model, in USD per token (OpenRouter-style `pricing.prompt`/`pricing.completion`); a missing or negative component means the model has no catalog price |
+| Price capture | Recording each chosen model's catalog price into the Pricing configuration, converted to $/1M during catalog parsing, replacing only that model's entry and leaving absent, invalid, and unchosen entries untouched |
 | Reasoning | Explanation produced by the LLM alongside the final answer. Accepted from `reasoning` or `reasoning_content`, buffered in the provider aggregate, and displayed on stderr only after successful completion when `-v`/`--verbose` is set |
 | Buffered reasoning | Provider-collected reasoning that is deliberately not emitted during the content stream and is discarded from user-visible output when the stream fails |
 | Partial output | Command content already flushed before a provider or output failure; it remains visible but is never treated as a successful executable result |

@@ -279,6 +279,13 @@ The response model from the final valid provider aggregate selects the pricing
 entry, including when it was supplied by a choices-empty usage event. Displayed
 only after `[DONE]`. When pricing is not configured, cost is omitted from output.
 
+A model catalog publishes prices in USD per token. The catalog parser converts
+each component once to $/1M (rounded to six decimals) and treats a missing or
+negative component as no price. Assigning tiers captures each chosen model's
+normalized price into `[pricing]`, so cost display works without manual price
+entry. Capture replaces only the chosen model's entry; entries for unchosen
+models and for chosen models without a valid catalog price are preserved.
+
 ## Tokens/second
 
 Wall clock measured from the first non-`[DONE]` SSE data line, before JSON
