@@ -24,7 +24,7 @@ Feature: Quick setup parameters
     And the config file should contain thinking model "~anthropic/claude-haiku-latest:nitro"
     And no model catalog request should be sent
 
-  @e2e @givn.added @wip
+  @e2e @givn.added
   Scenario: A small-model parameter seeds the remaining tiers
     Given no watn configuration exists
     And provider requests are captured by a sentinel
