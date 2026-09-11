@@ -76,7 +76,9 @@ watn setup
 The full wizard covers provider choice, endpoint, credential source (literal
 value or `${ENV_VAR}` reference), the provider's model catalog, the model and
 reasoning value for each tier, and shell integration, then shows a final review.
-Configuration is written only at final confirmation.
+Configuration is written only at final confirmation. When the catalog publishes
+prices, each chosen model's price is recorded per million tokens, so responses
+show a cost estimate afterwards.
 
 The focused commands `watn provider`, `watn models`, and `watn shell` configure
 one area each; `watn completions <SHELL>` prints a completion script for `bash`,
@@ -126,7 +128,8 @@ Options:
 ```
 
 Response content goes to stdout; model, tokens/second, elapsed time, and cost
-(when pricing is configured) go to stderr. `-x` executes with `sh -c` after
+(when the model's price is known, including prices captured during model setup)
+go to stderr. `-x` executes with `sh -c` after
 confirmation; when the review surface is active, final acceptance is that
 confirmation.
 

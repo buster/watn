@@ -375,6 +375,27 @@ fn configured_provider_models_bare(w: &mut WatnWorld) {
     ));
 }
 
+#[given("a configured provider \"test\" with models endpoint publishing a partial price")]
+fn configured_provider_models_partial(w: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let base_url = format!("http://127.0.0.1:{}", server.port());
+    w.mock_server = MockServerWrap(Some(server), None);
+
+    let server_ref = w.mock_server.0.as_ref().unwrap();
+    server_ref.mock(|when, then| {
+        when.method(httpmock::Method::GET).path("/models");
+        then.status(200)
+            .header("Content-Type", "application/json")
+            .body(r#"{"data":[{"id":"model-partial","pricing":{"prompt":"0.00000015"}}]}"#);
+    });
+
+    w.pending_mock_returned_models = vec!["model-partial".to_string()];
+    w.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{}/\"\napi_key = \"test-key\"\n",
+        base_url
+    ));
+}
+
 #[given("no LiteLLM endpoint is configured")]
 fn no_litellm(w: &mut WatnWorld) {
     w.raw_config = Some("[defaults]\nprovider = \"nonexistent\"\n".to_string());

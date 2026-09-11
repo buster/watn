@@ -21,3 +21,10 @@ Feature: Model explorer
     And  the config file should record pricing for "model-b" at 1.23 input and 4.56 output per million tokens
     And  the config file should record pricing for "model-plain" at 1.50 input and 2.50 output per million tokens
     And  the config file should not record pricing for "model-sentinel"
+
+  @givn.added
+  Scenario: A partial catalog price is not recorded
+    Given  a configured provider "test" with models endpoint publishing a partial price
+    When  I run `watn models` and select "model-partial" for small, "model-partial" for normal, and "model-partial" for thinking
+    Then  the output should not contain pricing information
+    And  the config file should not record pricing for "model-partial"
