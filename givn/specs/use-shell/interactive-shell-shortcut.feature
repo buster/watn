@@ -565,13 +565,6 @@ Feature: Interactive shell shortcut for watn
     Then  the current candidate should be accepted
     And  no alternative candidate should be generated
 
-  Scenario: The accept shortcut accepts the current candidate
-    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
-    When  I open the review surface
-    And  I press the accept shortcut
-    Then  the current candidate should be accepted
-    And  no alternative candidate should be generated
-
   Scenario: The cancel shortcut cancels the review
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     When  I open the review surface
