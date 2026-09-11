@@ -400,27 +400,29 @@ Domain constraints: `D` persists the disable, releases the current Candidate to
 stdout, prints the re-enable instruction naming `watn --review-panel` on
 stderr, never executes the Candidate, and exits 0.
 
-- [ ] RED: Synchronize the permanent scenario with the delta body; bind the PTY
+- [x] RED: Synchronize the permanent scenario with the delta body; bind the PTY
   disable step and exit capture with `unimplemented!()`. Run the E2E command
   targeted at the scenario; non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'The panel can permanently disable the review'`
-  output: <paste>
+  output: first synchronized run exit 1: the config assertion used the old harness-only config path; retargeted to the persisted XDG config step. 2 scenarios failed before the fix.
   ```
-- [ ] GREEN: Implement the disable release in `src/main.rs` (persist false,
+- [x] GREEN: Implement the disable release in `src/main.rs` (persist false,
   `panel.finish()`, print candidate to stdout, hint to stderr, exit 0) and the
   PTY steps (write `?`, write `D`, capture stdout file, stderr output, config,
-  exit code). Production files changed: `src/main.rs`.
+  exit code). Production files changed: `src/main.rs` (the flag-only branch for
+  the next scenario landed in the same file edit and is verified by its own
+  scenario).
   ```text
   command: `./run-tests.sh --e2e --name 'The panel can permanently disable the review'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 16 steps (16 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --e2e --name 'The panel can permanently disable the review'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 16 steps (16 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The panel can permanently disable the review
+- [x] COMMIT: `3fa4f04` - feat(interactive-shell-shortcut): The panel can permanently disable the review
 
 ### The review surface switches configure without a request
 

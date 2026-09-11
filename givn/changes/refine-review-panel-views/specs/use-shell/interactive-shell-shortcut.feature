@@ -147,13 +147,13 @@ Feature: Refined review panel views
     When I accept the selected candidate in the review surface
     Then the Bash command line should contain the accepted candidate
 
-  @e2e @givn.modified @wip
+  @e2e @givn.modified
   Scenario: The panel can permanently disable the review
     Given a configured provider candidate "git log --oneline | head -5"
     When I ask interactively for "inspect recent commits"
     And I switch to the detailed view in the review surface
     And I press the disable-review decision in the review surface
-    Then the review should be disabled in the configuration
+    Then the review surface should be disabled in the configuration
     And normal command output should contain only "git log --oneline | head -5"
     And the terminal should show "watn --review-panel"
     And watn should exit successfully

@@ -524,12 +524,16 @@ Feature: Interactive shell shortcut for watn
     And  no command-flow review should open
     And  no review surface should open
 
+  @e2e
   Scenario: The panel can permanently disable the review
-    Given  an installed Bash shortcut and a provider candidate for "show disk usage"
-    When  I invoke Ctrl-W with the current input
-    And  I choose to disable the review permanently
-    Then  the review should be disabled in the configuration
-    And  the review surface should close and preserve the original input
+    Given  a configured provider candidate "git log --oneline | head -5"
+    When  I ask interactively for "inspect recent commits"
+    And  I switch to the detailed view in the review surface
+    And  I press the disable-review decision in the review surface
+    Then  the review surface should be disabled in the configuration
+    And  normal command output should contain only "git log --oneline | head -5"
+    And  the terminal should show "watn --review-panel"
+    And  watn should exit successfully
 
   Scenario: The -x confirmation offers to explain the command
     Given  the explanatory review surface is disabled
