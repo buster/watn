@@ -455,27 +455,27 @@ its onboarding path.
 
 ## Final verification
 
-- [ ] Run `givn lint --change refine-review-panel-views`
+- [x] Run `givn lint --change refine-review-panel-views`
   ```text
-  output: <paste>
+  output: exit 0; `givn lint: 1 file(s) checked — clean`; two advisory subset notices dispositioned in review.md.
   ```
-- [ ] Run the full regular suite `./run-tests.sh`
+- [x] Run the full regular suite `./run-tests.sh`
   ```text
-  output: <paste>
+  output: exit 0; 21 features; 222 scenarios (222 passed); 1357 steps (1357 passed).
   ```
-- [ ] Run the full E2E suite `./run-tests.sh --e2e`
+- [x] Run the full E2E suite `./run-tests.sh --e2e`
   ```text
-  output: <paste>
+  output: exit 0; 25 features; 86 scenarios (86 passed); 633 steps (633 passed).
   ```
-- [ ] Run `cargo test --locked --lib`
+- [x] Run `cargo test --locked --lib`
   ```text
-  output: <paste>
+  output: exit 0; 83 passed; 0 failed.
   ```
-- [ ] Confirm the E2E scope is a strict subset of the regular scenario count.
+- [x] Confirm the E2E scope is a strict subset of the regular scenario count.
   ```text
-  output: <paste counts>
+  output: E2E 86 < regular 222; the E2E command selects only @e2e scenarios from the same feature set.
   ```
-- [ ] Run `givn status --change refine-review-panel-views`
+- [x] Run `givn status --change refine-review-panel-views`
   ```text
-  output: <paste>
+  output: tasks complete after this check-off; next required artifact is `review`.
   ```

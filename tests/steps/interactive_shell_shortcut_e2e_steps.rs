@@ -475,12 +475,30 @@ fn e2e_reject_and_choose_tier(world: &mut WatnWorld) {
 fn e2e_replacement_visible(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("e2e direct PTY session");
     let output = super::pty_snapshot(session);
+    let plain = strip_ansi(&output);
     assert!(
-        output.contains("du -sh ."),
+        plain.contains("du -sh ."),
         "the replacement candidate must be visible, got: {output:?}"
     );
     assert!(
-        output.contains("normal-model"),
+        plain.contains("normal-model"),
         "the chosen tier model must be visible, got: {output:?}"
     );
+}
+
+fn strip_ansi(value: &str) -> String {
+    let mut out = String::new();
+    let mut chars = value.chars();
+    while let Some(character) = chars.next() {
+        if character == '\u{1b}' {
+            for escaped in chars.by_ref() {
+                if escaped.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            out.push(character);
+        }
+    }
+    out
 }

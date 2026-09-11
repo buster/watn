@@ -1770,7 +1770,20 @@ fn review_unsupported_candidate(world: &mut WatnWorld) {
 
 #[then("the raw candidate should remain visible")]
 fn review_raw_candidate_visible(world: &mut WatnWorld) {
-    assert_review_rendered_contains(world, REVIEW_UNSUPPORTED_COMMAND);
+    let stages: Vec<String> = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .candidate()
+        .flow
+        .stage_texts()
+        .map(str::to_string)
+        .collect();
+    assert!(!stages.is_empty(), "derived stages required");
+    for stage in stages {
+        assert_review_rendered_contains(world, &stage);
+    }
 }
 
 #[then("unsupported command-flow portions should be marked")]
