@@ -102,15 +102,20 @@
 | Candidate | A generated or directly edited command under review; not a generic result or answer |
 | Command flow | The visible syntactic structure of a candidate, including command stages and control-flow operators; not a pipeline map or semantic safety verdict |
 | Review surface | A transient terminal presentation for examining a Candidate and its Command flow; an overlay is only one possible presentation, not the domain boundary |
-| Review decision | An explicit developer action during review, such as accept, edit, reject, cancel, rephrase, or escalate; not a generic action |
+| Review decision | An explicit developer action during review, such as accept, edit, reject, cancel, rephrase, escalate, switch the review view, or permanently disable review; not a generic action |
 | Presentation adapter | A terminal-specific renderer that presents the review surface; not a generic handler |
 | Intent | The current natural-language request that produces a Candidate; a rephrase replaces the visible active Intent and direct command editing does not change it |
 | Stage text | The exact command text assigned to one visible Command flow stage; it is not a paraphrase or a generated explanation |
 | Stage purpose | Concise model-written advisory text explaining why one stage is present and what it contributes to the Intent; it is not a semantic safety verdict or locally invented text |
 | Purpose status | The review state `ready`, `loading`, or `purpose-unavailable` for model-written Stage purposes; `loading` is valid only for a structured response that supports delayed purposes |
 | Structured review response | The review-mode provider response containing `review_version`, a complete `command`, exact `stage_text` entries, model-written purposes or a supported delayed-purpose state, and `purpose_status` |
-| Command-output channel | The existing stdout channel carrying only the accepted Candidate for a review-eligible accepted direct path; it is not the controlling-terminal channel |
+| Command-output channel | The existing stdout channel carrying only the accepted Candidate for a review-eligible accepted direct path, or the current Candidate released by a permanent review disable; it is not the controlling-terminal channel |
 | Controlling-terminal channel | The terminal descriptor used for the transient Review surface and ANSI cleanup; it never carries review text through stdout |
 | Shell line-editor buffer | The current editable command line owned by Bash Readline, Zsh ZLE, or Fish `commandline`; Watn changes it only after accepted Ctrl-W review |
-| Review outcome | The typed result `Accepted(candidate)`, `Cancelled`, `RejectRequested`, `RegenerateWith(tier, model)`, or `Unavailable` returned by review; it is not shell execution authorization except for eligible `-x` after acceptance |
+| Review outcome | The typed result `Accepted(candidate)`, `Cancelled`, `RejectRequested`, `RegenerateWith(tier, model)`, `DisableReviewPermanently`, or `Unavailable` returned by review; it is not shell execution authorization except for eligible `-x` after acceptance |
 | Review history | Prior-Intent state retained only during one current review; it is not persisted shell history |
+| Simple review view | The default reduced presentation of the Review surface: model short name, the Stage stack with the selected-stage marker, the selected Stage purpose below the stack, and only the accept, stage-navigation, view-toggle, and cancel decisions in its hints; edit, reject, and disable remain available and promote or act without changing the minimal presentation |
+| Detailed review view | The expanded presentation of the Review surface: Intent, flow position, full decision set including edit and reject, model context, and the same Stage stack and selected-stage purpose as the simple view |
+| Review view toggle | The `d` or `?` Review decision that switches between the simple and detailed review views |
+| Stage stack | The vertical presentation of Command flow stages in the Review surface, one row group per stage, with the command separator shown at the end of the preceding stage and the selected stage marked by an arrow |
+| Model short name | The final `/`-separated identifier segment of the configured model with any leading `~` and `:` variant suffix removed, shown in the simple review view frame |

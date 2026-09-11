@@ -99,6 +99,10 @@ change amends this record: review-eligible requests use the same synchronous
 callback and `[DONE]` boundary with a buffered Candidate sink, keep the progress
 line first, render the review surface through the controlling-terminal channel,
 and release exactly one Candidate only after explicit final acceptance.
+A subsequent amendment extends that explicit-final-decision gate: a permanent
+review disable releases the current Candidate to the command-output channel,
+prints the re-enable instruction on stderr, and ends the invocation, while
+review-surface text still never reaches stdout.
 Disabled and non-review paths retain the original incremental output and
 `Execute now?` confirmation. This is an amendment to ADR-0015, not a new ADR.
 

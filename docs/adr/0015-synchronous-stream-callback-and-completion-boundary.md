@@ -77,6 +77,16 @@ cancelled, rejected, failed, empty, or unavailable review releases no Candidate.
 Disabled and non-review requests retain the incremental output and existing
 `Execute now?` confirmation behavior described above.
 
+## Permanent-disable amendment
+
+A permanent review disable is the second explicit final decision. When the
+developer disables the review from the surface, the current Candidate is
+released to the existing command-output channel, the re-enable instruction is
+written to stderr, and the invocation ends without executing the Candidate,
+including under eligible `-x`. Review-surface text still never reaches stdout,
+and every other release rule of the review-mode amendment is unchanged. A
+review-panel switch without a request only persists the preference and exits.
+
 ## Consequences
 
 - Good: users see command content and spinner cleanup before a slow response ends
@@ -92,6 +102,9 @@ Disabled and non-review requests retain the incremental output and existing
 - Bad: callback and terminal failures require careful cleanup and exact-once tests
 - Bad: review-eligible requests do not expose Candidate bytes incrementally and
   therefore depend on the existing progress line for generation feedback
+- Bad: a permanent review disable releases the current Candidate without
+  execution, so a consumer of the command-output channel must distinguish that
+  explicit release from execution authorization
 
 ## Confirmation
 

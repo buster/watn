@@ -136,14 +136,17 @@ status word is outside the contract; provider-written commands with line breaks
 are normalized to one line before the flow is derived. A provider stage split
 is trusted when every stage text appears verbatim in the command, in order,
 without overlap and with only whitespace or shell separators between; that
-split then becomes the displayed Command flow. The card opens on the command
-flow; arrows move stages, Enter or `a` accepts, `e` edits, `r` rejects, and `c`
-or Escape cancels. Rejecting opens the model chooser with the configured tiers,
+split then becomes the displayed Command flow. The card opens in a simple view
+that names the model short name, stacks the command flow with separators and a
+selected-stage arrow, and shows the selected stage's marked purpose below the
+stack; `d` or `?` switches to the detailed view and back. Arrows move stages in
+both views, Enter or `a` accepts, `e` edits in the detailed view, `r` rejects in
+the detailed view, and `c` or Escape cancels. Rejecting opens the model chooser with the configured tiers,
 a typed model field, and provider-catalog suggestions that load without
 blocking; choosing a tier or model regenerates the Candidate and returns to the
 card, and a failed regeneration keeps the previous Candidate. The review surface
 presents through the review card, rendered monochrome when the terminal lacks
-color. A set `--review-panel`/`--no-review-panel` override persists the preference before generation; a `d` decision inside the card persists the review disable; an interactive `-x` confirmation accepts `?` to open the card as an explanation and close back to the confirmation.
+color. A set `--review-panel`/`--no-review-panel` override persists the preference before generation, and a review switch without a request only persists the requested value before exiting; a `D` decision inside the card persists the review disable, releases the current Candidate to the command-output channel, and names the re-enable switch on stderr; an interactive `-x` confirmation accepts `?` to open the card as an explanation and close back to the confirmation.
 Active eligible `-x` consumes
 acceptance as its sole execution authorization; disabled or non-review `-x`
 retains the existing confirmation prompt.
@@ -178,7 +181,10 @@ stateDiagram-v2
     Reviewing --> ModelSelection: highest tier + higher tier
     ModelSelection --> Generating: explicit provider model selected
     Reviewing --> Reviewing: purpose update
+    Reviewing --> Reviewing: d or ? toggles simple and detailed view
     Reviewing --> Accepted: final acceptance
+    Reviewing --> Disabled: D disable
+    Disabled --> [*]: release current Candidate, re-enable instruction
     Reviewing --> Cancelled: Escape or portable panel failure
     Generating --> Reviewing: interrupted operation with selected Candidate
     ModelSelection --> Reviewing: interrupted operation with selected Candidate
@@ -186,9 +192,10 @@ stateDiagram-v2
     Cancelled --> [*]: preserve original input and release none
 ```
 
-Final acceptance is the only transition that releases a Candidate. The
-controlling-terminal surface is removed and the terminal restored before
-routing to stdout, the shell line-editor buffer, or the execution boundary.
+Final acceptance and a permanent review disable are the only transitions that
+release a Candidate. The controlling-terminal surface is removed and the
+terminal restored before routing to stdout, the shell line-editor buffer, or the
+execution boundary.
 
 ## Scenario: Review channel routing and failure outcomes
 
@@ -216,11 +223,16 @@ sequenceDiagram
     else Eligible -x accepted
         CLI->>TTY: Remove surface and restore terminal
         CLI->>Exec: Authorize exactly one execution
+    else Permanent review disable
+        CLI->>TTY: Remove surface and restore terminal
+        CLI->>Out: Current Candidate only
+        CLI-->>TTY: Re-enable instruction on stderr
     end
 ```
 
 Review-surface bytes never use stdout. Disabled or non-review paths bypass this
-routing and retain the existing incremental output or `Execute now?` confirmation.
+routing and retain the existing incremental output or `Execute now?` confirmation;
+a review switch without a request only persists the setting and exits.
 
 ## Scenario: Generate a shell completion script
 
