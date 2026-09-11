@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:b9985f498c52aa2ffbf3ce09d234c25233e34436669ffc2a2da7d54f5d8a6450 -->
 # Use case: configure-interactive
 
 ## Level
@@ -74,6 +75,9 @@ The selected configuration is persisted and usable on the next run.
 | quicksetup | persist quick setup answers | Quick setup stores answers and installs integrations |
 | quicksetup | overwrite explicit quick setup | Explicit quick setup overwrites an existing configuration |
 | quicksetup | abort first-run quick setup | Aborting quick setup with Ctrl-C on the first run leaves no configuration |
+| quicksetup | prefill quick setup with parameters | Quick setup parameters prefill the dialog with an environment credential |
+| quicksetup | seed remaining tiers from a small-model parameter | A small-model parameter seeds the remaining tiers |
+| quicksetup | override tiers with parameters | Tier parameters override the shared model prefill |
 | responsive-setup-model-filtering | filter a delayed catalog | The terminal model filter stays responsive during a delayed search |
 | highlight-active-setup-input | inspect initial focus | The initial provider input has a green border |
 | highlight-active-setup-input | move focus to API key | The green border follows API key focus |
