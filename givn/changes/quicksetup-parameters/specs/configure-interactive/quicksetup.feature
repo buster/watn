@@ -1,7 +1,7 @@
 @givn.delta @quicksetup
 Feature: Quick setup parameters
 
-  @e2e @givn.added @wip
+  @e2e @givn.added
   Scenario: Quick setup parameters prefill the dialog with an environment credential
     Given no watn configuration exists
     And provider requests are captured by a sentinel
