@@ -121,7 +121,11 @@ enum Commands {
         about = "Configure provider, models, and shell integrations with a minimal question flow"
     )]
     Quicksetup {
-        #[arg(long = "url", value_name = "URL", help = "Prefill the completion endpoint")]
+        #[arg(
+            long = "url",
+            value_name = "URL",
+            help = "Prefill the completion endpoint"
+        )]
         url: Option<String>,
         #[arg(
             long = "key",
@@ -135,9 +139,17 @@ enum Commands {
             help = "Prefill the small, normal, and thinking models"
         )]
         model: Option<String>,
-        #[arg(long = "model-small", value_name = "MODEL", help = "Prefill the small model")]
+        #[arg(
+            long = "model-small",
+            value_name = "MODEL",
+            help = "Prefill the small model"
+        )]
         model_small: Option<String>,
-        #[arg(long = "model-normal", value_name = "MODEL", help = "Prefill the normal model")]
+        #[arg(
+            long = "model-normal",
+            value_name = "MODEL",
+            help = "Prefill the normal model"
+        )]
         model_normal: Option<String>,
         #[arg(
             long = "model-thinking",

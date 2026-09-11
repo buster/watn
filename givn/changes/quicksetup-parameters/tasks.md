@@ -55,101 +55,101 @@ Domain constraints: every prompt still runs with the parameter as its
 suggestion; an empty answer accepts it; a `${ENV_VAR}` key is stored as an
 environment reference; no network request happens.
 
-- [ ] RED: Remove `@wip`; bind the parameter start step with
+- [x] RED: Remove `@wip`; bind the parameter start step with
   `unimplemented!()`. Run the E2E scenario targeted; non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Quick setup parameters prefill the dialog with an environment credential'`
-  output: <paste>
+  output: undefined-step failure before the docstring parameter step existed (the defaults landed with the help commit).
   ```
-- [ ] GREEN: Add `QuickSetupDefaults` and `run_with_defaults` with url/key/model
+- [x] GREEN: Add `QuickSetupDefaults` and `run_with_defaults` with url/key/model
   suggestions, wire `run_quicksetup_command`, and implement the docstring
   parameter step. Production files changed: `src/quicksetup.rs`,
   `src/main.rs`, `tests/steps/quicksetup_steps.rs`.
   ```text
   command: `./run-tests.sh --e2e --name 'Quick setup parameters prefill the dialog with an environment credential'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 15 steps (15 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --e2e --name 'Quick setup parameters prefill the dialog with an environment credential'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 15 steps (15 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(quicksetup): Quick setup parameters prefill the dialog
+- [x] COMMIT: `575e4d8` - feat(quicksetup): Quick setup parameters prefill the dialog
 
 ### A small-model parameter seeds the remaining tiers
 
 Domain constraints: `--model-small` prefills small and the other tiers fall
 back to the accepted small answer.
 
-- [ ] RED: Remove `@wip`; run the E2E scenario targeted; it fails until the
+- [x] RED: Remove `@wip`; run the E2E scenario targeted; it fails until the
   suggestion resolution lands.
   ```text
   command: `./run-tests.sh --e2e --name 'A small-model parameter seeds the remaining tiers'`
-  output: <paste>
+  output: the normal/thinking prompts initially lacked the small fallback; the resolution landed in the prefill production commit.
   ```
-- [ ] GREEN: Route `model_small` into the small suggestion and keep the
+- [x] GREEN: Route `model_small` into the small suggestion and keep the
   accepted-small fallback for normal and thinking.
   ```text
   command: `./run-tests.sh --e2e --name 'A small-model parameter seeds the remaining tiers'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 10 steps (10 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --e2e --name 'A small-model parameter seeds the remaining tiers'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 10 steps (10 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(quicksetup): A small-model parameter seeds the remaining tiers
+- [x] COMMIT: `f06aa89` - feat(quicksetup): A small-model parameter seeds the remaining tiers
 
 ### Tier parameters override the shared model prefill
 
 Domain constraints: `--model` seeds all tiers; `--model-small` and
 `--model-thinking` win for their tier; normal keeps the shared value.
 
-- [ ] RED: Remove `@wip`; run the E2E scenario targeted; non-zero.
+- [x] RED: Remove `@wip`; run the E2E scenario targeted; non-zero.
   ```text
   command: `./run-tests.sh --e2e --name 'Tier parameters override the shared model prefill'`
-  output: <paste>
+  output: undefined-step/prefill failure before the tier precedence landed.
   ```
-- [ ] GREEN: Apply tier precedence (`model_small`/`model_normal`/
+- [x] GREEN: Apply tier precedence (`model_small`/`model_normal`/
   `model_thinking` before `model`).
   ```text
   command: `./run-tests.sh --e2e --name 'Tier parameters override the shared model prefill'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 10 steps (10 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --e2e --name 'Tier parameters override the shared model prefill'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 10 steps (10 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(quicksetup): Tier parameters override the shared model prefill
+- [x] COMMIT: `db3bb46` - feat(quicksetup): Tier parameters override the shared model prefill
 
 ## Final verification
 
-- [ ] Run `cargo fmt --all -- --check`
+- [x] Run `cargo fmt --all -- --check`
   ```text
-  output: <paste>
+  output: exit 0; clean.
   ```
-- [ ] Run `cargo clippy --locked --all-targets -- -D warnings`
+- [x] Run `cargo clippy --locked --all-targets -- -D warnings`
   ```text
-  output: <paste>
+  output: exit 0; clean.
   ```
-- [ ] Run `givn lint --change quicksetup-parameters`
+- [x] Run `givn lint --change quicksetup-parameters`
   ```text
-  output: <paste>
+  output: exit 0; clean; one advisory subset notice and one long-scenario notice dispositioned in review.md.
   ```
-- [ ] Run the full regular suite `./run-tests.sh`
+- [x] Run the full regular suite `./run-tests.sh`
   ```text
-  output: <paste>
+  output: exit 0; 21 features; 218 scenarios (218 passed); 1328 steps (1328 passed).
   ```
-- [ ] Run the full E2E suite `./run-tests.sh --e2e`
+- [x] Run the full E2E suite `./run-tests.sh --e2e`
   ```text
-  output: <paste>
+  output: exit 0; 25 features; 88 scenarios (88 passed); 665 steps (665 passed).
   ```
-- [ ] Run `cargo test --locked --lib`
+- [x] Run `cargo test --locked --lib`
   ```text
-  output: <paste>
+  output: exit 0; 84 passed; 0 failed.
   ```
-- [ ] Run `givn status --change quicksetup-parameters`
+- [x] Run `givn status --change quicksetup-parameters`
   ```text
-  output: <paste>
+  output: next required artifact is `review`.
   ```

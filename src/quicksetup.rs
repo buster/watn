@@ -45,8 +45,8 @@ fn ask_endpoint(default: Option<&str>) -> String {
     let suggestion = default.unwrap_or(OPENROUTER_ENDPOINT);
     loop {
         let answer = prompt("Completion endpoint", Some(suggestion));
-        let endpoint = resolve_answer(answer, Some(suggestion))
-            .unwrap_or_else(|| suggestion.to_string());
+        let endpoint =
+            resolve_answer(answer, Some(suggestion)).unwrap_or_else(|| suggestion.to_string());
         match normalize_endpoint(&endpoint) {
             Ok(normalized) => return normalized,
             Err(error) => println!("error: {error}"),
@@ -206,8 +206,7 @@ pub fn run_with_defaults(defaults: QuickSetupDefaults) -> Result<(), Error> {
         .or(defaults.model.as_deref())
         .map(str::to_string)
         .or_else(|| {
-            (endpoint == OPENROUTER_ENDPOINT)
-                .then(|| OPENROUTER_SUGGESTED_SMALL_MODEL.to_string())
+            (endpoint == OPENROUTER_ENDPOINT).then(|| OPENROUTER_SUGGESTED_SMALL_MODEL.to_string())
         });
     let small = ask_model("Small model", small_suggestion.as_deref());
     let normal_suggestion = defaults
