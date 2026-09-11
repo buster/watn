@@ -156,3 +156,22 @@ coordinated final-confirmation write path. Modified `@e2e` scenario.
 - [x] Commit count matches scenario count (six feature commits plus spec
       commits). Evidence: 5366fff, 4557110, 3aadc73, 188ea65, 10667bf, c613209
       = six scenario commits.
+
+---
+
+## Review follow-up: partial catalog price coverage
+
+Coverage inspection during review found the partial-component branch of
+`parse_pricing` (`pricing` present with only one component) had no scenario.
+Classified bucket 2 (missing test coverage) and resolved.
+
+- [x] RED — `A partial catalog price is not recorded` added; the guard was
+      already implemented in 5366fff, so RED was demonstrated by mutation:
+      defaulting a missing component to `0.0` made the scenario fail with
+      `expected no pricing in output`, exit 1. Guard restored.
+- [x] GREEN — `./run-tests.sh --name "A partial catalog price is not recorded"`
+      → `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0. Files:
+      `specs/models/models.feature`, `tests/steps/ask_steps.rs`.
+- [x] REFACTOR — no behavior change; branch unchanged from 5366fff.
+- [x] COMMIT — `test(models): A partial catalog price is not recorded`.
+      Hash: 835accf
