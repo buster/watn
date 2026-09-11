@@ -2,13 +2,17 @@
 
 ## Setup
 
-- [ ] Confirm the existing Cucumber runner is strict, runs the permanent and
+- [x] Confirm the existing Cucumber runner is strict, runs the permanent and
   change `givn/specs/**/*.feature` trees, and is configured by
   `givn/commands.yaml`; no new runner is needed for this maintenance change.
   Evidence: `tests/features_runner.rs` calls `.fail_on_skipped()` and collects
   permanent plus change specs; `givn/commands.yaml` configures
-  `./run-tests.sh` and `./run-tests.sh --e2e`.
-- [ ] Record the Givn version/configuration, the upgrade commit, and the prior
+  `./run-tests.sh` and `./run-tests.sh --e2e`. Strictness proof: a temporary
+  scenario `Strict runner rejects an undefined step` ran with
+  `./run-tests.sh --name 'Strict runner rejects an undefined step'` and exited
+  1 with `1 scenario (1 failed)`, `1 step (1 failed)`; the temporary feature
+  was removed afterward.
+- [x] Record the Givn version/configuration, the upgrade commit, and the prior
   proven receipt before touching the runner. Evidence: `givn --version` is
   0.7.0, `givn/config.yaml` declares `givn_config_version: "0.7.0"`, the
   managed preparation is `29b032cc1d6c10b0e87c4e05fd286dfdd4777acb`, and
@@ -23,17 +27,26 @@ or `e2e`; the result is written whenever the runner produced counts, even on
 failure; the exit code reflects the run including parsing and hook errors;
 Givn's gate is fail-closed.
 
-- [ ] RED: Add a temporary malformed feature to the change specs and run one
+- [x] RED: Add a temporary malformed feature to the change specs and run one
   regular scenario with `GIVN_RESULT_FILE` set. The current runner exits 0 and
   writes a reconciling result although the malformed file dropped its
   scenarios. Evidence: command and output showing exit 0 plus the result JSON.
-- [ ] GREEN: Add the harness failure signal (`Writer::execution_has_failed()`)
+  `GIVN_RESULT_FILE=/tmp/givn-red.json ./run-tests.sh --name 'Custom
+  OpenAI-compatible provider from config'` reported `1 scenario (1 passed)`,
+  `1 parsing error`, exited 0, and wrote
+  `{"failed":0,"passed":1,"scope":"regular","skipped":0,"total":1}`.
+- [x] GREEN: Add the harness failure signal (`Writer::execution_has_failed()`)
   to the exit condition in `tests/features_runner.rs`, keeping the result
   write before the exit and correcting the stale panic message. Re-run the
   same command. Evidence: exit 1 with the result file still written.
-- [ ] REFACTOR: Remove the temporary malformed feature; run the regular suite
+  `writer.execution_has_failed()` is provided by cucumber's `Stats` trait,
+  imported as `StatsWriter`. The same command exited 1 while still writing
+  `{"failed":0,"passed":1,"scope":"regular","skipped":0,"total":1}`.
+- [x] REFACTOR: Remove the temporary malformed feature; run the regular suite
   normally (without `GIVN_RESULT_FILE`) to confirm the runner still works
   outside Givn. Evidence: command and passing output.
+  `./run-tests.sh` reported `21 features`, `222 scenarios (222 passed)`,
+  `1366 steps (1366 passed)`, exit 0; the temporary feature was removed.
 - [ ] COMMIT: `<hash>` — `fix(givn): fail closed on runner parsing and hook errors`.
 
 ## Evidence and validation

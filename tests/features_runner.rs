@@ -11,7 +11,7 @@ use cucumber::gherkin::{Feature, GherkinEnv};
 use cucumber::parser::{self, Parser};
 use cucumber::runner;
 use cucumber::writer;
-use cucumber::{Cucumber, World, WriterExt};
+use cucumber::{Cucumber, StatsWriter, World, WriterExt};
 use futures::stream;
 
 pub mod steps;
@@ -222,9 +222,9 @@ async fn main() {
             "failed": stats.failed,
             "skipped": stats.skipped,
         });
-        std::fs::write(&path, format!("{payload}\n")).expect("write the review result file");
+        std::fs::write(&path, format!("{payload}\n")).expect("write the runner result file");
     }
-    if stats.failed > 0 || stats.skipped > 0 {
+    if writer.execution_has_failed() || stats.skipped > 0 {
         std::process::exit(1);
     }
 }
