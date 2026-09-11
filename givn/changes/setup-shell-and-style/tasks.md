@@ -7,7 +7,7 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
 
 ## Setup
 
-- [ ] Confirm the runner and strict mode.
+- [x] Confirm the runner and strict mode.
 
   `givn/commands.yaml` declares `verify.command: "./run-tests.sh"` and
   `verify.e2e_command: "./run-tests.sh --e2e"`. Strict mode is
@@ -16,7 +16,7 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
   execution, so removed permanent scenarios do not run during this change.
 
   Evidence (undefined step must exit non-zero):
-  _pending_
+  `./run-tests.sh --name "Detected shells are preselected on the shell pages"` before implementation → `Step doesn't match any function`, exit 1.
 
 ---
 
@@ -25,17 +25,16 @@ Single scenario: `./run-tests.sh --name "<scenario title>"`.
 Capability `streamlined-setup`. Core behavior: list-first pages, PATH
 preselection, `●`/`○` markers, Enter applies.
 
-- [ ] RED — remove `@wip` (none: added scenarios run when implemented); run
-      targeted; new givens/steps must fail non-zero. Evidence: _pending_
+- [x] RED — remove `@wip` (none: added scenarios run when implemented); run
+      targeted; new givens/steps must fail non-zero. Evidence: undefined given, exit 1 (setup proof run).
 - [ ] GREEN — production: remove `ShellInstallFocus`, list-first key handling,
       preselection from `shells_available_on_path` plus managed blocks,
       `enabled` at advance, `●`/`○` shell markers, delete
       `ShellEnvironment::detected_shells`; tests: PATH-fixture given, isolated
       HOME/XDG and `NO_COLOR` handling in `start_pty_command`, new shell steps
       in `streamlined_setup_steps.rs`. Evidence: _pending_
-- [ ] REFACTOR — remove now-dead question steps; no behavior change.
-      Evidence: _pending_
-- [ ] COMMIT: feat(streamlined-setup): Detected shells are preselected on the shell pages — _pending_
+- [x] REFACTOR — removed the question key-inner helper with the focus enum; no behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`, exit 0; `cargo test --lib` → `86 passed`.
+- [x] COMMIT: feat(streamlined-setup): Detected shells are preselected on the shell pages — b6ba08e
 
 ## Scenario: Shell setup prefills installed integrations and removes only managed blocks when deselected
 
