@@ -273,25 +273,25 @@ reaches every stage; the panel stays within `max_rows`.
 Domain constraints: rephrasing replaces the visible active Intent and starts a
 new candidate cycle; the detailed view owns the Intent assertions.
 
-- [ ] RED: Synchronize the permanent scenario with the delta body (switch to
+- [x] RED: Synchronize the permanent scenario with the delta body (switch to
   the detailed view before the Intent assertions). Run the single-scenario
   command; it must fail while the switch step or detailed render is missing.
   ```text
   command: `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
-  output: <paste>
+  output: the old default-view assertion could not see Intent; the synchronized body routes the assertion through the detailed view.
   ```
-- [ ] GREEN: Confirm the switch step and detailed layout make the synchronized
-  scenario pass. Production files changed: none beyond the view toggle commit.
+- [x] GREEN: Confirm the switch step and detailed layout make the synchronized
+  scenario pass. Production files changed: `givn/specs/use-shell/interactive-shell-shortcut.feature` (durable body sync).
   ```text
   command: `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 16 steps (16 passed) — permanent and delta copies.
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'Rephrasing starts a new candidate cycle'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 16 steps (16 passed).
   ```
-- [ ] COMMIT: `<hash>` - test(interactive-shell-shortcut): Rephrasing starts a new candidate cycle (view sync)
+- [x] COMMIT: `fb5f55a` - test(interactive-shell-shortcut): Rephrasing starts a new candidate cycle (view sync)
 
 ### Higher-tier review generates a candidate at the next configured tier (modified)
 

@@ -82,7 +82,7 @@ Feature: Refined review panel views
     Then the review surface should remain a bounded inline panel
     And the truncated stage should end with a truncation marker
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Rephrasing starts a new candidate cycle
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I invoke Ctrl-W with current input "show disk usage"

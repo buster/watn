@@ -350,6 +350,7 @@ Feature: Interactive shell shortcut for watn
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     When  I invoke Ctrl-W with current input "show disk usage"
     And  I rephrase the intent as "show disk usage for mounted filesystems"
+    And  I switch to the detailed view
     Then  a new candidate should be generated for the current intent
     And  the visible intent should be "show disk usage for mounted filesystems"
     And  the prior intent should remain only in current-review history
