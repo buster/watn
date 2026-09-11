@@ -360,6 +360,7 @@ Feature: Interactive shell shortcut for watn
     Given  an installed Bash shortcut and a candidate generated at the small tier
     When  I invoke Ctrl-W with current input "inspect recent log changes"
     And  I request a higher tier
+    And  I switch to the detailed view
     Then  a new candidate should be generated at the next configured tier
     And  its tier and provider/model context should be visible
     And  the current intent should remain unchanged

@@ -93,7 +93,7 @@ Feature: Refined review panel views
     And the prior intent should remain only in current-review history
     And the prior candidate should not be accepted by the new cycle
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Higher-tier review generates a candidate at the next configured tier
     Given an installed Bash shortcut and a candidate generated at the small tier
     When I invoke Ctrl-W with current input "inspect recent log changes"

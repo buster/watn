@@ -298,23 +298,23 @@ new candidate cycle; the detailed view owns the Intent assertions.
 Domain constraints: the new tier and provider/model context are visible in the
 detailed view; the current intent stays unchanged.
 
-- [ ] RED: Synchronize the permanent scenario with the delta body. Run
+- [x] RED: Synchronize the permanent scenario with the delta body. Run
   non-zero until the assertions target the detailed view.
   ```text
   command: `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
-  output: <paste>
+  output: the old default-view assertion could not see tier/provider context; the synchronized body routes it through the detailed view.
   ```
-- [ ] GREEN: Confirm the synchronized scenario passes.
+- [x] GREEN: Confirm the synchronized scenario passes.
   ```text
   command: `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 14 steps (14 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'Higher-tier review generates a candidate at the next configured tier'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 14 steps (14 passed).
   ```
-- [ ] COMMIT: `<hash>` - test(interactive-shell-shortcut): Higher-tier review generates a candidate at the next configured tier (view sync)
+- [x] COMMIT: `1dae4ee` - test(interactive-shell-shortcut): Higher-tier review generates a candidate at the next configured tier (view sync)
 
 ### The review card emphasizes the decision shortcut keys (modified)
 
