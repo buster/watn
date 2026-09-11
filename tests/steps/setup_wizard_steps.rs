@@ -1,7 +1,18 @@
-use cucumber::{then, when};
+use cucumber::{given, then, when};
 
 use super::{finish_pty_session, pty_snapshot, pty_wait_for_label, pty_write, start_pty_session};
 use crate::WatnWorld;
+
+fn strip_ansi(output: &str) -> String {
+    regex::Regex::new(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+        .expect("ANSI pattern")
+        .replace_all(output, "")
+        .to_string()
+}
+
+fn marker_shown(output: &str, marker: &str, name: &str) -> bool {
+    output.contains(&format!("{marker}{name}")) || output.contains(&format!("{marker} {name}"))
+}
 
 fn assert_words(output: &str, text: &str) {
     for word in text.split_whitespace() {
@@ -48,6 +59,83 @@ fn start_setup_wizard(world: &mut WatnWorld) {
     world.pty_session = Some(session);
     let session = world.pty_session.as_ref().expect("setup PTY session");
     pty_wait_for_label(session, "Setup");
+}
+
+#[given("the terminal color capability is disabled")]
+fn terminal_color_capability_disabled(world: &mut WatnWorld) {
+    world.env_vars.insert("NO_COLOR".to_string(), "1".to_string());
+}
+
+#[then("the setup frame should show the watn setup label")]
+fn setup_frame_label(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = strip_ansi(&pty_snapshot(session));
+    assert!(
+        output.contains("watn · setup"),
+        "setup frame label missing: {output:?}"
+    );
+}
+
+#[then(expr = "the active page marker should be {string}")]
+fn active_page_marker(world: &mut WatnWorld, marker: String) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let output = strip_ansi(&pty_snapshot(session));
+    assert!(
+        ["Provider", "Small Model", "Shell Completion", "Review"]
+            .iter()
+            .any(|page| marker_shown(&output, &marker, page)),
+        "active page marker missing: {output:?}"
+    );
+}
+
+#[then("the footer should show bold key hints with dim labels")]
+fn footer_key_hints(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let raw = pty_snapshot(session);
+    let visible = strip_ansi(&raw);
+    assert!(raw.contains("\u{1b}[1m"), "bold key hint missing: {raw:?}");
+    assert!(
+        raw.contains("38;5;81"),
+        "cyan key hint missing: {raw:?}"
+    );
+    assert!(raw.contains("\u{1b}[2m"), "dim label missing: {raw:?}");
+    assert!(visible.contains('⏎'), "enter hint missing: {visible:?}");
+}
+
+#[then("the setup palette should use cyan labels and dim borders")]
+fn setup_palette(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let raw = pty_snapshot(session);
+    assert!(
+        raw.contains("38;5;81"),
+        "cyan label color missing: {raw:?}"
+    );
+    assert!(raw.contains("\u{1b}[2m"), "dim border missing: {raw:?}");
+}
+
+#[then(expr = "the setup warning should be marked with {string} in amber")]
+fn setup_warning_amber(world: &mut WatnWorld, marker: String) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let raw = pty_snapshot(session);
+    let visible = strip_ansi(&raw);
+    assert!(
+        visible.contains(&marker),
+        "warning marker {marker:?} missing: {visible:?}"
+    );
+    assert!(
+        raw.contains("38;5;214"),
+        "warning is not amber: {raw:?}"
+    );
+}
+
+#[then("the setup output should not contain indexed color sequences")]
+fn no_indexed_color(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    let raw = pty_snapshot(session);
+    assert!(
+        !raw.contains("38;5;") && !raw.contains("48;5;"),
+        "indexed color leaked into a plain terminal: {raw:?}"
+    );
 }
 
 #[when("I start the shared `watn models` wizard in a terminal")]

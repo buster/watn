@@ -216,10 +216,75 @@ type SearchMessage = (
 
 const CATALOG_PAGE_LIMIT: u32 = 50;
 
-fn setup_block<'a>(title: impl Into<Line<'a>>, focused: bool) -> Block<'a> {
-    let block = Block::bordered().title(title);
+#[derive(Debug, Clone, Copy)]
+struct SetupInk {
+    color: bool,
+}
+
+impl SetupInk {
+    fn new(color: bool) -> Self {
+        Self { color }
+    }
+
+    fn apply(&self, style: Style) -> Style {
+        if self.color {
+            style
+        } else {
+            Style::default()
+        }
+    }
+
+    fn border(&self) -> Style {
+        self.apply(Style::default().add_modifier(Modifier::DIM))
+    }
+
+    fn label(&self) -> Style {
+        self.apply(Style::default().fg(Color::Indexed(81)))
+    }
+
+    fn label_bold(&self) -> Style {
+        self.apply(
+            Style::default()
+                .fg(Color::Indexed(81))
+                .add_modifier(Modifier::BOLD),
+        )
+    }
+
+    fn key(&self) -> Style {
+        self.apply(
+            Style::default()
+                .fg(Color::Indexed(81))
+                .add_modifier(Modifier::BOLD),
+        )
+    }
+
+    fn bold(&self) -> Style {
+        self.apply(Style::default().add_modifier(Modifier::BOLD))
+    }
+
+    fn dim(&self) -> Style {
+        self.apply(Style::default().add_modifier(Modifier::DIM))
+    }
+
+    fn white(&self) -> Style {
+        self.apply(Style::default().fg(Color::Indexed(97)))
+    }
+
+    fn green(&self) -> Style {
+        self.apply(Style::default().fg(Color::Green))
+    }
+
+    fn amber(&self) -> Style {
+        self.apply(Style::default().fg(Color::Indexed(214)))
+    }
+}
+
+fn setup_block<'a>(title: impl Into<Line<'a>>, focused: bool, ink: SetupInk) -> Block<'a> {
+    let block = Block::bordered()
+        .title(title)
+        .border_style(ink.border());
     if focused {
-        block.border_style(Style::default().fg(Color::Green))
+        block.border_style(ink.green()).title_style(ink.bold())
     } else {
         block
     }
@@ -401,6 +466,7 @@ pub fn apply_shell_result(result: &SetupWizardResult) -> Result<(), Error> {
 
 struct SetupWizard {
     config: Config,
+    ink: SetupInk,
     provider_name: String,
     provider_cursor: usize,
     page: SetupPage,
@@ -543,6 +609,11 @@ impl SetupWizard {
         let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
             config: config.clone(),
+            ink: SetupInk::new(crate::review::terminal_supports_color(
+                std::env::var_os("NO_COLOR").is_some(),
+                &std::env::var("TERM").unwrap_or_default(),
+                std::env::var_os("COLORTERM").is_some(),
+            )),
             provider_name: provider_name.to_string(),
             provider_cursor: match provider_name {
                 "openrouter" => 0,
@@ -1386,7 +1457,12 @@ impl SetupWizard {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let panel = Block::bordered().title("Setup");
+        let panel = Block::bordered()
+            .border_style(self.ink.border())
+            .title(Line::from(vec![
+                Span::styled("watn", self.ink.white()),
+                Span::styled(" · setup", self.ink.dim()),
+            ]));
         let areas = Layout::vertical([
             Constraint::Length(3),
             Constraint::Length(2),
@@ -1396,31 +1472,44 @@ impl SetupWizard {
         .split(panel.inner(frame.area()));
         frame.render_widget(panel, frame.area());
 
-        let mut tab_titles = vec![
-            Line::from("Provider"),
-            Line::from("URL"),
-            Line::from("API key"),
-            Line::from("Catalog"),
-            Line::from("Small Model"),
-            Line::from("Small Reasoning"),
-            Line::from("Normal Model"),
-            Line::from("Normal Reasoning"),
-            Line::from("Thinking Model"),
-            Line::from("Thinking Reasoning"),
-            Line::from("Shell Completion"),
-            Line::from("Shell Shortcut"),
-            Line::from("Review"),
+        let names = [
+            "Provider",
+            "URL",
+            "API key",
+            "Catalog",
+            "Small Model",
+            "Small Reasoning",
+            "Normal Model",
+            "Normal Reasoning",
+            "Thinking Model",
+            "Thinking Reasoning",
+            "Shell Completion",
+            "Shell Shortcut",
+            "Review",
         ];
+        let mut tab_titles: Vec<Line> = names
+            .iter()
+            .enumerate()
+            .map(|(index, title)| {
+                if index == self.page.index() {
+                    Line::from(vec![
+                        Span::styled("◆ ", self.ink.label_bold()),
+                        Span::styled(*title, self.ink.label_bold()),
+                    ])
+                } else {
+                    Line::from(Span::styled(*title, self.ink.dim()))
+                }
+            })
+            .collect();
         tab_titles.truncate(self.last_page.index() + 1);
         let tabs = Tabs::new(tab_titles)
-            .block(Block::bordered().title("Setup pages"))
-            .select(self.page.index())
-            .highlight_style(
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
+            .block(
+                Block::bordered()
+                    .title("Setup pages")
+                    .border_style(self.ink.border()),
             )
-            .divider(Span::raw(" | "));
+            .select(self.page.index())
+            .divider(Span::styled(" · ", self.ink.dim()));
         frame.render_widget(tabs, areas[0]);
 
         let focus = match self.page {
@@ -1446,13 +1535,17 @@ impl SetupWizard {
                 }
             }
         };
-        let header = Paragraph::new(format!(
-            "Page {} of {}  |  {}  |  Focus: {}",
-            self.page.index() + 1,
-            self.last_page.index() + 1,
-            self.page.title(),
-            focus
-        ));
+        let header = Paragraph::new(Line::from(vec![
+            Span::styled(
+                format!("Page {} of {}", self.page.index() + 1, self.last_page.index() + 1),
+                self.ink.white(),
+            ),
+            Span::styled("  ·  ", self.ink.dim()),
+            Span::styled(self.page.title(), self.ink.label()),
+            Span::styled("  ·  ", self.ink.dim()),
+            Span::styled("focus ", self.ink.dim()),
+            Span::styled(focus, self.ink.white()),
+        ]));
         frame.render_widget(header, areas[1]);
 
         match self.page {
@@ -1471,24 +1564,54 @@ impl SetupWizard {
             SetupPage::ShellShortcut => self.draw_shell_install(frame, areas[2], true),
         }
 
-        let footer = if self.save_prompt {
-            "Save current settings? [y] Save [n] Discard  [Esc] Return"
+        let hint = |pairs: &[(&str, &str)]| -> Line {
+            let mut spans: Vec<Span> = Vec::new();
+            for (index, (key, label)) in pairs.iter().enumerate() {
+                if index > 0 {
+                    spans.push(Span::styled(" · ", self.ink.dim()));
+                }
+                spans.push(Span::styled((*key).to_string(), self.ink.key()));
+                spans.push(Span::styled(format!(" {label}"), self.ink.dim()));
+            }
+            Line::from(spans)
+        };
+        let footer_line = if self.save_prompt {
+            hint(&[("y", "save"), ("n", "discard"), ("esc", "return")])
         } else {
             match self.page {
-                SetupPage::ShellCompletion | SetupPage::ShellShortcut => {
-                    "Up/Down move  Space toggle  Enter continue  Esc save/discard"
-                }
-                SetupPage::Review => "Enter confirm  Shift-Tab back  Esc discard  Ctrl-C quit",
-                _ if self.page.model_slot().is_some() => {
-                    "Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
-                }
-                _ => {
-                    "Up/Down choose  Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
-                }
+                SetupPage::ShellCompletion | SetupPage::ShellShortcut => hint(&[
+                    ("↑↓", "move"),
+                    ("␣", "toggle"),
+                    ("⏎", "continue"),
+                    ("esc", "save/discard"),
+                ]),
+                SetupPage::Review => hint(&[
+                    ("⏎", "confirm"),
+                    ("⇧tab", "back"),
+                    ("esc", "discard"),
+                    ("ctrl-c", "quit"),
+                ]),
+                _ if self.page.model_slot().is_some() => hint(&[
+                    ("⏎", "next"),
+                    ("⇧tab", "back"),
+                    ("esc", "save/discard"),
+                    ("ctrl-c", "quit"),
+                ]),
+                _ => hint(&[
+                    ("↑↓", "choose"),
+                    ("⏎", "next"),
+                    ("⇧tab", "back"),
+                    ("esc", "save/discard"),
+                    ("ctrl-c", "quit"),
+                ]),
             }
         };
-        let footer = Paragraph::new(footer)
-            .block(Block::bordered().title("Controls"))
+        let footer = Paragraph::new(footer_line)
+            .block(
+                Block::bordered()
+                    .title("Controls")
+                    .border_style(self.ink.border()),
+            )
             .wrap(Wrap { trim: true });
         frame.render_widget(footer, areas[3]);
     }
@@ -1507,7 +1630,7 @@ impl SetupWizard {
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
         let input = Paragraph::new(format!("> {}█", self.endpoint))
-            .block(setup_block("URL (editing)", true));
+            .block(setup_block("URL (editing)", true, self.ink));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
@@ -1526,7 +1649,7 @@ impl SetupWizard {
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
         let input = Paragraph::new(format!("> {}█", self.catalog_endpoint))
-            .block(setup_block("Catalog endpoint (editing)", true));
+            .block(setup_block("Catalog endpoint (editing)", true, self.ink));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
@@ -1543,14 +1666,9 @@ impl SetupWizard {
         let mut state = ListState::default();
         state.select(Some(self.provider_cursor));
         let list = List::new(items)
-            .block(setup_block("Provider (editing)", true))
-            .highlight_style(
-                Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
+            .block(setup_block("Provider (editing)", true, self.ink))
+            .highlight_style(self.ink.label_bold())
+            .highlight_symbol("▶ ");
         frame.render_stateful_widget(list, area, &mut state);
     }
 
@@ -1567,31 +1685,46 @@ impl SetupWizard {
             CredentialStorage::Configuration => "literal (masked)",
             CredentialStorage::Environment => "environment reference",
         };
+        let line = |label: &str, value: String, style: Style| {
+            Line::from(vec![
+                Span::styled(format!("{label}: "), self.ink.label()),
+                Span::styled(value, style),
+            ])
+        };
         let mut lines = vec![
-            format!("Provider: {provider}"),
-            format!("Completion endpoint: {}", self.endpoint),
-            format!("Catalog: {catalog}"),
-            format!("Credential: {credential}"),
+            line("Provider", provider.to_string(), self.ink.white()),
+            line(
+                "Completion endpoint",
+                self.endpoint.clone(),
+                self.ink.white(),
+            ),
+            line("Catalog", catalog.to_string(), self.ink.white()),
+            line("Credential", credential.to_string(), self.ink.white()),
         ];
         for (index, role) in ["small", "normal", "thinking"].iter().enumerate() {
             if let Some(choice) = &self.completed[index] {
-                lines.push(format!(
-                    "{role}: {} / {}",
-                    choice.model.id, choice.reasoning
+                lines.push(line(
+                    role,
+                    format!("{} / {}", choice.model.id, choice.reasoning),
+                    self.ink.white(),
                 ));
             } else if let Some(model) = &self.initial_models[index] {
-                lines.push(format!(
-                    "{role}: {} / {}",
-                    model,
-                    [
-                        self.config.tiers.reasoning.small.as_deref(),
-                        self.config.tiers.reasoning.normal.as_deref(),
-                        self.config.tiers.reasoning.thinking.as_deref(),
-                    ][index]
-                        .unwrap_or("off")
+                lines.push(line(
+                    role,
+                    format!(
+                        "{} / {}",
+                        model,
+                        [
+                            self.config.tiers.reasoning.small.as_deref(),
+                            self.config.tiers.reasoning.normal.as_deref(),
+                            self.config.tiers.reasoning.thinking.as_deref(),
+                        ][index]
+                            .unwrap_or("off")
+                    ),
+                    self.ink.white(),
                 ));
             } else {
-                lines.push(format!("{role}: incomplete"));
+                lines.push(line(role, "incomplete".to_string(), self.ink.amber()));
             }
         }
         let completion = Shell::ALL
@@ -1611,25 +1744,27 @@ impl SetupWizard {
             .map(|shell| shell.name())
             .collect::<Vec<_>>()
             .join(", ");
-        lines.push(format!(
-            "Completion shells: {}",
+        lines.push(line(
+            "Completion shells",
             if completion.is_empty() {
-                "none"
+                "none".to_string()
             } else {
-                &completion
-            }
+                completion
+            },
+            self.ink.white(),
         ));
-        lines.push(format!(
-            "Ctrl-W shells: {}",
+        lines.push(line(
+            "Ctrl-W shells",
             if shortcut.is_empty() {
-                "none"
+                "none".to_string()
             } else {
-                &shortcut
-            }
+                shortcut
+            },
+            self.ink.white(),
         ));
         frame.render_widget(
-            Paragraph::new(lines.join("\n"))
-                .block(setup_block("Review", true))
+            Paragraph::new(lines)
+                .block(setup_block("Review", true, self.ink))
                 .wrap(Wrap { trim: true }),
             area,
         );
@@ -1655,14 +1790,10 @@ impl SetupWizard {
             .block(setup_block(
                 "Where should the API key be stored?",
                 self.credential_focus == CredentialFocus::Storage,
+                self.ink,
             ))
-            .highlight_style(
-                Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
+            .highlight_style(self.ink.label_bold())
+            .highlight_symbol("▶ ");
         frame.render_stateful_widget(list, chunks[0], &mut state);
         let value = if self.storage == CredentialStorage::Configuration {
             "*".repeat(self.credential_input.chars().count())
@@ -1672,6 +1803,7 @@ impl SetupWizard {
         let input = Paragraph::new(format!("> {}█", value)).block(setup_block(
             "API key / environment name (editing)",
             self.credential_focus == CredentialFocus::Value,
+            self.ink,
         ));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
@@ -1687,42 +1819,59 @@ impl SetupWizard {
             .enumerate()
             .map(|(index, model)| {
                 let label = if index == self.selection[slot] {
-                    format!("> {}", model.id)
+                    Line::from(Span::styled(
+                        format!("▶ {}", model.id),
+                        self.ink.label_bold(),
+                    ))
                 } else {
-                    model.id.clone()
+                    Line::from(Span::styled(model.id.clone(), self.ink.white()))
                 };
                 Row::new([
                     Cell::from(label),
-                    Cell::from(
+                    Cell::from(Span::styled(
                         model
                             .context_length
                             .map(|value| format!("{}K", value / 1000))
                             .unwrap_or_else(|| "-".to_string()),
-                    ),
-                    Cell::from(
+                        self.ink.dim(),
+                    )),
+                    Cell::from(Span::styled(
                         model
                             .pricing
                             .as_ref()
                             .map(|value| format!("${:.2}/${:.2}", value.input, value.output))
                             .unwrap_or_else(|| "-".to_string()),
-                    ),
-                    Cell::from(model.supported_features.join(", ")),
+                        self.ink.dim(),
+                    )),
+                    Cell::from(Span::styled(
+                        model.supported_features.join(", "),
+                        self.ink.dim(),
+                    )),
                 ])
             })
             .chain(self.catalog_manual.then(|| {
                 Row::new([
-                    Cell::from("Catalog discovery unavailable"),
+                    Cell::from(Span::styled(
+                        "Catalog discovery unavailable",
+                        self.ink.amber(),
+                    )),
                     Cell::from(""),
                     Cell::from(""),
-                    Cell::from(self.validation.clone()),
+                    Cell::from(Span::styled(
+                        format!("⚠ {}", self.validation),
+                        self.ink.amber(),
+                    )),
                 ])
             }))
             .chain(self.catalog_manual.then(|| {
                 Row::new([
-                    Cell::from("Manual model identifier"),
+                    Cell::from(Span::styled(
+                        "Manual model identifier",
+                        self.ink.label(),
+                    )),
                     Cell::from(""),
                     Cell::from(""),
-                    Cell::from("type a model id"),
+                    Cell::from(Span::styled("↳ type a model id", self.ink.dim())),
                 ])
             }));
         let mut table_state = TableState::default();
@@ -1753,15 +1902,10 @@ impl SetupWizard {
         )
         .header(
             Row::new(["Model", "Context", "Pricing ($/1M)", "Features"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
+                .style(self.ink.label_bold()),
         )
-        .block(setup_block(title, self.model_focus == ModelFocus::Table))
-        .row_highlight_style(
-            Style::default()
-                .bg(Color::Cyan)
-                .fg(Color::Black)
-                .add_modifier(Modifier::BOLD),
-        )
+        .block(setup_block(title, self.model_focus == ModelFocus::Table, self.ink))
+        .row_highlight_style(self.ink.bold())
         .highlight_symbol("");
         frame.render_stateful_widget(table, chunks[0], &mut table_state);
         let visible_rows = chunks[0].height.saturating_sub(4) as usize;
@@ -1812,19 +1956,42 @@ impl SetupWizard {
         } else {
             ""
         };
-        let text = format!(
-            "Model: {}\n{}\nChoose reasoning effort with Up/Down, then press Enter.\nSelected: {}\nChoices: {}\nCustom: {}",
-            model,
-            metadata_notice,
-            self.reasoning_value(slot),
-            options,
-            self.custom_reasoning[slot]
-                .as_deref()
-                .unwrap_or("press c to enter a custom effort")
-        );
+        let mut lines = vec![
+            Line::from(vec![
+                Span::styled("Model: ", self.ink.label()),
+                Span::styled(model, self.ink.white()),
+            ]),
+        ];
+        if !metadata_notice.is_empty() {
+            lines.push(Line::from(vec![
+                Span::styled("⚠ ", self.ink.amber()),
+                Span::styled(metadata_notice, self.ink.amber()),
+            ]));
+        }
+        lines.push(Line::from(Span::styled(
+            "↳ Choose reasoning effort with Up/Down, then press Enter.",
+            self.ink.dim(),
+        )));
+        lines.push(Line::from(vec![
+            Span::styled("Selected: ", self.ink.label()),
+            Span::styled(self.reasoning_value(slot), self.ink.green()),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("Choices: ", self.ink.label()),
+            Span::styled(options, self.ink.dim()),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("Custom: ", self.ink.label()),
+            Span::styled(
+                self.custom_reasoning[slot]
+                    .as_deref()
+                    .unwrap_or("press c to enter a custom effort"),
+                self.ink.dim(),
+            ),
+        ]));
         frame.render_widget(
-            Paragraph::new(text)
-                .block(setup_block(self.page.title(), true))
+            Paragraph::new(lines)
+                .block(setup_block(self.page.title(), true, self.ink))
                 .wrap(Wrap { trim: true }),
             area,
         );
@@ -1852,35 +2019,48 @@ impl SetupWizard {
             "{}\n\nSelect the shells where this integration should be installed.",
             description
         ))
-        .block(setup_block(title, false))
+        .block(setup_block(title, false, self.ink))
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
 
         let items = Shell::ALL.iter().enumerate().map(|(index, shell)| {
-            let marker = if selected[index] { "●" } else { "○" };
-            ListItem::new(format!("{} {}", marker, shell.name()))
+            if selected[index] {
+                ListItem::new(Line::from(vec![
+                    Span::styled("● ", self.ink.green()),
+                    Span::styled(shell.name(), self.ink.white()),
+                ]))
+            } else {
+                ListItem::new(Line::from(vec![
+                    Span::styled("○ ", self.ink.dim()),
+                    Span::styled(shell.name(), self.ink.dim()),
+                ]))
+            }
         });
         let mut state = ListState::default();
         state.select(Some(cursor));
         let list = List::new(items)
-            .block(setup_block("Select shells", true))
-            .highlight_style(
-                Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
+            .block(setup_block("Select shells", true, self.ink))
+            .highlight_style(self.ink.label_bold())
+            .highlight_symbol("▶ ");
         frame.render_stateful_widget(list, chunks[1], &mut state);
     }
 
     fn draw_validation(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let text = if self.validation.is_empty() {
-            "The active line is marked with █. Enter or Tab advances the wizard.".to_string()
+        let line = if self.validation.is_empty() {
+            Line::from(vec![
+                Span::styled("↳ ", self.ink.dim()),
+                Span::styled(
+                    "The active line is marked with █. Enter or Tab advances the wizard.",
+                    self.ink.dim(),
+                ),
+            ])
         } else {
-            format!("Validation: {}", self.validation)
+            Line::from(vec![
+                Span::styled("⚠ ", self.ink.amber()),
+                Span::styled(self.validation.clone(), self.ink.amber()),
+            ])
         };
-        frame.render_widget(Paragraph::new(text).wrap(Wrap { trim: true }), area);
+        frame.render_widget(Paragraph::new(line).wrap(Wrap { trim: true }), area);
     }
 }
 

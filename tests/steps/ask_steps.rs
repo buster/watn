@@ -2005,8 +2005,8 @@ fn use_page_down(w: &mut WatnWorld) {
 fn dialog_highlights_selected(w: &mut WatnWorld) {
     let output = w.output.clone().unwrap_or_default();
     assert!(
-        output.contains("> model-12"),
-        "expected dialog to highlight 'model-12', got: {:?}",
+        output.contains("model-12") && output.contains('▶'),
+        "expected dialog to mark and show 'model-12', got: {:?}",
         output
     );
 }

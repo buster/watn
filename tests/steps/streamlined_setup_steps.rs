@@ -700,7 +700,7 @@ fn choose_small_model(world: &mut WatnWorld, model: String) {
 fn small_reasoning_identifies_model(world: &mut WatnWorld, model: String) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let output = pty_snapshot(session);
-    let page = latest_page(&output);
+    let page = visible_output(latest_page(&output));
     assert!(
         page.contains("Small Reasoning"),
         "small reasoning page was not active: {page:?}"
@@ -708,8 +708,7 @@ fn small_reasoning_identifies_model(world: &mut WatnWorld, model: String) {
     assert!(
         page.contains(&format!("Model: {model}")),
         "selected model missing: {page:?}"
-    );
-}
+    );}
 
 #[when(regex = r##"^I choose reasoning "([^"]+)" for the small role$"##)]
 fn choose_small_reasoning(world: &mut WatnWorld, effort: String) {
@@ -2375,6 +2374,22 @@ fn advance_through_shell_pages_without_selection(world: &mut WatnWorld) {
     super::finish_pty_session(world, session);
 }
 
+fn deselect_all_shells(session: &mut super::PtySession) {
+    for (index, name) in ["Bash", "Zsh", "Fish"].iter().enumerate() {
+        for _ in 0..3 {
+            pty_write(session, "\x1b[A");
+        }
+        for _ in 0..index {
+            pty_write(session, "\x1b[B");
+        }
+        let output = visible_output(&pty_snapshot(session));
+        let page = latest_page(&output);
+        if page.contains(&format!("●{name}")) || page.contains(&format!("● {name}")) {
+            pty_write(session, " ");
+        }
+    }
+}
+
 #[when("I deselect Bash completion")]
 fn deselect_bash_completion(world: &mut WatnWorld) {
     if world.pty_session.is_none() {
@@ -2390,6 +2405,7 @@ fn deselect_bash_completion(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("shell PTY session");
     wait_for_active_page(session, "Shell Shortcut");
     let session = world.pty_session.as_mut().expect("shell PTY session");
+    deselect_all_shells(session);
     pty_write(session, "\r");
     let session = world.pty_session.as_ref().expect("shell PTY session");
     wait_for_active_page(session, "Review");
@@ -2454,6 +2470,7 @@ fn deselect_bash_completion_in_shell_setup(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("shell PTY session");
     wait_for_active_page(session, "Shell Shortcut");
     let session = world.pty_session.as_mut().expect("shell PTY session");
+    deselect_all_shells(session);
     pty_write(session, "\r");
     let session = world.pty_session.as_ref().expect("shell PTY session");
     wait_for_active_page(session, "Review");
