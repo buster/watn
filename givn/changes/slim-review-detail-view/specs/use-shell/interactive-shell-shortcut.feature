@@ -5,7 +5,7 @@ Feature: Slim review detail view
   Scenario: The card marks a stage it cannot decompose
     Given this scenario was removed by slim-review-detail-view
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Unsupported command flow remains reviewable
     Given an installed Bash shortcut and a provider candidate containing unsupported shell syntax
     When I invoke Ctrl-W with the current input

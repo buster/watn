@@ -289,7 +289,7 @@ Feature: Interactive shell shortcut for watn
     Given  an installed Bash shortcut and a provider candidate containing unsupported shell syntax
     When  I invoke Ctrl-W with the current input
     Then  the raw candidate should remain visible
-    And  unsupported command-flow portions should be marked
+    And  the review surface should not mark undecomposed stages
     And  the review surface should still offer final acceptance and cancellation
 
   Scenario: Provider failure preserves a selected candidate during review

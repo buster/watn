@@ -1786,21 +1786,22 @@ fn review_raw_candidate_visible(world: &mut WatnWorld) {
     }
 }
 
-#[then("unsupported command-flow portions should be marked")]
-fn review_unsupported_marked(world: &mut WatnWorld) {
+#[then("the review surface should not mark undecomposed stages")]
+fn review_surface_has_no_undecomposed_marker(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert!(
         panel.candidate().flow.has_unsupported(),
-        "unsupported syntax must be marked in the derived flow"
+        "the fixture must contain unsupported syntax"
     );
     let rendered = review_rendered_text(world);
     assert!(
-        rendered.contains("\u{1b}[38;5;214m…"),
-        "the stage must carry the amber ellipsis, got:\n{rendered}"
+        !rendered.contains("\u{1b}[38;5;214m…"),
+        "the amber ellipsis must be gone, got:\n{rendered}"
     );
+    let plain = strip_ansi(&rendered);
     assert!(
-        !rendered.contains("nested syntax") && !rendered.contains("unsupported"),
-        "the worded note must be gone, got:\n{rendered}"
+        !plain.contains("unsupported") && !plain.contains("nested syntax"),
+        "no support word may remain, got:\n{rendered}"
     );
 }
 
@@ -2683,20 +2684,6 @@ fn review_previous_stage(world: &mut WatnWorld) {
     let panel = panel_mut(world);
     panel.handle_key(key(crossterm::event::KeyCode::Left));
     render_current_surface(world);
-}
-
-#[then("the card should mark the stage as not decomposed")]
-fn review_card_marks_undecomposed(world: &mut WatnWorld) {
-    let rendered = review_rendered_text(world);
-    let plain = strip_ansi(&rendered);
-    assert!(
-        rendered.contains("\u{1b}[38;5;214m…"),
-        "card should mark the stage with an amber ellipsis, got:\n{rendered}"
-    );
-    assert!(
-        !plain.contains("unsupported") && !plain.contains("nested syntax"),
-        "the worded note must be gone, got:\n{rendered}"
-    );
 }
 
 fn contains_sgr(value: &str) -> bool {

@@ -10,23 +10,23 @@ final decision; the ADR-0015 release boundary is unchanged.
 
 ## Setup
 
-- [ ] Record the baseline before any change.
+- [x] Record the baseline before any change.
   ```text
   regular command: `./run-tests.sh`
-  regular output/count: <paste>
+  regular output/count: exit 0; 21 features; 223 scenarios (223 passed); 1363 steps (1363 passed)
   e2e command: `./run-tests.sh --e2e`
-  e2e output/count: <paste>
+  e2e output/count: exit 0; 25 features; 86 scenarios (86 passed); 637 steps (637 passed)
   lib command: `cargo test --locked --lib`
-  lib output/count: <paste>
+  lib output/count: exit 0; 84 passed; 0 failed
   ```
 
-- [ ] Prove strict mode again for this change: remove `@wip` from one modified
+- [x] Prove strict mode again for this change: remove `@wip` from one modified
   scenario with no updated step definitions and run it; it must exit non-zero.
   Restore `@wip`.
   ```text
   scenario: Unsupported command flow remains reviewable
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste>
+  output: exit 1; 2 features; 2 scenarios (1 passed, 1 failed); 9 steps (8 passed, 1 failed); the delta copy failed on the undefined marker-absence step.
   ```
 
 ## Non-E2E scenarios
@@ -36,26 +36,26 @@ final decision; the ADR-0015 release boundary is unchanged.
 Domain constraints: unsupported stages stay visible with their exact text; the
 amber ellipsis and support labels are gone; acceptance and cancellation remain.
 
-- [ ] RED: Remove `@wip`; synchronize the permanent body; bind the marker
+- [x] RED: Remove `@wip`; synchronize the permanent body; bind the marker
   absence step with `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste>
+  output: exit 1 (strict proof) on the undefined marker-absence step.
   ```
-- [ ] GREEN: Delete `UNDECOMPOSED_STAGE_MARKER` and its append and reserve in
+- [x] GREEN: Delete `UNDECOMPOSED_STAGE_MARKER` and its append and reserve in
   `stage_group_rows`; implement the marker-absence step as an assertion on the
   ANSI render. Production files changed: `src/review/card.rs`.
   ```text
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 10 steps (10 passed).
   ```
-- [ ] REFACTOR: Update `panel.rs` and `card.rs` unit tests for the missing
+- [x] REFACTOR: Update `panel.rs` and `card.rs` unit tests for the missing
   marker; rerun.
   ```text
   command: `./run-tests.sh --name 'Unsupported command flow remains reviewable'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 10 steps (10 passed); lib unit tests updated in the same commit.
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): Unsupported command flow remains reviewable without a marker
+- [x] COMMIT: `c15cc91` - feat(interactive-shell-shortcut): Unsupported command flow remains reviewable without a marker
 
 ### The review card exposes the decision shortcuts (modified)
 

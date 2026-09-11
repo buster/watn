@@ -1,7 +1,6 @@
 use super::panel::{sanitize_terminal_text, InlineLayout, ReviewPanelState};
 
 const MAX_CARD_ROWS: u16 = 18;
-const UNDECOMPOSED_STAGE_MARKER: &str = "…";
 const HIDDEN_STAGE_MARKER: &str = "⋮";
 const SELECTED_STAGE_MARKER: &str = "▶";
 
@@ -282,10 +281,8 @@ fn stage_group_rows(
 ) -> Vec<String> {
     let stage = &state.candidate().flow.stages[index];
     let selected = index == state.flow_stage;
-    let unsupported = stage.support == super::flow::StageSupport::Unsupported;
     let separator = stage.separator.as_deref();
-    let reserve = separator.map(|value| value.chars().count() + 1).unwrap_or(0)
-        + if unsupported { 2 } else { 0 };
+    let reserve = separator.map(|value| value.chars().count() + 1).unwrap_or(0);
     let wrap_width = text_width.saturating_sub(reserve).max(1);
     let wrapped = wrap_stage(&stage.stage_text, wrap_width);
     let last_index = wrapped.len().saturating_sub(1);
@@ -308,10 +305,6 @@ fn stage_group_rows(
             if let Some(separator) = separator {
                 line.push(' ');
                 line.push_str(&ink.amber(separator));
-            }
-            if unsupported {
-                line.push(' ');
-                line.push_str(&ink.amber(UNDECOMPOSED_STAGE_MARKER));
             }
         }
         rows.push(line);
@@ -848,7 +841,7 @@ mod tests {
     }
 
     #[test]
-    fn card_stays_bounded_and_marks_unsupported_stages() {
+    fn card_stays_bounded_without_unsupported_markers() {
         let mut unsupported = state();
         unsupported.candidate = ReviewCandidate::from_command("printf one; cat < input");
         unsupported.flow_stage = 1;
@@ -856,7 +849,7 @@ mod tests {
         let lines = render_card_lines(&unsupported, layout, true);
 
         assert!(lines.len() <= 7, "card rows: {}", lines.len());
-        assert!(lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
+        assert!(!lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
         assert!(!lines.iter().any(|line| line.contains('\n')));
     }
 
@@ -888,26 +881,15 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_stages_carry_their_own_marker() {
+    fn unsupported_stages_render_without_a_marker() {
         let mut unsupported = state();
         unsupported.candidate =
             ReviewCandidate::from_command("while read commit; do git ls-tree -r $commit; done");
         unsupported.flow_stage = 0;
-        let unsupported_count = unsupported
-            .candidate()
-            .flow
-            .stages
-            .iter()
-            .filter(|stage| stage.support == crate::review::StageSupport::Unsupported)
-            .count();
         let lines = render_card_lines(&unsupported, InlineLayout::for_dimensions(40, 24), true);
-        let marker_lines = lines
-            .iter()
-            .filter(|line| line.contains("\u{1b}[38;5;214m…"))
-            .count();
-        assert_eq!(
-            marker_lines, unsupported_count,
-            "every undecomposed stage carries one marker, got:\n{}",
+        assert!(
+            !lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")),
+            "undecomposed stages must not be marked, got:\n{}",
             lines.join("\n")
         );
     }
@@ -923,7 +905,7 @@ mod tests {
         unsupported.flow_stage = 1;
         let lines = render_card_lines(&unsupported, layout, false);
         assert!(lines.iter().all(|line| !line.contains('\u{1b}')));
-        assert!(lines.iter().any(|line| line.contains('…')));
+        assert!(!lines.iter().any(|line| line.contains('…')));
     }
 
     #[test]

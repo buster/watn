@@ -990,7 +990,7 @@ mod tests {
 
         assert!(layout.is_bounded());
         assert!(lines.len() <= layout.max_rows as usize);
-        assert!(lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
+        assert!(!lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
         assert!(
             lines
                 .iter()
