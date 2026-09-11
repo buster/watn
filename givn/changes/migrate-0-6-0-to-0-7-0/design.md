@@ -78,6 +78,11 @@ Rules:
 - The command's exit code still reflects the run. Write the result whenever
   the runner produced counts, even when scenarios failed; Givn rejects the
   failure either way.
+- The command's exit code must also reflect parsing and hook errors, not only
+  scenario failures. A runner that writes a reconciling result while a
+  malformed feature silently drops scenarios is fail-open; the exit condition
+  must include the harness's own failure signal (for cucumber-rs,
+  `Writer::execution_has_failed()`).
 - When `GIVN_RESULT_FILE` is not set (developer runs the script directly),
   keep the previous behavior; only write when the variable is present.
 
@@ -147,7 +152,7 @@ commands file and the README development managed block through the normal
 
    ```sh
    result=$(mktemp)
-   GIVN_FEATURES=givn/specs GIVN_RESULT_FILE="$result" <scope command>
+   GIVN_RESULT_FILE="$result" <scope command>
    cat "$result"
    ```
 
