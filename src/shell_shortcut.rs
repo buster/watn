@@ -94,24 +94,10 @@ impl ShellEnvironment {
         };
         Ok(path)
     }
-
-    pub fn detected_shells(&self) -> Vec<Shell> {
-        let Some(value) = self.shell.as_deref() else {
-            return Vec::new();
-        };
-        let Some(name) = Path::new(value).file_name().and_then(|name| name.to_str()) else {
-            return Vec::new();
-        };
-        Shell::ALL
-            .into_iter()
-            .filter(|shell| shell.lowercase_name() == name)
-            .collect()
-    }
 }
 
 /// Detect shells that are available on this system by scanning every `$PATH`
-/// directory for an executable file named exactly the shell's lowercase name.
-/// Unlike `ShellEnvironment::detected_shells`, this does not consult `$SHELL`.
+/// directory for a file named exactly the shell's lowercase name.
 pub fn shells_available_on_path() -> [bool; 3] {
     let path = std::env::var("PATH").unwrap_or_default();
     Shell::ALL.map(|shell| {

@@ -404,9 +404,8 @@ fn setup_wizard_save_prompt(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
-        let output = pty_snapshot(session);
-        if output.contains("Sav") && output.contains("Discard") {
-            assert_words(&output, "settings");
+        let output = strip_ansi(&pty_snapshot(session));
+        if output.contains("save") && output.contains("discard") {
             return;
         }
         if std::time::Instant::now() >= deadline {

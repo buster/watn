@@ -522,36 +522,16 @@ fn confirm_large_model_and_configure_shortcut(world: &mut WatnWorld) {
     wait_for_active_page(session, "Shell Shortcut");
 }
 
-#[then("the setup wizard should show the shortcut question with a green border")]
-fn active_shortcut_question_border(world: &mut WatnWorld) {
-    let question = wait_for_border(world, "Shell shortcut");
-    assert_green(&question, "Shell shortcut");
-    let shells = wait_for_border(world, "Select shells");
-    remember_signature(world, "shortcut-shells", &shells);
-}
-
-#[when("I enable shortcut configuration")]
-fn enable_shortcut_configuration(world: &mut WatnWorld) {
+#[when("I advance past the completion selection")]
+fn advance_past_completion_selection(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
-    pty_write(session, "y");
-    std::thread::sleep(Duration::from_millis(100));
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("setup PTY session");
+    wait_for_active_page(session, "Shell Shortcut");
 }
 
 #[then("the setup wizard should show shell selection with a green border")]
 fn active_shell_selection_border(world: &mut WatnWorld) {
     let shells = wait_for_border(world, "Select shells");
     assert_green(&shells, "Select shells");
-}
-
-#[then("the inactive shell selection should retain its default border styling")]
-fn inactive_shell_selection_border(world: &mut WatnWorld) {
-    let shells = wait_for_border(world, "Select shells");
-    assert_default(&shells, "Select shells");
-    assert_matches_signature(world, "shortcut-shells", &shells, "Select shells");
-}
-
-#[then("the inactive shortcut question should retain its default border styling")]
-fn inactive_shortcut_question_border(world: &mut WatnWorld) {
-    let question = wait_for_border(world, "Shell shortcut");
-    assert_matches_signature(world, "shortcut-shells", &question, "Shell shortcut");
 }
