@@ -115,7 +115,7 @@ Feature: Refined review panel views
     And I press the reject shortcut
     Then the chooser keys should be shown colored and bold
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The review card exposes the decision shortcuts
     Given an installed Bash shortcut and a provider candidate for "show disk usage"
     When I open the review surface

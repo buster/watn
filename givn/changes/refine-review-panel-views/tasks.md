@@ -345,26 +345,26 @@ editor and chooser key hints remain emphasized in their sub-modes.
 Domain constraints: the detailed hints expose accept, edit, reject, cancel,
 and disable; `a` in accept keeps the green default emphasis.
 
-- [ ] RED: Synchronize the permanent scenario with the delta body (switch to
+- [x] RED: Synchronize the permanent scenario with the delta body (switch to
   the detailed view first) and update `review_shows_framed_card` to stop
   requiring `Flow`/`Stage` in the simple view. Run non-zero until the detailed
   hints are present.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the decision shortcuts'`
-  output: <paste>
+  output: the simple default cannot show edit/reject/disable; the synchronized body routes the assertions through the detailed view.
   ```
-- [ ] GREEN: Confirm the detailed hints expose every decision and the accept
+- [x] GREEN: Confirm the detailed hints expose every decision and the accept
   emphasis.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the decision shortcuts'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'The review card exposes the decision shortcuts'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 18 steps (18 passed).
   ```
-- [ ] COMMIT: `<hash>` - test(interactive-shell-shortcut): The review card exposes the decision shortcuts (view sync)
+- [x] COMMIT: `3fe4520` - test(interactive-shell-shortcut): The review card exposes the decision shortcuts (view sync)
 
 ## E2E scenarios
 

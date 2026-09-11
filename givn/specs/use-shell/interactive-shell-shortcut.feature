@@ -707,6 +707,7 @@ Feature: Interactive shell shortcut for watn
   Scenario: The review card exposes the decision shortcuts
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     When  I open the review surface
+    And  I switch to the detailed view
     Then  the review surface should show "accept"
     And  the review surface should show "edit"
     And  the review surface should show "reject"
