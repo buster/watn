@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:b9985f498c52aa2ffbf3ce09d234c25233e34436669ffc2a2da7d54f5d8a6450 -->
 # Use case: configure-interactive
 
 ## Level
