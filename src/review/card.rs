@@ -1,8 +1,9 @@
-use super::panel::{sanitize_terminal_text, wrap_text, InlineLayout, ReviewPanelState};
+use super::panel::{sanitize_terminal_text, InlineLayout, ReviewPanelState};
 
 const MAX_CARD_ROWS: u16 = 18;
-const NARROW_WIDTH: u16 = 60;
 const UNDECOMPOSED_STAGE_MARKER: &str = "…";
+const HIDDEN_STAGE_MARKER: &str = "⋮";
+const SELECTED_STAGE_MARKER: &str = "▶";
 
 /// Pure color-capability decision so tests can exercise every combination
 /// without touching the process environment.
@@ -58,10 +59,6 @@ impl Ink {
         self.paint("1;38;5;114", text)
     }
 
-    fn italic_dim(&self, text: &str) -> String {
-        self.paint("2;3", text)
-    }
-
     fn yellow(&self, text: &str) -> String {
         self.paint("38;5;221", text)
     }
@@ -74,13 +71,17 @@ impl Ink {
         self.paint("38;5;214", text)
     }
 
-    fn reverse(&self, text: &str) -> String {
-        self.paint("7", text)
+    fn purpose_marker(&self, text: &str) -> String {
+        self.paint("38;5;81", text)
+    }
+
+    fn purpose(&self, text: &str) -> String {
+        self.paint("38;5;252", text)
     }
 }
 
 fn visible_len(value: &str) -> usize {
-    let mut count = 0;
+    let mut width = 0;
     let mut chars = value.chars();
     while let Some(character) = chars.next() {
         if character == '\u{1b}' {
@@ -90,10 +91,10 @@ fn visible_len(value: &str) -> usize {
                 }
             }
         } else {
-            count += 1;
+            width += unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
         }
     }
-    count
+    width
 }
 
 fn pad_to(value: &str, width: usize) -> String {
@@ -145,55 +146,56 @@ fn ellipsize_visible(value: &str, width: usize) -> String {
     result
 }
 
-fn wrap_capped(value: &str, width: usize, max_rows: usize) -> Vec<String> {
-    let width = width.max(1);
-    let mut rows = wrap_text(value, width);
-    if rows.len() > max_rows {
-        rows.truncate(max_rows);
-        if let Some(last) = rows.last_mut() {
-            if last.chars().count() >= width {
-                let mut shortened: String = last.chars().take(width.saturating_sub(1)).collect();
-                shortened.push('…');
-                *last = shortened;
-            }
-        }
-    }
-    rows
+fn char_offset(value: &str, count: usize) -> usize {
+    value
+        .char_indices()
+        .nth(count)
+        .map(|(index, _)| index)
+        .unwrap_or(value.len())
 }
 
-/// Wrap an already-styled value by visible width, preserving escape sequences.
-fn wrap_visible(value: &str, width: usize, max_rows: usize) -> Vec<String> {
+/// Word-aware wrapping for one stage. A single word wider than the row is
+/// hard-split at a character boundary so the row width stays exact.
+fn wrap_stage(text: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
     let mut rows: Vec<String> = Vec::new();
     let mut current = String::new();
-    let mut visible = 0;
-    let mut chars = value.chars();
-    while let Some(character) = chars.next() {
-        if character == '\u{1b}' {
-            current.push(character);
-            for escaped in chars.by_ref() {
-                current.push(escaped);
-                if escaped.is_ascii_alphabetic() {
-                    break;
-                }
+    let mut current_len = 0usize;
+    for word in text.split_whitespace() {
+        let word_len = word.chars().count();
+        let projected = if current.is_empty() {
+            word_len
+        } else {
+            current_len + 1 + word_len
+        };
+        if projected <= width {
+            if !current.is_empty() {
+                current.push(' ');
+                current_len += 1;
             }
+            current.push_str(word);
+            current_len += word_len;
             continue;
         }
-        if visible >= width {
+        if !current.is_empty() {
             rows.push(std::mem::take(&mut current));
-            visible = 0;
         }
-        current.push(character);
-        visible += 1;
+        if word_len <= width {
+            current.push_str(word);
+            current_len = word_len;
+        } else {
+            let mut rest = word;
+            while rest.chars().count() > width {
+                let split = char_offset(rest, width);
+                rows.push(rest[..split].to_string());
+                rest = &rest[split..];
+            }
+            current.push_str(rest);
+            current_len = rest.chars().count();
+        }
     }
     if !current.is_empty() || rows.is_empty() {
         rows.push(current);
-    }
-    if rows.len() > max_rows {
-        rows.truncate(max_rows);
-        if let Some(last) = rows.last_mut() {
-            *last = ellipsize_visible(last, width);
-        }
     }
     rows
 }
@@ -234,7 +236,7 @@ fn flow_strip(state: &ReviewPanelState, ink: &Ink) -> String {
         .map(|(index, stage)| {
             let number = (index + 1).to_string();
             if index == state.flow_stage {
-                ink.reverse(&ink.white(&number))
+                ink.paint("7", &ink.white(&number))
             } else if stage.support == super::flow::StageSupport::Unsupported {
                 ink.amber(&number)
             } else {
@@ -245,11 +247,185 @@ fn flow_strip(state: &ReviewPanelState, ink: &Ink) -> String {
         .join(" · ")
 }
 
-fn header_right(state: &ReviewPanelState) -> String {
-    format!(
-        "◆ tier {} · {}/{}",
-        state.context.tier, state.context.provider, state.context.model
-    )
+/// The model label used by the simple view: the last `/`-separated identifier
+/// segment, without a leading routing marker or a `:` variant suffix.
+pub fn model_short_name(model: &str) -> String {
+    let last = model.rsplit('/').next().unwrap_or(model);
+    let last = last.strip_prefix('~').unwrap_or(last);
+    let short = last.split(':').next().unwrap_or(last);
+    if short.is_empty() {
+        model.to_string()
+    } else {
+        short.to_string()
+    }
+}
+
+fn header_right(state: &ReviewPanelState, detailed: bool) -> String {
+    if detailed {
+        format!(
+            "◆ tier {} · {}/{}",
+            state.context.tier, state.context.provider, state.context.model
+        )
+    } else {
+        format!("◆ {}", model_short_name(&state.context.model))
+    }
+}
+
+/// One stage as a row group: the selected stage carries an amber arrow, the
+/// stage text wraps word-aware, and the operator that joined this stage to the
+/// next one is shown at the end of its last row in amber.
+fn stage_group_rows(
+    state: &ReviewPanelState,
+    index: usize,
+    text_width: usize,
+    ink: &Ink,
+) -> Vec<String> {
+    let stage = &state.candidate().flow.stages[index];
+    let selected = index == state.flow_stage;
+    let unsupported = stage.support == super::flow::StageSupport::Unsupported;
+    let separator = stage.separator.as_deref();
+    let reserve = separator.map(|value| value.chars().count() + 1).unwrap_or(0)
+        + if unsupported { 2 } else { 0 };
+    let wrap_width = text_width.saturating_sub(reserve).max(1);
+    let wrapped = wrap_stage(&stage.stage_text, wrap_width);
+    let last_index = wrapped.len().saturating_sub(1);
+    let mut rows = Vec::with_capacity(wrapped.len());
+    for (row_index, row) in wrapped.iter().enumerate() {
+        let mut line = String::new();
+        if row_index == 0 {
+            if selected {
+                line.push_str("  ");
+                line.push_str(&ink.amber(SELECTED_STAGE_MARKER));
+                line.push(' ');
+            } else {
+                line.push_str("    ");
+            }
+        } else {
+            line.push_str("    ");
+        }
+        line.push_str(&colorize_command(row, ink));
+        if row_index == last_index {
+            if let Some(separator) = separator {
+                line.push(' ');
+                line.push_str(&ink.amber(separator));
+            }
+            if unsupported {
+                line.push(' ');
+                line.push_str(&ink.amber(UNDECOMPOSED_STAGE_MARKER));
+            }
+        }
+        rows.push(line);
+    }
+    rows
+}
+
+fn hidden_marker_row(ink: &Ink) -> String {
+    format!("    {}", ink.dim(HIDDEN_STAGE_MARKER))
+}
+
+/// Window the stage groups so the selected stage always fits the budget.
+/// Hidden edges are marked with a dim `⋮`; a selected group that alone exceeds
+/// the budget is truncated with an unstyled `…`.
+fn stack_window_rows(
+    state: &ReviewPanelState,
+    text_width: usize,
+    budget: usize,
+    ink: &Ink,
+) -> Vec<String> {
+    let stages = &state.candidate().flow.stages;
+    if stages.is_empty() {
+        return vec![format!("    {}", ink.dim("no supported flow stages"))];
+    }
+    let selected = state.flow_stage.min(stages.len() - 1);
+    let groups: Vec<Vec<String>> = (0..stages.len())
+        .map(|index| stage_group_rows(state, index, text_width, ink))
+        .collect();
+    let heights: Vec<usize> = groups.iter().map(Vec::len).collect();
+    let budget = budget.max(1);
+    if heights[selected] > budget {
+        let mut rows = groups[selected].clone();
+        rows.truncate(budget);
+        if let Some(last) = rows.last_mut() {
+            last.push('…');
+        }
+        return rows;
+    }
+    let mut lo = selected;
+    let mut hi = selected;
+    let mut used = heights[selected];
+    loop {
+        let mut expanded = false;
+        if lo > 0 {
+            let edge = usize::from(lo > 0) + usize::from(hi + 1 < groups.len());
+            if used + heights[lo - 1] + edge <= budget {
+                lo -= 1;
+                used += heights[lo];
+                expanded = true;
+            }
+        }
+        if hi + 1 < groups.len() {
+            let edge = usize::from(lo > 0) + usize::from(hi + 2 < groups.len());
+            if used + heights[hi + 1] + edge <= budget {
+                hi += 1;
+                used += heights[hi];
+                expanded = true;
+            }
+        }
+        if !expanded {
+            break;
+        }
+    }
+    let mut rows = Vec::new();
+    if lo > 0 {
+        rows.push(hidden_marker_row(ink));
+    }
+    for index in lo..=hi {
+        rows.extend(groups[index].iter().cloned());
+    }
+    if hi + 1 < groups.len() {
+        rows.push(hidden_marker_row(ink));
+    }
+    rows
+}
+
+fn hints(state: &ReviewPanelState, detailed: bool, ink: &Ink) -> String {
+    let keyed = |key: &str, label: &str| format!("{}{}", ink.key(key), ink.dim(label));
+    match state.input_mode {
+        super::panel::PanelInputMode::CommandEditor => {
+            format!("{} · {}", keyed("⏎", " commit"), keyed("esc", " discard"))
+        }
+        super::panel::PanelInputMode::ModelChooser => format!(
+            "{} · {} · {} · {} · {}",
+            keyed("1/2/3", " switch tier"),
+            ink.dim("type to filter"),
+            keyed("↑↓", " pick"),
+            keyed("⏎", " use"),
+            keyed("esc", " back")
+        ),
+        super::panel::PanelInputMode::Review if state.explain_only => ink.dim("esc close"),
+        super::panel::PanelInputMode::Review if detailed => {
+            let parts = [
+                format!("{} {}{}", ink.key("⏎"), ink.accept_key("a"), ink.dim("ccept")),
+                format!("{}{}", ink.key("↑↓"), ink.dim(" stage")),
+                format!("{}{}", ink.key("e"), ink.dim("dit")),
+                format!("{}{}", ink.key("r"), ink.dim("eject")),
+                format!("{}{}", ink.key("c"), ink.dim("ancel")),
+                format!("{}{}", ink.key("d/?"), ink.dim(" simple")),
+                format!("{}{}", ink.key("D"), ink.dim(" disable")),
+                ink.key("esc"),
+            ];
+            parts.join(&ink.dim(" · "))
+        }
+        super::panel::PanelInputMode::Review => {
+            let parts = [
+                format!("{} {}", ink.key("⏎"), ink.dim("accept")),
+                format!("{} {}", ink.key("↑↓"), ink.dim("stage")),
+                format!("{} {}", ink.key("d/?"), ink.dim("details")),
+                format!("{} {}", ink.key("esc"), ink.dim("cancel")),
+            ];
+            parts.join(&ink.dim(" · "))
+        }
+    }
 }
 
 pub fn render_card_lines(
@@ -259,14 +435,17 @@ pub fn render_card_lines(
 ) -> Vec<String> {
     let ink = Ink::new(color);
     let width = layout.width.max(24) as usize;
-    let narrow = layout.width < NARROW_WIDTH;
     let max_rows = ((layout.height.saturating_sub(1)).clamp(5, MAX_CARD_ROWS)) as usize;
     let inner = width.saturating_sub(4);
+    let detailed = state.details
+        || state.explain_only
+        || state.input_mode != super::panel::PanelInputMode::Review;
+    let label_width = 7;
+    let available = max_rows.saturating_sub(2).max(3);
 
     let mut content: Vec<(u8, String)> = Vec::new();
-    let label_width = 7;
 
-    if !narrow {
+    if detailed {
         content.push((
             50,
             format!(
@@ -274,236 +453,203 @@ pub fn render_card_lines(
                 ink.label(&pad_to("Intent", label_width)),
                 ink.dim(&ellipsize(
                     &sanitize_terminal_text(&state.context.intent),
-                    inner - label_width - 3
+                    inner.saturating_sub(label_width + 3)
                 ))
             ),
         ));
         content.push((10, String::new()));
-
-        let command = colorize_command(&state.candidate().command, &ink);
-        for (index, row) in wrap_visible(&command, inner - label_width - 3, 2)
-            .iter()
-            .enumerate()
-        {
-            let label = if index == 0 {
-                ink.label(&pad_to("Command", label_width))
-            } else {
-                " ".repeat(label_width)
-            };
-            content.push((55, format!("{label}   {row}")));
-        }
+    } else {
         content.push((10, String::new()));
     }
 
-    content.push((
-        100,
-        format!(
-            "{}   {}",
-            ink.label(&pad_to("Flow", label_width)),
-            flow_strip(state, &ink)
-        ),
-    ));
+    let purpose_indent = if detailed {
+        " ".repeat(label_width + 3 + 4)
+    } else {
+        "    ".to_string()
+    };
+    let purpose_width = inner.saturating_sub(purpose_indent.len() + 2);
+    let purpose_rows: Vec<String> = wrap_stage(&purpose_text(state), purpose_width)
+        .into_iter()
+        .take(2)
+        .collect();
 
-    let stage_count = state.candidate().flow.stages.len();
-    let stage_text = state
-        .candidate()
-        .flow
-        .stages
-        .get(state.flow_stage)
-        .map(|stage| stage.stage_text.clone())
-        .unwrap_or_else(|| "no supported flow stages".to_string());
-    let stage_rows = wrap_capped(
-        &sanitize_terminal_text(&stage_text),
-        inner - label_width - 8,
-        2,
-    );
-    let stage_number = format!(
-        "{}/{}",
-        (state.flow_stage + 1).min(stage_count.max(1)),
-        stage_count
-    );
-    let mut marker_on_own_row = false;
-    let unsupported_stage = state
-        .candidate()
-        .flow
-        .stages
-        .get(state.flow_stage)
-        .is_some_and(|stage| stage.support == super::flow::StageSupport::Unsupported);
-    for (index, row) in stage_rows.iter().enumerate() {
-        if index == 0 {
-            let mut line = format!(
-                "{}   {} {}",
-                ink.label(&pad_to("Stage", label_width)),
-                ink.dim(&stage_number),
-                ink.white(row)
-            );
-            if unsupported_stage {
-                let marker = format!("  {}", ink.amber(UNDECOMPOSED_STAGE_MARKER));
-                if visible_len(&line) + visible_len(&marker) <= inner.saturating_sub(2) {
-                    line.push_str(&marker);
-                } else {
-                    marker_on_own_row = true;
-                }
-            }
-            content.push((90, line));
-        } else {
-            content.push((
-                85,
-                format!("{}       {}", " ".repeat(label_width), ink.white(row)),
-            ));
-        }
-    }
-    if marker_on_own_row {
-        content.push((
-            65,
+    let essential_rows = purpose_rows.len() + if detailed { 7 } else { 4 };
+    let stack_budget = available.saturating_sub(essential_rows).max(1);
+
+    let base = if detailed {
+        " ".repeat(label_width + 3)
+    } else {
+        String::new()
+    };
+    let stack_text_width = inner.saturating_sub(base.len() + 4);
+    let stack = stack_window_rows(state, stack_text_width, stack_budget, &ink);
+    for (index, row) in stack.iter().enumerate() {
+        let line = if detailed && index == 0 {
             format!(
-                "{}   {}",
-                " ".repeat(label_width),
-                ink.amber(UNDECOMPOSED_STAGE_MARKER)
-            ),
-        ));
-    }
-    for row in wrap_capped(&purpose_text(state), inner - label_width - 3, 2) {
-        content.push((
-            70,
-            format!("{}   {}", " ".repeat(label_width), ink.italic_dim(&row)),
-        ));
-    }
-
-    if state.input_mode == super::panel::PanelInputMode::CommandEditor {
-        let buffer = sanitize_terminal_text(state.editor_buffer().unwrap_or(""));
-        let cursor = super::panel::char_index_to_byte(&buffer, state.editor_cursor());
-        let (before, after) = buffer.split_at(cursor);
-        content.push((
-            95,
-            format!(
-                "{}   {}",
-                ink.label(&pad_to("Edit", label_width)),
-                ink.white(&format!("{before}▏{after}"))
-            ),
-        ));
-    }
-
-    if let Some(chooser) = state.chooser() {
-        if !chooser.tiers.is_empty() {
-            let tiers = chooser
-                .tiers
-                .iter()
-                .enumerate()
-                .map(|(index, choice)| {
-                    let marker = if choice.model == state.context.model {
-                        format!(" {}", ink.green("●"))
-                    } else {
-                        String::new()
-                    };
-                    format!(
-                        "{} {} · {}{marker}",
-                        ink.key(&(index + 1).to_string()),
-                        choice.label,
-                        choice.model
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("  ");
-            content.push((
-                75,
-                format!("{}   {tiers}", ink.label(&pad_to("Models", label_width))),
-            ));
-        }
-        let suggestions: Vec<String> = chooser
-            .filtered()
-            .into_iter()
-            .take(4)
-            .enumerate()
-            .map(|(index, model)| {
-                if Some(index) == chooser.highlight {
-                    ink.reverse(&ink.white(model))
-                } else {
-                    ink.white(model)
-                }
-            })
-            .collect();
-        if chooser.catalog_loading {
-            content.push((
-                70,
-                format!(
-                    "{}   {}",
-                    ink.label(&pad_to("Picks", label_width)),
-                    ink.dim("loading suggestions…")
-                ),
-            ));
-        } else if !suggestions.is_empty() {
-            content.push((
-                70,
-                format!(
-                    "{}   {}",
-                    ink.label(&pad_to("Picks", label_width)),
-                    suggestions.join("  ")
-                ),
-            ));
-        }
-        let search = if chooser.query.is_empty() {
-            format!("{}▏", ink.dim("type a model name…"))
+                "{}   {base}{row}",
+                ink.label(&pad_to("Command", label_width))
+            )
         } else {
-            let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
-            let (before, after) = chooser.query.split_at(cursor);
-            ink.white(&format!("{before}▏{after}"))
+            format!("{base}{row}")
+        };
+        content.push((if index == 0 { 100 } else { 95 }, line));
+    }
+
+    if !detailed {
+        content.push((10, String::new()));
+    }
+    for (index, row) in purpose_rows.iter().enumerate() {
+        let marker = if index == 0 {
+            format!("{} ", ink.purpose_marker("↳"))
+        } else {
+            "  ".to_string()
         };
         content.push((
-            85,
-            format!("{}   {search}", ink.label(&pad_to("Search", label_width))),
+            70,
+            format!("{purpose_indent}{marker}{}", ink.purpose(row)),
         ));
     }
 
-    if let Some(error) = state.regeneration_error() {
+    if detailed {
+        content.push((10, String::new()));
         content.push((
-            95,
+            60,
             format!(
                 "{}   {}",
-                ink.label(&pad_to("Error", label_width)),
-                ink.amber(&ellipsize(
-                    &sanitize_terminal_text(error),
-                    inner - label_width - 3
-                ))
+                ink.label(&pad_to("Flow", label_width)),
+                flow_strip(state, &ink)
             ),
         ));
+        let stage_count = state.candidate().flow.stages.len().max(1);
+        let stage_number = format!(
+            "{}/{}",
+            (state.flow_stage + 1).min(stage_count),
+            stage_count
+        );
+        let unsupported = state
+            .candidate()
+            .flow
+            .stages
+            .get(state.flow_stage)
+            .is_some_and(|stage| stage.support == super::flow::StageSupport::Unsupported);
+        let support = if unsupported {
+            ink.amber("unsupported")
+        } else {
+            ink.green("supported")
+        };
+        content.push((
+            55,
+            format!(
+                "{}   {}  {}",
+                ink.label(&pad_to("Stage", label_width)),
+                ink.dim(&stage_number),
+                support
+            ),
+        ));
+
+        if state.input_mode == super::panel::PanelInputMode::CommandEditor {
+            let buffer = sanitize_terminal_text(state.editor_buffer().unwrap_or(""));
+            let cursor = super::panel::char_index_to_byte(&buffer, state.editor_cursor());
+            let (before, after) = buffer.split_at(cursor);
+            content.push((
+                95,
+                format!(
+                    "{}   {}",
+                    ink.label(&pad_to("Edit", label_width)),
+                    ink.white(&format!("{before}▏{after}"))
+                ),
+            ));
+        }
+
+        if let Some(chooser) = state.chooser() {
+            if !chooser.tiers.is_empty() {
+                let tiers = chooser
+                    .tiers
+                    .iter()
+                    .enumerate()
+                    .map(|(index, choice)| {
+                        let marker = if choice.model == state.context.model {
+                            format!(" {}", ink.green("●"))
+                        } else {
+                            String::new()
+                        };
+                        format!(
+                            "{} {} · {}{marker}",
+                            ink.key(&(index + 1).to_string()),
+                            choice.label,
+                            choice.model
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("  ");
+                content.push((
+                    75,
+                    format!("{}   {tiers}", ink.label(&pad_to("Models", label_width))),
+                ));
+            }
+            let suggestions: Vec<String> = chooser
+                .filtered()
+                .into_iter()
+                .take(4)
+                .enumerate()
+                .map(|(index, model)| {
+                    if Some(index) == chooser.highlight {
+                        ink.paint("7", &ink.white(model))
+                    } else {
+                        ink.white(model)
+                    }
+                })
+                .collect();
+            if chooser.catalog_loading {
+                content.push((
+                    70,
+                    format!(
+                        "{}   {}",
+                        ink.label(&pad_to("Picks", label_width)),
+                        ink.dim("loading suggestions…")
+                    ),
+                ));
+            } else if !suggestions.is_empty() {
+                content.push((
+                    70,
+                    format!(
+                        "{}   {}",
+                        ink.label(&pad_to("Picks", label_width)),
+                        suggestions.join("  ")
+                    ),
+                ));
+            }
+            let search = if chooser.query.is_empty() {
+                format!("{}▏", ink.dim("type a model name…"))
+            } else {
+                let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
+                let (before, after) = chooser.query.split_at(cursor);
+                ink.white(&format!("{before}▏{after}"))
+            };
+            content.push((
+                85,
+                format!("{}   {search}", ink.label(&pad_to("Search", label_width))),
+            ));
+        }
+
+        if let Some(error) = state.regeneration_error() {
+            content.push((
+                95,
+                format!(
+                    "{}   {}",
+                    ink.label(&pad_to("Error", label_width)),
+                    ink.amber(&ellipsize(
+                        &sanitize_terminal_text(error),
+                        inner.saturating_sub(label_width + 3)
+                    ))
+                ),
+            ));
+        }
     }
 
     content.push((10, String::new()));
-    let keyed = |key: &str, label: &str| format!("{}{}", ink.key(key), ink.dim(label));
-    let hints = if state.input_mode == super::panel::PanelInputMode::CommandEditor {
-        format!("{} · {}", keyed("⏎", " commit"), keyed("esc", " discard"))
-    } else if state.input_mode == super::panel::PanelInputMode::ModelChooser {
-        format!(
-            "{} · {} · {} · {} · {}",
-            keyed("1/2/3", " switch tier"),
-            ink.dim("type to filter"),
-            keyed("↑↓", " pick"),
-            keyed("⏎", " use"),
-            keyed("esc", " back")
-        )
-    } else if state.explain_only {
-        ink.dim("esc close")
-    } else {
-        format!(
-            "{} {}{} · {}{} · {}{} · {}{} · {}{} · {}",
-            ink.key("⏎"),
-            ink.accept_key("a"),
-            ink.dim("ccept"),
-            ink.key("e"),
-            ink.dim("dit"),
-            ink.key("r"),
-            ink.dim("eject"),
-            ink.key("c"),
-            ink.dim("ancel"),
-            ink.key("d"),
-            ink.dim("isable"),
-            ink.key("esc")
-        )
-    };
-    content.push((30, hints));
+    content.push((30, hints(state, detailed, &ink)));
 
-    let available = max_rows.saturating_sub(2).max(3);
     while content.len() > available {
         let lowest = content
             .iter()
@@ -516,7 +662,7 @@ pub fn render_card_lines(
 
     let top_left = format!(" {} · {} ", ink.white("watn"), ink.dim("review"));
     let right = ellipsize(
-        &header_right(state),
+        &header_right(state, detailed),
         inner
             .saturating_sub(visible_len(&top_left))
             .saturating_sub(2),
@@ -550,7 +696,7 @@ pub fn render_card_lines(
 
 #[cfg(test)]
 mod tests {
-    use super::{render_card_lines, terminal_supports_color};
+    use super::{model_short_name, render_card_lines, terminal_supports_color};
     use crate::review::{InlineLayout, ReviewCandidate, ReviewContext, ReviewPanelState};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -576,9 +722,44 @@ mod tests {
     }
 
     #[test]
-    fn card_frames_content_and_colors_roles() {
-        let layout = InlineLayout::for_dimensions(100, 40);
-        let lines = render_card_lines(&state(), layout, true);
+    fn model_short_name_strips_provider_and_variant() {
+        assert_eq!(model_short_name("gpt-4o"), "gpt-4o");
+        assert_eq!(
+            model_short_name("~anthropic/claude-haiku-latest:nitro"),
+            "claude-haiku-latest"
+        );
+        assert_eq!(
+            model_short_name("~deepseek/deepseek-v4-flash-latest"),
+            "deepseek-v4-flash-latest"
+        );
+        assert_eq!(model_short_name(""), "");
+    }
+
+    #[test]
+    fn simple_card_names_the_model_and_stacks_stages() {
+        let lines = render_card_lines(&state(), InlineLayout::for_dimensions(100, 40), true);
+        let joined = lines.join("\n");
+
+        assert!(joined.contains("◆ review-model"));
+        assert!(!joined.contains("Intent"));
+        assert!(!joined.contains("tier"));
+        assert!(joined.contains("oneline"), "the first stage is stacked");
+        assert!(joined.contains("head"), "the second stage is stacked");
+        assert!(joined.contains("-5"));
+        assert!(
+            joined.contains("\u{1b}[38;5;214m|\u{1b}[0m"),
+            "the separator is amber on the stage row"
+        );
+        assert!(joined.contains('▶'), "the selected stage is marked");
+        assert!(joined.contains('↳'), "the purpose is marked");
+        assert!(joined.contains("\u{1b}[38;5;252m"), "the purpose is bright");
+    }
+
+    #[test]
+    fn card_frames_content_and_colors_roles_in_the_detailed_view() {
+        let mut state = state();
+        state.details = true;
+        let lines = render_card_lines(&state, InlineLayout::for_dimensions(100, 40), true);
         let joined = lines.join("\n");
 
         assert!(joined.contains('┌') && joined.contains('┘'));
@@ -600,21 +781,28 @@ mod tests {
     }
 
     #[test]
-    fn wrapping_truncation_helpers_stay_bounded() {
+    fn wrapping_helpers_stay_bounded() {
         assert_eq!(super::ellipsize("abc", 0), "");
         assert_eq!(super::ellipsize("abcdef", 3).chars().count(), 3);
-        let rows = super::wrap_capped("alpha beta gamma delta", 6, 1);
-        assert_eq!(rows.len(), 1);
-        assert!(rows[0].ends_with('…'));
-        let styled = super::wrap_visible("\u{1b}[97malpha beta\u{1b}[0m", 4, 1);
-        assert_eq!(styled.len(), 1);
-        assert!(styled[0].contains("alph"));
+        assert_eq!(
+            super::wrap_stage("alpha beta", 20),
+            vec!["alpha beta".to_string()]
+        );
+        assert_eq!(
+            super::wrap_stage("alpha beta gamma", 11),
+            vec!["alpha beta".to_string(), "gamma".to_string()]
+        );
+        assert_eq!(
+            super::wrap_stage("abcdef", 2),
+            vec!["ab".to_string(), "cd".to_string(), "ef".to_string()]
+        );
+        assert_eq!(super::wrap_stage("", 4), vec![String::new()]);
     }
 
     #[test]
-    fn a_long_stage_wraps_to_a_continuation_row() {
+    fn a_long_stage_wraps_and_keeps_its_separator() {
         let candidate = ReviewCandidate::from_command(
-            "git log --format='%H' --since='7 days ago' | xargs -n1 git show --stat --oneline",
+            "git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | head -5",
         );
         let state = ReviewPanelState::new(
             ReviewContext {
@@ -627,13 +815,9 @@ mod tests {
         );
         let lines = render_card_lines(&state, InlineLayout::for_dimensions(60, 24), true);
         let joined = lines.join("\n");
-        assert!(joined.contains("--since"), "stage text is rendered");
-        assert!(
-            lines
-                .iter()
-                .any(|line| line.contains('\'') && !line.contains("--since")),
-            "a wrapped stage has a continuation row, got:\n{joined}"
-        );
+        assert!(joined.contains("%(objecttype)"), "the stage text wraps");
+        assert!(joined.contains("%(rest)"));
+        assert!(joined.contains("\u{1b}[38;5;214m|\u{1b}[0m"));
     }
 
     #[test]
@@ -656,6 +840,7 @@ mod tests {
         assert!(joined.contains("\u{1b}[1;38;5;81m1/2/3\u{1b}[0m\u{1b}[2m switch tier\u{1b}[0m"));
 
         chooser.apply_regeneration_failure("provider exploded");
+        chooser.details = true;
         let lines = render_card_lines(&chooser, InlineLayout::for_dimensions(80, 24), true);
         let joined = lines.join("\n");
         assert!(joined.contains("Error"));
@@ -676,6 +861,44 @@ mod tests {
     }
 
     #[test]
+    fn a_narrow_stack_windows_around_the_selected_stage() {
+        let mut state = state();
+        state.candidate =
+            ReviewCandidate::from_command("a | b | c | d | e | f | g | h");
+        state.flow_stage = 0;
+        let lines = render_card_lines(&state, InlineLayout::for_dimensions(40, 8), true);
+        let joined = lines.join("\n");
+        assert!(joined.contains('⋮'), "hidden stages are marked: {joined}");
+        assert!(joined.contains("  ▶ a") || joined.contains("▶"));
+        assert!(lines.len() <= 7);
+    }
+
+    #[test]
+    fn unsupported_stages_carry_their_own_marker() {
+        let mut unsupported = state();
+        unsupported.candidate =
+            ReviewCandidate::from_command("while read commit; do git ls-tree -r $commit; done");
+        unsupported.flow_stage = 0;
+        let unsupported_count = unsupported
+            .candidate()
+            .flow
+            .stages
+            .iter()
+            .filter(|stage| stage.support == crate::review::StageSupport::Unsupported)
+            .count();
+        let lines = render_card_lines(&unsupported, InlineLayout::for_dimensions(40, 24), true);
+        let marker_lines = lines
+            .iter()
+            .filter(|line| line.contains("\u{1b}[38;5;214m…"))
+            .count();
+        assert_eq!(
+            marker_lines, unsupported_count,
+            "every undecomposed stage carries one marker, got:\n{}",
+            lines.join("\n")
+        );
+    }
+
+    #[test]
     fn plain_card_has_no_escape_sequences() {
         let layout = InlineLayout::for_dimensions(100, 40);
         let lines = render_card_lines(&state(), layout, false);
@@ -690,18 +913,11 @@ mod tests {
     }
 
     #[test]
-    fn a_full_stage_row_moves_the_marker_to_its_own_row() {
-        let mut unsupported = state();
-        unsupported.candidate =
-            ReviewCandidate::from_command("while read commit; do git ls-tree -r $commit; done");
-        unsupported.flow_stage = 1;
-        let lines = render_card_lines(&unsupported, InlineLayout::for_dimensions(40, 24), true);
-        assert!(
-            lines
-                .iter()
-                .any(|line| { line.contains("\u{1b}[38;5;214m…") && !line.contains("ls-tree") }),
-            "the marker should move to its own row, got:\n{}",
-            lines.join("\n")
-        );
+    fn visible_width_uses_terminal_columns_for_wide_characters() {
+        assert_eq!(super::visible_len("abc"), 3);
+        assert_eq!(super::visible_len("漢"), 2);
+        assert_eq!(super::visible_len("a漢b"), 4);
+        assert_eq!(super::visible_len("\u{1b}[97m漢\u{1b}[0m"), 2);
+        assert_eq!(super::pad_to("漢", 4), "漢  ");
     }
 }

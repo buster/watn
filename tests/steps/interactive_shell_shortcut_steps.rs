@@ -1067,6 +1067,7 @@ pub struct ReviewState {
     pub candidate_command: String,
     pub structured_response: Option<String>,
     pub intent: String,
+    pub model: String,
     pub context: Option<watn::review::ReviewContext>,
     pub candidate: Option<watn::review::ReviewCandidate>,
     pub panel: Option<watn::review::ReviewPanelState>,
@@ -1099,13 +1100,14 @@ pub struct ReviewState {
     pub color_incapable: bool,
 }
 
-fn review_context(intent: &str, tier: &str) -> watn::review::ReviewContext {
+fn review_context(intent: &str, tier: &str, model: &str) -> watn::review::ReviewContext {
     let tier = if tier.is_empty() { "1" } else { tier };
+    let model = if model.is_empty() { "review-model" } else { model };
     watn::review::ReviewContext {
         intent: intent.to_string(),
         tier: tier.to_string(),
         provider: "loopback".to_string(),
-        model: "review-model".to_string(),
+        model: model.to_string(),
     }
 }
 
@@ -1337,7 +1339,7 @@ fn build_review_panel(world: &mut WatnWorld) {
     };
     let intent = world.review.intent.clone();
     let tier = world.review.tier.clone();
-    let context = review_context(&intent, &tier);
+    let context = review_context(&intent, &tier, &world.review.model);
     world.review.context = Some(context.clone());
     world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
     render_surface(world);
@@ -2388,7 +2390,7 @@ fn review_compact_overview(world: &mut WatnWorld) {
     let panel = world.review.panel.as_ref().expect("review panel state");
     assert_eq!(panel.flow_stage, 0);
     assert_eq!(panel.candidate().flow.stages[0].stage_text, "a");
-    assert_review_rendered_contains(world, "1/8");
+    assert_review_rendered_contains(world, "⋮");
     assert_review_rendered_contains(world, "a");
 }
 
@@ -2580,12 +2582,16 @@ fn review_untrusted_stage_split(world: &mut WatnWorld) {
 fn review_shows_framed_card(world: &mut WatnWorld) {
     let rendered = review_rendered_text(world);
     let plain = strip_ansi(&rendered);
-    for needle in ["┌", "┘", "watn", "Flow", "Stage", "accept"] {
+    for needle in ["┌", "┘", "watn"] {
         assert!(
             rendered.contains(needle) || plain.contains(needle),
             "card should show {needle:?}, got:\n{rendered}"
         );
     }
+    assert!(
+        plain.contains("accept"),
+        "card should expose the accept decision, got:\n{rendered}"
+    );
 }
 
 #[then("the review surface should show the intent")]
@@ -2767,11 +2773,11 @@ fn review_surface_without_color(world: &mut WatnWorld) {
 
 #[when("I choose to disable the review permanently")]
 fn review_disable_permanently(world: &mut WatnWorld) {
-    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('d')));
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('D')));
     assert_eq!(
         outcome,
         watn::review::PanelOutcome::DisableReviewPermanently,
-        "the d decision must disable the review permanently"
+        "the D decision must disable the review permanently"
     );
 
     let path = world
@@ -2836,7 +2842,7 @@ fn review_ask_to_explain(world: &mut WatnWorld) {
     );
 
     let command = world.review.candidate_command.clone();
-    let context = review_context(&world.review.intent, &world.review.tier);
+    let context = review_context(&world.review.intent, &world.review.tier, &world.review.model);
     let mut state = watn::review::ReviewPanelState::new(
         context,
         watn::review::ReviewCandidate::from_command(command),
@@ -3697,4 +3703,324 @@ fn review_choose_highlighted(world: &mut WatnWorld) {
     assert_eq!(model, "model-a", "the first pick must be chosen");
     regenerate_through_session(world, &tier, &model, REVIEW_TIER_RESPONSE);
     render_surface(world);
+}
+
+fn current_review_lines(world: &WatnWorld) -> Vec<String> {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    watn::review::render_card_lines(panel, review_layout(world), !world.review.color_incapable)
+}
+
+fn plain_card_lines(world: &WatnWorld) -> Vec<String> {
+    current_review_lines(world)
+        .iter()
+        .map(|line| strip_ansi(line))
+        .collect()
+}
+
+fn trimmed_card_row(line: &str) -> String {
+    line.trim_end()
+        .trim_end_matches('│')
+        .trim_end()
+        .to_string()
+}
+
+fn stage_last_token(stage: &str) -> &str {
+    stage.split_whitespace().last().unwrap_or(stage)
+}
+
+fn selected_stage_text(world: &WatnWorld) -> String {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    let count = panel.candidate().flow.stages.len();
+    assert!(count > 0, "selected candidate has no stages");
+    panel.candidate().flow.stages[panel.flow_stage.min(count - 1)]
+        .stage_text
+        .clone()
+}
+
+#[given(expr = "the configured model is {string}")]
+fn review_configured_model(world: &mut WatnWorld, model: String) {
+    world.review.model = model;
+}
+
+#[then(expr = "the review frame should name the model {string}")]
+fn review_frame_names_model(world: &mut WatnWorld, model: String) {
+    let lines = plain_card_lines(world);
+    let frame = lines.first().expect("review frame line");
+    assert!(
+        frame.contains(&model),
+        "the frame should name {model:?}, got:\n{}",
+        lines.join("\n")
+    );
+}
+
+#[then(expr = "the review frame should not name the provider {string} or a tier")]
+fn review_frame_omits_provider_and_tier(world: &mut WatnWorld, provider: String) {
+    let lines = plain_card_lines(world);
+    let frame = lines.first().expect("review frame line");
+    assert!(
+        !frame.contains(&provider),
+        "the frame should not name {provider:?}, got: {frame:?}"
+    );
+    assert!(
+        !frame.contains("tier"),
+        "the frame should not name a tier, got: {frame:?}"
+    );
+}
+
+#[then(expr = "the command stack should show the stage {string}")]
+fn review_stack_shows_stage(world: &mut WatnWorld, stage: String) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(
+        panel
+            .candidate()
+            .flow
+            .stage_texts()
+            .any(|text| text == stage),
+        "derived stages should contain {stage:?}"
+    );
+    assert_review_rendered_contains(world, &stage);
+}
+
+#[then(expr = "the stage {string} should end with the {string} separator")]
+fn review_stage_ends_with_separator(world: &mut WatnWorld, stage: String, separator: String) {
+    let lines = plain_card_lines(world);
+    let token = stage_last_token(&stage);
+    let row = lines
+        .iter()
+        .find(|line| line.contains(token))
+        .unwrap_or_else(|| panic!("stage row for {stage:?} not found:\n{}", lines.join("\n")));
+    let text = trimmed_card_row(row);
+    assert!(
+        text.ends_with(&separator),
+        "row {text:?} should end with {separator:?}"
+    );
+}
+
+#[then(expr = "the stage {string} should not end with a separator")]
+fn review_stage_has_no_separator(world: &mut WatnWorld, stage: String) {
+    let lines = plain_card_lines(world);
+    let token = stage_last_token(&stage);
+    let row = lines
+        .iter()
+        .find(|line| line.contains(token))
+        .unwrap_or_else(|| panic!("stage row for {stage:?} not found:\n{}", lines.join("\n")));
+    let text = trimmed_card_row(row);
+    assert!(
+        !text.ends_with('|') && !text.ends_with("&&") && !text.ends_with(';'),
+        "row {text:?} should not end with a separator"
+    );
+}
+
+#[then(expr = "the stage {string} should continue on a following stack row")]
+fn review_stage_continues(world: &mut WatnWorld, stage: String) {
+    let lines = plain_card_lines(world);
+    assert!(
+        !lines.iter().any(|line| line.contains(&stage)),
+        "the stage must not fit on one row:\n{}",
+        lines.join("\n")
+    );
+    let first = stage.split_whitespace().next().unwrap_or(&stage);
+    let last = stage_last_token(&stage);
+    let first_index = lines
+        .iter()
+        .position(|line| line.contains(first))
+        .expect("first stage row");
+    let last_index = lines
+        .iter()
+        .position(|line| line.contains(last))
+        .expect("last stage row");
+    assert!(
+        last_index > first_index,
+        "the stage should continue on a later row"
+    );
+}
+
+#[then(expr = "the last stack row of that stage should end with the {string} separator")]
+fn review_last_stage_row_ends_with_separator(world: &mut WatnWorld, separator: String) {
+    let stage = selected_stage_text(world);
+    let token = stage_last_token(&stage).to_string();
+    let lines = plain_card_lines(world);
+    let row = lines
+        .iter()
+        .find(|line| line.contains(&token))
+        .expect("last stage row");
+    let text = trimmed_card_row(row);
+    assert!(
+        text.ends_with(&separator),
+        "the last stack row {text:?} should end with {separator:?}"
+    );
+}
+
+#[then(expr = "the command stack should mark the selected stage {string} with an arrow")]
+fn review_stack_marks_selected(world: &mut WatnWorld, stage: String) {
+    let lines = plain_card_lines(world);
+    let first = stage.split_whitespace().next().unwrap_or(&stage);
+    let row = lines
+        .iter()
+        .find(|line| line.contains(first))
+        .unwrap_or_else(|| panic!("selected stage row for {stage:?} not found"));
+    assert!(
+        row.contains('▶'),
+        "the selected stage {stage:?} should carry an arrow, got: {row:?}"
+    );
+}
+
+#[then(expr = "the stage purpose {string} should appear below the stage stack")]
+fn review_purpose_below_stack(world: &mut WatnWorld, purpose: String) {
+    let lines = plain_card_lines(world);
+    let purpose_index = lines
+        .iter()
+        .position(|line| line.contains(&purpose))
+        .expect("purpose row");
+    let stage = selected_stage_text(world);
+    let token = stage_last_token(&stage).to_string();
+    let stage_index = lines
+        .iter()
+        .position(|line| line.contains(&token))
+        .expect("stage row");
+    assert!(
+        purpose_index > stage_index,
+        "the purpose must appear below the stack, got:\n{}",
+        lines.join("\n")
+    );
+}
+
+#[then("the purpose below the stack should be marked and readable")]
+fn review_purpose_marked_and_readable(world: &mut WatnWorld) {
+    let rendered = current_review_lines(world);
+    let joined = rendered.join("\n");
+    assert!(
+        joined.contains("\u{1b}[38;5;81m↳\u{1b}[0m"),
+        "the purpose needs the cyan marker, got:\n{joined}"
+    );
+    assert!(
+        joined.contains("\u{1b}[38;5;252m"),
+        "the purpose text needs the bright style, got:\n{joined}"
+    );
+    let purpose_row = rendered
+        .iter()
+        .find(|line| line.contains('↳'))
+        .expect("purpose row");
+    assert!(
+        !purpose_row.contains("\u{1b}[2m"),
+        "the purpose row must not be dim, got:\n{purpose_row}"
+    );
+    let plain = plain_card_lines(world);
+    let purpose_index = plain
+        .iter()
+        .position(|line| line.contains('↳'))
+        .expect("purpose row");
+    let stage = selected_stage_text(world);
+    let token = stage_last_token(&stage).to_string();
+    let stage_index = plain
+        .iter()
+        .position(|line| line.contains(&token))
+        .expect("stage row");
+    assert!(
+        purpose_index > stage_index,
+        "the purpose must appear below the stack"
+    );
+}
+
+#[when("I switch to the detailed view")]
+fn review_switch_to_detailed_view(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('?')));
+    assert_eq!(outcome, watn::review::PanelOutcome::Continue);
+    render_surface(world);
+}
+
+#[when("I switch back to the simple view")]
+fn review_switch_to_simple_view(world: &mut WatnWorld) {
+    let outcome = panel_mut(world).handle_key(key(crossterm::event::KeyCode::Char('d')));
+    assert_eq!(outcome, watn::review::PanelOutcome::Continue);
+    render_surface(world);
+}
+
+#[then("the review surface should be in the simple view")]
+fn review_is_in_simple_view(world: &mut WatnWorld) {
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert!(!panel.details, "the simple view is the default");
+    let lines = plain_card_lines(world);
+    assert!(
+        !lines.iter().any(|line| line.contains("Intent")),
+        "the simple view must not show Intent, got:\n{}",
+        lines.join("\n")
+    );
+}
+
+#[then("the detailed review should show the intent")]
+fn review_detailed_shows_intent(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "Intent");
+    let intent = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .context
+        .intent
+        .clone();
+    if !intent.is_empty() {
+        assert_review_rendered_contains(world, &intent);
+    }
+}
+
+#[then("the detailed review should show the command stack")]
+fn review_detailed_shows_stack(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "Command");
+    let first = world
+        .review
+        .panel
+        .as_ref()
+        .expect("review panel state")
+        .candidate()
+        .flow
+        .stages
+        .first()
+        .map(|stage| stage.stage_text.clone());
+    if let Some(stage) = first {
+        let token = stage.split_whitespace().next().unwrap_or("").to_string();
+        assert_review_rendered_contains(world, &token);
+    }
+}
+
+#[then("the detailed review should show the stage navigation hint")]
+fn review_detailed_shows_navigation_hint(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "↑↓ stage");
+}
+
+#[given("an installed Bash shortcut and a provider candidate with one stage longer than the terminal")]
+fn review_one_long_stage(world: &mut WatnWorld) {
+    install_bash_shortcut(world);
+    world.review = ReviewState {
+        candidate_command:
+            "git log --format='%H %an %ae %ad %s %b %N' --all --graph --decorate --date=iso"
+                .to_string(),
+        intent: "inspect recent log changes".to_string(),
+        narrow: true,
+        ..ReviewState::default()
+    };
+}
+
+#[then("the truncated stage should end with a truncation marker")]
+fn review_truncated_stage_marker(world: &mut WatnWorld) {
+    let layout = review_layout(world);
+    let lines = current_review_lines(world);
+    assert!(
+        lines.len() <= layout.max_rows as usize,
+        "the panel must stay bounded"
+    );
+    let plain = plain_card_lines(world);
+    let selected = plain
+        .iter()
+        .find(|line| line.contains('▶'))
+        .expect("selected stage row");
+    assert!(
+        trimmed_card_row(selected).ends_with('…'),
+        "the truncated stage should end with …, got: {selected:?}"
+    );
+}
+
+#[then("the command stack should mark hidden stages with a hidden-window marker")]
+fn review_hidden_window_marker(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "⋮");
 }

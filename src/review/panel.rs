@@ -107,6 +107,7 @@ pub struct ReviewPanelState {
     pub flow_stage: usize,
     pub input_mode: PanelInputMode,
     pub explain_only: bool,
+    pub details: bool,
     intent_history: Vec<String>,
     configured_model: String,
     chooser: Option<ModelChooser>,
@@ -128,6 +129,7 @@ impl ReviewPanelState {
             flow_stage: 0,
             input_mode: PanelInputMode::Review,
             explain_only: false,
+            details: false,
             intent_history: Vec::new(),
             chooser: None,
             regeneration_error: None,
@@ -471,14 +473,22 @@ impl ReviewPanelState {
                 self.move_flow_stage(1);
                 PanelOutcome::Continue
             }
-            KeyCode::Char('e') | KeyCode::Char('E') if plain => self.begin_editor(),
+            KeyCode::Char('e') | KeyCode::Char('E') if plain => {
+                self.details = true;
+                self.begin_editor()
+            }
             KeyCode::Char('a') | KeyCode::Char('A') if plain => {
                 PanelOutcome::Accepted(self.candidate.clone())
             }
             KeyCode::Char('c') | KeyCode::Char('C') if plain => PanelOutcome::Cancelled,
-            KeyCode::Char('r') | KeyCode::Char('R') if plain => PanelOutcome::RejectRequested,
-            KeyCode::Char('d') | KeyCode::Char('D') if plain => {
-                PanelOutcome::DisableReviewPermanently
+            KeyCode::Char('r') | KeyCode::Char('R') if plain => {
+                self.details = true;
+                PanelOutcome::RejectRequested
+            }
+            KeyCode::Char('D') if plain => PanelOutcome::DisableReviewPermanently,
+            KeyCode::Char('d') | KeyCode::Char('?') if plain => {
+                self.details = !self.details;
+                PanelOutcome::Continue
             }
             KeyCode::Enter => PanelOutcome::Accepted(self.candidate.clone()),
             _ => PanelOutcome::Continue,
@@ -780,27 +790,6 @@ impl<W: Write> InlineReviewPanel<W> {
     }
 }
 
-/// Wrap one logical value into rows of at most `width` characters.
-pub fn wrap_text(text: &str, width: usize) -> Vec<String> {
-    let width = width.max(1);
-    let mut wrapped = Vec::new();
-    let mut remaining = text;
-    if remaining.is_empty() {
-        return vec![String::new()];
-    }
-    while remaining.chars().count() > width {
-        let split_at = remaining
-            .char_indices()
-            .nth(width)
-            .map(|(index, _)| index)
-            .unwrap_or(remaining.len());
-        wrapped.push(remaining[..split_at].to_string());
-        remaining = &remaining[split_at..];
-    }
-    wrapped.push(remaining.to_string());
-    wrapped
-}
-
 pub fn sanitize_terminal_text(value: &str) -> String {
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum EscapeState {
@@ -956,9 +945,21 @@ mod tests {
 
         let mut disable = state();
         assert_eq!(
-            disable.handle_key(key(KeyCode::Char('d'))),
+            disable.handle_key(key(KeyCode::Char('D'))),
             PanelOutcome::DisableReviewPermanently
         );
+
+        let mut toggle = state();
+        assert_eq!(
+            toggle.handle_key(key(KeyCode::Char('d'))),
+            PanelOutcome::Continue
+        );
+        assert!(toggle.details, "d opens the detailed review view");
+        assert_eq!(
+            toggle.handle_key(key(KeyCode::Char('?'))),
+            PanelOutcome::Continue
+        );
+        assert!(!toggle.details, "? returns to the simple review view");
     }
 
     #[test]
@@ -990,7 +991,13 @@ mod tests {
         assert!(layout.is_bounded());
         assert!(lines.len() <= layout.max_rows as usize);
         assert!(lines.iter().any(|line| line.contains("\u{1b}[38;5;214m…")));
-        assert!(lines.iter().any(|line| line.contains("cat < input")));
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("cat") && line.contains("input")),
+            "the selected stage stays readable, got:\n{}",
+            lines.join("\n")
+        );
     }
 
     #[test]
@@ -1065,11 +1072,6 @@ mod tests {
 
         assert_eq!(super::move_cursor(0, 1, 0), 0);
         assert_eq!(super::move_cursor(0, -1, 0), 0);
-        assert_eq!(super::wrap_text("", 2), vec![String::new()]);
-        assert_eq!(
-            super::wrap_text("abcdef", 2),
-            vec!["ab".to_string(), "cd".to_string(), "ef".to_string()]
-        );
     }
 
     #[test]

@@ -51,14 +51,14 @@ Domain constraints: the simple view is the default; it names the model short
 name only (last `/` segment, no leading `~`, no `:` variant suffix) and never
 the provider or tier; `d`/`?` switch views; `D` disables in both views.
 
-- [ ] RED: Remove `@wip` from this scenario only. Bind every new step with the
+- [x] RED: Remove `@wip` from this scenario only. Bind every new step with the
   `unimplemented!()` stub. Run the single-scenario command; it must exit
   non-zero.
   ```text
   command: `./run-tests.sh --name 'The simple review view names only the model without provider or tier'`
-  output: <paste>
+  output: exit 1; 1 feature; 1 scenario (1 failed); 2 steps (1 passed, 1 failed); step "the configured model is ..." has no function (strict-mode proof run repeated after binding).
   ```
-- [ ] GREEN: Add `ReviewPanelState.details` (default false) and
+- [x] GREEN: Add `ReviewPanelState.details` (default false) and
   `model_short_name`; select the simple layout for the default and keep the
   existing detailed body behind `details || explain_only || input_mode !=
   Review`; split `d`/`?` toggle from `D` disable; implement the new step
@@ -67,15 +67,15 @@ the provider or tier; `d`/`?` switch views; `D` disables in both views.
   Production files changed: `src/review/panel.rs`, `src/review/card.rs`.
   ```text
   command: `./run-tests.sh --name 'The simple review view names only the model without provider or tier'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 5 steps (5 passed).
   ```
-- [ ] REFACTOR: Keep the model helper and the view selection in one place;
+- [x] REFACTOR: Keep the model helper and the view selection in one place;
   rerun the single-scenario command.
   ```text
   command: `./run-tests.sh --name 'The simple review view names only the model without provider or tier'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 5 steps (5 passed). No further behaviour change; the shared renderer helpers (separators, purpose, windowing) were introduced in this commit because the simple view needs them together.
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The simple review view names only the model without provider or tier
+- [x] COMMIT: `PENDING` - feat(interactive-shell-shortcut): The simple review view names only the model without provider or tier
 
 ### The simple view stacks the command flow with its separators
 

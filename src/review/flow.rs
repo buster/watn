@@ -17,6 +17,7 @@ pub struct CommandStage {
     pub stage_text: String,
     pub support: StageSupport,
     pub unsupported_spans: Vec<UnsupportedSpan>,
+    pub separator: Option<String>,
 }
 
 impl CommandStage {
@@ -54,7 +55,19 @@ pub fn command_stage(command: &str, start: usize, end: usize) -> CommandStage {
             StageSupport::Unsupported
         },
         unsupported_spans,
+        separator: following_separator(command, end),
     }
+}
+
+/// The operator that immediately follows a stage, if any. Only top-level
+/// operators are found because accepted provider gaps contain nothing but
+/// whitespace and separators.
+fn following_separator(command: &str, end: usize) -> Option<String> {
+    let rest = command.get(end..)?.trim_start();
+    ["&&", "||", "|", ";"]
+        .into_iter()
+        .find(|operator| rest.starts_with(operator))
+        .map(str::to_string)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,16 +109,7 @@ fn push_stage(stages: &mut Vec<CommandStage>, command: &str, start: usize, end: 
     let Some((start, end)) = trimmed_range(command, start, end) else {
         return;
     };
-    let unsupported_spans = unsupported_spans(command, start, end);
-    stages.push(CommandStage {
-        stage_text: command[start..end].to_string(),
-        support: if unsupported_spans.is_empty() {
-            StageSupport::Supported
-        } else {
-            StageSupport::Unsupported
-        },
-        unsupported_spans,
-    });
+    stages.push(command_stage(command, start, end));
 }
 
 fn split_segments(command: &str) -> Vec<Segment> {

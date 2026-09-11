@@ -51,6 +51,7 @@ ctrlc = "3"
 ratatui = "0.30"
 crossterm = "0.29.0"
 clap_complete = "4.6.9"
+unicode-width = "0.2"
 
 [dev-dependencies]
 cucumber = "0.23"
