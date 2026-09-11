@@ -1468,6 +1468,22 @@ fn entry_shows_price(w: &mut WatnWorld, model: String) {
     );
 }
 
+#[then(expr = "the displayed price for {string} is {string}")]
+fn displayed_price_is(w: &mut WatnWorld, model: String, expected: String) {
+    let entries = w.formatted_entries.as_ref().expect("no formatted entries");
+    let line = entries
+        .iter()
+        .find(|l| l.starts_with(&model))
+        .expect("entry not found");
+    assert!(
+        line.contains(&expected),
+        "expected '{}' to contain '{}', got: '{}'",
+        model,
+        expected,
+        line
+    );
+}
+
 #[then(expr = "the entry for {string} shows no price")]
 fn entry_shows_no_price(w: &mut WatnWorld, model: String) {
     let entries = w.formatted_entries.as_ref().expect("no formatted entries");

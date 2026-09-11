@@ -2,7 +2,7 @@
 
 Feature: Keyboard-driven model picker
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Model entry shows additional metadata when available
     Given  the catalog has models "model-a" and "model-b" where "model-a" has pricing
     When  I format the model list for display

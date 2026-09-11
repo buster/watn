@@ -48,17 +48,17 @@ display of the chosen model metadata. Modified scenario in
 Capability `models`. Use-case guarantee: Main flow 4 (persist and apply),
 minimal guarantee (no corruption). Added scenario.
 
-- [ ] RED — remove `@wip` from this scenario only; run targeted; new config
+- [x] RED — remove `@wip` from this scenario only; run targeted; new config
       assertion steps and `[pricing]` seeding must fail non-zero.
-      Evidence: _pending_
-- [ ] GREEN — production: `capture_catalog_price` in `src/setup.rs` and its
+      Evidence: `./run-tests.sh --name "Non-terminal model assignment records catalog prices"` → `1 scenario (1 failed)`, `Step doesn't match any function`, exit 1.
+- [x] GREEN — production: `capture_catalog_price` in `src/setup.rs` and its
       call in `src/models/mod.rs::run_models_result` before `save_config`.
       Tests: new given/then bindings in `tests/steps/ask_steps.rs`.
-      Evidence: _pending_
-- [ ] REFACTOR — share the capture rule with the other write paths' call
-      shape; no behavior change. Evidence: _pending_
-- [ ] COMMIT — `feat(models): Non-terminal model assignment records catalog prices`.
-      Hash: _pending_
+      Evidence: targeted run → `1 scenario (1 passed)`, `9 steps (9 passed)`, exit 0. Files: `src/setup.rs`, `src/models/mod.rs`, `tests/steps/ask_steps.rs`, `specs/models/models.feature`.
+- [x] REFACTOR — share the capture rule with the other write paths' call
+      shape; no behavior change. Evidence: targeted re-run → `1 scenario (1 passed)`, exit 0; `cargo test --lib` → `86 passed`.
+- [x] COMMIT — `feat(models): Non-terminal model assignment records catalog prices`.
+      Hash: 4557110
 
 ## Scenario: Model entry shows additional metadata when available
 
