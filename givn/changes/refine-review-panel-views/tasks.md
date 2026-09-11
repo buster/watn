@@ -103,32 +103,33 @@ stage has no separator; the command is never rewritten.
   command: `./run-tests.sh --name 'The simple view stacks the command flow with its separators'`
   output: exit 0; 1 feature; 1 scenario (1 passed); 7 steps (7 passed).
   ```
-- [x] COMMIT: `PENDING` - feat(interactive-shell-shortcut): The simple view stacks the command flow with its separators
+- [x] COMMIT: `5575ed7` - feat(interactive-shell-shortcut): The simple view stacks the command flow with its separators
 
 ### A long stage continues on the next stack rows and keeps its separator
 
 Domain constraints: a stage wider than the row continues on following rows;
 the separator stays at the end of the stage's last row; row widths stay exact.
 
-- [ ] RED: Remove `@wip`; bind the wrap steps with `unimplemented!()`. Run
+- [x] RED: Remove `@wip`; bind the wrap steps with `unimplemented!()`. Run
   non-zero.
   ```text
   command: `./run-tests.sh --name 'A long stage continues on the next stack rows and keeps its separator'`
-  output: <paste>
+  output: first run exit 1: the original fixture stage fit on one row, so the scenario could not distinguish the requirement; the fixture stage was lengthened with --buffer --unordered (a testability fix, delta spec updated). Re-run after binding: undefined step failure under strict mode before implementation.
   ```
-- [ ] GREEN: Add word-aware `wrap_stage` with separator-width reservation;
+- [x] GREEN: Add word-aware `wrap_stage` with separator-width reservation;
   implement the continuation and last-row-separator steps. Production files
-  changed: `src/review/card.rs`.
+  changed: `src/review/card.rs`; implementation shipped with the
+  shared-renderer foundation in `d51a93f`.
   ```text
   command: `./run-tests.sh --name 'A long stage continues on the next stack rows and keeps its separator'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 4 steps (4 passed).
   ```
-- [ ] REFACTOR: Rerun the single-scenario command.
+- [x] REFACTOR: Rerun the single-scenario command.
   ```text
   command: `./run-tests.sh --name 'A long stage continues on the next stack rows and keeps its separator'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 4 steps (4 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A long stage continues on the next stack rows and keeps its separator
+- [x] COMMIT: `cb9c2fb` - feat(interactive-shell-shortcut): A long stage continues on the next stack rows and keeps its separator
 
 ### The selected stage is marked and its purpose follows the arrow keys
 

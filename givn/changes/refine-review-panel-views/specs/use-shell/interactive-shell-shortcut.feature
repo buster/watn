@@ -26,11 +26,11 @@ Feature: Refined review panel views
     And the stage "git log --oneline" should end with the "|" separator
     And the stage "head -5" should not end with a separator
 
-  @givn.added @wip
+  @givn.added
   Scenario: A long stage continues on the next stack rows and keeps its separator
-    Given an installed Bash shortcut and a provider candidate "git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | head -5"
+    Given an installed Bash shortcut and a provider candidate "git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' --buffer --unordered | head -5"
     When I invoke Ctrl-W with the current input
-    Then the stage "git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)'" should continue on a following stack row
+    Then the stage "git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' --buffer --unordered" should continue on a following stack row
     And the last stack row of that stage should end with the "|" separator
 
   @givn.added @wip
