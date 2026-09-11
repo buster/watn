@@ -247,26 +247,26 @@ Domain constraints: the stack windows around the selection with a dim `⋮`
 hidden-window marker; the selected stage stays readable; arrow navigation
 reaches every stage; the panel stays within `max_rows`.
 
-- [ ] RED: Synchronize the permanent scenario body with the delta body
+- [x] RED: Synchronize the permanent scenario body with the delta body
   (hidden-window marker, selected arrow, navigation); bind the hidden-window
   step with `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
-  output: <paste>
+  output: first synchronized run exit 1: the arrow step matched the frame line containing the letter "a"; the step now requires the arrow row itself. Re-run after the fixture fix: 2 features / 2 scenarios (2 failed) on the same step before the fix.
   ```
-- [ ] GREEN: Implement the `⋮` window edges and update
+- [x] GREEN: Implement the `⋮` window edges and update
   `review_compact_overview` to the window contract. Production files changed:
   `src/review/card.rs`, `tests/steps/interactive_shell_shortcut_steps.rs`.
   ```text
   command: `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 12 steps (12 passed) — the permanent and delta copies both pass.
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'A narrow terminal keeps the inline review bounded and readable'`
-  output: <paste>
+  output: exit 0; 2 features; 2 scenarios (2 passed); 12 steps (12 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): A narrow terminal keeps the inline review bounded and readable
+- [x] COMMIT: `a30a153` - feat(interactive-shell-shortcut): A narrow terminal keeps the inline review bounded and readable
 
 ### Rephrasing starts a new candidate cycle (modified)
 

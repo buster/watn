@@ -127,7 +127,7 @@ Feature: Refined review panel views
     And the review surface should show "disable"
     And accept should be shown as the default decision
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A narrow terminal keeps the inline review bounded and readable
     Given an installed Bash shortcut and a provider candidate with more stages than fit in the terminal
     When I invoke Ctrl-W with current input "inspect recent log changes"

@@ -393,7 +393,8 @@ Feature: Interactive shell shortcut for watn
     Given  an installed Bash shortcut and a provider candidate with more stages than fit in the terminal
     When  I invoke Ctrl-W with current input "inspect recent log changes"
     Then  the review surface should remain a bounded inline panel
-    And  it should show a compact command-flow overview and one readable selected stage
+    And  the command stack should mark hidden stages with a hidden-window marker
+    And  the command stack should mark the selected stage "a" with an arrow
     And  arrow navigation should reach every command-flow stage
   Scenario: A markdown-fenced structured response is still explained
     Given  an installed Bash shortcut and a provider candidate for "inspect recent log changes"

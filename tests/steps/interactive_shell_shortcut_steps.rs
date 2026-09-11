@@ -3857,8 +3857,13 @@ fn review_stack_marks_selected(world: &mut WatnWorld, stage: String) {
     let first = stage.split_whitespace().next().unwrap_or(&stage);
     let row = lines
         .iter()
-        .find(|line| line.contains(first))
-        .unwrap_or_else(|| panic!("selected stage row for {stage:?} not found"));
+        .find(|line| line.contains('▶') && line.contains(first))
+        .unwrap_or_else(|| {
+            panic!(
+                "selected stage row for {stage:?} not found:\n{}",
+                lines.join("\n")
+            )
+        });
     assert!(
         row.contains('▶'),
         "the selected stage {stage:?} should carry an arrow, got: {row:?}"
