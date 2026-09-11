@@ -66,13 +66,19 @@ Givn's gate is fail-closed.
   `result=$(mktemp); GIVN_RESULT_FILE="$result" ./run-tests.sh --e2e` reported
   `88 scenarios (88 passed)`, exit 0, and wrote
   `{"failed":0,"passed":88,"scope":"e2e","skipped":0,"total":88}`.
-- [ ] COMMIT: `<hash>` — `docs(givn): record migrate-0-6-0-to-0-7-0 runner result contract`.
+- [x] COMMIT: `ffc6cfc` — `docs(givn): record migrate-0-6-0-to-0-7-0 runner result contract`.
 
 ## Final gates
 
-- [ ] Run `givn lint --change migrate-0-6-0-to-0-7-0`; exit 0 or 2.
-- [ ] Run `givn check arc42-docs --change migrate-0-6-0-to-0-7-0`; passed.
-- [ ] Write `review.md` with `REVIEW: PASS` after the fabrication audit, static
-  checks, and the archive receipt.
+- [x] Run `givn lint --change migrate-0-6-0-to-0-7-0`; exit 0 or 2.
+  Evidence: exit 0 (no `.feature` files in the change; specs are not
+  applicable).
+- [x] Run `givn check arc42-docs --change migrate-0-6-0-to-0-7-0`; passed.
+  Evidence: exit 0.
+- [x] Write `review.md` with `REVIEW: PASS` after the fabrication audit, static
+  checks, and the archive receipt. Evidence: `review.md` records the clean
+  fabrication audit (0 empty step bodies across 31 files), the Arc42
+  conformance table, `README-IMPACT: none`, and `REVIEW: PASS`;
+  `givn check review --change migrate-0-6-0-to-0-7-0` exits 0.
 - [ ] Archive this change; the receipt must show both scopes passed (or e2e
   `not_applicable`) and `status: "proven"`.
