@@ -159,7 +159,9 @@ fn pricing_configured_given(w: &mut WatnWorld) {
     w.pending_mock_usage = Some(true);
 }
 
-#[given(expr = "the config file records pricing for {string} at {float} input and {float} output per million tokens")]
+#[given(
+    expr = "the config file records pricing for {string} at {float} input and {float} output per million tokens"
+)]
 fn config_records_pricing_given(w: &mut WatnWorld, model: String, input: f64, output: f64) {
     let raw = w.raw_config.get_or_insert_with(String::new);
     if !raw.contains("[pricing]") {
@@ -887,13 +889,17 @@ fn stored_config(w: &WatnWorld) -> watn::config::types::Config {
     toml::from_str(&content).expect("parse config")
 }
 
-#[then(expr = "the config file should record pricing for {string} at {float} input and {float} output per million tokens")]
+#[then(
+    expr = "the config file should record pricing for {string} at {float} input and {float} output per million tokens"
+)]
 fn config_should_record_pricing(w: &mut WatnWorld, model: String, input: f64, output: f64) {
     let config = stored_config(w);
-    let pricing = config
-        .pricing
-        .get(&model)
-        .unwrap_or_else(|| panic!("expected pricing for '{}', got: {:?}", model, config.pricing));
+    let pricing = config.pricing.get(&model).unwrap_or_else(|| {
+        panic!(
+            "expected pricing for '{}', got: {:?}",
+            model, config.pricing
+        )
+    });
     assert!(
         (pricing.input - input).abs() < 1e-9,
         "expected input {} for '{}', got {}",

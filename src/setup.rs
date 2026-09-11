@@ -280,9 +280,7 @@ impl SetupInk {
 }
 
 fn setup_block<'a>(title: impl Into<Line<'a>>, focused: bool, ink: SetupInk) -> Block<'a> {
-    let block = Block::bordered()
-        .title(title)
-        .border_style(ink.border());
+    let block = Block::bordered().title(title).border_style(ink.border());
     if focused {
         block.border_style(ink.green()).title_style(ink.bold())
     } else {
@@ -1537,7 +1535,11 @@ impl SetupWizard {
         };
         let header = Paragraph::new(Line::from(vec![
             Span::styled(
-                format!("Page {} of {}", self.page.index() + 1, self.last_page.index() + 1),
+                format!(
+                    "Page {} of {}",
+                    self.page.index() + 1,
+                    self.last_page.index() + 1
+                ),
                 self.ink.white(),
             ),
             Span::styled("  ·  ", self.ink.dim()),
@@ -1629,8 +1631,11 @@ impl SetupWizard {
         .block(Block::bordered().title("Endpoint explanation"))
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
-        let input = Paragraph::new(format!("> {}█", self.endpoint))
-            .block(setup_block("URL (editing)", true, self.ink));
+        let input = Paragraph::new(format!("> {}█", self.endpoint)).block(setup_block(
+            "URL (editing)",
+            true,
+            self.ink,
+        ));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
@@ -1648,8 +1653,11 @@ impl SetupWizard {
         .block(Block::bordered().title("Catalog endpoint explanation"))
         .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
-        let input = Paragraph::new(format!("> {}█", self.catalog_endpoint))
-            .block(setup_block("Catalog endpoint (editing)", true, self.ink));
+        let input = Paragraph::new(format!("> {}█", self.catalog_endpoint)).block(setup_block(
+            "Catalog endpoint (editing)",
+            true,
+            self.ink,
+        ));
         frame.render_widget(input, chunks[1]);
         self.draw_validation(frame, chunks[2]);
     }
@@ -1865,10 +1873,7 @@ impl SetupWizard {
             }))
             .chain(self.catalog_manual.then(|| {
                 Row::new([
-                    Cell::from(Span::styled(
-                        "Manual model identifier",
-                        self.ink.label(),
-                    )),
+                    Cell::from(Span::styled("Manual model identifier", self.ink.label())),
                     Cell::from(""),
                     Cell::from(""),
                     Cell::from(Span::styled("↳ type a model id", self.ink.dim())),
@@ -1904,7 +1909,11 @@ impl SetupWizard {
             Row::new(["Model", "Context", "Pricing ($/1M)", "Features"])
                 .style(self.ink.label_bold()),
         )
-        .block(setup_block(title, self.model_focus == ModelFocus::Table, self.ink))
+        .block(setup_block(
+            title,
+            self.model_focus == ModelFocus::Table,
+            self.ink,
+        ))
         .row_highlight_style(self.ink.bold())
         .highlight_symbol("");
         frame.render_stateful_widget(table, chunks[0], &mut table_state);
@@ -1956,12 +1965,10 @@ impl SetupWizard {
         } else {
             ""
         };
-        let mut lines = vec![
-            Line::from(vec![
-                Span::styled("Model: ", self.ink.label()),
-                Span::styled(model, self.ink.white()),
-            ]),
-        ];
+        let mut lines = vec![Line::from(vec![
+            Span::styled("Model: ", self.ink.label()),
+            Span::styled(model, self.ink.white()),
+        ])];
         if !metadata_notice.is_empty() {
             lines.push(Line::from(vec![
                 Span::styled("⚠ ", self.ink.amber()),

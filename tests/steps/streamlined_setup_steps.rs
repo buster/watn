@@ -708,7 +708,8 @@ fn small_reasoning_identifies_model(world: &mut WatnWorld, model: String) {
     assert!(
         page.contains(&format!("Model: {model}")),
         "selected model missing: {page:?}"
-    );}
+    );
+}
 
 #[when(regex = r##"^I choose reasoning "([^"]+)" for the small role$"##)]
 fn choose_small_reasoning(world: &mut WatnWorld, effort: String) {

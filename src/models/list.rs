@@ -272,12 +272,11 @@ fn parse_pricing(item: &serde_json::Value) -> Option<ModelPricing> {
 }
 
 fn parse_pricing_value(val: Option<&serde_json::Value>) -> Option<f64> {
-    let value = match val? {
-        v => v
-            .as_str()
+    let value = val.and_then(|v| {
+        v.as_str()
             .and_then(|s| s.parse::<f64>().ok())
-            .or_else(|| v.as_f64())?,
-    };
+            .or_else(|| v.as_f64())
+    })?;
     if value < 0.0 {
         return None;
     }

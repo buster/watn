@@ -169,16 +169,18 @@ fn setup_models_mock(
             when.method(Method::GET).path("/models");
             let data: Vec<serde_json::Value> = models_clone
                 .iter()
-                .map(|id| match prices_clone.iter().find(|(model, _, _)| model == id) {
-                    Some((_, input, output)) => serde_json::json!({
-                        "id": id,
-                        "pricing": {
-                            "prompt": format!("{}", input / 1_000_000.0),
-                            "completion": format!("{}", output / 1_000_000.0)
-                        }
-                    }),
-                    None => serde_json::json!({"id": id}),
-                })
+                .map(
+                    |id| match prices_clone.iter().find(|(model, _, _)| model == id) {
+                        Some((_, input, output)) => serde_json::json!({
+                            "id": id,
+                            "pricing": {
+                                "prompt": format!("{}", input / 1_000_000.0),
+                                "completion": format!("{}", output / 1_000_000.0)
+                            }
+                        }),
+                        None => serde_json::json!({"id": id}),
+                    },
+                )
                 .collect();
             then.status(200)
                 .header("Content-Type", "application/json")

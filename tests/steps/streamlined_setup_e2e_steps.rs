@@ -116,7 +116,10 @@ fn shell_choices_are_closed(world: &mut WatnWorld) {
 
 fn shell_selected(session: &super::PtySession, name: &str) -> bool {
     let output = visible_output(&pty_snapshot(session));
-    let page = output.rfind("Page").map(|index| &output[index..]).unwrap_or(&output);
+    let page = output
+        .rfind("Page")
+        .map(|index| &output[index..])
+        .unwrap_or(&output);
     page.contains(&format!("●{name}")) || page.contains(&format!("● {name}"))
 }
 

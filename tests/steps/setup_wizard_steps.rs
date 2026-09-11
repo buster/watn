@@ -63,7 +63,9 @@ fn start_setup_wizard(world: &mut WatnWorld) {
 
 #[given("the terminal color capability is disabled")]
 fn terminal_color_capability_disabled(world: &mut WatnWorld) {
-    world.env_vars.insert("NO_COLOR".to_string(), "1".to_string());
+    world
+        .env_vars
+        .insert("NO_COLOR".to_string(), "1".to_string());
 }
 
 #[then("the setup frame should show the watn setup label")]
@@ -94,10 +96,7 @@ fn footer_key_hints(world: &mut WatnWorld) {
     let raw = pty_snapshot(session);
     let visible = strip_ansi(&raw);
     assert!(raw.contains("\u{1b}[1m"), "bold key hint missing: {raw:?}");
-    assert!(
-        raw.contains("38;5;81"),
-        "cyan key hint missing: {raw:?}"
-    );
+    assert!(raw.contains("38;5;81"), "cyan key hint missing: {raw:?}");
     assert!(raw.contains("\u{1b}[2m"), "dim label missing: {raw:?}");
     assert!(visible.contains('⏎'), "enter hint missing: {visible:?}");
 }
@@ -106,10 +105,7 @@ fn footer_key_hints(world: &mut WatnWorld) {
 fn setup_palette(world: &mut WatnWorld) {
     let session = world.pty_session.as_ref().expect("setup PTY session");
     let raw = pty_snapshot(session);
-    assert!(
-        raw.contains("38;5;81"),
-        "cyan label color missing: {raw:?}"
-    );
+    assert!(raw.contains("38;5;81"), "cyan label color missing: {raw:?}");
     assert!(raw.contains("\u{1b}[2m"), "dim border missing: {raw:?}");
 }
 
@@ -122,10 +118,7 @@ fn setup_warning_amber(world: &mut WatnWorld, marker: String) {
         visible.contains(&marker),
         "warning marker {marker:?} missing: {visible:?}"
     );
-    assert!(
-        raw.contains("38;5;214"),
-        "warning is not amber: {raw:?}"
-    );
+    assert!(raw.contains("38;5;214"), "warning is not amber: {raw:?}");
 }
 
 #[then("the setup output should not contain indexed color sequences")]
