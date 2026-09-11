@@ -132,25 +132,27 @@ focused model write path. Modified `@e2e` scenario.
 Capability `streamlined-setup`. Use-case guarantee: Main flow 4 across the
 coordinated final-confirmation write path. Modified `@e2e` scenario.
 
-- [ ] RED — remove `@wip` from this scenario only; run e2e targeted; the
+- [x] RED — remove `@wip` from this scenario only; run e2e targeted; the
       priced transport table and pricing assertions must fail non-zero.
-      Evidence: _pending_
-- [ ] GREEN — production: `apply_result` calls `capture_catalog_price`;
+      Evidence: `./run-tests.sh --e2e --name "Coordinated setup completes provider models reasoning and shell choices"` → `2 scenarios (1 passed, 1 failed)`, `Step doesn't match any function`, exit 1.
+- [x] GREEN — production: `apply_result` calls `capture_catalog_price`;
       tests: priced ephemeral-transport given in
-      `tests/steps/provider_setup_steps.rs`. Evidence: _pending_
-- [ ] REFACTOR — no behavior change. Evidence: _pending_
-- [ ] COMMIT — `test(e2e): Coordinated setup completes provider models reasoning and shell choices`.
-      Hash: _pending_
+      `tests/steps/provider_setup_steps.rs`. Evidence: targeted run → `2 scenarios (2 passed)`, `41 steps (41 passed)`, exit 0. Files: `src/setup.rs`, `tests/steps/provider_setup_steps.rs`, `specs/streamlined-setup/streamlined-setup.feature`.
+- [x] REFACTOR — no behavior change. Evidence: targeted re-run → `2 scenarios (2 passed)`, exit 0.
+- [x] COMMIT — `test(e2e): Coordinated setup completes provider models reasoning and shell choices`.
+      Hash: c613209
 
 ---
 
 ## Final checks
 
-- [ ] Full regular suite green: `./run-tests.sh` output pasted, zero exit.
-      Evidence: _pending_
-- [ ] Full e2e suite green: `./run-tests.sh --e2e` output pasted, zero exit.
-      Evidence: _pending_
-- [ ] No empty/no-op step bodies introduced (`unimplemented!`/`todo!`
-      grep returns none in touched step files). Evidence: _pending_
-- [ ] Commit count matches scenario count (six feature commits plus spec
-      commits). Evidence: _pending_
+- [x] Full regular suite green: `./run-tests.sh` output pasted, zero exit.
+      Evidence: `22 features, 221 scenarios (221 passed), 1347 steps`, exit 0.
+- [x] Full e2e suite green: `./run-tests.sh --e2e` output pasted, zero exit.
+      Evidence: `25 features, 90 scenarios (90 passed), 701 steps`, exit 0.
+- [x] No empty/no-op step bodies introduced (`unimplemented!`/`todo!`
+      grep returns none in touched step files). Evidence: grep over
+      `tests/steps` and `src` returns no matches.
+- [x] Commit count matches scenario count (six feature commits plus spec
+      commits). Evidence: 5366fff, 4557110, 3aadc73, 188ea65, 10667bf, c613209
+      = six scenario commits.
