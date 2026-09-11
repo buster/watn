@@ -107,34 +107,51 @@ fn shell_questions_are_independent(world: &mut WatnWorld) {
 
 #[then("the shell choices should include only Bash, Fish, and Zsh")]
 fn shell_choices_are_closed(world: &mut WatnWorld) {
-    let session = world.pty_session.as_mut().expect("shell PTY session");
-    pty_write(session, "y");
-    std::thread::sleep(std::time::Duration::from_millis(150));
+    let session = world.pty_session.as_ref().expect("shell PTY session");
     let output = visible_output(&pty_snapshot(session));
     for shell in ["Bash", "Fish", "Zsh"] {
         assert!(output.contains(shell), "shell choice missing: {output:?}");
     }
 }
 
+fn shell_selected(session: &super::PtySession, name: &str) -> bool {
+    let output = visible_output(&pty_snapshot(session));
+    let page = output.rfind("Page").map(|index| &output[index..]).unwrap_or(&output);
+    page.contains(&format!("●{name}")) || page.contains(&format!("● {name}"))
+}
+
+fn choose_only_shell(session: &mut super::PtySession, keep: &str) {
+    for (index, name) in ["Bash", "Zsh", "Fish"].iter().enumerate() {
+        for _ in 0..3 {
+            pty_write(session, "\x1b[A");
+        }
+        for _ in 0..index {
+            pty_write(session, "\x1b[B");
+        }
+        let selected = shell_selected(session, name);
+        if (*name == keep) != selected {
+            pty_write(session, " ");
+        }
+    }
+}
+
 #[when("I choose Bash for completion")]
 fn choose_bash_completion(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("shell PTY session");
-    pty_write(session, " \r");
-    std::thread::sleep(std::time::Duration::from_millis(150));
-    let output = visible_output(&pty_snapshot(session)).to_ascii_lowercase();
-    assert!(
-        output.contains("shortcut"),
-        "shortcut question missing: {output:?}"
-    );
+    choose_only_shell(session, "Bash");
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_page(session, "Shell Shortcut");
 }
 
 #[when("choose Zsh for the Ctrl-W shortcut")]
 fn choose_zsh_shortcut(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("shell PTY session");
-    pty_write(session, "y");
-    std::thread::sleep(std::time::Duration::from_millis(150));
-    pty_write(session, "\x1b[B \r");
-    std::thread::sleep(std::time::Duration::from_millis(150));
+    choose_only_shell(session, "Zsh");
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_page(session, "Review");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, "\r");
     let session = world.pty_session.take().expect("shell PTY session");
     finish_pty_session(world, session);
