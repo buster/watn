@@ -44,7 +44,6 @@ release is created with the changelog; no prebuilt executables are attached.
 ## Quick setup
 
 ```sh
-cargo install watn
 watn quicksetup --url https://openrouter.ai/api/v1 --key '${OPENROUTER_API_KEY}' --model '~anthropic/claude-haiku-latest:nitro'
 watn "find the 5 largest files in the commit history"
 ```
