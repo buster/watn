@@ -49,13 +49,12 @@ UBIQUITOUS LANGUAGE: CLEAN
 
 ## Overlap dispositions
 
-| Scenario A | Scenario B | Disposition |
-|---|---|---|
-| Developer rejects a candidate and regenerates with another model | The panel can permanently disable the review | boundary |
-
-The scenes share only generic direct-request setup; one rejects and
-regenerates, the other disables and releases. The remove+add pair (the removed
-marker scenario versus the modified unsupported-flow scenario) is a
+No deterministic shape match is reported for this change. The advisory subset
+notice compares the permanent "Developer rejects a candidate and regenerates
+with another model" with the modified "The panel can permanently disable the
+review": they share only generic direct-request setup, while one rejects and
+regenerates and the other disables and releases. The remove+add pair (the
+removed marker scenario versus the modified unsupported-flow scenario) is a
 supersession: the modified scenario asserts visibility without the marker.
 
 ## Split-or-keep
