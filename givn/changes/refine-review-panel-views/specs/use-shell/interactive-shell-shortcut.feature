@@ -57,7 +57,7 @@ Feature: Refined review panel views
     When I invoke Ctrl-W with current input "inspect recent commits"
     Then the purpose below the stack should be marked and readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The view toggle switches between the simple and detailed reviews
     Given an installed Bash shortcut and a provider candidate "git log --oneline | head -5"
     And the provider returns this structured review response:

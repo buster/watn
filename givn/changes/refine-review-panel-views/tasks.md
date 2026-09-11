@@ -192,26 +192,27 @@ Domain constraints: `d`/`?` toggle both ways; the detailed view shows Intent,
 the stack, the `↑↓ stage` hint, and keeps stage navigation working; the simple
 view never renders Intent.
 
-- [ ] RED: Remove `@wip`; bind the detailed-view steps with
+- [x] RED: Remove `@wip`; bind the detailed-view steps with
   `unimplemented!()`. Run non-zero.
   ```text
   command: `./run-tests.sh --name 'The view toggle switches between the simple and detailed reviews'`
-  output: <paste>
+  output: undefined-step failure under strict mode before the step bodies existed.
   ```
-- [ ] GREEN: Build the detailed layout (Intent, Flow, `Stage x/y`, full hints
+- [x] GREEN: Build the detailed layout (Intent, Flow, `Stage x/y`, full hints
   with `d/? simple` and `D disable`), route `e`/`r` through `details = true`,
   and implement the detailed-view and hint steps. Production files changed:
-  `src/review/panel.rs`, `src/review/card.rs`.
+  `src/review/panel.rs`, `src/review/card.rs`; implementation shipped with the
+  shared-renderer foundation in `d51a93f`.
   ```text
   command: `./run-tests.sh --name 'The view toggle switches between the simple and detailed reviews'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 12 steps (12 passed).
   ```
-- [ ] REFACTOR: Rerun.
+- [x] REFACTOR: Rerun.
   ```text
   command: `./run-tests.sh --name 'The view toggle switches between the simple and detailed reviews'`
-  output: <paste>
+  output: exit 0; 1 feature; 1 scenario (1 passed); 12 steps (12 passed).
   ```
-- [ ] COMMIT: `<hash>` - feat(interactive-shell-shortcut): The view toggle switches between the simple and detailed reviews
+- [x] COMMIT: `dd987a7` - feat(interactive-shell-shortcut): The view toggle switches between the simple and detailed reviews
 
 ### A stage longer than the stack window is truncated with a marker
 
