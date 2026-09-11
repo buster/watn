@@ -181,7 +181,7 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 92% (18546/20133)
+Line coverage: 92% (18616/20206)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
