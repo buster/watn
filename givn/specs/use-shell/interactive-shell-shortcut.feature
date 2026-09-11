@@ -781,7 +781,8 @@ Feature: Interactive shell shortcut for watn
     Then  the review surface should be in the simple view
     When  I switch to the detailed view
     Then  the detailed review should show the intent
-    And  the detailed review should show the command stack
+    And  the detailed review should show the command without a label
+    And  the detailed review should keep a blank row between command and purpose
     And  the detailed review should show the stage navigation hint
     And  the detailed review should not show the flow or stage labels
     When  I move to the next stage

@@ -3963,10 +3963,41 @@ fn review_detailed_shows_intent(world: &mut WatnWorld) {
     }
 }
 
-#[then("the detailed review should show the command stack")]
-fn review_detailed_shows_stack(world: &mut WatnWorld) {
-    assert_review_rendered_contains(world, "Command");
-    let first = world
+#[then("the detailed review should show the command without a label")]
+fn review_detailed_command_without_label(world: &mut WatnWorld) {
+    let lines = plain_card_lines(world);
+    let joined = lines.join("\n");
+    assert!(
+        !joined.contains("Command"),
+        "the detailed command must not carry the label, got:\n{joined}"
+    );
+    let selected = lines
+        .iter()
+        .find(|line| line.contains('▶'))
+        .expect("selected stage row");
+    let after_border = selected.trim_start_matches('│');
+    assert!(
+        after_border.starts_with("   ▶ "),
+        "the detailed stage row must use the simple four-column prefix, got: {selected:?}"
+    );
+}
+
+#[then("the detailed review should keep a blank row between command and purpose")]
+fn review_detailed_blank_between_command_and_purpose(world: &mut WatnWorld) {
+    let lines = plain_card_lines(world);
+    let purpose_index = lines
+        .iter()
+        .position(|line| line.contains('↳'))
+        .expect("purpose row");
+    assert!(purpose_index >= 2, "purpose needs rows above it");
+    assert!(
+        lines[purpose_index - 1]
+            .trim_matches(|character| character == '│' || character == ' ')
+            .is_empty(),
+        "the row above the purpose must be blank, got: {:?}",
+        lines[purpose_index - 1]
+    );
+    let last_stage = world
         .review
         .panel
         .as_ref()
@@ -3974,12 +4005,15 @@ fn review_detailed_shows_stack(world: &mut WatnWorld) {
         .candidate()
         .flow
         .stages
-        .first()
-        .map(|stage| stage.stage_text.clone());
-    if let Some(stage) = first {
-        let token = stage.split_whitespace().next().unwrap_or("").to_string();
-        assert_review_rendered_contains(world, &token);
-    }
+        .last()
+        .map(|stage| stage.stage_text.clone())
+        .expect("at least one stage");
+    let token = stage_last_token(&last_stage).to_string();
+    assert!(
+        lines[purpose_index - 2].contains(&token),
+        "the last stack row must sit directly above the blank row, got: {:?}",
+        lines[purpose_index - 2]
+    );
 }
 
 #[then("the detailed review should show the stage navigation hint")]

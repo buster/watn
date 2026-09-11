@@ -447,42 +447,23 @@ pub fn render_card_lines(
         content.push((10, String::new()));
     }
 
-    let purpose_indent = if detailed {
-        " ".repeat(label_width + 3 + 4)
-    } else {
-        "    ".to_string()
-    };
+    let purpose_indent = "    ".to_string();
     let purpose_width = inner.saturating_sub(purpose_indent.len() + 2);
     let purpose_rows: Vec<String> = wrap_stage(&purpose_text(state), purpose_width)
         .into_iter()
         .take(2)
         .collect();
 
-    let essential_rows = purpose_rows.len() + 4;
+    let essential_rows = purpose_rows.len() + if detailed { 5 } else { 4 };
     let stack_budget = available.saturating_sub(essential_rows).max(1);
 
-    let base = if detailed {
-        " ".repeat(label_width + 3)
-    } else {
-        String::new()
-    };
-    let stack_text_width = inner.saturating_sub(base.len() + 4);
+    let stack_text_width = inner.saturating_sub(4);
     let stack = stack_window_rows(state, stack_text_width, stack_budget, &ink);
     for (index, row) in stack.iter().enumerate() {
-        let line = if detailed && index == 0 {
-            format!(
-                "{}   {base}{row}",
-                ink.label(&pad_to("Command", label_width))
-            )
-        } else {
-            format!("{base}{row}")
-        };
-        content.push((if index == 0 { 100 } else { 95 }, line));
+        content.push((if index == 0 { 100 } else { 95 }, row.clone()));
     }
 
-    if !detailed {
-        content.push((10, String::new()));
-    }
+    content.push((10, String::new()));
     for (index, row) in purpose_rows.iter().enumerate() {
         let marker = if index == 0 {
             format!("{} ", ink.purpose_marker("↳"))
@@ -711,7 +692,6 @@ mod tests {
         assert!(joined.contains('┌') && joined.contains('┘'));
         assert!(joined.contains("watn"));
         assert!(joined.contains("Intent"));
-        assert!(joined.contains("Command"));
         assert!(joined.contains("ccept"));
         for absent in ["Flow", "Stage", "supported", "unsupported"] {
             assert!(
@@ -728,6 +708,42 @@ mod tests {
             "separators are colored"
         );
         assert!(joined.contains("◆ tier 1 · loopback/review-model"));
+    }
+
+    #[test]
+    fn detailed_command_block_matches_the_simple_view() {
+        let layout = InlineLayout::for_dimensions(100, 40);
+        let simple = render_card_lines(&state(), layout, true);
+        let mut detailed_state = state();
+        detailed_state.details = true;
+        let detailed = render_card_lines(&detailed_state, layout, true);
+
+        let simple_selected = simple
+            .iter()
+            .find(|line| line.contains('▶'))
+            .expect("simple selected stage row");
+        let detailed_selected = detailed
+            .iter()
+            .find(|line| line.contains('▶'))
+            .expect("detailed selected stage row");
+        assert_eq!(
+            simple_selected, detailed_selected,
+            "the detailed stack must use the simple indentation and markers"
+        );
+        assert!(
+            !detailed.join("\n").contains("Command"),
+            "the detailed command must not carry the label"
+        );
+        let purpose_index = detailed
+            .iter()
+            .position(|line| line.contains('↳'))
+            .expect("purpose row");
+        assert!(
+            detailed[purpose_index - 1]
+                .trim_matches(|character| character == '│' || character == ' ')
+                .is_empty(),
+            "a blank row must separate command and purpose"
+        );
     }
 
     #[test]
