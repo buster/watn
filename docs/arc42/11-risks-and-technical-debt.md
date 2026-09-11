@@ -51,7 +51,7 @@
 | R-045 | A selected shell target may fail after another target has been changed | Medium | Medium | Attempt every selected target independently, report every success and OS failure, retain successful changes deliberately, and return an aggregate non-zero result |
 | R-046 | Shell-native widget syntax or key maps differ across Bash, Zsh, and Fish environments | Medium | Medium | Keep one native generated block per shell, run installed Bash/Fish parser checks, use real Bash and Fish PTY/subprocess checks for buffer behavior, and retain the remaining Zsh interactive-runtime limitation |
 | R-047 | A widget could pass a leading option, reserved token, or generated output into an unintended shell path | Medium | High | Use `command watn -- "$question"`, capture stdout without evaluation, preserve stderr, and assert leading-option/reserved-token, multiline, failure, and no-execution scenarios |
-| R-048 | Automatic first-use onboarding could surprise a user by mutating shell files | Medium | High | Make the shortcut question explicit and opt-in; Enter/no and empty selection perform no shell I/O; report every selected target before returning |
+| R-048 | Automatic first-use onboarding or a shell page can mutate shell files through the preselection accepted with Enter | Medium | High | Preselect only shells detected on `PATH` or already carrying a managed block; mark every choice with `●`/`○`; Escape and the empty-detection path perform no inspection or write; isolate HOME/XDG in PTY tests so no real startup file is touched |
 | R-049 | A shell path, symlink, non-UTF-8 file, or permission failure could make installation platform-dependent | Medium | Medium | Resolve absolute HOME/XDG targets, preserve bytes outside ASCII markers, reject unsafe symlinks and directories, use temporary files in the target directory, and include exact path/reason diagnostics |
 | R-050 | A terminal color palette or environment color policy may make the green active border hard to distinguish or suppress ANSI styling | Low | Low | Keep the visible cursor and focus text unchanged, remove inherited `NO_COLOR` in the PTY child, set `TERM=xterm-256color`, parse green SGR foreground parameters semantically, and retain the cursor/focus text as redundant cues |
 | R-055 | Flattened comment construction or per-shell history recording could misrepresent the request or fail on shells whose history API differs | Low | Low | Replace only CR, LF, and TAB with spaces so the request stays one comment line; use the native history APIs (`history -s`, `print -s`, `builtin history append`); verify the real Fish buffer and Bash commit-time execution and no-evaluation coverage; interactive wrapped-line redraw remains outside the measured contract |
@@ -214,9 +214,10 @@ The completion-generation decision has these durable consequences:
 
 The shell-shortcut decision has these durable consequences:
 
-- Startup-file mutation: the feature is opt-in but changes user-owned files;
-  R-044 and R-048 require exact marker ownership, a default decline, isolated
-  tests, and visible target reports.
+- Startup-file mutation: the feature changes user-owned files when a detected
+  shell is accepted; R-044 and R-048 require exact marker ownership, visible
+  selection markers, an empty-preselection no-write path, isolated tests, and
+  visible target reports.
 - Atomic replacement: same-directory temporary files and rename protect an
   existing target from pre-rename failures, while R-049 records platform/path
   limitations and R-044 covers malformed markers.

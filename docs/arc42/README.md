@@ -20,6 +20,9 @@ only omission sentinel, and stale search generations cannot overwrite results
 from newer user-entered searches. Catalog prices published per token are
 displayed per million tokens and captured into `[pricing]` for each chosen
 model, so cost display follows a model assignment without manual price entry.
+Every setup page shares the review panel's visual language of symbols,
+emphasis, and color roles, and the shell pages list detected shells
+preselected for direct toggling.
 The outbound transport boundary keeps configured endpoints authoritative for
 normal and release-profile binaries; only a debug `test-support` binary may
 route requests to a loopback test twin, and that route is never persisted or

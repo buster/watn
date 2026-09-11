@@ -2235,6 +2235,38 @@ fn bash_contains_user_owned_content(world: &mut WatnWorld) {
     assert!(content.contains("# user before") && content.contains("# user after"));
 }
 
+#[given(regex = r##"^the shell binaries on PATH are (.+)$"##)]
+fn shell_binaries_on_path(world: &mut WatnWorld, list: String) {
+    let names: Vec<String> = list
+        .split(" and ")
+        .flat_map(|part| part.split(','))
+        .map(|part| part.trim().trim_matches('"').to_string())
+        .filter(|name| !name.is_empty())
+        .collect();
+    install_path_fixture(world, &names);
+}
+
+#[given("no shell binaries are on PATH")]
+fn no_shell_binaries_on_path(world: &mut WatnWorld) {
+    install_path_fixture(world, &[]);
+}
+
+fn install_path_fixture(world: &mut WatnWorld, names: &[String]) {
+    let dir = tempfile::tempdir().expect("PATH fixture dir");
+    for name in names {
+        let path = dir.path().join(name);
+        std::fs::write(&path, b"#!/bin/sh\n").expect("write PATH fixture");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod PATH fixture");
+        }
+    }
+    world.path_override = Some(dir.path().to_string_lossy().to_string());
+    world.path_fixture_dir = Some(dir);
+}
+
 #[when("I start `watn shell` in a terminal")]
 fn start_shell_setup(world: &mut WatnWorld) {
     let session = super::start_pty_session(world, &["shell"]);
@@ -2243,20 +2275,104 @@ fn start_shell_setup(world: &mut WatnWorld) {
     wait_for_active_page(session, "Shell Completion");
 }
 
+fn shell_page_output(world: &WatnWorld) -> String {
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    let snapshot = visible_output(&pty_snapshot(session));
+    latest_page(&snapshot).to_string()
+}
+
+#[then("shell setup should show the completion and Ctrl-W shell lists")]
+fn shell_setup_shows_shell_lists(world: &mut WatnWorld) {
+    let output = shell_page_output(world);
+    assert!(
+        output.contains("Select shells"),
+        "shell list missing: {output:?}"
+    );
+}
+
+#[then("no shell opt-in question should be shown")]
+fn no_shell_opt_in_question(world: &mut WatnWorld) {
+    let output = shell_page_output(world);
+    for question in [
+        "Install shell completion for watn?",
+        "Install the Ctrl-W shell shortcut for watn?",
+    ] {
+        assert!(
+            !output.contains(question),
+            "retired shell question is still shown: {output:?}"
+        );
+    }
+}
+
+fn shell_marker_shown(output: &str, marker: &str, name: &str) -> bool {
+    output.contains(&format!("{marker}{name}")) || output.contains(&format!("{marker} {name}"))
+}
+
 #[then("Bash completion should be selected")]
 fn bash_completion_is_selected(world: &mut WatnWorld) {
-    let session = world.pty_session.as_mut().expect("shell PTY session");
-    pty_write(session, "y");
-    std::thread::sleep(std::time::Duration::from_millis(150));
-    let output = pty_snapshot(session);
+    let output = shell_page_output(world);
     assert!(
-        output.contains("Bash"),
-        "Bash shell choice missing: {output:?}"
-    );
-    assert!(
-        output.contains("[x]"),
+        shell_marker_shown(&output, "●", "Bash"),
         "Bash completion was not preselected: {output:?}"
     );
+}
+
+#[then("Zsh completion should be selected")]
+fn zsh_completion_is_selected(world: &mut WatnWorld) {
+    let output = shell_page_output(world);
+    assert!(
+        shell_marker_shown(&output, "●", "Zsh"),
+        "Zsh completion was not selected: {output:?}"
+    );
+}
+
+#[then("Fish completion should be unselected")]
+fn fish_completion_is_unselected(world: &mut WatnWorld) {
+    let output = shell_page_output(world);
+    assert!(
+        shell_marker_shown(&output, "○", "Fish"),
+        "Fish completion was not unselected: {output:?}"
+    );
+}
+
+#[when("I accept the completion selection")]
+fn accept_completion_selection(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Shortcut");
+}
+
+#[when("I accept the Ctrl-W selection")]
+fn accept_shortcut_selection(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Review");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("shell PTY session");
+    super::finish_pty_session(world, session);
+}
+
+#[when("I advance through both shell integration pages without a selection")]
+fn advance_through_shell_pages_without_selection(world: &mut WatnWorld) {
+    let session = super::start_pty_session(world, &["shell"]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Completion");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Shortcut");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Review");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
+    pty_write(session, "\r");
+    let session = world.pty_session.take().expect("shell PTY session");
+    super::finish_pty_session(world, session);
 }
 
 #[when("I deselect Bash completion")]
@@ -2264,18 +2380,20 @@ fn deselect_bash_completion(world: &mut WatnWorld) {
     if world.pty_session.is_none() {
         let session = super::start_pty_session(world, &["shell"]);
         world.pty_session = Some(session);
-        let session = world.pty_session.as_mut().expect("shell PTY session");
+        let session = world.pty_session.as_ref().expect("shell PTY session");
         wait_for_active_page(session, "Shell Completion");
-        pty_write(session, "y");
-        std::thread::sleep(std::time::Duration::from_millis(150));
     }
     let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, " ");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Shortcut");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Review");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, "\r");
     let session = world.pty_session.take().expect("shell PTY session");
     super::finish_pty_session(world, session);
@@ -2329,14 +2447,17 @@ fn bash_contains_duplicated_completion_markers(world: &mut WatnWorld) {
 fn deselect_bash_completion_in_shell_setup(world: &mut WatnWorld) {
     let session = super::start_pty_session(world, &["shell"]);
     world.pty_session = Some(session);
-    let session = world.pty_session.as_mut().expect("shell PTY session");
+    let session = world.pty_session.as_ref().expect("shell PTY session");
     wait_for_active_page(session, "Shell Completion");
-    pty_write(session, "y");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, " \r");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Shell Shortcut");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, "\r");
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.as_ref().expect("shell PTY session");
+    wait_for_active_page(session, "Review");
+    let session = world.pty_session.as_mut().expect("shell PTY session");
     pty_write(session, "\r");
     let session = world.pty_session.take().expect("shell PTY session");
     super::finish_pty_session(world, session);

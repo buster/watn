@@ -208,12 +208,6 @@ enum ModelFocus {
     Reasoning,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ShellInstallFocus {
-    Question,
-    Shells,
-}
-
 type SearchMessage = (
     usize,
     u64,
@@ -438,14 +432,14 @@ struct SetupWizard {
     validation: String,
     save_prompt: bool,
     initial_models: [Option<String>; 3],
-    completion_focus: ShellInstallFocus,
     completion_enabled: bool,
     completion_cursor: usize,
     completion_selected: [bool; 3],
-    shortcut_focus: ShellInstallFocus,
+    completion_preselected_any: bool,
     shortcut_enabled: bool,
     shortcut_cursor: usize,
     shortcut_selected: [bool; 3],
+    shortcut_preselected_any: bool,
 }
 
 impl Drop for SetupWizard {
@@ -534,21 +528,17 @@ impl SetupWizard {
             .catalog_endpoint
             .unwrap_or_else(|| endpoint.clone());
         let shell_environment = shell_shortcut::ShellEnvironment::from_process();
-        let detected_shells = shell_environment.detected_shells();
-        let completion_selected = if entry == SetupEntryPoint::Shell {
-            Shell::ALL.map(|shell| {
-                shell_completion::has_managed_block_with_environment(shell, &shell_environment)
-            })
-        } else {
-            Shell::ALL.map(|shell| detected_shells.contains(&shell))
-        };
-        let shortcut_selected = if entry == SetupEntryPoint::Shell {
-            Shell::ALL.map(|shell| {
-                shell_shortcut::has_managed_block_with_environment(shell, &shell_environment)
-            })
-        } else {
-            Shell::ALL.map(|shell| detected_shells.contains(&shell))
-        };
+        let available_on_path = shell_shortcut::shells_available_on_path();
+        let completion_selected = Shell::ALL.map(|shell| {
+            let index = shell_index(shell);
+            available_on_path[index]
+                || shell_completion::has_managed_block_with_environment(shell, &shell_environment)
+        });
+        let shortcut_selected = Shell::ALL.map(|shell| {
+            let index = shell_index(shell);
+            available_on_path[index]
+                || shell_shortcut::has_managed_block_with_environment(shell, &shell_environment)
+        });
         let generation = Arc::new(AtomicU64::new(0));
         let (search_tx, search_rx) = mpsc::channel();
         let mut wizard = Self {
@@ -592,14 +582,14 @@ impl SetupWizard {
             validation: String::new(),
             save_prompt: false,
             initial_models,
-            completion_focus: ShellInstallFocus::Question,
             completion_enabled: false,
             completion_cursor: 0,
             completion_selected,
-            shortcut_focus: ShellInstallFocus::Question,
+            completion_preselected_any: completion_selected.iter().any(|selected| *selected),
             shortcut_enabled: false,
             shortcut_cursor: 0,
             shortcut_selected,
+            shortcut_preselected_any: shortcut_selected.iter().any(|selected| *selected),
         };
         if wizard.storage == CredentialStorage::Environment && wizard.credential_input.is_empty() {
             wizard.credential_input = suggested_api_key_env(&wizard.endpoint).to_string();
@@ -708,68 +698,42 @@ impl SetupWizard {
         }
 
         let shortcut = self.page == SetupPage::ShellShortcut;
-        let advance = if shortcut {
-            Self::handle_shell_install_key_inner(
-                key,
-                &mut self.shortcut_focus,
-                &mut self.shortcut_enabled,
-                &mut self.shortcut_cursor,
-                &mut self.shortcut_selected,
-            )
+        let (cursor, selected) = if shortcut {
+            (&mut self.shortcut_cursor, &mut self.shortcut_selected)
         } else {
-            Self::handle_shell_install_key_inner(
-                key,
-                &mut self.completion_focus,
-                &mut self.completion_enabled,
-                &mut self.completion_cursor,
-                &mut self.completion_selected,
-            )
+            (&mut self.completion_cursor, &mut self.completion_selected)
         };
-        if advance {
-            self.advance_shell_install_page()
+        let advance = match key.code {
+            KeyCode::Up => {
+                *cursor = cursor.saturating_sub(1);
+                false
+            }
+            KeyCode::Down => {
+                *cursor = (*cursor + 1).min(Shell::ALL.len() - 1);
+                false
+            }
+            KeyCode::Char(' ') => {
+                selected[*cursor] = !selected[*cursor];
+                false
+            }
+            KeyCode::Enter | KeyCode::Tab => true,
+            _ => false,
+        };
+        if !advance {
+            return Ok(None);
+        }
+        let enabled = selected.iter().any(|value| *value)
+            || if shortcut {
+                self.shortcut_preselected_any
+            } else {
+                self.completion_preselected_any
+            };
+        if shortcut {
+            self.shortcut_enabled = enabled;
         } else {
-            Ok(None)
+            self.completion_enabled = enabled;
         }
-    }
-
-    fn handle_shell_install_key_inner(
-        key: KeyEvent,
-        focus: &mut ShellInstallFocus,
-        enabled: &mut bool,
-        cursor: &mut usize,
-        selected: &mut [bool; 3],
-    ) -> bool {
-        match focus {
-            ShellInstallFocus::Question => match key.code {
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    *enabled = true;
-                    *focus = ShellInstallFocus::Shells;
-                    *cursor = 0;
-                    false
-                }
-                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter | KeyCode::Tab => {
-                    *enabled = false;
-                    true
-                }
-                _ => false,
-            },
-            ShellInstallFocus::Shells => match key.code {
-                KeyCode::Up => {
-                    *cursor = cursor.saturating_sub(1);
-                    false
-                }
-                KeyCode::Down => {
-                    *cursor = (*cursor + 1).min(Shell::ALL.len() - 1);
-                    false
-                }
-                KeyCode::Char(' ') => {
-                    selected[*cursor] = !selected[*cursor];
-                    false
-                }
-                KeyCode::Enter | KeyCode::Tab => true,
-                _ => false,
-            },
-        }
+        self.advance_shell_install_page()
     }
 
     fn advance_shell_install_page(&mut self) -> Result<Option<SetupWizardOutcome>, Error> {
@@ -1463,14 +1427,8 @@ impl SetupWizard {
             SetupPage::Review => "review",
             SetupPage::Provider => "provider choice",
             SetupPage::Catalog => "catalog endpoint",
-            SetupPage::ShellCompletion => match self.completion_focus {
-                ShellInstallFocus::Question => "completion confirmation",
-                ShellInstallFocus::Shells => "completion shells",
-            },
-            SetupPage::ShellShortcut => match self.shortcut_focus {
-                ShellInstallFocus::Question => "shortcut confirmation",
-                ShellInstallFocus::Shells => "shortcut shells",
-            },
+            SetupPage::ShellCompletion => "completion shells",
+            SetupPage::ShellShortcut => "shortcut shells",
             _ => {
                 if self.page.reasoning_slot().is_some() {
                     "reasoning"
@@ -1517,22 +1475,9 @@ impl SetupWizard {
             "Save current settings? [y] Save [n] Discard  [Esc] Return"
         } else {
             match self.page {
-                SetupPage::ShellCompletion => match self.completion_focus {
-                    ShellInstallFocus::Question => {
-                        "[y] Install completion  [Enter] Skip  [Esc] save/discard"
-                    }
-                    ShellInstallFocus::Shells => {
-                        "Up/Down move  Space toggle  Enter continue  Esc save/discard"
-                    }
-                },
-                SetupPage::ShellShortcut => match self.shortcut_focus {
-                    ShellInstallFocus::Question => {
-                        "[y] Install shortcut  [Enter] Skip  [Esc] save/discard"
-                    }
-                    ShellInstallFocus::Shells => {
-                        "Up/Down move  Space toggle  Enter finish  Esc save/discard"
-                    }
-                },
+                SetupPage::ShellCompletion | SetupPage::ShellShortcut => {
+                    "Up/Down move  Space toggle  Enter continue  Esc save/discard"
+                }
                 SetupPage::Review => "Enter confirm  Shift-Tab back  Esc discard  Ctrl-C quit",
                 _ if self.page.model_slot().is_some() => {
                     "Enter/Tab next  Shift-Tab back  Esc save/discard  Ctrl-C quit"
@@ -1886,59 +1831,39 @@ impl SetupWizard {
     }
 
     fn draw_shell_install(&self, frame: &mut Frame, area: ratatui::layout::Rect, shortcut: bool) {
-        let (focus, enabled, cursor, selected) = if shortcut {
-            (
-                self.shortcut_focus,
-                self.shortcut_enabled,
-                self.shortcut_cursor,
-                &self.shortcut_selected,
-            )
+        let (cursor, selected) = if shortcut {
+            (self.shortcut_cursor, &self.shortcut_selected)
         } else {
-            (
-                self.completion_focus,
-                self.completion_enabled,
-                self.completion_cursor,
-                &self.completion_selected,
-            )
+            (self.completion_cursor, &self.completion_selected)
         };
-        let (title, description, question) = if shortcut {
+        let (title, description) = if shortcut {
             (
                 "Shell shortcut",
                 "Install a Ctrl-W widget in each selected shell startup file. Type a natural-language request, press Ctrl-W, review or edit the generated command, then press Enter. The command is never executed automatically.",
-                if enabled {
-                    "Select the shells where the Ctrl-W widget should be installed."
-                } else {
-                    "Install the Ctrl-W shell shortcut for watn?"
-                },
             )
         } else {
             (
                 "Shell completion",
                 "Install watn's generated Tab completion in each selected shell startup file. After reloading the file, type watn and press Tab to complete options and subcommands.",
-                if enabled {
-                    "Select the shells where watn completion should be installed."
-                } else {
-                    "Install shell completion for watn?"
-                },
             )
         };
         let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(5)]).split(area);
-        let explanation = Paragraph::new(format!("{}\n\n{}", description, question))
-            .block(setup_block(title, focus == ShellInstallFocus::Question))
-            .wrap(Wrap { trim: true });
+        let explanation = Paragraph::new(format!(
+            "{}\n\nSelect the shells where this integration should be installed.",
+            description
+        ))
+        .block(setup_block(title, false))
+        .wrap(Wrap { trim: true });
         frame.render_widget(explanation, chunks[0]);
 
         let items = Shell::ALL.iter().enumerate().map(|(index, shell)| {
-            let marker = if selected[index] { "[x]" } else { "[ ]" };
+            let marker = if selected[index] { "●" } else { "○" };
             ListItem::new(format!("{} {}", marker, shell.name()))
         });
         let mut state = ListState::default();
         state.select(Some(cursor));
         let list = List::new(items)
-            .block(setup_block(
-                "Select shells",
-                focus == ShellInstallFocus::Shells,
-            ))
+            .block(setup_block("Select shells", true))
             .highlight_style(
                 Style::default()
                     .bg(Color::Cyan)
@@ -1973,6 +1898,13 @@ fn parse_custom_reasoning(value: Option<&str>) -> Option<String> {
 
 fn provider_choices() -> [&'static str; 3] {
     ["openrouter", "openai", "custom"]
+}
+
+fn shell_index(shell: Shell) -> usize {
+    Shell::ALL
+        .iter()
+        .position(|value| *value == shell)
+        .unwrap_or(0)
 }
 
 fn valid_environment_name(name: &str) -> bool {

@@ -45,11 +45,12 @@ another environment variable.
 
 ## Shell shortcut safety and file ownership
 
-The optional shortcut is part of explicit setup and implicit first-use setup,
-but Enter accepts the default decline. Selection is runtime-only; no provider
-configuration field records the chosen shells. The installer resolves Bash and
-Zsh from `HOME`, Fish from `XDG_CONFIG_HOME` or the HOME-based XDG fallback, and
-uses only the basename of `SHELL` for preselection.
+The optional shortcut is part of explicit setup and implicit first-use setup.
+The shell pages are list-first: a shell is preselected when its binary is on
+`PATH` or its target already holds a watn-managed block, and Enter applies the
+shown desired state. Selection is runtime-only; no provider configuration field
+records the chosen shells. The installer resolves Bash and Zsh from `HOME`,
+Fish from `XDG_CONFIG_HOME` or the HOME-based XDG fallback.
 
 Each target is treated as user-owned bytes. A target with no shortcut markers
 gets one generated block appended. An existing target must contain exactly one
@@ -387,6 +388,9 @@ reasoning pairs, two shell desired states, and a final review:
 - Catalog-supported reasoning suggestions plus a custom non-empty entry; `off`
   is omitted from requests and is blocked for mandatory reasoning.
 - A status line for the empty state or the unsupported-search notice.
+- List-first shell completion and Ctrl-W pages: a shell is preselected when its
+  binary is on `PATH` or its target already has a watn-managed block; Space
+  toggles the highlighted shell and Enter applies the shown desired state.
 
 Key bindings:
 - Up/Down arrows: move selection through the list.
@@ -411,13 +415,30 @@ custom non-empty value remains available alongside catalog choices. A model
 change selects that model's catalog default when available but does not discard
 an explicit custom value without user confirmation.
 
+## Setup visual language
+
+Every setup page shares the review panel's visual language. The frame is
+labelled `watn · setup`; the active page is marked `◆`; the highlighted list
+or table row is marked `▶`; selected and unselected shell choices use `●` and
+`○`; guidance uses `↳`; validation and warnings use an amber `⚠`. Labels and
+the active tab are cyan, values are white, the focused input accent and
+selected state are green, secondary text is dim, and panel borders are dim
+gray. Footer hints pair a bold cyan key with a dim label joined by `·`.
+
+The same palette is disabled as a whole when the terminal does not support
+color (`NO_COLOR`, `TERM=dumb`, or a terminal without color capability): every
+style falls back to the default and only the symbols and text remain. The
+decision uses the same pure capability function as the review card.
+
 ## Focused provider, model, and shell setup
 
 Provider setup presents OpenRouter, OpenAI, or Custom, then completion endpoint
 and credential source. It never probes the catalog. Models setup requires a
 ready provider, uses only its catalog source, and persists only roles and
-reasoning. Shell setup presents completion and Ctrl-W desired states
-independently and inspects target markers only after the user opts in.
+reasoning. Shell setup presents completion and Ctrl-W desired states as
+list-first pages: detected shells (PATH binaries plus existing managed blocks)
+are preselected, toggled with Space, and applied on Enter. A page where nothing
+was detected and nothing is selected performs no target inspection or write.
 
 Coordinated setup retains all values in memory through the final review. Escape
 discards the draft and Ctrl-C returns 130; neither changes configuration or

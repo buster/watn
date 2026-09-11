@@ -146,3 +146,16 @@ history recording, and a real Fish pseudo-terminal captures the corrected
 editable buffer; regular isolated tests cover Zsh generation and shell
 contracts. The existing `./run-tests.sh` and `./run-tests.sh --e2e` wrappers
 remain the verification commands.
+
+## Amendment (setup-shell-and-style, 2026-09-11)
+
+The interactive setup surface no longer uses an opt-in question, and Enter no
+longer means decline. The shell completion and Ctrl-W pages are list-first: a
+shell is preselected when its binary is present on `PATH` or its target already
+holds a watn-managed block; the shown selection is the desired state applied on
+Enter. The `$SHELL`-basename preselection rule and the Enter-as-default-decline
+clause above are superseded. The installer safety decisions (exact marker
+ownership, atomic replacement, independent target attempts, no evaluation,
+native widgets, history recording) are unchanged. In the focused `watn shell`
+flow a deselected shell has only its managed block removed; coordinated setup
+keeps its install-only behavior.

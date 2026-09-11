@@ -32,6 +32,7 @@ pub struct WatnWorld {
     /// removes every entry there from the runner process, which would strip
     /// the runner's own PATH.
     pub path_override: Option<String>,
+    pub path_fixture_dir: Option<tempfile::TempDir>,
     pub mock_server: MockServerWrap,
     pub temp_dir: Option<tempfile::TempDir>,
     pub pending_config: HashMap<String, String>,

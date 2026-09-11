@@ -295,9 +295,8 @@ text beginning with that token must be quoted as one argument or passed after
 
 ## Scenario: Optional shell shortcut during setup
 
-**Trigger:** A user reaches the shell desired-state questions in explicit,
-coordinated, or focused shell setup and confirms the desired completion and
-shortcut selections.
+**Trigger:** A user reaches the shell completion or Ctrl-W page in explicit,
+coordinated, or focused shell setup.
 
 ```mermaid
 sequenceDiagram
@@ -307,9 +306,9 @@ sequenceDiagram
     participant Installer as Shell Shortcut Installer
     participant Files as Selected startup files
 
-    User->>Wizard: Confirm shell desired states
-    Wizard-->>User: Show completion and Ctrl-W selections separately
-    User->>Wizard: Select or deselect Bash/Zsh/Fish and confirm
+    Wizard->>Wizard: Preselect shells from PATH binaries and existing managed blocks
+    Wizard-->>User: Show the shell list with selected and unselected markers
+    User->>Wizard: Toggle Bash/Zsh/Fish and press Enter
     Wizard->>Config: Persist confirmed config snapshot first
     loop Each changed shell target
         Wizard->>Installer: Resolve target and install, replace, or remove marked block
@@ -320,12 +319,17 @@ sequenceDiagram
     Wizard-->>User: Report every target and reload instruction
 ```
 
-Declining either shell question performs no target inspection or shell-file I/O.
-A selected shell with no target file creates only its own parent directories; a
-deselected shell with one valid block removes only that block. Duplicate,
-unmatched, or reversed markers fail before writing. Every changed target is
-attempted independently; a later failure does not roll back earlier successful
-renames, and the aggregate setup result is non-zero when any target failed.
+The shell pages have no separate opt-in question. A shell is preselected when
+its binary is on `PATH` or when its target already holds a watn-managed block;
+the shown selection is the desired state applied on Enter. Advancing a page
+where nothing was detected and nothing is selected performs no target
+inspection and no shell-file I/O, preserving the decline path without a
+question. A selected shell with no target file creates only its own parent
+directories; a deselected shell with one valid block removes only that block.
+Duplicate, unmatched, or reversed markers fail before writing. Every changed
+target is attempted independently; a later failure does not roll back earlier
+successful renames, and the aggregate setup result is non-zero when any target
+failed.
 
 ## Scenario: Ctrl-W generates a command without evaluation
 

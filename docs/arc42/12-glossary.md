@@ -121,3 +121,5 @@
 | Review view toggle | The `d` or `?` Review decision that switches between the simple and detailed review views |
 | Stage stack | The vertical presentation of Command flow stages in the Review surface, one row group per stage, with the command separator shown at the end of the preceding stage and the selected stage marked by an arrow |
 | Model short name | The final `/`-separated identifier segment of the configured model with any leading `~` and `:` variant suffix removed, shown in the simple review view frame |
+| Shell preselection | The initial completion and Ctrl-W selection: a shell is selected when its binary is present on `PATH` or its target already holds a watn-managed block; the shown selection is the desired state applied on Enter |
+| Setup visual language | The shared symbols (`◆`, `▶`, `●`, `○`, `↳`, `⚠`), emphasis, color roles, and bold-key/dim-label hints used by every setup page, matching the review panel; disabled as a whole when the terminal does not support color |

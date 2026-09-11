@@ -82,7 +82,7 @@ The selected configuration is persisted and usable on the next run.
 | highlight-active-setup-input | inspect initial focus | The initial provider input has a green border |
 | highlight-active-setup-input | move focus to API key | The green border follows API key focus |
 | highlight-active-setup-input | move focus to model | The green border follows model focus |
-| highlight-active-setup-input | move focus to shortcut | The green border follows optional shortcut focus |
+| highlight-active-setup-input | move focus to shell pages | The green border follows the shell lists |
 
 ## Includes
 

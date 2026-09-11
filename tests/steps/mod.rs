@@ -643,8 +643,27 @@ pub(crate) fn start_pty_command(
     cmd.env_remove("OPENROUTER_API_KEY");
     cmd.env_remove("WATN_API_KEY");
     cmd.env_remove("WATN_TEST_ENDPOINT_OVERRIDE");
+    cmd.env_remove("NO_COLOR");
     for (key, value) in &world.env_vars {
         cmd.env(key.as_str(), value.as_str());
+    }
+    if !world.env_vars.contains_key("HOME") {
+        let home = world
+            .temp_dir
+            .get_or_insert_with(|| tempfile::tempdir().expect("pty home"))
+            .path()
+            .join("home");
+        let _ = std::fs::create_dir_all(&home);
+        cmd.env("HOME", &home);
+    }
+    if !world.env_vars.contains_key("XDG_CONFIG_HOME") {
+        let config = world
+            .temp_dir
+            .get_or_insert_with(|| tempfile::tempdir().expect("pty config"))
+            .path()
+            .join("config");
+        let _ = std::fs::create_dir_all(&config);
+        cmd.env("XDG_CONFIG_HOME", &config);
     }
     if world.pending_config.contains_key("start_review") {
         cmd.env("WATN_SETUP_START_REVIEW", "1");
