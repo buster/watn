@@ -47,7 +47,7 @@ Domain constraints: the parameters are discoverable from the command surface.
   command: `./run-tests.sh --name 'Quick setup documents its parameters in help'`
   output: exit 0; 1 feature; 1 scenario (1 passed); 7 steps (7 passed).
   ```
-- [x] COMMIT: `abd5a49` - feat(quicksetup): Quick setup documents its parameters in help
+- [x] COMMIT: `26464a1` - feat(quicksetup): Quick setup documents its parameters in help
 
 ### Quick setup parameters prefill the dialog with an environment credential
 
