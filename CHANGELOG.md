@@ -6,6 +6,326 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-11
+
+### Bug Fixes
+
+- **ci:** Install givn for specification fixtures
+
+- **ci:** Pin givn fixture installer to git revision
+
+- **ci:** Remove Watn Givn fixture dependency
+
+- **security:** Update h2 0.4.15 -> 0.4.16 (RUSTSEC-2026-0258)
+
+- **tests:** Rename body_contains to body_includes for httpmock 0.8
+
+- **tests:** Rename hits to calls for httpmock 0.8
+
+- **release:** Exclude AGENTS.md from package
+
+- **quicksetup:** Use valid OpenRouter default model
+
+- Resolve clippy lints blocking the release
+
+- **interactive-shell-shortcut:** Keep the raw candidate visible in the stage stack
+
+
+### Documentation
+
+- **upgrade:** Record aggregate migration plan migrate-0-2-0-to-0-3-0
+
+- Update README to streamline demo and shortcuts
+
+- **readme:** Document the quick setup flow
+
+- **specs:** Strict use-case relationship bullets in group.md files
+
+- **specs:** Strict relationship bullets and reconciled interaction inventories
+
+- **upgrade:** Record aggregate migration plan migrate-0-3-0-to-0-5-0
+
+- **migrate-0-3-0-to-0-5-0:** Arc42 assessment and design-review PASS
+
+- **migrate-0-3-0-to-0-5-0:** Tasks evidence and review PASS
+
+- **migrate-0-3-0-to-0-5-0:** Empty disposition tables removed for clean gate
+
+- **migrate-0-3-0-to-0-5-0:** Complete task evidence
+
+- Record Watn migration evidence
+
+- **upgrade:** Record aggregate migration plan migrate-0-5-0-to-0-6-0
+
+- **usecase:** Preserve shell-completions interactions after archive merge
+
+- **readme:** Document the review card and its toggles
+
+- **readme:** Document the card-only review controls
+
+- **arc42:** Record the single review card and its controls
+
+- **arc42:** Single review card, color property, and in-panel controls
+
+- **readme:** Document persisted review panel toggles
+
+- **arc42:** Record persisted review preference
+
+- **arc42:** Record flow-first decisions, model chooser, and regeneration risk
+
+- **arc42:** Emphasize shortcut letters in the review hints
+
+
+### Features
+
+- **quicksetup:** Quick setup without a terminal prints guidance instead of asking
+
+- **quicksetup:** A model question without a suggestion requires a non-empty answer
+
+- **quicksetup:** Quick setup does not ask reasoning questions and stores no reasoning
+
+- **quicksetup:** An OpenAI endpoint suggests the OpenAI credential and no model
+
+- **quicksetup:** Shell integrations are pre-selected only for shells available on the path
+
+- **quicksetup:** Explicit provider selection skips the first-run quick setup
+
+- **quicksetup:** Aborting explicit quick setup leaves the previous configuration unchanged
+
+- **quicksetup:** A failed configuration write installs no shell integration
+
+- **quicksetup:** A failed shell installation keeps the saved configuration
+
+- **quicksetup:** An invalid endpoint value re-asks for the endpoint
+
+- **quicksetup:** An unknown shell name shows an error and keeps the list open
+
+- **quicksetup:** A re-asked small model stores the later answer on completion
+
+- Migrate Watn specs to use cases
+
+- **interactive-shell-shortcut:** The review surface explains a complex command flow
+
+- **interactive-shell-shortcut:** A complete candidate is buffered before review
+
+- **interactive-shell-shortcut:** Direct command editing preserves the original intent
+
+- **interactive-shell-shortcut:** Escape discards a direct command edit
+
+- **interactive-shell-shortcut:** Edited candidate purpose refresh failure remains reviewable
+
+- **interactive-shell-shortcut:** The compact review surface cycles three focus regions
+
+- **interactive-shell-shortcut:** Review actions use Enter and Escape
+
+- **interactive-shell-shortcut:** Stage purposes can load after a structured candidate appears
+
+- **interactive-shell-shortcut:** A command-only response shows purpose-unavailable
+
+- **interactive-shell-shortcut:** Unsupported command flow remains reviewable
+
+- **interactive-shell-shortcut:** Enhanced renderer failure falls back to the inline review surface
+
+- **interactive-shell-shortcut:** Portable review-surface failure releases no candidate
+
+- **interactive-shell-shortcut:** Provider failure preserves a selected candidate during review
+
+- **interactive-shell-shortcut:** Disabled review preserves direct Ctrl-W replacement
+
+- **interactive-shell-shortcut:** Disabled review preserves direct positional output
+
+- **interactive-shell-shortcut:** Disabled review preserves -x confirmation
+
+- **interactive-shell-shortcut:** Non-review -x preserves confirmation
+
+- **interactive-shell-shortcut:** Rephrasing starts a new candidate cycle
+
+- **interactive-shell-shortcut:** Regeneration replaces the current candidate by default
+
+- **interactive-shell-shortcut:** Higher-tier review generates a candidate at the next configured tier
+
+- **interactive-shell-shortcut:** Highest-tier review opens explicit provider catalog model selection
+
+- **interactive-shell-shortcut:** Rejected candidate returns to the current intent
+
+- **interactive-shell-shortcut:** Retained candidates can be compared and one selected
+
+- **interactive-shell-shortcut:** Interrupting an in-progress review operation preserves the selected candidate
+
+- **interactive-shell-shortcut:** Shell repaint remains owned by the line editor after review
+
+- **interactive-shell-shortcut:** A narrow terminal keeps the inline review bounded and readable
+
+- **interactive-shell-shortcut:** A markdown-fenced structured response is still explained
+
+- **interactive-shell-shortcut:** An invalid structured response with a command stays reviewable
+
+- **interactive-shell-shortcut:** A provider payload without a usable command releases nothing
+
+- **interactive-shell-shortcut:** A multiline provider payload keeps every rendered value on one row
+
+- **interactive-shell-shortcut:** An unknown purpose status keeps matching model-written purposes
+
+- **interactive-shell-shortcut:** A command broken across lines is explained on one row per stage
+
+- **interactive-shell-shortcut:** Mismatched stage text still shows purpose-unavailable
+
+- **interactive-shell-shortcut:** A provider stage split that covers the command is shown with its purposes
+
+- **interactive-shell-shortcut:** Provider stages that do not cover the command are not trusted
+
+- **interactive-shell-shortcut:** The enhanced review card frames the command, stage, and actions
+
+- **interactive-shell-shortcut:** The card shows one stage at a time and moves stages with the arrow keys
+
+- **interactive-shell-shortcut:** The card marks unsupported stage syntax
+
+- **interactive-shell-shortcut:** Disabling the enhanced card preserves the plain review surface
+
+- **interactive-shell-shortcut:** A color-incapable terminal falls back to the plain review surface
+
+- **interactive-shell-shortcut:** The card's edit shortcut opens the command editor
+
+- **interactive-shell-shortcut:** The review card is the only review panel
+
+- **interactive-shell-shortcut:** A failing review card releases no candidate
+
+- **interactive-shell-shortcut:** A color-incapable terminal shows the review card without color
+
+- **interactive-shell-shortcut:** Disabling the review panel preserves the original command handling
+
+- **interactive-shell-shortcut:** The panel can permanently disable the review
+
+- **interactive-shell-shortcut:** The -x confirmation offers to explain the command
+
+- **interactive-shell-shortcut:** Enabling the review panel from the command line persists it
+
+- **interactive-shell-shortcut:** Disabling the review panel from the command line persists it
+
+- **interactive-shell-shortcut:** The review card opens on the first command-flow stage
+
+- **interactive-shell-shortcut:** The review card exposes the direct decision shortcuts
+
+- **interactive-shell-shortcut:** Enter accepts the current candidate
+
+- **interactive-shell-shortcut:** The accept shortcut accepts the current candidate
+
+- **interactive-shell-shortcut:** The cancel shortcut cancels the review
+
+- **interactive-shell-shortcut:** Rejecting a candidate opens the model chooser
+
+- **interactive-shell-shortcut:** A configured tier can be chosen with its number
+
+- **interactive-shell-shortcut:** A model name is suggested from the provider catalog while typing
+
+- **interactive-shell-shortcut:** A typed model name works when the catalog is unavailable
+
+- **interactive-shell-shortcut:** The model chooser ignores incomplete choices
+
+- **interactive-shell-shortcut:** A failed regeneration preserves the previous candidate
+
+- **interactive-shell-shortcut:** Leaving the model chooser preserves the candidate
+
+- **interactive-shell-shortcut:** The command editor moves the insertion point with arrows and Home and End
+
+- **interactive-shell-shortcut:** Backspace and Delete remove text at the insertion point
+
+- **interactive-shell-shortcut:** The explanation card ignores review decisions
+
+- **interactive-shell-shortcut:** The review card emphasizes the decision shortcut keys
+
+- **interactive-shell-shortcut:** Emphasize shortcut letters inside the hint words
+
+- **interactive-shell-shortcut:** The model chooser explains how to choose
+
+- **interactive-shell-shortcut:** The first suggestion is ready to choose
+
+- **interactive-shell-shortcut:** The card marks nested shell syntax
+
+- **interactive-shell-shortcut:** The card marks a stage it cannot decompose
+
+- **interactive-shell-shortcut:** The simple review view names only the model without provider or tier
+
+- **interactive-shell-shortcut:** The simple view stacks the command flow with its separators
+
+- **interactive-shell-shortcut:** A long stage continues on the next stack rows and keeps its separator
+
+- **interactive-shell-shortcut:** The selected stage is marked and its purpose follows the arrow keys
+
+- **interactive-shell-shortcut:** The purpose below the stack is marked and readable
+
+- **interactive-shell-shortcut:** The view toggle switches between the simple and detailed reviews
+
+- **interactive-shell-shortcut:** A stage longer than the stack window is truncated with a marker
+
+- **interactive-shell-shortcut:** A narrow terminal keeps the inline review bounded and readable
+
+- **interactive-shell-shortcut:** The panel can permanently disable the review
+
+- **interactive-shell-shortcut:** The review surface switches configure without a request
+
+- **interactive-shell-shortcut:** Unsupported command flow remains reviewable without a marker
+
+- **interactive-shell-shortcut:** The review card stops advertising cancel
+
+- **interactive-shell-shortcut:** The detailed view drops the flow and stage rows
+
+- **interactive-shell-shortcut:** The panel reports its disable clearly
+
+- **quicksetup:** Quick setup documents its parameters in help
+
+- **quicksetup:** Quick setup parameters prefill the dialog
+
+- **quicksetup:** A small-model parameter seeds the remaining tiers
+
+- **quicksetup:** Tier parameters override the shared model prefill
+
+- **interactive-shell-shortcut:** The review card exposes the enter accept and disable-review wording
+
+- **interactive-shell-shortcut:** The detailed view shares the simple command block
+
+- **models:** Model picker shows metadata when available
+
+- **models:** Non-terminal model assignment records catalog prices
+
+- **ratatui-model-picker:** Model entry shows additional metadata when available
+
+- **ratatui-model-picker:** Interactive model table shows published prices per million tokens
+
+- **streamlined-setup:** Detected shells are preselected on the shell pages
+
+- **streamlined-setup:** Shell setup prefills installed integrations and removes only managed blocks when deselected
+
+- **unified-setup-wizard:** Setup surfaces use the review visual language
+
+
+### Other Changes
+
+- Delete docs/givn-refactor-0.3 directory
+
+- Delete docs/givn-embedding-idea.md
+
+- Cargo fmt and fix clippy match-single-binding
+
+
+### Refactoring
+
+- **watn-consolidation:** Retain exact Bash failure assertion
+
+- **watn-consolidation:** Capture fixture review output
+
+- **watn-consolidation:** Verify archived fixture titles
+
+- **ci:** Remove Givn tag filters from Watn
+
+- **quicksetup:** Move shells_available_on_path to shell_shortcut per design
+
+- **quicksetup:** Drop redundant validators and flatten endpoint answer fallback
+
+- **specs:** Regroup the spec corpus into use-case groups
+
+- **review:** Drop the superseded derived-stage purpose match
+
 ## [0.4.0] - 2026-09-11
 
 ### Bug Fixes
@@ -775,3 +1095,5 @@ Bright fireant
 [0.3.3]: https://github.com/buster/watn/compare/v0.3.2...v0.3.3
 
 [0.4.0]: https://github.com/buster/watn/compare/v0.3.3...v0.4.0
+
+[0.4.1]: https://github.com/buster/watn/compare/v0.4.0...v0.4.1
