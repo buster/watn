@@ -1102,7 +1102,11 @@ pub struct ReviewState {
 
 fn review_context(intent: &str, tier: &str, model: &str) -> watn::review::ReviewContext {
     let tier = if tier.is_empty() { "1" } else { tier };
-    let model = if model.is_empty() { "review-model" } else { model };
+    let model = if model.is_empty() {
+        "review-model"
+    } else {
+        model
+    };
     watn::review::ReviewContext {
         intent: intent.to_string(),
         tier: tier.to_string(),
@@ -2420,7 +2424,6 @@ fn review_bounded_panel(world: &mut WatnWorld) {
     }
 }
 
-
 #[then("arrow navigation should reach every command-flow stage")]
 fn review_arrow_reaches_every_stage(world: &mut WatnWorld) {
     let mut panel = world.review.panel.clone().expect("review panel state");
@@ -2658,7 +2661,6 @@ fn review_shows_key_hints(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "accept");
 }
 
-
 #[when("I move to the next stage")]
 fn review_next_stage(world: &mut WatnWorld) {
     let panel = panel_mut(world);
@@ -2829,7 +2831,11 @@ fn review_ask_to_explain(world: &mut WatnWorld) {
     );
 
     let command = world.review.candidate_command.clone();
-    let context = review_context(&world.review.intent, &world.review.tier, &world.review.model);
+    let context = review_context(
+        &world.review.intent,
+        &world.review.tier,
+        &world.review.model,
+    );
     let mut state = watn::review::ReviewPanelState::new(
         context,
         watn::review::ReviewCandidate::from_command(command),
@@ -3710,10 +3716,7 @@ fn plain_card_lines(world: &WatnWorld) -> Vec<String> {
 }
 
 fn trimmed_card_row(line: &str) -> String {
-    line.trim_end()
-        .trim_end_matches('│')
-        .trim_end()
-        .to_string()
+    line.trim_end().trim_end_matches('│').trim_end().to_string()
 }
 
 fn stage_last_token(stage: &str) -> &str {
@@ -3996,7 +3999,9 @@ fn review_detailed_has_no_flow_or_stage_labels(world: &mut WatnWorld) {
     }
 }
 
-#[given("an installed Bash shortcut and a provider candidate with one stage longer than the terminal")]
+#[given(
+    "an installed Bash shortcut and a provider candidate with one stage longer than the terminal"
+)]
 fn review_one_long_stage(world: &mut WatnWorld) {
     install_bash_shortcut(world);
     world.review = ReviewState {

@@ -277,7 +277,9 @@ fn stage_group_rows(
     let stage = &state.candidate().flow.stages[index];
     let selected = index == state.flow_stage;
     let separator = stage.separator.as_deref();
-    let reserve = separator.map(|value| value.chars().count() + 1).unwrap_or(0);
+    let reserve = separator
+        .map(|value| value.chars().count() + 1)
+        .unwrap_or(0);
     let wrap_width = text_width.saturating_sub(reserve).max(1);
     let wrapped = wrap_stage(&stage.stage_text, wrap_width);
     let last_index = wrapped.len().saturating_sub(1);
@@ -367,8 +369,8 @@ fn stack_window_rows(
     if lo > 0 {
         rows.push(hidden_marker_row(ink));
     }
-    for index in lo..=hi {
-        rows.extend(groups[index].iter().cloned());
+    for group in groups.iter().take(hi + 1).skip(lo) {
+        rows.extend(group.iter().cloned());
     }
     if hi + 1 < groups.len() {
         rows.push(hidden_marker_row(ink));
@@ -393,7 +395,12 @@ fn hints(state: &ReviewPanelState, detailed: bool, ink: &Ink) -> String {
         super::panel::PanelInputMode::Review if state.explain_only => ink.dim("esc close"),
         super::panel::PanelInputMode::Review if detailed => {
             let parts = [
-                format!("{} {}{}", ink.key("⏎"), ink.accept_key("a"), ink.dim("ccept")),
+                format!(
+                    "{} {}{}",
+                    ink.key("⏎"),
+                    ink.accept_key("a"),
+                    ink.dim("ccept")
+                ),
                 format!("{}{}", ink.key("↑↓"), ink.dim(" stage")),
                 format!("{}{}", ink.key("e"), ink.dim("dit")),
                 format!("{}{}", ink.key("r"), ink.dim("eject")),
@@ -491,10 +498,7 @@ pub fn render_card_lines(
         } else {
             "  ".to_string()
         };
-        content.push((
-            70,
-            format!("{purpose_indent}{marker}{}", ink.purpose(row)),
-        ));
+        content.push((70, format!("{purpose_indent}{marker}{}", ink.purpose(row))));
     }
 
     if detailed {
@@ -818,8 +822,7 @@ mod tests {
     #[test]
     fn a_narrow_stack_windows_around_the_selected_stage() {
         let mut state = state();
-        state.candidate =
-            ReviewCandidate::from_command("a | b | c | d | e | f | g | h");
+        state.candidate = ReviewCandidate::from_command("a | b | c | d | e | f | g | h");
         state.flow_stage = 0;
         let lines = render_card_lines(&state, InlineLayout::for_dimensions(40, 8), true);
         let joined = lines.join("\n");

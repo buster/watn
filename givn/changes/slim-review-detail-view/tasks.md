@@ -153,31 +153,31 @@ releases only the candidate to stdout with exit 0.
 
 ## Final verification
 
-- [ ] Run `cargo fmt --all -- --check`
+- [x] Run `cargo fmt --all -- --check`
   ```text
-  output: <paste>
+  output: exit 0; clean after `cargo fmt --all`.
   ```
-- [ ] Run `cargo clippy --locked --all-targets -- -D warnings`
+- [x] Run `cargo clippy --locked --all-targets -- -D warnings`
   ```text
-  output: <paste>
+  output: exit 0; clean after replacing the indexed window loop with an iterator (needless_range_loop).
   ```
-- [ ] Run `givn lint --change slim-review-detail-view`
+- [x] Run `givn lint --change slim-review-detail-view`
   ```text
-  output: <paste>
+  output: exit 0; clean; one advisory subset notice for the disable scenario.
   ```
-- [ ] Run the full regular suite `./run-tests.sh`
+- [x] Run the full regular suite `./run-tests.sh`
   ```text
-  output: <paste>
+  output: exit 0; 21 features; 220 scenarios (220 passed); 1348 steps (1348 passed).
   ```
-- [ ] Run the full E2E suite `./run-tests.sh --e2e`
+- [x] Run the full E2E suite `./run-tests.sh --e2e`
   ```text
-  output: <paste>
+  output: exit 0; 25 features; 86 scenarios (86 passed); 639 steps (639 passed).
   ```
-- [ ] Run `cargo test --locked --lib`
+- [x] Run `cargo test --locked --lib`
   ```text
-  output: <paste>
+  output: exit 0; 84 passed; 0 failed.
   ```
-- [ ] Run `givn status --change slim-review-detail-view`
+- [x] Run `givn status --change slim-review-detail-view`
   ```text
-  output: <paste>
+  output: next required artifact is `review`.
   ```
