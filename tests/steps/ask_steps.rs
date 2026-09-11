@@ -323,12 +323,19 @@ fn configured_provider_models_rich(w: &mut WatnWorld) {
         then.status(200)
             .header("Content-Type", "application/json")
             .body(r#"{"data":[
-                {"id":"model-a","name":"Model Alpha","context_length":128000,"pricing":{"prompt":"0.15","completion":"0.60"},"supported_features":["reasoning","tools"]},
-                {"id":"model-b","name":"Model Beta","context_length":32000,"pricing":{"prompt":"2.50","completion":"10.00"},"supported_features":["tools"]}
+                {"id":"model-a","name":"Model Alpha","context_length":128000,"pricing":{"prompt":"0.00000015","completion":"0.0000006"},"supported_features":["reasoning","tools"]},
+                {"id":"model-b","name":"Model Beta","context_length":32000,"pricing":{"prompt":"0.0000025","completion":"0.00001"},"supported_features":["tools"]},
+                {"id":"model-sentinel","name":"Model Sentinel","context_length":16000,"pricing":{"prompt":"-1","completion":"-1"}},
+                {"id":"model-plain","name":"Model Plain","context_length":8000}
             ]}"#);
     });
 
-    w.pending_mock_returned_models = vec!["model-a".to_string(), "model-b".to_string()];
+    w.pending_mock_returned_models = vec![
+        "model-a".to_string(),
+        "model-b".to_string(),
+        "model-sentinel".to_string(),
+        "model-plain".to_string(),
+    ];
     w.raw_config = Some(format!(
         "[defaults]\nprovider = \"test\"\n\n[providers.test]\nendpoint = \"{}/\"\napi_key = \"test-key\"\n",
         base_url
@@ -1775,7 +1782,7 @@ fn configured_provider_long_models(w: &mut WatnWorld, provider: String) {
                             "id": id,
                             "name": "Model One",
                             "context_length": 128000,
-                            "pricing": {"prompt": "0.15", "completion": "0.60"},
+                            "pricing": {"prompt": "0.00000015", "completion": "0.0000006"},
                             "supported_features": ["tools"],
                             "reasoning": {
                                 "default_effort": "medium",

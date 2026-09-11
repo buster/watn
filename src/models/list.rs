@@ -84,45 +84,7 @@ pub fn fetch_models(endpoint: &str, api_key: Option<&str>) -> Result<Vec<ModelEn
         message: "response missing 'data' array".to_string(),
     })?;
 
-    let models: Vec<ModelEntry> = data
-        .iter()
-        .map(|item| {
-            let id = item["id"].as_str().unwrap_or("").to_string();
-
-            let name = item["name"].as_str().map(|s| s.to_string());
-
-            let context_length = item["context_length"]
-                .as_u64()
-                .or_else(|| item["context_length"].as_str().and_then(|s| s.parse().ok()));
-
-            let pricing = item["pricing"].as_object().map(|p| {
-                let prompt = parse_pricing_value(p.get("prompt"));
-                let completion = parse_pricing_value(p.get("completion"));
-                ModelPricing {
-                    input: prompt,
-                    output: completion,
-                }
-            });
-
-            let supported_features: Vec<String> = item["supported_features"]
-                .as_array()
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                        .collect()
-                })
-                .unwrap_or_default();
-
-            ModelEntry {
-                id,
-                name,
-                context_length,
-                pricing,
-                supported_features,
-                reasoning: parse_reasoning(item.get("reasoning")),
-            }
-        })
-        .collect();
+    let models: Vec<ModelEntry> = parse_model_data(data);
 
     Ok(models)
 }
@@ -279,10 +241,7 @@ fn parse_model_data(data: &[serde_json::Value]) -> Vec<ModelEntry> {
             let context_length = item["context_length"]
                 .as_u64()
                 .or_else(|| item["context_length"].as_str().and_then(|s| s.parse().ok()));
-            let pricing = item["pricing"].as_object().map(|p| ModelPricing {
-                input: parse_pricing_value(p.get("prompt")),
-                output: parse_pricing_value(p.get("completion")),
-            });
+            let pricing = parse_pricing(item);
             let supported_features: Vec<String> = item["supported_features"]
                 .as_array()
                 .map(|arr| {
@@ -304,15 +263,30 @@ fn parse_model_data(data: &[serde_json::Value]) -> Vec<ModelEntry> {
         .collect()
 }
 
-fn parse_pricing_value(val: Option<&serde_json::Value>) -> f64 {
-    match val {
-        Some(v) => v
+fn parse_pricing(item: &serde_json::Value) -> Option<ModelPricing> {
+    let pricing = item["pricing"].as_object()?;
+    Some(ModelPricing {
+        input: parse_pricing_value(pricing.get("prompt"))?,
+        output: parse_pricing_value(pricing.get("completion"))?,
+    })
+}
+
+fn parse_pricing_value(val: Option<&serde_json::Value>) -> Option<f64> {
+    let value = match val? {
+        v => v
             .as_str()
             .and_then(|s| s.parse::<f64>().ok())
-            .or_else(|| v.as_f64())
-            .unwrap_or(0.0),
-        None => 0.0,
+            .or_else(|| v.as_f64())?,
+    };
+    if value < 0.0 {
+        return None;
     }
+    Some(per_million_tokens(value))
+}
+
+fn per_million_tokens(per_token: f64) -> f64 {
+    let value = per_token * 1_000_000.0;
+    (value * 1_000_000.0).round() / 1_000_000.0
 }
 
 fn parse_reasoning(value: Option<&serde_json::Value>) -> Option<ModelReasoning> {

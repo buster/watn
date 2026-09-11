@@ -133,8 +133,8 @@ pub fn format_model_entry(entry: &list::ModelEntry) -> String {
     }
     if let Some(ref pricing) = entry.pricing {
         parts.push(format!(
-            "${:.2}/{}K in, ${:.2}/{}K out",
-            pricing.input, 1, pricing.output, 1
+            "${:.2}/1M in, ${:.2}/1M out",
+            pricing.input, pricing.output
         ));
     }
     if !entry.supported_features.is_empty() {

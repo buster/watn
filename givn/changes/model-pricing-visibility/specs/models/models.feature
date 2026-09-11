@@ -2,7 +2,7 @@
 
 Feature: Model explorer
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Model picker shows metadata when available
     Given  a configured provider "test" with models endpoint returning rich metadata
     When  I run `watn models` and select "model-a" for small, "model-a" for normal, and "model-a" for thinking
