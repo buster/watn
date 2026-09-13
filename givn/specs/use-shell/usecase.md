@@ -26,7 +26,7 @@ command request, or runs `watn explain` with a command they already have.
 
 - Watn is installed.
 - A provider and usable model are configured for generation.
-- A usable model is optional when explaining an existing command; without one the explanation card shows purpose-unavailable.
+- A usable model fills in stage purposes; when none is usable and no provider or model was explicitly selected, watn starts setup or prints guidance instead of opening the explanation card.
 - The shell shortcut is installed when the user invokes Ctrl-W.
 
 ## Main flow
@@ -52,6 +52,9 @@ command request, or runs `watn explain` with a command they already have.
 - An unsupported command-flow portion remains visible and reviewable.
 - Non-TTY and redirected requests retain raw or existing confirmation behavior.
 - An existing command supplied for explanation is never generated, edited, accepted, or executed; its card closes on Enter or Escape.
+- A failed explanation request keeps the explained command reviewable with purpose-unavailable and reports the failure; watn never releases or executes it.
+- An interrupted explanation request opens no card and exits 130, preserving the existing interrupt contract.
+- An unusable explanation response keeps the explained command reviewable with purpose-unavailable and names the unusable response.
 - Active eligible `-x` requires `-x` and review acceptance, without a second prompt; disabled or non-review `-x` retains the existing confirmation.
 
 ## Rules
@@ -148,7 +151,8 @@ flowchart LR
   User --> Explain[[Explain an existing command]]
   Shortcut --> Review[[Review candidate]]
   Ask --> Review
-  Explain --> ExplainCard[[Explanation-only card]]
+  Explain -->|no usable model| Setup[[Setup or guidance]]
+  Explain -->|usable model| ExplainCard[[Explanation-only card]]
   ExplainCard -->|close| Nothing[[No command released]]
   Review -->|accept| Result[[Return candidate]]
   Review -->|cancel| Preserve[[Preserve input]]

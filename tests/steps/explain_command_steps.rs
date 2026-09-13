@@ -455,6 +455,111 @@ fn configuration_file_malformed(world: &mut WatnWorld) {
     world.raw_config = Some("this is not valid toml {{{".to_string());
 }
 
+// ---------------------------------------------------------------------------
+// Failure-guidance steps — implemented scenario by scenario.
+// ---------------------------------------------------------------------------
+
+#[given("a configured provider whose explanation returns no stage purposes")]
+fn configured_provider_no_stage_purposes(world: &mut WatnWorld) {
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+    world.pending_mock_usage = Some(false);
+}
+
+#[given("a configured provider whose endpoint refuses connections")]
+fn configured_provider_endpoint_refuses_connections(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[given("a configured provider with no default model")]
+fn configured_provider_no_default_model(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[when("I run `watn explain` with this single argument and let the setup flow start:")]
+fn run_explain_let_setup_flow_start(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when("I run `watn explain` with this single argument and let quick setup start:")]
+fn run_explain_let_quick_setup_start(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when(
+    "I run `watn explain` in a terminal with this command on standard input and let it report setup guidance:"
+)]
+fn run_explain_stdin_setup_guidance(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when("I run `watn explain` with this single argument and interrupt the request:")]
+fn run_explain_interrupt_request(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when("I run `watn --provider missing explain` with this single argument in a terminal:")]
+fn run_explain_provider_missing(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when("I run `watn --provider openrouter explain` with this single argument in a terminal:")]
+fn run_explain_provider_openrouter(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when("I run `watn --provider custom explain` with this single argument in a terminal:")]
+fn run_explain_provider_custom(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = step;
+    unimplemented!()
+}
+
+#[when("I abandon the setup flow")]
+fn abandon_setup_flow(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("the setup flow should start")]
+fn setup_flow_should_start(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("watn should report that setup is complete and the command must be rerun")]
+fn watn_reports_setup_complete_rerun(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("watn should report that setup is required")]
+fn watn_reports_setup_required(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("watn should report an unknown provider error")]
+fn watn_reports_unknown_provider(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("watn should report a missing credential error")]
+fn watn_reports_missing_credential(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("watn should report that the explanation request failed")]
+fn watn_reports_explanation_request_failed(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
+#[then("watn should report that the explanation response was not usable")]
+fn watn_reports_explanation_not_usable(_world: &mut WatnWorld) {
+    unimplemented!()
+}
+
 #[then("watn should report a configuration error")]
 fn watn_reports_configuration_error(world: &mut WatnWorld) {
     assert!(

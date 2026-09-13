@@ -215,6 +215,27 @@ through `/dev/tty`. Its eligibility predicate is terminal stderr, `TERM` not
 requires terminal stdin. A missing terminal is a non-zero diagnostic and no
 card opens.
 
+Explain reuses the question path's readiness rule instead of degrading
+silently. When no usable provider or model is configured and no provider or
+model was explicitly selected, no card opens: non-terminal command input prints
+the existing setup guidance and exits 1; terminal command input starts quick
+setup when no configuration file exists and the setup wizard when one exists,
+then prints `setup complete; rerun watn explain with the command` and exits 0
+without explaining the original command. An explicit `--provider`, `--model`,
+or `WATN_PROVIDER` selection never enters setup and keeps its
+unknown-provider (exit 1), missing-model (exit 1), or missing-credential
+(exit 2) error.
+
+A failed explanation request is visible. The card still opens with the
+developer's command and `purpose-unavailable`, `explain request failed:
+<error>` is printed to stderr, and the invocation exits with the mapped status
+(auth/API 2, network 3, config/IO 1) after the card closes. A response that is
+not usable as an explanation prints `explain response was not usable:
+<reason>`, keeps the card reviewable with `purpose-unavailable`, and exits 0
+because the request itself succeeded and the safe degradation is deliberate.
+Ctrl+C during the request opens no card and exits 130. The explained command is
+never generated, replaced, edited, evaluated, or executed on any path.
+
 ## Transport isolation
 
 The endpoint override is a compile-time test capability, not a configuration

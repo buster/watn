@@ -45,7 +45,7 @@ graph TB
 
 | Building block | Responsibility |
 |---|---|
-| CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes; run the streaming call on a worker thread, poll completion and the interrupt flag, and bound cancellation by a 500 ms grace before exiting 130 |
+| CLI | Parse args (`-1`/`-2`/`-3` tier flags, `-x`, subcommands), route errors to exit codes; run the streaming call on a worker thread, poll completion and the interrupt flag, and bound cancellation by a 500 ms grace before exiting 130; delegate `watn explain` to quick setup, the setup wizard, or setup guidance when no usable model is configured and no explicit selection was made, and report a failed explanation request with the mapped exit status after the card closes |
 | Config | Load and merge from built-in defaults, user config file, env, CLI; preserve credential sources, provider-local catalog state, and atomic candidate snapshots |
 | Provider | Chat with any OpenAI-compatible API via the Provider trait; parse SSE incrementally, invoke the synchronous content sink, accumulate reasoning privately, require `[DONE]`, and abort with `Interrupted` when the shared interrupt flag is set |
 | Transport boundary | Resolve the configured endpoint for all normal/release requests; permit a non-empty test override only in debug `test-support` outbound construction, without touching config or readiness |

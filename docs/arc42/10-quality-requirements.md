@@ -60,11 +60,12 @@
    - QS-071: A review card that cannot open preserves the original input and releases no Candidate
    - QS-072: Structured review responses retain model-written Stage purposes; fenced, prose-wrapped, unknown-status, multiline, compound-split, invalid, or command-only responses keep the provider-written command reviewable with purpose-unavailable when no matching purposes exist
     - QS-073: Eligible `-x` review acceptance is the sole execution authorization; a permanent disable releases the Candidate without executing it and a review switch without a request only persists the setting; disabled and non-review `-x` retains confirmation
-- **Command explanation** — Verbatim delivery of an existing command, safe degradation, and no execution
+- **Command explanation** — Verbatim delivery of an existing command, setup or visible diagnostics when no model is usable, and no execution
   - QS-075: `watn explain '<command>'` shows the exact command stages and model-written purposes; closing releases no command and stdout stays empty
   - QS-076: Complex command text reaches the card unchanged through the documented argument and standard-input forms; `-x` is rejected and nothing executes
-  - QS-077: An unavailable, failed, or non-covering explanation keeps the developer's command with purpose-unavailable; an unready provider receives zero requests
+  - QS-077: A failed or non-covering explanation keeps the developer's command reviewable with purpose-unavailable and a visible diagnostic; a request failure exits with the mapped status after the card closes
   - QS-078: The explicit explanation card is independent of the persisted review preference and requires a controlling terminal
+  - QS-079: An unready provider with no explicit selection starts setup or prints setup guidance instead of opening the card; an explicit selection reports its error and starts no setup
 
 ## Quality scenarios
 
@@ -146,5 +147,6 @@
 | QS-073 | Shell integration / Safety | User accepts eligible `-x`, disables review, or uses non-review `-x` | Eligible acceptance executes once without a second confirmation; a permanent disable releases the Candidate to the command-output channel without executing it and names the re-enable switch; disabled and non-review paths retain the existing `Execute now?` confirmation |
 | QS-075 | Command explanation / Correctness | Developer runs `watn explain '<command>'` with a usable model | The card shows the exact command stages and every model-written stage purpose; closing exits 0, stdout contains no command, and nothing executes |
 | QS-076 | Command explanation / Safety | The explained command contains shell metacharacters, embedded quoting, newlines, `$`, backticks, or a leading dash, or is supplied through standard input | Each documented invocation form delivers the command unchanged to the card; a second positional argument or empty input is a usage error; `-x` is rejected; no command executes |
-| QS-077 | Command explanation / Recovery | No usable model, a failed explanation request, or a response whose stages do not cover the command | The card shows the developer's command with purpose-unavailable; an unready provider receives zero requests; the model's command text never replaces the developer's |
+| QS-077 | Command explanation / Recovery | A failed explanation request, or a response whose stages do not cover the command | The card shows the developer's command with purpose-unavailable and the model's command text never replaces the developer's; a failed request is named on stderr and the invocation exits with the mapped status after the card closes; a non-covering response is named on stderr and exits 0 |
 | QS-078 | Command explanation / Usability | The persisted review surface is disabled, or the invocation has no controlling terminal | The explicit explanation card opens with the persisted preference unchanged; without a terminal watn reports the requirement and opens no card |
+| QS-079 | Command explanation / Onboarding | Developer runs `watn explain` with no usable model and no explicit provider/model selection | Quick setup starts when no configuration file exists, the setup wizard starts when a configuration exists, and non-terminal command input prints setup guidance; no explanation card opens and no provider request is made; an explicit `--provider`/`--model`/`WATN_PROVIDER` selection reports its unknown-provider (exit 1), missing-model (exit 1), or missing-credential (exit 2) error and starts no setup |

@@ -245,24 +245,50 @@ sequenceDiagram
     participant User as Terminal developer
     participant CLI as watn explain
     participant Config
+    participant Setup as Quick setup / Setup wizard
     participant Provider as OpenAI-compatible API
     participant TTY as Controlling-terminal channel
 
     User->>CLI: watn explain <command> / -- / stdin
     CLI->>CLI: reject -x; resolve exactly one command; reject empty input
     CLI->>CLI: require terminal stderr and an open /dev/tty
-    CLI->>Config: load config (absent file = defaults)
-    alt provider and model usable
+    CLI->>Config: load config (malformed = exit 1)
+    alt no usable model and no explicit selection
+        alt stdin is not a terminal
+            CLI-->>User: setup guidance on stderr; exit 1, no card
+        else no configuration file exists
+            CLI->>Setup: quick setup
+        else configuration file exists
+            CLI->>Setup: setup wizard
+        end
+        Setup-->>CLI: saved / cancelled / failed
+        CLI-->>User: rerun hint on stderr, exit 0 (or cancellation status)
+    else explicit provider/model selection
+        CLI->>CLI: strict provider, model, and credential resolution (errors exit 1/2)
+    end
+    alt usable model
         CLI->>Provider: POST /v1/chat/completions with the exact command
-        Provider-->>CLI: SSE content and [DONE]
-        CLI->>CLI: apply_explanation keeps the developer's command
-    else not ready, failed, or untrusted response
-        CLI->>CLI: keep the developer's command with purpose-unavailable
+        alt request succeeds
+            Provider-->>CLI: SSE content and [DONE]
+            alt response usable
+                CLI->>CLI: apply_explanation_outcome -> Ready
+            else response not usable
+                CLI->>User: explain response was not usable on stderr
+                CLI->>CLI: keep the command with purpose-unavailable
+            end
+        else request fails
+            Provider--xCLI: HTTP, authentication, or network error
+            CLI->>User: explain request failed on stderr
+            CLI->>CLI: keep the command with purpose-unavailable
+        else request interrupted by Ctrl+C
+            CLI->>CLI: shared interrupt flag checked after the fetch
+            CLI-->>User: exit 130, no card
+        end
     end
     CLI->>TTY: explanation-only review card
     User->>TTY: arrows, Enter, or Escape
     TTY-->>CLI: close; release nothing
-    CLI-->>User: exit 0, empty stdout
+    CLI-->>User: exit 0, or the mapped request-failure status
 ```
 
 The command is authoritative. A positional argument wins over standard input;
@@ -274,6 +300,21 @@ displayed: model-written purposes are adopted only when the response echoes the
 command and stages exactly, or when the stages form an ordered, non-overlapping,
 verbatim cover of the developer's command with a non-empty purpose per stage.
 The card never executes, edits, or releases the command.
+
+Readiness follows the question path. When no usable provider or model is
+configured and no provider or model was explicitly selected, watn does not open
+the card: with non-terminal standard input it prints the existing setup
+guidance and exits 1; with terminal standard input it runs quick setup when no
+configuration file exists and the setup wizard when one exists, then reports
+`setup complete; rerun watn explain with the command` on stderr and exits 0.
+An explicit `--provider`, `--model`, or `WATN_PROVIDER` selection never enters
+setup and keeps its unknown-provider (exit 1), missing-model (exit 1), or
+missing-credential (exit 2) error. When the request itself fails, the card still
+opens with the developer's command and `purpose-unavailable`,
+`explain request failed: <error>` is printed to stderr, and the invocation exits
+with the mapped status after the card closes. A response that is not usable as
+an explanation prints `explain response was not usable: <reason>` and exits 0.
+Ctrl+C during the request opens no card and exits 130.
 
 ## Scenario: Generate a shell completion script
 

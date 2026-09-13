@@ -25,7 +25,7 @@ Feature: Explain an existing command
     And  the file "/tmp/watn-explain-should-not-run" should not exist
 
   Scenario: Enter closes the explanation card without releasing the command
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain` with this single argument in a terminal, then press Enter:
       """
       ls > /tmp/watn-explain-enter-should-not-run
