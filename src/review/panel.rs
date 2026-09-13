@@ -460,6 +460,14 @@ impl ReviewPanelState {
             return match key.code {
                 KeyCode::Esc => PanelOutcome::Cancelled,
                 KeyCode::Enter => PanelOutcome::Accepted(self.candidate.clone()),
+                KeyCode::Up | KeyCode::Left => {
+                    self.move_flow_stage(-1);
+                    PanelOutcome::Continue
+                }
+                KeyCode::Down | KeyCode::Right => {
+                    self.move_flow_stage(1);
+                    PanelOutcome::Continue
+                }
                 _ => PanelOutcome::Continue,
             };
         }

@@ -356,35 +356,73 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A malformed configuration file is reported` → hash: ``
+- [x] COMMIT: `feat(explain-command): A malformed configuration file is reported` → hash: `fea98a4`
 
 ## E2E setup task
 
-- [ ] Local environment: no containers or databases; the only external service is the LLM provider endpoint, replaced by the in-process `httpmock` twin (`MockServerWrap` in `tests/features_runner.rs`). Confirm `cargo run --release -- explain 'ls'` fails cleanly without a terminal and that the PTY harness starts.
-- [ ] Create the e2e step skeleton in `tests/steps/explain_command_e2e_steps.rs` (already registered in the setup task); `unimplemented!()` bodies until implemented.
-- [ ] Strict mode for the e2e runner: same `.fail_on_skipped()` configuration; proof-of-strictness already recorded in the setup task.
-- [ ] Prove `verify.e2e_command` is a strict subset of `verify.command`: run both on the current suite and record the scenario counts (e2e count strictly smaller).
-  - `./run-tests.sh` count:
+- [x] Local environment: no containers or databases; the only external service is the LLM provider endpoint, replaced by the in-process `httpmock` twin (`MockServerWrap` in `tests/features_runner.rs`). Confirm `cargo run --release -- explain 'ls'` fails cleanly without a terminal and that the PTY harness starts.
+  - Evidence:
     ```
+    $ cargo run --release -- explain 'ls'   # no controlling terminal
+    exit 1
+    stderr: explain requires a terminal for the explanation card
     ```
-  - `./run-tests.sh --e2e` count:
+    The PTY harness and mock twin start in the existing e2e suite; see the smoke check below.
+- [x] Create the e2e step skeleton in `tests/steps/explain_command_e2e_steps.rs` (already registered in the setup task); `unimplemented!()` bodies until implemented.
+  - Evidence: seven steps created (`configured_provider_covering`, `run_explain_that_command`, `card_shows_each_purpose`, `card_shows_close_hint`, `card_names`, `card_hides_internal_identifiers`, `close_explanation_card`), all `unimplemented!()` until E1 GREEN.
+- [x] Strict mode for the e2e runner: same `.fail_on_skipped()` configuration; proof-of-strictness already recorded in the setup task.
+  - Evidence: `tests/features_runner.rs:210` (`.fail_on_skipped()`) and `tests/features_runner.rs:227` (`stats.skipped > 0 -> exit 1`) apply to both runner invocations; only the tag filter differs.
+- [x] Prove `verify.e2e_command` is a strict subset of `verify.command`: run both on the current suite and record the scenario counts (e2e count strictly smaller).
+  - `./run-tests.sh` count (E1 still `@wip`):
     ```
+    22 features
+    238 scenarios (238 passed)
+    1442 steps (1442 passed)
     ```
-- [ ] Confirm the e2e runner reaches the PTY harness and the mock twin with a trivial smoke check.
+  - `./run-tests.sh --e2e` count (E1 still `@wip`; explain-command contributes 0 e2e scenarios):
+    ```
+    24 features
+    88 scenarios (88 passed)
+    670 steps (670 passed)
+    ```
+  - After E1's `@wip` is removed (explain-command contributes 1 e2e scenario):
+    - `./run-tests.sh`:
+      ```
+      22 features
+      238 scenarios (238 passed)
+      1442 steps (1442 passed)
+      ```
+    - `./run-tests.sh --e2e`:
+      ```
+      25 features
+      89 scenarios (89 passed)
+      682 steps (682 passed)
+      ```
+- [x] Confirm the e2e runner reaches the PTY harness and the mock twin with a trivial smoke check.
+  - Evidence:
+    ```
+    ./run-tests.sh --e2e --name "Developer accepts a candidate from an interactive terminal request" -> exit 0
+    1 scenario (1 passed), 5 steps (5 passed)
+    ```
 
 ## E1 (@e2e): Developer explains an existing command in the review card
 
-- [ ] RED: remove `@wip` from this scenario only; run `./run-tests.sh --e2e --name "Developer explains an existing command in the review card"`; must exit non-zero.
+- [x] RED: remove `@wip` from this scenario only; run `./run-tests.sh --e2e --name "Developer explains an existing command in the review card"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ Given a configured provider whose explanation covers the command:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: e2e steps drive the real `watn` binary in a `portable-pty` session, assert the stages, model-written purposes, and terminal baseline through the PTY transcript, press Escape, and commit the ANSI-stripped transcript to `givn/changes/explain-command/evidence/visual/developer-explains-an-existing-command-in-the-review-card/transcript.txt`. Production files: `tests/steps/explain_command_e2e_steps.rs`. Run the single-scenario e2e command; must exit zero.
+- [x] GREEN: e2e steps drive the real `watn` binary in a `portable-pty` session, assert the stages, model-written purposes, and terminal baseline through the PTY transcript, press Escape, and commit the ANSI-stripped transcript to `givn/changes/explain-command/evidence/visual/developer-explains-an-existing-command-in-the-review-card/transcript.txt`. Production files: `tests/steps/explain_command_e2e_steps.rs`. Run the single-scenario e2e command; must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 12 steps (12 passed)
     ```
-- [ ] REFACTOR: clean up e2e code without behaviour change; re-run; still zero.
+  - The transcript evidence file was written (3376 bytes) and contains both stages, `Explains stage 1`, `Explains stage 2`, `esc close`, and `watn`.
+- [x] REFACTOR: clean up e2e code without behaviour change; re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 12 steps (12 passed)
     ```
 - [ ] COMMIT: `test(e2e): Developer explains an existing command in the review card` → hash: ``
 
