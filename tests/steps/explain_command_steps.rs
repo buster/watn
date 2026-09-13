@@ -227,3 +227,29 @@ fn run_explain_piped_command(world: &mut WatnWorld, command: String) {
     prepare_explain_pty(world, r#""$WATN_BIN" explain < "$WATN_STDIN" > "$WATN_OUT""#);
     close_explain_card(world, "\x1b");
 }
+
+#[when(expr = "I run watn explain with the argument {string} in a terminal with the command {string} on standard input")]
+fn run_explain_argument_over_stdin(world: &mut WatnWorld, argument: String, stdin_command: String) {
+    world
+        .env_vars
+        .insert("WATN_ARG".to_string(), argument);
+    let stdin_path = write_explain_stdin(world, &stdin_command);
+    world
+        .env_vars
+        .insert("WATN_STDIN".to_string(), stdin_path);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain "$WATN_ARG" < "$WATN_STDIN" > "$WATN_OUT""#,
+    );
+    close_explain_card(world, "\x1b");
+}
+
+#[then(expr = "the explanation card should not show the text {string}")]
+fn card_does_not_show_text(world: &mut WatnWorld, needle: String) {
+    let plain = card_plain_text(world);
+    let collapsed = needle.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        !plain.contains(&collapsed),
+        "explanation card should not show {needle:?}, got:\n{plain}"
+    );
+}

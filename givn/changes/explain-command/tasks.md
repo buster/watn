@@ -136,21 +136,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A piped command without the marker is explained` → hash: ``
+- [x] COMMIT: `feat(explain-command): A piped command without the marker is explained` → hash: `af0c529`
 
 ## S6: A positional command takes precedence over standard input
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A positional command takes precedence over standard input"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A positional command takes precedence over standard input"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run watn explain with the argument "echo positional" in a terminal with the command "echo standard input" on standard input
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: positional-wins precedence and no silent pipe consumption; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: positional-wins precedence and no silent pipe consumption; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A positional command takes precedence over standard input` → hash: ``
 
