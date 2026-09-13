@@ -217,3 +217,95 @@ Feature: Explain an existing command
       """
     Then  watn should report a configuration error
     And  no explanation card should open
+  Scenario: A network failure reports the mapped exit status
+    Given  a configured provider whose endpoint refuses connections
+    When  I run `watn explain` with this single argument:
+      """
+      git log --oneline | head -5
+      """
+    Then  the explanation card should show the stage:
+      """
+      git log --oneline
+      """
+    And  the explanation card should show purpose-unavailable
+    And  watn should report that the explanation request failed
+    And  the exit status should be 3
+
+  Scenario: An unconfigured machine starts quick setup instead of explaining
+    Given  no config file exists
+    When  I run `watn explain` with this single argument and let quick setup start:
+      """
+      git log --oneline | head -5
+      """
+    Then  the quick setup should announce that no configuration was found
+    When  I accept the suggested endpoint
+    And  I answer the credential with "sk-quick-test"
+    And  I accept the suggested small model
+    And  I accept the pre-filled normal model
+    And  I accept the pre-filled thinking model
+    And  I keep the pre-selected shell integrations and confirm
+    Then  watn should exit successfully
+    And  watn should report that setup is complete and the command must be rerun
+    And  no provider request should have been made
+    And  no explanation card should open
+
+  Scenario: An existing configuration without a usable model completes the setup wizard
+    Given  a configured provider with catalog models "model-small", "model-middle", and "model-large"
+    When  I run `watn explain` with this single argument and let the setup flow start:
+      """
+      git log --oneline | head -5
+      """
+    Then  the setup flow should start
+    When  I configure the provider and models through the wizard
+    And  I complete the optional shell pages without integrations
+    Then  watn should exit successfully
+    And  watn should report that setup is complete and the command must be rerun
+    And  no explanation card should open
+    And  no provider request should have been made
+
+  Scenario: Interrupting the explanation request opens no card
+    Given  a provider accepts a connection and never sends a response
+    When  I run `watn explain` with this single argument and interrupt the request:
+      """
+      git log --oneline | head -5
+      """
+    Then  no explanation card should open
+    And  the exit status should be 130
+
+  Scenario: A command supplied through standard input without a usable model reports setup guidance
+    Given  no config file exists
+    When  I run `watn explain` in a terminal with this command on standard input and let it report setup guidance:
+      """
+      ls | wc -l
+      """
+    Then  watn should report that setup is required
+    And  no explanation card should open
+    And  no provider request should have been made
+    And  the exit status should be 1
+
+  Scenario: An explicit provider selection with a broken configuration reports its error
+    Given  no config file exists
+    When  I run `watn --provider missing explain` with this single argument in a terminal:
+      """
+      ls
+      """
+    Then  watn should report an unknown provider error
+    And  no explanation card should open
+    And  the exit status should be 1
+    When  I run `watn --provider openrouter explain` with this single argument in a terminal:
+      """
+      ls
+      """
+    Then  watn should report a missing credential error
+    And  no explanation card should open
+    And  the exit status should be 2
+
+  Scenario: An explicit provider without a resolvable model reports its error
+    Given  a configured provider with no default model
+    When  I run `watn --provider custom explain` with this single argument in a terminal:
+      """
+      ls
+      """
+    Then  watn should report a configuration error
+    And  no explanation card should open
+    And  the exit status should be 1
