@@ -122,13 +122,37 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     10 steps (10 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): Enter closes the explanation card without releasing the command` -> hash: ``
+- [x] COMMIT: `feat(explain-command): Enter closes the explanation card without releasing the command` -> hash: `c333742`
 
 ## S2: Shell metacharacters and embedded quoting reach the card unchanged (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT as above with `./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"`.
+- [x] RED/GREEN/REFACTOR/COMMIT as above with `./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"`.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"
+      Scenario: Shell metacharacters and embedded quoting reach the card unchanged
+       ✔  Given no config file exists
+       ✘  When I run `watn explain` with this single argument:
+          Step panicked. Captured output: PTY did not render label "esc close"; output: ""
+    [Summary]
+    2 scenarios (1 passed, 1 failed)
+    9 steps (8 passed, 1 failed)
+    exit=1
+
+    GREEN: $ ./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    14 steps (14 passed)
+    exit=0
+
+    REFACTOR: $ ./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    14 steps (14 passed)
+    exit=0
+    # permanent copy re-based to the ready-provider Given in the same commit
     ```
 - [ ] COMMIT hash: ``
 
