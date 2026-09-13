@@ -116,21 +116,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A command read from standard input keeps its quoting and line breaks` → hash: ``
+- [x] COMMIT: `feat(explain-command): A command read from standard input keeps its quoting and line breaks` → hash: `abc1a8c`
 
 ## S5: A piped command without the marker is explained
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A piped command without the marker is explained"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A piped command without the marker is explained"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain` in a terminal with the command "ls | wc -l" piped on standard input
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: piped-stdin detection when no positional argument is present; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: piped-stdin detection when no positional argument is present; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A piped command without the marker is explained` → hash: ``
 

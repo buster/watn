@@ -92,7 +92,7 @@ Feature: Explain an existing command
       """
     And the explanation card should show the stages "awk '{print $1}' access.log" and "grep -F 'error' access.log" as separate stages
 
-  @givn.added @wip
+  @givn.added
   Scenario: A piped command without the marker is explained
     Given no config file exists
     When I run `watn explain` in a terminal with the command "ls | wc -l" piped on standard input
