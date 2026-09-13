@@ -315,21 +315,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 3 steps (3 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): The review-panel switches are inert for explain` → hash: ``
+- [x] COMMIT: `feat(explain-command): The review-panel switches are inert for explain` → hash: `4f52d82`
 
 ## S15: A terminal is required for the explanation card
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A terminal is required for the explanation card"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A terminal is required for the explanation card"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain 'echo test'` without a controlling terminal
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: `explanation_terminal_is_usable` check with a non-zero exit and terminal-required message; production code in `src/main.rs`, `src/review/panel.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: `explanation_terminal_is_usable` check with a non-zero exit and terminal-required message; production code in `src/main.rs`, `src/review/panel.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A terminal is required for the explanation card` → hash: ``
 
