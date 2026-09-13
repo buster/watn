@@ -327,3 +327,10 @@ fn no_provider_request(world: &mut WatnWorld) {
         "the provider must not be contacted when no credential is usable"
     );
 }
+
+#[given("a configured provider whose explanation request fails")]
+fn configured_provider_request_fails(world: &mut WatnWorld) {
+    world.pending_mock_auth_fail = true;
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some("output".to_string());
+}

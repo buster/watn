@@ -216,21 +216,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A configured provider without a usable credential is not contacted` → hash: ``
+- [x] COMMIT: `feat(explain-command): A configured provider without a usable credential is not contacted` → hash: `983a459`
 
 ## S10: A failed explanation keeps the command reviewable
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A failed explanation keeps the command reviewable"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A failed explanation keeps the command reviewable"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ Given a configured provider whose explanation request fails
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: provider-failure degradation to `purpose-unavailable` while keeping the command; production code in `src/main.rs`, `src/review/session.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: provider-failure degradation to `purpose-unavailable` while keeping the command; production code in `src/main.rs`, `src/review/session.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A failed explanation keeps the command reviewable` → hash: ``
 
