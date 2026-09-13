@@ -464,6 +464,7 @@ fn configured_provider_no_stage_purposes(world: &mut WatnWorld) {
     world.pending_mock_model = Some("test-model".to_string());
     world.pending_mock_output = Some("output".to_string());
     world.pending_mock_usage = Some(false);
+    super::ensure_test_env(world);
 }
 
 #[given("a configured provider whose endpoint refuses connections")]
