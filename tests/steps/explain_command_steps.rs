@@ -485,8 +485,11 @@ fn configured_provider_endpoint_refuses_connections(world: &mut WatnWorld) {
 }
 
 #[given("a configured provider with no default model")]
-fn configured_provider_no_default_model(_world: &mut WatnWorld) {
-    unimplemented!()
+fn configured_provider_no_default_model(world: &mut WatnWorld) {
+    world.raw_config = Some(
+        "[defaults]\nprovider = \"custom\"\n\n[providers.custom]\nendpoint = \"http://127.0.0.1:9\"\napi_key = \"test-key\"\n"
+            .to_string(),
+    );
 }
 
 #[when("I run `watn explain` with this single argument and let the setup flow start:")]

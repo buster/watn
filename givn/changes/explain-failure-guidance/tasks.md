@@ -775,21 +775,48 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     9 steps (9 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): An explicit provider selection with a broken configuration reports its error` -> hash: ``
+- [x] COMMIT: `feat(explain-command): An explicit provider selection with a broken configuration reports its error` -> hash: `c2b0189`
 
 ## S18: An explicit provider without a resolvable model reports its error (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explicit provider without a resolvable model reports its error"
+      Scenario: An explicit provider without a resolvable model reports its error
+       ✘  Given a configured provider with no default model
+          Matched: tests/steps/explain_command_steps.rs:487:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: explicit-provider model resolution error, exit 1, no card. Targeted run zero.
+- [x] GREEN: explicit-provider model resolution error, exit 1, no card. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explicit provider without a resolvable model reports its error"
+      Scenario: An explicit provider without a resolvable model reports its error
+       ✔  Given a configured provider with no default model
+       ✔  When I run `watn --provider custom explain` with this single argument in a terminal:
+       ✔  Then watn should report a configuration error
+       ✔  And no explanation card should open
+       ✔  And the exit status should be 1
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    exit=0
+    # fixture writes [defaults] provider = "custom" plus [providers.custom] with
+    # endpoint and credential but no default_model, no tiers, no defaults.model;
+    # strict model resolution reports config error: no default model configured.
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explicit provider without a resolvable model reports its error"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): An explicit provider without a resolvable model reports its error` -> hash: ``
 
