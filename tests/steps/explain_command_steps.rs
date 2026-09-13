@@ -253,3 +253,42 @@ fn card_does_not_show_text(world: &mut WatnWorld, needle: String) {
         "explanation card should not show {needle:?}, got:\n{plain}"
     );
 }
+
+#[when("I run `watn explain` with an empty argument")]
+fn run_explain_empty_argument(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["explain", ""], None);
+}
+
+#[when("I run `watn explain` with empty standard input")]
+fn run_explain_empty_stdin(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["explain"], Some(""));
+}
+
+#[then("watn should report a usage error")]
+fn watn_reports_usage_error(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(2),
+        "watn should exit with a usage error, got {:?}; stderr: {:?}",
+        world.exit_status,
+        world.stderr_output
+    );
+    assert!(
+        !world
+            .stderr_output
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty(),
+        "a usage error must be reported on stderr"
+    );
+}
+
+#[then("no explanation card should open")]
+fn no_explanation_card(world: &mut WatnWorld) {
+    let output = world.output.as_deref().unwrap_or_default();
+    assert!(
+        !output.contains("esc close"),
+        "no explanation card should open, got:\n{output}"
+    );
+}
