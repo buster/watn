@@ -417,6 +417,27 @@ shapes end-to-end and remain the executable contract.
 `givn/specs/**` and `givn/changes/explain-command/specs/**` through the
 cucumber-rs `features_runner`. There is no parallel hand-maintained test file.
 
+## Internal Primitives
+
+New or changed production primitives this change introduces, and what relies
+on them:
+
+| Primitive | Location | Kind | Relied on by |
+|---|---|---|---|
+| `Commands::Explain { command, review_panel, no_review_panel }` | `src/main.rs` | CLI variant | `watn explain` invocation; the step definitions invoke the real binary with these arguments |
+| `run_explain_command` | `src/main.rs` | orchestration fn | All `watn explain` scenarios through the binary |
+| `resolve_explain_command` / `read_stdin_command` | `src/main.rs` | argument resolution fns | Positional, `--`, `-`/stdin, empty-input, and precedence scenarios |
+| `explain_system_prompt` | `src/main.rs` | prompt builder | Provider-backed explanation scenarios (E1) |
+| `run_explanation_card(candidate, context) -> Result<(), String>` | `src/main.rs` | card runner (refactored) | The `watn explain` card scenarios and the `-x` explain choice |
+| `apply_explanation(command, raw) -> ReviewCandidate` | `src/review/response.rs` | pure response transform | Covered-split and non-covering provider scenarios; unit tests in the same module |
+| `explain_command_candidate(...)` | `src/review/session.rs` | provider fetch + apply | Provider-backed scenarios and the binary explain path |
+| `explanation_terminal_is_usable()` | `src/review/panel.rs` | eligibility predicate | Terminal-required scenario and the stdin/heredoc form |
+| `ControllingTerminal::open` eligibility | `src/review/panel.rs` | behavior change | `watn explain - < file` opens the card with piped stdin |
+| `explain_only` arrow navigation | `src/review/panel.rs` | behavior change | E1 reads each stage purpose through real arrow keys |
+
+No new struct, enum, or trait is introduced; `ReviewCandidate`, `ReviewContext`,
+`ReviewPanelState`, and `ReviewResponse` are reused unchanged.
+
 ## Risks introduced
 
 - The `explain` subcommand shadows natural-language questions whose first token

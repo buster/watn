@@ -90,6 +90,7 @@ one area each; `watn completions <SHELL>` prints a completion script for `bash`,
 watn "find all files modified in the last day"
 printf "find all rust source files" | watn
 watn -x "remove all .bak files"
+watn explain 'git log --oneline | head -5'
 ```
 
 ```text
@@ -105,6 +106,7 @@ Commands:
   shell        Configure shell completion and Ctrl-W integrations
   quicksetup   Configure provider, models, and shell integrations with a minimal question flow
   completions  Generate a shell completion script on stdout for the caller to install or source
+  explain      Explain an existing shell command in the review card
   help         Print this message or the help of the given subcommand(s)
 
 Arguments:
@@ -147,6 +149,26 @@ permanently: watn ends, prints the current command, and shows an amber
 persist the choice they set; without a question they only persist and exit.
 Direct edits commit with `Enter`, discard with `Escape`, and still require final
 acceptance.
+
+### Explain an existing command
+
+`watn explain '<command>'` opens the explanation card for a command you already
+have. The command reaches watn verbatim as exactly one argument; watn never
+joins, re-splits, evaluates, or executes it. Use `--` before a command that
+begins with a dash, and a quoted heredoc or `-` for commands that contain both
+quote kinds, `$`, backticks, or line breaks:
+
+```sh
+watn explain 'git log --format=%H | xargs -n1 git show --stat && printf done'
+watn explain -- '--version'
+watn explain - <<'EOF'
+printf '%s\n' "$HOME" && echo `date`
+EOF
+```
+
+Arrow keys move through the stages so every model-written purpose can be read;
+`Enter` or `Escape` closes the card without releasing the command. Without a
+usable model the stages are still shown with `purpose-unavailable`.
 
 ### Shell shortcut
 

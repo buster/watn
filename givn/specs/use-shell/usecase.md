@@ -26,8 +26,7 @@ command request, or runs `watn explain` with a command they already have.
 
 - Watn is installed.
 - A provider and usable model are configured for generation.
-- A usable model is optional when explaining an existing command; without one
-  the explanation card shows purpose-unavailable.
+- A usable model is optional when explaining an existing command; without one the explanation card shows purpose-unavailable.
 - The shell shortcut is installed when the user invokes Ctrl-W.
 
 ## Main flow
@@ -52,8 +51,7 @@ command request, or runs `watn explain` with a command they already have.
 - Provider or explanation failure preserves review state when a selected candidate exists; initial generation failure releases no command.
 - An unsupported command-flow portion remains visible and reviewable.
 - Non-TTY and redirected requests retain raw or existing confirmation behavior.
-- An existing command supplied for explanation is never generated, edited,
-  accepted, or executed; its card closes on Enter or Escape.
+- An existing command supplied for explanation is never generated, edited, accepted, or executed; its card closes on Enter or Escape.
 - Active eligible `-x` requires `-x` and review acceptance, without a second prompt; disabled or non-review `-x` retains the existing confirmation.
 
 ## Rules
