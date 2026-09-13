@@ -235,6 +235,46 @@ Review-surface bytes never use stdout. Disabled or non-review paths bypass this
 routing and retain the existing incremental output or `Execute now?` confirmation;
 a review switch without a request only persists the setting and exits.
 
+## Scenario: Explain an existing command
+
+**Trigger:** The developer runs `watn explain '<command>'`, passes the command
+after `--`, or supplies it on standard input.
+
+```mermaid
+sequenceDiagram
+    participant User as Terminal developer
+    participant CLI as watn explain
+    participant Config
+    participant Provider as OpenAI-compatible API
+    participant TTY as Controlling-terminal channel
+
+    User->>CLI: watn explain <command> / -- / stdin
+    CLI->>CLI: reject -x; resolve exactly one command; reject empty input
+    CLI->>CLI: require terminal stderr and an open /dev/tty
+    CLI->>Config: load config (absent file = defaults)
+    alt provider and model usable
+        CLI->>Provider: POST /v1/chat/completions with the exact command
+        Provider-->>CLI: SSE content and [DONE]
+        CLI->>CLI: apply_explanation keeps the developer's command
+    else not ready, failed, or untrusted response
+        CLI->>CLI: keep the developer's command with purpose-unavailable
+    end
+    CLI->>TTY: explanation-only review card
+    User->>TTY: arrows, Enter, or Escape
+    TTY-->>CLI: close; release nothing
+    CLI-->>User: exit 0, empty stdout
+```
+
+The command is authoritative. A positional argument wins over standard input;
+the `-` marker selects standard input; an absent positional argument with
+non-terminal standard input reads standard input; terminal standard input with
+no argument is a usage error. One trailing `\n` or `\r\n` is removed from
+standard input; nothing else is trimmed. The model's own command text is never
+displayed: model-written purposes are adopted only when the response echoes the
+command and stages exactly, or when the stages form an ordered, non-overlapping,
+verbatim cover of the developer's command with a non-empty purpose per stage.
+The card never executes, edits, or releases the command.
+
 ## Scenario: Generate a shell completion script
 
 **Trigger:** A caller runs `watn completions <SHELL>` for `bash`, `zsh`, or

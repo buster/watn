@@ -125,3 +125,6 @@
 | Setup visual language | The shared symbols (`◆`, `▶`, `●`, `○`, `↳`, `⚠`), emphasis, color roles, and bold-key/dim-label hints used by every setup page, matching the review panel; disabled as a whole when the terminal does not support color |
 | Verification result | The machine-readable per-scope JSON (`scope`, `total`, `passed`, `failed`, `skipped`) written by the runner to `GIVN_RESULT_FILE`; counts come from the runner, never from the exit code |
 | Archive receipt | The `givn/archive/<id>/verification.json` record proving each scope's verification result; archives published before Givn 0.7.0 have no receipt and remain historical |
+| Explained command | The existing command a developer hands to `watn explain` for a read-only explanation; it is never generated, edited, accepted, or executed. Anti-terms: not a Candidate, not a question |
+| Explanation-only card | The Review surface state for an Explained command: it shows the Stage stack and Stage purposes and closes on Enter or Escape without accept, edit, reject, or regenerate decisions |
+| Verbatim command delivery | The contract that the Explained command reaches the card as the literal bytes watn received through one argument, after `--`, or on standard input; watn never joins, re-splits, evaluates, or executes it |

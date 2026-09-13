@@ -169,6 +169,26 @@ enum Commands {
         )]
         shell: CompletionShell,
     },
+    #[command(about = "Explain an existing shell command in the review card")]
+    Explain {
+        #[arg(
+            value_name = "COMMAND",
+            help = "The command to explain verbatim; use - to read it from standard input"
+        )]
+        command: Option<String>,
+
+        #[arg(
+            long = "review-panel",
+            help = "Accepted for compatibility; explain always opens the explanation card"
+        )]
+        review_panel: bool,
+
+        #[arg(
+            long = "no-review-panel",
+            help = "Accepted for compatibility; explain always opens the explanation card"
+        )]
+        no_review_panel: bool,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -264,6 +284,13 @@ fn main() {
                 model_thinking: model_thinking.clone(),
             }),
             Commands::Completions { shell } => run_completions(shell),
+            Commands::Explain { command, .. } => run_explain_command(
+                command.clone(),
+                cli.execute,
+                cli.provider.as_deref(),
+                cli.model.as_deref(),
+                cli.tier(),
+            ),
         }
         return;
     }
@@ -627,13 +654,17 @@ fn main() {
                     match watn::exec::prompt_for_execution(&command_text, explain_allowed) {
                         watn::exec::PromptResult::Execute => watn::exec::execute(&command_text),
                         watn::exec::PromptResult::Explain => {
-                            run_explanation_card(
-                                &command_text,
-                                &config,
-                                provider_name,
-                                tier.unwrap_or("1"),
-                                &model,
-                            );
+                            let candidate =
+                                watn::review::ReviewCandidate::from_command(&command_text);
+                            let context = watn::review::ReviewContext {
+                                intent: "explain command".to_string(),
+                                tier: tier.unwrap_or("1").to_string(),
+                                provider: provider_name.to_string(),
+                                model: model.clone(),
+                            };
+                            if let Err(error) = run_explanation_card(candidate, context) {
+                                eprintln!("explanation unavailable: {error}");
+                            }
                         }
                         watn::exec::PromptResult::Cancelled => break,
                         watn::exec::PromptResult::Interrupted => std::process::exit(130),
@@ -683,36 +714,19 @@ fn review_system_prompt() -> String {
 }
 
 fn run_explanation_card(
-    command: &str,
-    config: &watn::config::types::Config,
-    provider: &str,
-    tier: &str,
-    model: &str,
-) {
-    let _ = config;
-    let candidate = watn::review::ReviewCandidate::from_command(command);
-    let context = watn::review::ReviewContext {
-        intent: "explain command".to_string(),
-        tier: tier.to_string(),
-        provider: provider.to_string(),
-        model: model.to_string(),
-    };
+    candidate: watn::review::ReviewCandidate,
+    context: watn::review::ReviewContext,
+) -> Result<(), String> {
     let size = crossterm::terminal::size().unwrap_or((80, 24));
     let layout = watn::review::InlineLayout::for_dimensions(size.0, size.1);
-    let terminal = match std::fs::OpenOptions::new()
+    let terminal = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
         .open("/dev/tty")
         .map_err(|error| error.to_string())
         .and_then(|tty| {
             watn::review::ControllingTerminal::open(tty, layout).map_err(|error| error.to_string())
-        }) {
-        Ok(terminal) => terminal,
-        Err(error) => {
-            eprintln!("explanation unavailable: {error}");
-            return;
-        }
-    };
+        })?;
     let mut state = watn::review::ReviewPanelState::new(context, candidate);
     state.explain_only = true;
     let mut panel = watn::review::InlineReviewPanel::with_color(
@@ -720,28 +734,227 @@ fn run_explanation_card(
         state,
         watn::review::color_terminal_supports_card(),
     );
-    if let Err(error) = panel.render() {
-        eprintln!("explanation unavailable: {error}");
-        return;
-    }
+    panel.render().map_err(|error| error.to_string())?;
     loop {
         let key = match crossterm::event::read() {
             Ok(crossterm::event::Event::Key(key)) => key,
             Ok(_) => continue,
-            Err(_) => return,
+            Err(error) => return Err(error.to_string()),
         };
         match panel.handle_key(key) {
             Ok(watn::review::PanelOutcome::Continue) => {}
             Ok(_) => {
                 let _ = panel.finish();
-                return;
+                return Ok(());
             }
-            Err(_) => {
+            Err(error) => {
                 let _ = panel.finish();
-                return;
+                return Err(error.to_string());
             }
         }
     }
+}
+
+fn explain_system_prompt() -> String {
+    format!(
+        "You are a command explanation engine. The user provides one existing shell command. Explain it without changing it and without executing it.\n\
+         Respond with exactly one JSON object and nothing else.\n\
+         Schema: {{\"review_version\":1,\"command\":\"...\",\"stages\":[{{\"stage_text\":\"...\",\"purpose\":\"...\"}}],\"purpose_status\":\"ready\"}}\n\
+         Rules:\n\
+         - command must repeat the user's command exactly, character for character. If the command contains line breaks, encode them as \\n inside the JSON string.\n\
+         - Split the command into stages at top-level pipes, ||, &&, ; and newline boundaries. stage_text must be the exact text of each stage as it appears in the command.\n\
+         - purpose is plain text explaining why the stage is present and what it contributes; never evaluate or execute anything.\n\
+         - purpose_status must be exactly ready and every stage must have a non-empty purpose.\n\
+         - Do not wrap the response in a markdown code fence and do not add prose before or after the object.\n\
+         Operating System: {} ({}). Shell: {}.",
+        std::env::consts::OS,
+        std::env::consts::ARCH,
+        std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string()),
+    )
+}
+
+/// Resolve the explained command from the positional argument or standard
+/// input. The bytes are never re-split, joined, evaluated, or trimmed beyond
+/// one trailing standard-input newline.
+fn resolve_explain_command(command: Option<String>) -> Result<String, String> {
+    match command {
+        Some(value) if value != "-" => {
+            if value.is_empty() {
+                Err("Usage: watn explain <command>".to_string())
+            } else {
+                Ok(value)
+            }
+        }
+        Some(_) => {
+            let command = read_stdin_command()?;
+            if command.is_empty() {
+                Err("Usage: watn explain <command>".to_string())
+            } else {
+                Ok(command)
+            }
+        }
+        None => {
+            if std::io::stdin().is_terminal() {
+                return Err("Usage: watn explain <command>".to_string());
+            }
+            let command = read_stdin_command()?;
+            if command.is_empty() {
+                Err("Usage: watn explain <command>".to_string())
+            } else {
+                Ok(command)
+            }
+        }
+    }
+}
+
+fn read_stdin_command() -> Result<String, String> {
+    let mut buffer = String::new();
+    std::io::Read::read_to_string(&mut std::io::stdin(), &mut buffer)
+        .map_err(|error| format!("cannot read the command from standard input: {error}"))?;
+    if let Some(stripped) = buffer.strip_suffix("\r\n") {
+        buffer = stripped.to_string();
+    } else if let Some(stripped) = buffer.strip_suffix('\n') {
+        buffer = stripped.to_string();
+    }
+    Ok(buffer)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_explain_command(
+    command: Option<String>,
+    execute: bool,
+    provider: Option<&str>,
+    explicit_model: Option<&str>,
+    tier: Option<&str>,
+) -> ! {
+    if execute {
+        eprintln!("explain never executes a command; remove -x");
+        std::process::exit(2);
+    }
+
+    let command = match resolve_explain_command(command) {
+        Ok(command) => command,
+        Err(message) => {
+            eprintln!("{message}");
+            std::process::exit(2);
+        }
+    };
+
+    if !watn::review::explanation_terminal_is_usable() {
+        eprintln!("explain requires a terminal for the explanation card");
+        std::process::exit(1);
+    }
+
+    let config = match load_config() {
+        Ok(config) => config,
+        Err(error) => {
+            let code = exit_code(&error);
+            eprintln!("{error}");
+            std::process::exit(code);
+        }
+    };
+
+    let provider_name = provider
+        .unwrap_or(config.defaults.provider.as_deref().unwrap_or("openrouter"))
+        .to_string();
+    let tier = tier.unwrap_or("1");
+    let explicit_selection =
+        provider.is_some() || explicit_model.is_some() || std::env::var("WATN_PROVIDER").is_ok();
+    let model = match resolve_model(&config, Some(tier), explicit_model) {
+        Ok(model) => model,
+        Err(error) => {
+            if explicit_selection {
+                let code = exit_code(&error);
+                eprintln!("{error}");
+                std::process::exit(code);
+            }
+            "unknown".to_string()
+        }
+    };
+
+    let context = watn::review::ReviewContext {
+        intent: "explain command".to_string(),
+        tier: tier.to_string(),
+        provider: provider_name.clone(),
+        model: model.clone(),
+    };
+
+    let candidate = if config::provider_ready(&config, &provider_name)
+        && config::model_roles_ready(&config)
+    {
+        let provider_config = match resolve_provider(&config, &provider_name) {
+            Ok(provider_config) => provider_config,
+            Err(error) => {
+                let code = exit_code(&error);
+                eprintln!("{error}");
+                std::process::exit(code);
+            }
+        };
+        let api_key = match config::get_provider_api_key(&provider_name, &provider_config) {
+            Ok(api_key) => api_key,
+            Err(_) => {
+                run_explanation_card(
+                    watn::review::ReviewCandidate::from_command(&command),
+                    context,
+                )
+                .unwrap_or_else(|error| {
+                    eprintln!("explain unavailable: {error}");
+                    std::process::exit(1);
+                });
+                std::process::exit(0);
+            }
+        };
+
+        let interrupt = Arc::new(AtomicBool::new(false));
+        let int_flag = Arc::clone(&interrupt);
+        let _ = ctrlc::set_handler(move || {
+            int_flag.store(true, Ordering::SeqCst);
+        });
+        let mut registry = ProviderRegistry::new();
+        build_registry(
+            &mut registry,
+            &provider_name,
+            &provider_config.endpoint,
+            &api_key,
+            Arc::clone(&interrupt),
+        );
+        let messages = vec![
+            Message {
+                role: "system".to_string(),
+                content: explain_system_prompt(),
+            },
+            Message {
+                role: "user".to_string(),
+                content: command.clone(),
+            },
+        ];
+        let options = RequestOptions {
+            model: model.clone(),
+            temperature: None,
+            max_tokens: None,
+            reasoning_effort: config.tiers.reasoning.effort(Some(tier)),
+        };
+        let spinner = Some(watn::output::spinner::Spinner::start(&model));
+        let provider = registry
+            .get(&provider_name)
+            .expect("the active provider is registered");
+        watn::review::session::explain_command_candidate(
+            provider,
+            &command,
+            &messages,
+            &options,
+            &interrupt,
+            spinner,
+        )
+    } else {
+        watn::review::ReviewCandidate::from_command(&command)
+    };
+
+    if let Err(error) = run_explanation_card(candidate, context) {
+        eprintln!("explain unavailable: {error}");
+        std::process::exit(1);
+    }
+    std::process::exit(0);
 }
 
 #[allow(clippy::too_many_arguments)]

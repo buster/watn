@@ -14,17 +14,20 @@
 ## Goal
 
 Use Watn as a native shell tool with an interactive shortcut that can explain
-and refine generated commands before returning them.
+and refine generated commands before returning them, and a direct explanation
+entry point for commands the developer already has.
 
 ## Trigger
 
-The terminal developer invokes the shortcut or submits an eligible interactive
-command request.
+The terminal developer invokes the shortcut, submits an eligible interactive
+command request, or runs `watn explain` with a command they already have.
 
 ## Preconditions
 
 - Watn is installed.
 - A provider and usable model are configured for generation.
+- A usable model is optional when explaining an existing command; without one
+  the explanation card shows purpose-unavailable.
 - The shell shortcut is installed when the user invokes Ctrl-W.
 
 ## Main flow
@@ -49,6 +52,8 @@ command request.
 - Provider or explanation failure preserves review state when a selected candidate exists; initial generation failure releases no command.
 - An unsupported command-flow portion remains visible and reviewable.
 - Non-TTY and redirected requests retain raw or existing confirmation behavior.
+- An existing command supplied for explanation is never generated, edited,
+  accepted, or executed; its card closes on Enter or Escape.
 - Active eligible `-x` requires `-x` and review acceptance, without a second prompt; disabled or non-review `-x` retains the existing confirmation.
 
 ## Rules
@@ -64,6 +69,8 @@ command request.
 - Direct command editing preserves the original intent and refreshes explanation state; it never evaluates the edited candidate.
 - Every candidate requires explicit final acceptance.
 - Review never evaluates generated or edited text.
+- An explained command is the developer's own text: it is never evaluated, re-split, joined, or executed, and its card offers only closing.
+- The explanation entry point is independent of the persisted review-surface preference.
 - Purpose loading is shown only for a structured response that supports delayed purpose completion; otherwise purpose-unavailable is shown.
 
 ## Examples
@@ -76,6 +83,7 @@ command request.
 - A higher-tier request uses the next configured tier. At the highest tier it opens the existing provider catalog picker for one explicit model selection.
 - A rejected candidate is not released and the active intent is unchanged; leaving the model chooser keeps the current candidate.
 - An interrupted generation, purpose operation, or model selection preserves the selected candidate and review state.
+- `watn explain 'git log --oneline | head -5'` opens the review card for that exact command and closes without releasing a command.
 
 ## Minimal guarantee
 
@@ -98,6 +106,7 @@ evaluation.
 
 - interactive-shell-shortcut
 - shell-completions
+- explain-command
 
 ## Interactions
 
@@ -115,6 +124,7 @@ evaluation.
 | interactive-shell-shortcut | review and execute an accepted eligible -x candidate | Developer accepts an eligible -x candidate and it executes once |
 | interactive-shell-shortcut | reject a candidate and regenerate with another model | Developer rejects a candidate and regenerates with another model |
 | shell-completions | generate Bash completions | Built Bash completion generation emits the current command tree |
+| explain-command | explain an existing command in the review card | Developer explains an existing command in the review card |
 
 ## Includes
 
@@ -137,8 +147,11 @@ evaluation.
 flowchart LR
   User((Terminal developer)) --> Shortcut[[Invoke Ctrl-W]]
   User --> Ask[[Ask interactively]]
+  User --> Explain[[Explain an existing command]]
   Shortcut --> Review[[Review candidate]]
   Ask --> Review
+  Explain --> ExplainCard[[Explanation-only card]]
+  ExplainCard -->|close| Nothing[[No command released]]
   Review -->|accept| Result[[Return candidate]]
   Review -->|cancel| Preserve[[Preserve input]]
   Result --> Buffer[[Replace shell buffer]]
