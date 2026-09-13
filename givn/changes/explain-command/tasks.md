@@ -424,10 +424,29 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 12 steps (12 passed)
     ```
-- [ ] COMMIT: `test(e2e): Developer explains an existing command in the review card` → hash: ``
+- [x] COMMIT: `test(e2e): Developer explains an existing command in the review card` → hash: `7fd7258`
 
 ## Completion
 
-- [ ] All scenarios GREEN: `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0.
-- [ ] `givn lint --change explain-command` exits 0 or 2.
-- [ ] Every scenario has a recorded commit hash; no commit touches only the spec or a stub.
+- [x] All scenarios GREEN: `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0.
+  - Evidence (post-E1, all scenarios un-`@wip`):
+    ```
+    ./run-tests.sh        -> exit 0: 22 features, 238 scenarios (238 passed), 1442 steps (1442 passed)
+    ./run-tests.sh --e2e  -> exit 0: 25 features, 89 scenarios (89 passed), 682 steps (682 passed)
+    ```
+- [x] `givn lint --change explain-command` exits 0 or 2.
+  - Evidence:
+    ```
+    $ givn lint --change explain-command
+    ... advisory [SHAPE]/[SUBST] notes ...
+    givn lint: 1 file(s) checked — clean
+    exit 0
+    ```
+- [x] Every scenario has a recorded commit hash; no commit touches only the spec or a stub.
+  - Evidence:
+    ```
+    S1  2ac3c1e  S2  0319495  S3  b4c3ec4  S4  abc1a8c  S5  af0c529  S6  9ca91e1
+    S7  082b63f  S8  eb9caf1  S9  983a459  S10 a25714b  S11 4d2d6e7  S12 f47e40f
+    S13 75fc633  S14 4f52d82  S15 c76e808  S16 fea98a4  E1  7fd7258
+    ```
+    Every scenario commit carries its feature-file `@wip` removal, its step implementations (or, for S13, the reused-step evidence), and its tasks.md evidence. E1 also carries the explanation-card stage navigation it exercises (`src/review/panel.rs`) and the committed PTY transcript.
