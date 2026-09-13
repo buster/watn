@@ -504,9 +504,17 @@ fn run_explain_let_setup_flow_start(world: &mut WatnWorld, step: &cucumber::gher
 }
 
 #[when("I run `watn explain` with this single argument and let quick setup start:")]
-fn run_explain_let_quick_setup_start(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_let_quick_setup_start(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    world.env_vars.insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(world, r#""$WATN_BIN" explain "$WATN_COMMAND""#);
+    let session = world.pty_session.as_ref().expect("quick setup PTY session");
+    super::pty_wait_for_label(session, "Completion endpoint");
 }
 
 #[when(
@@ -578,8 +586,16 @@ fn setup_flow_should_start(world: &mut WatnWorld) {
 }
 
 #[then("watn should report that setup is complete and the command must be rerun")]
-fn watn_reports_setup_complete_rerun(_world: &mut WatnWorld) {
-    unimplemented!()
+fn watn_reports_setup_complete_rerun(world: &mut WatnWorld) {
+    let output = watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        output.contains("setup complete"),
+        "the transcript should report that setup completed, got: {output:?}"
+    );
+    assert!(
+        output.contains("watn explain"),
+        "the transcript should tell the developer to rerun watn explain, got: {output:?}"
+    );
 }
 
 #[then("watn should report that setup is required")]

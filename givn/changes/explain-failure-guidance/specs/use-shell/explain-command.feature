@@ -177,7 +177,7 @@ Feature: Explain an existing command
     And  watn should report that the explanation response was not usable
     And  watn should exit successfully
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unconfigured machine starts quick setup instead of explaining
     Given  no config file exists
     When  I run `watn explain` with this single argument and let quick setup start:

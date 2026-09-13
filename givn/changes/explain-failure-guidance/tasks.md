@@ -535,21 +535,55 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     14 steps (14 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): An explanation that does not cover the command is not trusted` -> hash: ``
+- [x] COMMIT: `feat(explain-command): An explanation that does not cover the command is not trusted` -> hash: `1b3440d`
 
 ## S13: An unconfigured machine starts quick setup instead of explaining (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An unconfigured machine starts quick setup instead of explaining"
+      Scenario: An unconfigured machine starts quick setup instead of explaining
+       ✘  When I run `watn explain` with this single argument and let quick setup start:
+          Matched: tests/steps/explain_command_steps.rs:506:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: quick-setup delegation on a clean machine (terminal stdin, no config), rerun hint, exit 0; reused quicksetup steps typed correctly. Targeted run zero.
+- [x] GREEN: quick-setup delegation on a clean machine (terminal stdin, no config), rerun hint, exit 0; reused quicksetup steps typed correctly. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An unconfigured machine starts quick setup instead of explaining"
+      Scenario: An unconfigured machine starts quick setup instead of explaining
+       ✔  Given no config file exists
+       ✔  When I run `watn explain` with this single argument and let quick setup start:
+       ✔  Then the quick setup should announce that no configuration was found
+       ✔  When I accept the suggested endpoint
+       ✔  And I answer the credential with "sk-quick-test"
+       ✔  And I accept the suggested small model
+       ✔  And I accept the pre-filled normal model
+       ✔  And I accept the pre-filled thinking model
+       ✔  And I keep the pre-selected shell integrations and confirm
+       ✔  Then watn should exit successfully
+       ✔  And watn should report that setup is complete and the command must be rerun
+       ✔  And no provider request should have been made
+       ✔  And no explanation card should open
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    13 steps (13 passed)
+    exit=0
+    # quick-setup branch now prints the rerun hint and exits 0; new quick-setup start
+    # step and rerun-hint assertion step
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An unconfigured machine starts quick setup instead of explaining"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    13 steps (13 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): An unconfigured machine starts quick setup instead of explaining` -> hash: ``
 

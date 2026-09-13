@@ -874,6 +874,7 @@ fn run_explain_command(
                 eprintln!("{error}");
                 std::process::exit(exit_code(&error));
             }
+            print_explain_rerun_hint();
             std::process::exit(0);
         }
         match watn::setup::run_with_config(&config, SetupEntryPoint::Setup) {
@@ -992,6 +993,12 @@ fn run_explain_command(
         std::process::exit(1);
     }
     std::process::exit(failure_status.unwrap_or(0));
+}
+
+/// After a successful delegated setup, the original command is not resumed;
+/// the developer reruns `watn explain` with the configuration in place.
+fn print_explain_rerun_hint() {
+    eprintln!("setup complete; rerun `watn explain` with the command");
 }
 
 #[allow(clippy::too_many_arguments)]
