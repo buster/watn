@@ -38,7 +38,7 @@ Feature: Explain an existing command
       """
     And  the explanation card should show purpose-unavailable
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A command beginning with a dash passes after the option terminator
     Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain --` with this single argument:
