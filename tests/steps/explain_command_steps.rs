@@ -27,12 +27,34 @@ fn prepare_explain_pty(world: &mut WatnWorld, script: &str) {
 }
 
 fn close_explain_card(world: &mut WatnWorld, key: &str) -> String {
+    let mut card_open = false;
     {
-        let session = world.pty_session.as_ref().expect("explain pty session");
-        super::pty_wait_for_label(session, "esc close");
+        let session = world.pty_session.as_mut().expect("explain pty session");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        loop {
+            let output = super::pty_snapshot(session);
+            if "esc close".split_whitespace().all(|word| output.contains(word)) {
+                card_open = true;
+                break;
+            }
+            if session.child.try_wait().expect("poll pty child").is_some() {
+                break;
+            }
+            if std::time::Instant::now() >= deadline {
+                panic!("PTY did not render label \"esc close\"; output: {output:?}");
+            }
+            std::thread::sleep(std::time::Duration::from_millis(25));
+        }
     }
     let mut session = world.pty_session.take().expect("explain pty session");
-    super::pty_write(&mut session, key);
+    let still_running = session
+        .child
+        .try_wait()
+        .expect("poll pty child")
+        .is_none();
+    if card_open && still_running {
+        super::pty_write(&mut session, key);
+    }
     let transcript = super::finish_pty_session(world, session);
     if let Some(path) = &world.review.stdout_path {
         world.review.command_output = std::fs::read_to_string(path).unwrap_or_default();
@@ -419,5 +441,28 @@ fn watn_reports_terminal_required(world: &mut WatnWorld) {
     assert!(
         stderr.contains("terminal"),
         "stderr should report that the explanation requires a terminal, got: {stderr:?}"
+    );
+}
+
+#[given("the configuration file is malformed")]
+fn configuration_file_malformed(world: &mut WatnWorld) {
+    world.raw_config = Some("this is not valid toml {{{".to_string());
+}
+
+#[then("watn should report a configuration error")]
+fn watn_reports_configuration_error(world: &mut WatnWorld) {
+    assert!(
+        world.exit_status.is_some_and(|status| status != 0),
+        "a malformed configuration should exit non-zero, got {:?}",
+        world.exit_status
+    );
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    let transcript = world.output.as_deref().unwrap_or_default();
+    assert!(
+        stderr.contains("config")
+            || stderr.contains("parse error")
+            || transcript.contains("config")
+            || transcript.contains("parse error"),
+        "stderr or the terminal transcript should report a configuration error, got stderr: {stderr:?}, transcript: {transcript:?}"
     );
 }

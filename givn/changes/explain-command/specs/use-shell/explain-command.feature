@@ -222,7 +222,7 @@ Feature: Explain an existing command
     Then watn should report that the explanation requires a terminal
     And no explanation card should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed configuration file is reported
     Given the configuration file is malformed
     When I run `watn explain` with this single argument:

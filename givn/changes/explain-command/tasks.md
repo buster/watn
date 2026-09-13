@@ -335,21 +335,26 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A terminal is required for the explanation card` → hash: ``
+- [x] COMMIT: `feat(explain-command): A terminal is required for the explanation card` → hash: `c76e808`
 
 ## S16: A malformed configuration file is reported
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A malformed configuration file is reported"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A malformed configuration file is reported"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ Given the configuration file is malformed
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: config parse error propagation with exit 1 and no card; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: config parse error propagation with exit 1 and no card; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+  - `close_explain_card` now polls `try_wait` alongside the "esc close" label and only sends the key while the child is still running, so a process that exits before opening a card (malformed config) is tolerated.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A malformed configuration file is reported` → hash: ``
 
