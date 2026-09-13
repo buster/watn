@@ -488,21 +488,52 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     6 steps (6 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): A network failure reports the mapped exit status` -> hash: ``
+- [x] COMMIT: `feat(explain-command): A network failure reports the mapped exit status` -> hash: `6f943bc`
 
 ## S12: An explanation that does not cover the command is not trusted (@givn.modified)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explanation that does not cover the command is not trusted"
+      Scenario: An explanation that does not cover the command is not trusted
+       ✘  And watn should report that the explanation response was not usable
+          Matched: tests/steps/explain_command_steps.rs:609:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: unusable-response diagnostic with explain-domain wording (no anti-terms); exit 0. Targeted run zero.
+- [x] GREEN: unusable-response diagnostic with explain-domain wording (no anti-terms); exit 0. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explanation that does not cover the command is not trusted"
+      Scenario: An explanation that does not cover the command is not trusted
+       ✔  Given a configured provider whose explanation does not cover the command
+       ✔  When I run `watn explain` with this single argument:
+       ✔  Then the explanation card should show the stage:
+       ✔  And the explanation card should show purpose-unavailable
+       ✔  And the explanation card should not show the text "unrelated stage"
+       ✔  And watn should report that the explanation response was not usable
+       ✔  And watn should exit successfully
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    14 steps (14 passed)
+    exit=0
+    # ReviewResponseError::explain_reason() added; diagnostic "explain response was not usable: ..."
+    # printed on stderr with exit 0; step also guards against the "candidate" anti-term;
+    # permanent copy re-based
+    $ cargo test --locked --lib review::response
+    test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explanation that does not cover the command is not trusted"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    14 steps (14 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): An explanation that does not cover the command is not trusted` -> hash: ``
 

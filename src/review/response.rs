@@ -72,6 +72,32 @@ impl std::fmt::Display for ReviewResponseError {
     }
 }
 
+impl ReviewResponseError {
+    /// Explain-domain wording for the `explain response was not usable`
+    /// diagnostic. The review path keeps `Display`, which names a "candidate";
+    /// that term is an anti-term for an Explained command and must never reach
+    /// explain output.
+    pub fn explain_reason(&self) -> String {
+        match self {
+            Self::InvalidJson(error) => format!("invalid explanation JSON: {error}"),
+            Self::UnsupportedVersion(version) => {
+                format!("unsupported explanation version: {version}")
+            }
+            Self::EmptyCommand => "the explanation is empty".to_string(),
+            Self::CommandMismatch => {
+                "the explanation does not match the explained command".to_string()
+            }
+            Self::StageMismatch => {
+                "the explanation stages do not match the command flow".to_string()
+            }
+            Self::MissingPurpose => "the explanation is missing a stage purpose".to_string(),
+            Self::InvalidLoadingResponse => {
+                "the explanation has no delayed-purpose request".to_string()
+            }
+        }
+    }
+}
+
 impl std::error::Error for ReviewResponseError {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -537,6 +563,31 @@ mod tests {
                 panic!("a mismatched response must not be trusted")
             }
         }
+    }
+
+    #[test]
+    fn explain_reason_uses_explain_domain_wording_without_anti_terms() {
+        let reasons = [
+            ReviewResponseError::InvalidJson("broken".to_string()),
+            ReviewResponseError::UnsupportedVersion(9),
+            ReviewResponseError::EmptyCommand,
+            ReviewResponseError::CommandMismatch,
+            ReviewResponseError::StageMismatch,
+            ReviewResponseError::MissingPurpose,
+            ReviewResponseError::InvalidLoadingResponse,
+        ];
+        for reason in reasons {
+            let explain = reason.explain_reason();
+            assert!(!explain.is_empty());
+            assert!(
+                !explain.contains("candidate") && !explain.contains("review response"),
+                "explain diagnostic leaked a review-path term: {explain:?}"
+            );
+        }
+        assert_eq!(
+            ReviewResponseError::CommandMismatch.explain_reason(),
+            "the explanation does not match the explained command"
+        );
     }
 
     #[test]

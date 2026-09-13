@@ -607,8 +607,16 @@ fn watn_reports_explanation_request_failed(world: &mut WatnWorld) {
 }
 
 #[then("watn should report that the explanation response was not usable")]
-fn watn_reports_explanation_not_usable(_world: &mut WatnWorld) {
-    unimplemented!()
+fn watn_reports_explanation_not_usable(world: &mut WatnWorld) {
+    let output = watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        output.contains("explain response was not usable"),
+        "the transcript should report the unusable explanation response, got: {output:?}"
+    );
+    assert!(
+        !output.contains("candidate"),
+        "the explain diagnostic must not use the review-path anti-term, got: {output:?}"
+    );
 }
 
 #[then("watn should report a configuration error")]

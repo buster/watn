@@ -161,6 +161,8 @@ Feature: Explain an existing command
       """
     And  the explanation card should show purpose-unavailable
     And  the explanation card should not show the text "unrelated stage"
+    And  watn should report that the explanation response was not usable
+    And  watn should exit successfully
 
   Scenario: Explain never executes the command
     Given  no config file exists
