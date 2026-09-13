@@ -110,3 +110,18 @@ fn card_shows_stage(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
 fn card_shows_purpose_unavailable(world: &mut WatnWorld) {
     assert_card_contains(world, "purpose-unavailable");
 }
+
+#[when("I run `watn explain --` with this single argument:")]
+fn run_explain_terminator(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    world
+        .env_vars
+        .insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(world, r#""$WATN_BIN" explain -- "$WATN_COMMAND" > "$WATN_OUT""#);
+    close_explain_card(world, "\x1b");
+}
