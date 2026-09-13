@@ -133,9 +133,20 @@ fn close_explanation_card(world: &mut WatnWorld) {
         world.review.command_output = std::fs::read_to_string(path).unwrap_or_default();
     }
     let plain = watn::review::sanitize_terminal_text(&transcript);
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
-        "givn/changes/explain-command/evidence/visual/developer-explains-an-existing-command-in-the-review-card",
-    );
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let change_dir = [
+        "givn/changes/explain-command",
+        "givn/archive/explain-command",
+    ]
+    .into_iter()
+    .map(|path| root.join(path))
+    .find(|path| path.exists())
+    .expect("the explain-command change directory");
+    let dir = change_dir
+        .join("evidence/visual/developer-explains-an-existing-command-in-the-review-card");
     std::fs::create_dir_all(&dir).expect("create evidence directory");
-    std::fs::write(dir.join("transcript.txt"), plain).expect("write evidence transcript");
+    let path = dir.join("transcript.txt");
+    if std::fs::read_to_string(&path).ok().as_deref() != Some(plain.as_str()) {
+        std::fs::write(&path, plain).expect("write evidence transcript");
+    }
 }
