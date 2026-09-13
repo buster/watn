@@ -256,21 +256,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): An explanation that does not cover the command is not trusted` → hash: ``
+- [x] COMMIT: `feat(explain-command): An explanation that does not cover the command is not trusted` → hash: `4d2d6e7`
 
 ## S12: Explain never executes the command
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "Explain never executes the command"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "Explain never executes the command"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn -x explain` with this single argument:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: `-x` rejection on both invocation positions with exit 2 and no execution; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: `-x` rejection on both invocation positions with exit 2 and no execution; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 7 steps (7 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 7 steps (7 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): Explain never executes the command` → hash: ``
 

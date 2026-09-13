@@ -174,7 +174,7 @@ Feature: Explain an existing command
     And the explanation card should show purpose-unavailable
     And the explanation card should not show the text "unrelated stage"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Explain never executes the command
     Given no config file exists
     When I run `watn -x explain` with this single argument:

@@ -344,3 +344,43 @@ fn configured_provider_not_covering(world: &mut WatnWorld) {
     );
     world.pending_mock_usage = Some(false);
 }
+
+#[when("I run `watn -x explain` with this single argument:")]
+fn run_execute_explain(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    let _ = std::fs::remove_file("/tmp/watn-explain-should-not-run");
+    super::run_binary_with_state(world, &["-x", "explain", &command], None);
+}
+
+#[when("I run `watn explain -x` with this single argument:")]
+fn run_explain_execute(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    let _ = std::fs::remove_file("/tmp/watn-explain-should-not-run");
+    super::run_binary_with_state(world, &["explain", "-x", &command], None);
+}
+
+#[then("watn should report that explain never executes")]
+fn watn_reports_explain_never_executes(world: &mut WatnWorld) {
+    assert_eq!(
+        world.exit_status,
+        Some(2),
+        "explain with -x should exit 2, got {:?}; stderr: {:?}",
+        world.exit_status,
+        world.stderr_output
+    );
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(
+        stderr.contains("never executes"),
+        "stderr should report that explain never executes, got: {stderr:?}"
+    );
+}
