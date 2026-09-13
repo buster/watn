@@ -147,7 +147,7 @@ Feature: Explain an existing command
     And the explanation card should show purpose-unavailable
     And no provider request should have been made
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed explanation keeps the command reviewable
     Given a configured provider whose explanation request fails
     When I run `watn explain` with this single argument:
