@@ -116,7 +116,7 @@ Feature: Explain an existing command
       """
     And the explanation card should not show the text "echo standard input"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Empty input is rejected without opening a card
     Given no config file exists
     When I run `watn explain` with an empty argument

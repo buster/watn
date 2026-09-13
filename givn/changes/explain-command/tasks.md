@@ -156,21 +156,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A positional command takes precedence over standard input` → hash: ``
+- [x] COMMIT: `feat(explain-command): A positional command takes precedence over standard input` → hash: `9ca91e1`
 
 ## S7: Empty input is rejected without opening a card
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "Empty input is rejected without opening a card"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "Empty input is rejected without opening a card"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain` with an empty argument
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: empty-argument and empty-stdin rejection with exit 2 and no card; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: empty-argument and empty-stdin rejection with exit 2 and no card; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 7 steps (7 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 7 steps (7 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): Empty input is rejected without opening a card` → hash: ``
 
