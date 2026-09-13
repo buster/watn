@@ -13,7 +13,7 @@ Feature: Explain an existing command
     And  the command-output channel should contain no command
     And  the file "/tmp/watn-explain-enter-should-not-run" should not exist
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Shell metacharacters and embedded quoting reach the card unchanged
     Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain` with this single argument:

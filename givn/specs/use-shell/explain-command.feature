@@ -35,7 +35,7 @@ Feature: Explain an existing command
     And  the file "/tmp/watn-explain-enter-should-not-run" should not exist
 
   Scenario: Shell metacharacters and embedded quoting reach the card unchanged
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain` with this single argument:
       """
       git log --format='%H' --since='7 days ago' | xargs -n1 git show --stat --oneline && printf 'done %s' "$(date)" || echo `hostname`; grep -E '[0-9]+ err(or)?' < input.log > output.log &
