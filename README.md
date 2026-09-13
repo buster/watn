@@ -167,8 +167,12 @@ EOF
 ```
 
 Arrow keys move through the stages so every model-written purpose can be read;
-`Enter` or `Escape` closes the card without releasing the command. Without a
-usable model the stages are still shown with `purpose-unavailable`.
+`Enter` or `Escape` closes the card without releasing the command. When no
+usable model is configured, `watn explain` starts quick setup or the setup
+wizard (or prints setup guidance when the command arrives through a pipe)
+instead of opening the card. A failed explanation request is reported on
+stderr, and the card still opens with the command's stages and
+`purpose-unavailable`.
 
 ### Shell shortcut
 
