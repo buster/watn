@@ -46,7 +46,7 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     1 step (1 failed)
     exit=1
     ```
-- [ ] Permanent-spec lockstep (design.md `## Permanent-spec lockstep`): re-base the modified permanent scenarios in `givn/specs/use-shell/explain-command.feature` to a ready provider in the same commit as their delta GREEN, so the permanent copies do not fail under the new readiness gate. The permanent `@e2e` scenario is unaffected.
+- [x] Permanent-spec lockstep (design.md `## Permanent-spec lockstep`): re-base the modified permanent scenarios in `givn/specs/use-shell/explain-command.feature` to a ready provider in the same commit as their delta GREEN, so the permanent copies do not fail under the new readiness gate. The permanent `@e2e` scenario is unaffected.
   - Evidence:
     ```
     # after the readiness gate landed (S1), the full suite identified exactly these
@@ -58,7 +58,14 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     # S7 The review-panel switches..., S9 A configured provider without a usable
     # credential... (S8's permanent copy already seeds a ready provider; re-based
     # for text lockstep in S8)
-    # re-based one by one in S2..S9; verified green by the final full-suite run
+    # re-based one by one in S2..S9; verified green by the final full-suite run:
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    256 scenarios (256 passed)
+    1558 steps (1558 passed)
+    exit=0
+    # the permanent @e2e scenario is unchanged and passes in the e2e run
     ```
 - [x] Confirm `verify.command` and `verify.e2e_command` are unchanged (`./run-tests.sh`, `./run-tests.sh --e2e`) and the current suite is green before starting.
   - Evidence:
@@ -818,12 +825,55 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     5 steps (5 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): An explicit provider without a resolvable model reports its error` -> hash: ``
+- [x] COMMIT: `feat(explain-command): An explicit provider without a resolvable model reports its error` -> hash: `53b1412`
 
 ## Completion
 
-- [ ] All scenarios GREEN: `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0.
-- [ ] `givn lint --change explain-failure-guidance` exits 0 or 2.
-- [ ] `cargo fmt --all -- --check` and `cargo clippy --locked --all-targets -- -D warnings` are clean.
-- [ ] Every scenario has a recorded commit hash; no commit touches only the spec or a stub.
-- [ ] Permanent-spec lockstep verified: the modified permanent scenarios pass under the new readiness gate.
+- [x] All scenarios GREEN: `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0.
+  - Evidence:
+    ```
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    256 scenarios (256 passed)
+    1558 steps (1558 passed)
+    exit=0
+
+    $ ./run-tests.sh --e2e
+    [Summary]
+    25 features
+    89 scenarios (89 passed)
+    682 steps (682 passed)
+    exit=0
+    ```
+- [x] `givn lint --change explain-failure-guidance` exits 0 or 2.
+  - Evidence:
+    ```
+    $ givn lint --change explain-failure-guidance
+    givn lint: 1 file(s) checked — clean
+    exit=0
+    ```
+- [x] `cargo fmt --all -- --check` and `cargo clippy --locked --all-targets -- -D warnings` are clean.
+  - Evidence:
+    ```
+    $ cargo fmt --all -- --check
+    exit=0
+    $ cargo clippy --locked --all-targets -- -D warnings
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.25s
+    exit=0
+    ```
+- [x] Every scenario has a recorded commit hash; no commit touches only the spec or a stub.
+  - Evidence:
+    ```
+    S1 c333742  S2 de2a82e  S3 55e5123  S4 4541b8a  S5 c75bb93  S6 80e8d8f
+    S7 f90581b  S8 d8e6da8  S9 0104fc0  S10 aeba739 S11 6f943bc S12 1b3440d
+    S13 1be1e10 S14 9edccba S15 540adc2 S16 746d936 S17 c2b0189 S18 53b1412
+    # each commit carries RED+GREEN+REFACTOR evidence, the delta scenario unwip,
+    # the permanent lockstep edit, and the production change (S1, S10-S15)
+    ```
+- [x] Permanent-spec lockstep verified: the modified permanent scenarios pass under the new readiness gate.
+  - Evidence:
+    ```
+    $ ./run-tests.sh
+    256 scenarios (256 passed) — includes both permanent and delta copies
+    ```
