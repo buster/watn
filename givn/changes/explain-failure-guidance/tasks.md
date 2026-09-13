@@ -642,21 +642,48 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     9 steps (9 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): An existing configuration without a usable model completes the setup wizard` -> hash: ``
+- [x] COMMIT: `feat(explain-command): An existing configuration without a usable model completes the setup wizard` -> hash: `9edccba`
 
 ## S15: Interrupting the explanation request opens no card (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "Interrupting the explanation request opens no card"
+      Scenario: Interrupting the explanation request opens no card
+       ✘  When I run `watn explain` with this single argument and interrupt the request:
+          Matched: tests/steps/explain_command_steps.rs:533:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: explicit interrupt check after the fetch and before the card; exit 130, no card; hanging-provider step. Targeted run zero.
+- [x] GREEN: explicit interrupt check after the fetch and before the card; exit 130, no card; hanging-provider step. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "Interrupting the explanation request opens no card"
+      Scenario: Interrupting the explanation request opens no card
+       ✔  Given a provider accepts a connection and never sends a response
+       ✔  When I run `watn explain` with this single argument and interrupt the request:
+       ✔  Then no explanation card should open
+       ✔  And the exit status should be 130
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    4 steps (4 passed)
+    exit=0
+    # step waits for the in-flight spinner, sends Ctrl+C, captures exit 130;
+    # run_explain_command re-checks the shared interrupt flag after the fetch and
+    # before the card (the hanging provider exits through generate_candidate's
+    # grace contract, so both paths guarantee no card).
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "Interrupting the explanation request opens no card"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    4 steps (4 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): Interrupting the explanation request opens no card` -> hash: ``
 
