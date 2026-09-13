@@ -384,3 +384,21 @@ fn watn_reports_explain_never_executes(world: &mut WatnWorld) {
         "stderr should report that explain never executes, got: {stderr:?}"
     );
 }
+
+#[when("I run `watn explain --no-review-panel` with this single argument:")]
+fn run_explain_no_review_panel(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    world
+        .env_vars
+        .insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain --no-review-panel "$WATN_COMMAND" > "$WATN_OUT""#,
+    );
+    close_explain_card(world, "\x1b");
+}
