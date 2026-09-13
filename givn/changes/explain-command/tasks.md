@@ -196,21 +196,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A second positional argument is refused` → hash: ``
+- [x] COMMIT: `feat(explain-command): A second positional argument is refused` → hash: `eb9caf1`
 
 ## S9: A configured provider without a usable credential is not contacted
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A configured provider without a usable credential is not contacted"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A configured provider without a usable credential is not contacted"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ Given a configured provider without a usable credential
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: tolerant readiness check, zero provider requests, `purpose-unavailable`; production code in `src/main.rs`, `src/review/session.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: tolerant readiness check, zero provider requests, `purpose-unavailable`; production code in `src/main.rs`, `src/review/session.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A configured provider without a usable credential is not contacted` → hash: ``
 

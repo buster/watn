@@ -1,4 +1,4 @@
-use cucumber::{then, when};
+use cucumber::{given, then, when};
 
 use crate::WatnWorld;
 
@@ -296,4 +296,34 @@ fn no_explanation_card(world: &mut WatnWorld) {
 #[when(expr = "I run watn explain with the arguments {string} and {string}")]
 fn run_explain_two_arguments(world: &mut WatnWorld, first: String, second: String) {
     super::run_binary_with_state(world, &["explain", &first, &second], None);
+}
+
+#[given("a configured provider without a usable credential")]
+fn configured_provider_without_credential(world: &mut WatnWorld) {
+    let server = httpmock::MockServer::start();
+    let port = server.port();
+    let mock = server.mock(|when, then| {
+        when.method(httpmock::Method::POST)
+            .path("/chat/completions");
+        then.status(200)
+            .header("Content-Type", "text/event-stream")
+            .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
+    });
+    let mock_id = mock.id;
+    drop(mock);
+    world.mock_server = crate::MockServerWrap(Some(server), Some(mock_id));
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\nmodel = \"test-model\"\n\n[providers.test]\nendpoint = \"http://127.0.0.1:{port}\"\n"
+    ));
+}
+
+#[then("no provider request should have been made")]
+fn no_provider_request(world: &mut WatnWorld) {
+    let server = world.mock_server.0.as_ref().expect("mock server");
+    let id = world.mock_server.1.expect("registered provider mock");
+    assert_eq!(
+        httpmock::Mock::new(id, server).calls(),
+        0,
+        "the provider must not be contacted when no credential is usable"
+    );
 }
