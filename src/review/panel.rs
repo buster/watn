@@ -610,7 +610,7 @@ impl<W: Write> ControllingTerminal<W> {
     }
 
     pub fn open(writer: W, layout: InlineLayout) -> io::Result<Self> {
-        if !controlling_terminal_is_usable() {
+        if !explanation_terminal_is_usable() {
             return Err(io::Error::new(
                 io::ErrorKind::NotConnected,
                 "review panel requires a controlling terminal",
