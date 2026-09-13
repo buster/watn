@@ -233,7 +233,7 @@ Feature: Explain an existing command
     And  no provider request should have been made
     And  the exit status should be 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicit provider selection with a broken configuration reports its error
     Given  no config file exists
     When  I run `watn --provider missing explain` with this single argument in a terminal:
