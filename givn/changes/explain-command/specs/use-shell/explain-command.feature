@@ -126,7 +126,7 @@ Feature: Explain an existing command
     Then watn should report a usage error
     And no explanation card should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: A second positional argument is refused
     Given no config file exists
     When I run watn explain with the arguments "echo one" and "echo two"

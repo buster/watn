@@ -176,21 +176,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 7 steps (7 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): Empty input is rejected without opening a card` → hash: ``
+- [x] COMMIT: `feat(explain-command): Empty input is rejected without opening a card` → hash: `082b63f`
 
 ## S8: A second positional argument is refused
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A second positional argument is refused"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A second positional argument is refused"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run watn explain with the arguments "echo one" and "echo two"
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: single-argument clap contract (no lossy join); production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: single-argument clap contract (no lossy join); production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A second positional argument is refused` → hash: ``
 
