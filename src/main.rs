@@ -989,6 +989,10 @@ fn run_explain_command(
         }
     };
 
+    if interrupt.load(Ordering::SeqCst) {
+        std::process::exit(130);
+    }
+
     if let Err(error) = run_explanation_card(candidate, context) {
         eprintln!("explain unavailable: {error}");
         std::process::exit(1);

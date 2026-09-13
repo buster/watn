@@ -531,9 +531,24 @@ fn run_explain_stdin_setup_guidance(_world: &mut WatnWorld, step: &cucumber::ghe
 }
 
 #[when("I run `watn explain` with this single argument and interrupt the request:")]
-fn run_explain_interrupt_request(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_interrupt_request(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    let _ = std::fs::remove_file("/tmp/watn-explain-should-not-run");
+    let session = super::start_pty_session(world, &["explain", &command]);
+    world.pty_session = Some(session);
+    {
+        let session = world.pty_session.as_ref().expect("interrupt PTY session");
+        super::pty_wait_for_label(session, "Asking");
+    }
+    let session = world.pty_session.as_mut().expect("interrupt PTY session");
+    super::pty_write(session, "\x03");
+    let session = world.pty_session.take().expect("interrupt PTY session");
+    super::finish_pty_session(world, session);
 }
 
 #[when("I run `watn --provider missing explain` with this single argument in a terminal:")]

@@ -211,7 +211,7 @@ Feature: Explain an existing command
     And  no explanation card should open
     And  no provider request should have been made
 
-  @givn.added @wip
+  @givn.added
   Scenario: Interrupting the explanation request opens no card
     Given  a provider accepts a connection and never sends a response
     When  I run `watn explain` with this single argument and interrupt the request:
