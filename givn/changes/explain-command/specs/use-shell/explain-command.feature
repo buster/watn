@@ -106,7 +106,7 @@ Feature: Explain an existing command
       """
     And the explanation card should show the stages "ls" and "wc -l" as separate stages
 
-  @givn.added @wip
+  @givn.added
   Scenario: A positional command takes precedence over standard input
     Given no config file exists
     When I run watn explain with the argument "echo positional" in a terminal with the command "echo standard input" on standard input
