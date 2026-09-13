@@ -177,7 +177,8 @@ Feature: Explain an existing command
     And  the file "/tmp/watn-explain-should-not-run" should not exist
 
   Scenario: The explanation card opens even when the review surface is disabled
-    Given  the persisted review surface is disabled
+    Given  a configured provider whose explanation returns no stage purposes
+    And  the persisted review surface is disabled
     When  I run `watn explain` with this single argument:
       """
       git log --oneline | head -5
