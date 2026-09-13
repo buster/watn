@@ -968,7 +968,13 @@ fn run_explain_command(
 
     let (candidate, failure_status) = match outcome {
         Ok(watn::review::ExplanationOutcome::Ready(candidate)) => (candidate, None),
-        Ok(watn::review::ExplanationOutcome::Unusable { candidate, .. }) => (candidate, None),
+        Ok(watn::review::ExplanationOutcome::Unusable { candidate, reason }) => {
+            eprintln!(
+                "explain response was not usable: {}",
+                reason.explain_reason()
+            );
+            (candidate, None)
+        }
         Err(error) => {
             if matches!(error, watn::error::Error::Interrupted) {
                 std::process::exit(130);

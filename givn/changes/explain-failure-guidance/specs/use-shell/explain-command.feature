@@ -161,7 +161,7 @@ Feature: Explain an existing command
     And  watn should report that the explanation request failed
     And  the exit status should be 3
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An explanation that does not cover the command is not trusted
     Given  a configured provider whose explanation does not cover the command
     When  I run `watn explain` with this single argument:
