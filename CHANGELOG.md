@@ -6,6 +6,103 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-13
+
+### Bug Fixes
+
+- **givn:** Fail closed on runner parsing and hook errors
+
+- **explain-command:** Keep e2e evidence with the change after archive
+
+- **release:** Exclude .githooks from the crate package
+
+
+### Documentation
+
+- **upgrade:** Record aggregate migration plan migrate-0-6-0-to-0-7-0
+
+- **explain-command:** Review sign-off, README usage, and primitive inventory
+
+- **explain-command:** Review sign-off and README failure-guidance update
+
+
+### Features
+
+- **explain-command:** Enter closes the explanation card without releasing the command
+
+- **explain-command:** Shell metacharacters and embedded quoting reach the card unchanged
+
+- **explain-command:** A command beginning with a dash passes after the option terminator
+
+- **explain-command:** A command read from standard input keeps its quoting and line breaks
+
+- **explain-command:** A piped command without the marker is explained
+
+- **explain-command:** A positional command takes precedence over standard input
+
+- **explain-command:** Empty input is rejected without opening a card
+
+- **explain-command:** A second positional argument is refused
+
+- **explain-command:** A configured provider without a usable credential is not contacted
+
+- **explain-command:** A failed explanation keeps the command reviewable
+
+- **explain-command:** An explanation that does not cover the command is not trusted
+
+- **explain-command:** Explain never executes the command
+
+- **explain-command:** The explanation card opens even when the review surface is disabled
+
+- **explain-command:** The review-panel switches are inert for explain
+
+- **explain-command:** A terminal is required for the explanation card
+
+- **explain-command:** A malformed configuration file is reported
+
+- **explain-command:** Enter closes the explanation card without releasing the command
+
+- **explain-command:** Shell metacharacters and embedded quoting reach the card unchanged
+
+- **explain-command:** A command beginning with a dash passes after the option terminator
+
+- **explain-command:** A command read from standard input keeps its quoting and line breaks
+
+- **explain-command:** A piped command without the marker is explained
+
+- **explain-command:** A positional command takes precedence over standard input
+
+- **explain-command:** The review-panel switches are inert for explain
+
+- **explain-command:** The explanation card opens even when the review surface is disabled
+
+- **explain-command:** A configured provider without a usable credential is not contacted
+
+- **explain-command:** A failed explanation keeps the command reviewable
+
+- **explain-command:** A network failure reports the mapped exit status
+
+- **explain-command:** An explanation that does not cover the command is not trusted
+
+- **explain-command:** An unconfigured machine starts quick setup instead of explaining
+
+- **explain-command:** An existing configuration without a usable model completes the setup wizard
+
+- **explain-command:** Interrupting the explanation request opens no card
+
+- **explain-command:** A command supplied through standard input without a usable model reports setup guidance
+
+- **explain-command:** An explicit provider selection with a broken configuration reports its error
+
+- **explain-command:** An explicit provider without a resolvable model reports its error
+
+
+### Other Changes
+
+- **explain-command:** Satisfy rustfmt and clippy gates
+
+- **explain-command:** Satisfy rustfmt and record completion evidence
+
 ## [0.4.1] - 2026-09-11
 
 ### Bug Fixes
@@ -1097,3 +1194,5 @@ Bright fireant
 [0.4.0]: https://github.com/buster/watn/compare/v0.3.3...v0.4.0
 
 [0.4.1]: https://github.com/buster/watn/compare/v0.4.0...v0.4.1
+
+[0.5.0]: https://github.com/buster/watn/compare/v0.4.1...v0.5.0
