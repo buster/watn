@@ -251,7 +251,7 @@ Feature: Explain an existing command
     And  no explanation card should open
     And  the exit status should be 2
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicit provider without a resolvable model reports its error
     Given  a configured provider with no default model
     When  I run `watn --provider custom explain` with this single argument in a terminal:
