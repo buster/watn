@@ -133,7 +133,7 @@ Feature: Explain an existing command
     Then watn should report a usage error
     And no explanation card should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: A configured provider without a usable credential is not contacted
     Given a configured provider without a usable credential
     When I run `watn explain` with this single argument:
