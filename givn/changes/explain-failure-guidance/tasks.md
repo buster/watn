@@ -225,13 +225,31 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     24 steps (24 passed)
     exit=0
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `4541b8a`
 
 ## S5: A piped command without the marker is explained (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
+- [x] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "A piped command without the marker is explained"
+       ✘  Then the explanation card should show the stage:
+          Step panicked. Captured output: explanation card should show "ls", got:
+    exit=1
+
+    GREEN: $ ./run-tests.sh --name "A piped command without the marker is explained"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    10 steps (10 passed)
+    exit=0
+
+    REFACTOR: $ ./run-tests.sh --name "A piped command without the marker is explained"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    10 steps (10 passed)
+    exit=0
     ```
 - [ ] COMMIT hash: ``
 
