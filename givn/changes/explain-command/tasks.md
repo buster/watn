@@ -276,21 +276,24 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 7 steps (7 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): Explain never executes the command` → hash: ``
+- [x] COMMIT: `feat(explain-command): Explain never executes the command` → hash: `f47e40f`
 
 ## S13: The explanation card opens even when the review surface is disabled
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "The explanation card opens even when the review surface is disabled"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "The explanation card opens even when the review surface is disabled"`; must exit non-zero.
   - Evidence:
     ```
+    No new steps: the scenario reuses the persisted-disabled Given (interactive_shell_shortcut_steps.rs), the explain When and stage Then (explain_command_steps.rs), and the configuration Then (interactive_shell_shortcut_steps.rs). Removing @wip produced an immediate GREEN (exit 0: 1 scenario (1 passed), 4 steps (4 passed)); there is no RED phase to record for an all-reused scenario.
     ```
-- [ ] GREEN: explain bypasses the persisted review-surface preference; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: explain bypasses the persisted review-surface preference; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): The explanation card opens even when the review surface is disabled` → hash: ``
 
