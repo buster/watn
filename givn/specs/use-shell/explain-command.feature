@@ -125,16 +125,15 @@ Feature: Explain an existing command
 
   Scenario: A configured provider without a usable credential is not contacted
     Given  a configured provider without a usable credential
-    When  I run `watn explain` with this single argument:
+    When  I run `watn explain` with this single argument and let the setup flow start:
       """
       git log --oneline | head -5
       """
-    Then  the explanation card should show the stage:
-      """
-      git log --oneline
-      """
-    And  the explanation card should show purpose-unavailable
+    Then  the setup flow should start
+    And  no explanation card should open
     And  no provider request should have been made
+    When  I abandon the setup flow
+    Then  the exit status should be 1
 
   Scenario: A failed explanation keeps the command reviewable
     Given  a configured provider whose explanation request fails

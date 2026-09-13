@@ -118,7 +118,7 @@ Feature: Explain an existing command
       """
     And  the review surface should be disabled in the configuration
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A configured provider without a usable credential is not contacted
     Given  a configured provider without a usable credential
     When  I run `watn explain` with this single argument and let the setup flow start:
