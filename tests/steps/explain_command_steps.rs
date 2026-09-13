@@ -217,3 +217,13 @@ fn card_shows_stages_separately(world: &mut WatnWorld, first: String, second: St
         "stages {first:?} and {second:?} must not be joined on one line, got:\n{plain}"
     );
 }
+
+#[when(expr = "I run `watn explain` in a terminal with the command {string} piped on standard input")]
+fn run_explain_piped_command(world: &mut WatnWorld, command: String) {
+    let stdin_path = write_explain_stdin(world, &command);
+    world
+        .env_vars
+        .insert("WATN_STDIN".to_string(), stdin_path);
+    prepare_explain_pty(world, r#""$WATN_BIN" explain < "$WATN_STDIN" > "$WATN_OUT""#);
+    close_explain_card(world, "\x1b");
+}
