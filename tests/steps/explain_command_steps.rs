@@ -402,3 +402,22 @@ fn run_explain_no_review_panel(world: &mut WatnWorld, step: &cucumber::gherkin::
     );
     close_explain_card(world, "\x1b");
 }
+
+#[when("I run `watn explain 'echo test'` without a controlling terminal")]
+fn run_explain_without_terminal(world: &mut WatnWorld) {
+    super::run_binary_with_state(world, &["explain", "echo test"], None);
+}
+
+#[then("watn should report that the explanation requires a terminal")]
+fn watn_reports_terminal_required(world: &mut WatnWorld) {
+    assert!(
+        world.exit_status.is_some_and(|status| status != 0),
+        "explain without a terminal should exit non-zero, got {:?}",
+        world.exit_status
+    );
+    let stderr = world.stderr_output.as_deref().unwrap_or_default();
+    assert!(
+        stderr.contains("terminal"),
+        "stderr should report that the explanation requires a terminal, got: {stderr:?}"
+    );
+}

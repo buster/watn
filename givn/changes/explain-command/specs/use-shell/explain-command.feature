@@ -215,7 +215,7 @@ Feature: Explain an existing command
       ls
       """
 
-  @givn.added @wip
+  @givn.added
   Scenario: A terminal is required for the explanation card
     Given no config file exists
     When I run `watn explain 'echo test'` without a controlling terminal
