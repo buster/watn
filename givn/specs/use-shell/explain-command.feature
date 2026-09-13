@@ -87,7 +87,7 @@ Feature: Explain an existing command
     And  the explanation card should show the stages "awk '{print $1}' access.log" and "grep -F 'error' access.log" as separate stages
 
   Scenario: A piped command without the marker is explained
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain` in a terminal with the command "ls | wc -l" piped on standard input
     Then  the explanation card should show the stage:
       """
