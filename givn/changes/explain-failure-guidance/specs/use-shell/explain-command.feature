@@ -104,7 +104,7 @@ Feature: Explain an existing command
       ls
       """
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The explanation card opens even when the review surface is disabled
     Given  a configured provider whose explanation returns no stage purposes
     And  the persisted review surface is disabled

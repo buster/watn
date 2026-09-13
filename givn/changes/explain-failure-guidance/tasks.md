@@ -303,13 +303,50 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     6 steps (6 passed)
     exit=0
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `f90581b`
 
 ## S8: The explanation card opens even when the review surface is disabled (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
+- [x] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "The explanation card opens even when the review surface is disabled"
+      Scenario: The explanation card opens even when the review surface is disabled
+       ✔  Given a configured provider whose explanation returns no stage purposes
+       ✔  And the persisted review surface is disabled
+       ✔  When I run `watn explain` with this single argument:
+       ✔  Then the explanation card should show the stage:
+       ✔  And the review surface should be disabled in the configuration
+    Feature: Explain an existing command
+      Scenario: The explanation card opens even when the review surface is disabled
+       ✔  Given the persisted review surface is disabled
+       ...
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    9 steps (9 passed)
+    exit=0
+    # ANOMALY (recorded, not fabricated): this permanent copy does not fail under
+    # the readiness gate because its `the persisted review surface is disabled`
+    # fixture calls ensure_test_env, which already writes a ready provider
+    # (provider "test", api key "test-key", default_model "test-model"). The
+    # design's lockstep list assumed it assumed an unconfigured machine; it does
+    # not. The scenario is a pure text lockstep re-base with no failing RED.
+
+    GREEN: $ ./run-tests.sh --name "The explanation card opens even when the review surface is disabled"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    10 steps (10 passed)
+    exit=0
+    # permanent copy re-based to carry the explicit ready-provider Given in lockstep
+
+    REFACTOR: $ ./run-tests.sh --name "The explanation card opens even when the review surface is disabled"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    10 steps (10 passed)
+    exit=0
     ```
 - [ ] COMMIT hash: ``
 
