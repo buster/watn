@@ -18,35 +18,44 @@ Design: `givn/changes/explain-command/design.md`.
 
 ## Setup task
 
-- [ ] Create the two step-definition skeleton files from design.md, one per capability:
+- [x] Create the two step-definition skeleton files from design.md, one per capability:
   - `tests/steps/explain_command_steps.rs` (regular), module `explain_command_steps`
   - `tests/steps/explain_command_e2e_steps.rs` (e2e), module `explain_command_e2e_steps`
   Register both in `tests/steps/mod.rs`. New step bodies use `unimplemented!()` until implemented.
-- [ ] Configure the runner and strict mode. Already in place and verified against design.md:
+- [x] Configure the runner and strict mode. Already in place and verified against design.md:
   - `verify.command`: `./run-tests.sh` (`givn/commands.yaml`)
   - `verify.e2e_command`: `./run-tests.sh --e2e` (`givn/commands.yaml`)
   - cucumber-rs strict mode: `.fail_on_skipped()` at `tests/features_runner.rs:210`; runner exits 1 when `stats.skipped > 0` (`tests/features_runner.rs:227`).
-- [ ] Proof-of-strictness: temporarily add a scratch scenario with one undefined step (no `@wip`), run it with `./run-tests.sh --name "<temp title>"`, confirm a NON-ZERO exit, then delete the scratch scenario.
+- [x] Proof-of-strictness: temporarily add a scratch scenario with one undefined step (no `@wip`), run it with `./run-tests.sh --name "<temp title>"`, confirm a NON-ZERO exit, then delete the scratch scenario.
   - Command + output:
     ```
+    ./run-tests.sh --name "Scratch undefined step fails" -> exit 1
+    Scenario: Scratch undefined step fails
+     ✘  Given a step that is not defined anywhere in this project
+        Step failed: Step doesn't match any function
+    [Summary] 1 scenario (1 failed), 1 step (1 failed)
     ```
-- [ ] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` are distinct strings and both currently exit 0 on the unmodified suite.
+- [x] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` are distinct strings and both currently exit 0 on the unmodified suite.
 
 ## S1: Enter closes the explanation card without releasing the command
 
-- [ ] RED: remove `@wip` from this scenario only; run `./run-tests.sh --name "Enter closes the explanation card without releasing the command"`; must exit non-zero.
+- [x] RED: remove `@wip` from this scenario only; run `./run-tests.sh --name "Enter closes the explanation card without releasing the command"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain` with this single argument in a terminal, then press Enter:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: implement the minimum production code (`src/main.rs` explain dispatch, `src/review/panel.rs` terminal predicate, `src/review/mod.rs` exports); replace stubs with real assertions. Production files: `src/main.rs`, `src/review/mod.rs`, `src/review/panel.rs`, `tests/steps/explain_command_steps.rs`, `tests/steps/mod.rs`. Run the single-scenario command; must exit zero.
+- [x] GREEN: implement the minimum production code (`src/main.rs` explain dispatch, `src/review/panel.rs` terminal predicate, `src/review/mod.rs` exports); replace stubs with real assertions. Production files: `src/main.rs`, `src/review/mod.rs`, `src/review/panel.rs`, `tests/steps/explain_command_steps.rs`, `tests/steps/mod.rs`. Run the single-scenario command; must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] REFACTOR: clean up without behaviour change; re-run the single-scenario command; still zero.
+- [x] REFACTOR: clean up without behaviour change; re-run the single-scenario command; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): Enter closes the explanation card without releasing the command` → hash: ``
+- [x] COMMIT: `feat(explain-command): Enter closes the explanation card without releasing the command` → hash: `2ac3c1e`
 
 ## S2: Shell metacharacters and embedded quoting reach the card unchanged
 

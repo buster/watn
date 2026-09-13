@@ -63,3 +63,50 @@ fn command_output_contains_no_command(world: &mut WatnWorld) {
         world.review.command_output
     );
 }
+
+fn card_plain_text(world: &WatnWorld) -> String {
+    let rendered = world.output.clone().unwrap_or_default();
+    let plain = watn::review::sanitize_terminal_text(&rendered);
+    let plain = plain.replace(['│', '┌', '┐', '└', '┘', '─'], " ");
+    plain.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn assert_card_contains(world: &WatnWorld, needle: &str) {
+    let plain = card_plain_text(world);
+    let collapsed = needle.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        plain.contains(&collapsed),
+        "explanation card should show {needle:?}, got:\n{plain}"
+    );
+}
+
+#[when("I run `watn explain` with this single argument:")]
+fn run_explain_single_argument(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    world
+        .env_vars
+        .insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(world, r#""$WATN_BIN" explain "$WATN_COMMAND" > "$WATN_OUT""#);
+    close_explain_card(world, "\x1b");
+}
+
+#[then("the explanation card should show the stage:")]
+fn card_shows_stage(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let needle = step
+        .docstring
+        .as_deref()
+        .expect("stage docstring")
+        .trim()
+        .to_string();
+    assert_card_contains(world, &needle);
+}
+
+#[then("the explanation card should show purpose-unavailable")]
+fn card_shows_purpose_unavailable(world: &mut WatnWorld) {
+    assert_card_contains(world, "purpose-unavailable");
+}
