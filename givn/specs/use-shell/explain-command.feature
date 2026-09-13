@@ -100,7 +100,7 @@ Feature: Explain an existing command
     And  the explanation card should show the stages "ls" and "wc -l" as separate stages
 
   Scenario: A positional command takes precedence over standard input
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run watn explain with the argument "echo positional" in a terminal with the command "echo standard input" on standard input
     Then  the explanation card should show the stage:
       """

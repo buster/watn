@@ -251,13 +251,31 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     10 steps (10 passed)
     exit=0
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `c75bb93`
 
 ## S6: A positional command takes precedence over standard input (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
+- [x] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "A positional command takes precedence over standard input"
+       ✘  Then the explanation card should show the stage:
+          Step panicked. Captured output: explanation card should show "echo positional", got:
+    exit=1
+
+    GREEN: $ ./run-tests.sh --name "A positional command takes precedence over standard input"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    8 steps (8 passed)
+    exit=0
+
+    REFACTOR: $ ./run-tests.sh --name "A positional command takes precedence over standard input"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    8 steps (8 passed)
+    exit=0
     ```
 - [ ] COMMIT hash: ``
 

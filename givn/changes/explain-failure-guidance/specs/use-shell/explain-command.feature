@@ -82,7 +82,7 @@ Feature: Explain an existing command
       """
     And  the explanation card should show the stages "ls" and "wc -l" as separate stages
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A positional command takes precedence over standard input
     Given  a configured provider whose explanation returns no stage purposes
     When  I run watn explain with the argument "echo positional" in a terminal with the command "echo standard input" on standard input
