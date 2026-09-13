@@ -590,8 +590,12 @@ fn watn_reports_missing_credential(_world: &mut WatnWorld) {
 }
 
 #[then("watn should report that the explanation request failed")]
-fn watn_reports_explanation_request_failed(_world: &mut WatnWorld) {
-    unimplemented!()
+fn watn_reports_explanation_request_failed(world: &mut WatnWorld) {
+    let output = watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        output.contains("explain request failed"),
+        "the transcript should report the failed explanation request, got: {output:?}"
+    );
 }
 
 #[then("watn should report that the explanation response was not usable")]

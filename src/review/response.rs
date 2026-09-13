@@ -231,15 +231,31 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
     Some(ReviewCandidate::from_command(trimmed))
 }
 
-/// Apply a provider explanation to a developer-supplied command. The
-/// developer's command is authoritative and is never replaced. Model purposes
-/// are adopted only when the response echoes the command with the locally
-/// derived stages, or when its stage split provably covers the command.
-pub fn apply_explanation(command: &str, raw: &str) -> ReviewCandidate {
+/// The result of applying a provider explanation to a developer-supplied
+/// command. `Ready` carries the command with model-written purposes;
+/// `Unusable` carries the command with local stages and the reason the
+/// provider response could not be trusted.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExplanationOutcome {
+    Ready(ReviewCandidate),
+    Unusable {
+        candidate: ReviewCandidate,
+        reason: ReviewResponseError,
+    },
+}
+
+/// Apply a provider explanation to a developer-supplied command and report
+/// whether the response was usable. The developer's command is authoritative
+/// and is never replaced. Model purposes are adopted only when the response
+/// echoes the command with the locally derived stages, or when its stage
+/// split provably covers the command.
+pub fn apply_explanation_outcome(command: &str, raw: &str) -> ExplanationOutcome {
     let mut candidate = ReviewCandidate::from_command(command);
-    if matches!(candidate.apply_response(raw), ReviewParseResult::Ready) {
-        return candidate;
-    }
+    let reason = match candidate.apply_response(raw) {
+        ReviewParseResult::Ready => return ExplanationOutcome::Ready(candidate),
+        ReviewParseResult::PurposeUnavailable(error) => error,
+        ReviewParseResult::Loading => ReviewResponseError::InvalidLoadingResponse,
+    };
     candidate.mark_unavailable();
     if let Some(payload) = locate_json_payload(raw) {
         if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload) {
@@ -247,10 +263,23 @@ pub fn apply_explanation(command: &str, raw: &str) -> ReviewCandidate {
                 candidate.flow = flow;
                 candidate.stages = stages;
                 candidate.purpose_status = PurposeStatus::Ready;
+                return ExplanationOutcome::Ready(candidate);
             }
         }
     }
-    candidate
+    ExplanationOutcome::Unusable { candidate, reason }
+}
+
+/// Apply a provider explanation to a developer-supplied command. The
+/// developer's command is authoritative and is never replaced. Model purposes
+/// are adopted only when the response echoes the command with the locally
+/// derived stages, or when its stage split provably covers the command.
+pub fn apply_explanation(command: &str, raw: &str) -> ReviewCandidate {
+    match apply_explanation_outcome(command, raw) {
+        ExplanationOutcome::Ready(candidate) | ExplanationOutcome::Unusable { candidate, .. } => {
+            candidate
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -396,8 +425,9 @@ fn unavailable_stages(flow: &CommandFlow) -> Vec<ReviewStage> {
 #[cfg(test)]
 mod tests {
     use super::{
-        candidate_from_provider_response, parse_structured_review_response, PurposeStatus,
-        ReviewCandidate, ReviewParseResult, ReviewResponseError, REVIEW_VERSION,
+        apply_explanation_outcome, candidate_from_provider_response,
+        parse_structured_review_response, ExplanationOutcome, PurposeStatus, ReviewCandidate,
+        ReviewParseResult, ReviewResponseError, REVIEW_VERSION,
     };
 
     const COMMAND: &str = "git log --since='7 days ago' | xargs -n1 git show --stat";
@@ -482,6 +512,31 @@ mod tests {
             candidate.apply_response(loading_without_request),
             ReviewParseResult::PurposeUnavailable(ReviewResponseError::InvalidLoadingResponse)
         ));
+    }
+
+    #[test]
+    fn explanation_outcome_discriminates_ready_and_unusable() {
+        let command = "git log --oneline | head -5";
+        let ready = format!(
+            "{{\"review_version\":1,\"command\":{command},\"stages\":[{{\"stage_text\":\"git log --oneline\",\"purpose\":\"List commits.\"}},{{\"stage_text\":\"head -5\",\"purpose\":\"Keep five.\"}}],\"purpose_status\":\"ready\"}}",
+            command = serde_json::to_string(command).unwrap()
+        );
+        assert!(matches!(
+            apply_explanation_outcome(command, &ready),
+            ExplanationOutcome::Ready(_)
+        ));
+
+        let unusable = r#"{"review_version":1,"command":"git log --oneline","stages":[{"stage_text":"unrelated stage","purpose":"x"}],"purpose_status":"ready"}"#;
+        match apply_explanation_outcome(command, unusable) {
+            ExplanationOutcome::Unusable { candidate, reason } => {
+                assert_eq!(candidate.command, command);
+                assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+                assert_eq!(reason, ReviewResponseError::CommandMismatch);
+            }
+            ExplanationOutcome::Ready(_) => {
+                panic!("a mismatched response must not be trusted")
+            }
+        }
     }
 
     #[test]

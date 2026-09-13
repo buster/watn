@@ -146,6 +146,8 @@ Feature: Explain an existing command
       git log --oneline
       """
     And  the explanation card should show purpose-unavailable
+    And  watn should report that the explanation request failed
+    And  the exit status should be 2
 
   Scenario: An explanation that does not cover the command is not trusted
     Given  a configured provider whose explanation does not cover the command
