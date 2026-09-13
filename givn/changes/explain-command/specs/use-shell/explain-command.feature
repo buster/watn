@@ -74,7 +74,7 @@ Feature: Explain an existing command
       --version
       """
 
-  @givn.added @wip
+  @givn.added
   Scenario: A command read from standard input keeps its quoting and line breaks
     Given no config file exists
     When I run `watn explain -` in a terminal with this command on standard input:

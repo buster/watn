@@ -95,21 +95,26 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 3 steps (3 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A command beginning with a dash passes after the option terminator` → hash: ``
+- [x] COMMIT: `feat(explain-command): A command beginning with a dash passes after the option terminator` → hash: `b4c3ec4`
 
 ## S4: A command read from standard input keeps its quoting and line breaks
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A command read from standard input keeps its quoting and line breaks"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A command read from standard input keeps its quoting and line breaks"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain -` in a terminal with this command on standard input:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: stdin marker `-` handling plus the separate-stage boundary assertion; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: stdin marker `-` handling plus the separate-stage boundary assertion; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+  - Production fix: the first GREEN attempt failed with `explain unavailable: review panel requires a controlling terminal` because `ControllingTerminal::open` checked terminal stdin. Per design.md:354 it now validates the controlling-terminal channel (`explanation_terminal_is_usable()`) in `src/review/panel.rs`, so `watn explain - < file` opens the card.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A command read from standard input keeps its quoting and line breaks` → hash: ``
 
