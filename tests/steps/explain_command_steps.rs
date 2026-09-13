@@ -2,7 +2,7 @@ use cucumber::{given, then, when};
 
 use crate::WatnWorld;
 
-fn prepare_explain_pty(world: &mut WatnWorld, script: &str) {
+pub(crate) fn prepare_explain_pty(world: &mut WatnWorld, script: &str) {
     let _ = std::fs::remove_file("/tmp/watn-explain-should-not-run");
     let _ = std::fs::remove_file("/tmp/watn-explain-enter-should-not-run");
     super::ensure_test_env(world);
@@ -86,8 +86,11 @@ fn command_output_contains_no_command(world: &mut WatnWorld) {
     );
 }
 
-fn card_plain_text(world: &WatnWorld) -> String {
-    let rendered = world.output.clone().unwrap_or_default();
+pub(crate) fn card_plain_text(world: &WatnWorld) -> String {
+    let rendered = match world.pty_session.as_ref() {
+        Some(session) => super::pty_snapshot(session),
+        None => world.output.clone().unwrap_or_default(),
+    };
     let plain = watn::review::sanitize_terminal_text(&rendered);
     let plain = plain.replace(['│', '┌', '┐', '└', '┘', '─'], " ");
     plain.split_whitespace().collect::<Vec<_>>().join(" ")

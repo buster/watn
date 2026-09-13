@@ -2,7 +2,7 @@
 
 Feature: Explain an existing command
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer explains an existing command in the review card
     Given a configured provider whose explanation covers the command:
       """
