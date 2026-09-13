@@ -77,6 +77,12 @@ stdin requests retain the existing command-output behavior; eligible `-x`
 acceptance is the sole execution authorization, while disabled or non-review
 `-x` retains the existing confirmation.
 
+`watn explain` opens the same card in explanation-only mode for a command the
+developer already has. The command is delivered verbatim as one argument, after
+`--`, or on standard input; watn never joins, re-splits, evaluates, or executes
+it. A usable model fills in the Stage purposes; otherwise the card shows the
+locally derived stages with purpose-unavailable, and no command is released.
+
 ## Archive Status
 
 The files in this directory describe the current architecture. Archived givn

@@ -12,13 +12,13 @@ pub use card::{
 };
 pub use flow::{derive_command_flow, CommandFlow, CommandStage, StageSupport, UnsupportedSpan};
 pub use panel::{
-    controlling_terminal_is_usable, sanitize_terminal_text, ControllingTerminal, InlineLayout,
-    InlineReviewPanel, ModelChooser, PanelInputMode, PanelOutcome, ReviewContext, ReviewOperation,
-    ReviewPanelState, TierChoice,
+    controlling_terminal_is_usable, explanation_terminal_is_usable, sanitize_terminal_text,
+    ControllingTerminal, InlineLayout, InlineReviewPanel, ModelChooser, PanelInputMode,
+    PanelOutcome, ReviewContext, ReviewOperation, ReviewPanelState, TierChoice,
 };
 pub use response::{
-    candidate_from_provider_response, parse_structured_review_response, CandidateIdentity,
-    PurposeStatus, ReviewCandidate, ReviewParseResult, ReviewResponse, ReviewResponseError,
-    ReviewStage, REVIEW_VERSION,
+    apply_explanation, candidate_from_provider_response, parse_structured_review_response,
+    CandidateIdentity, PurposeStatus, ReviewCandidate, ReviewParseResult, ReviewResponse,
+    ReviewResponseError, ReviewStage, REVIEW_VERSION,
 };
 pub use routing::{request_route, resolve_review_enabled, RequestRoute};

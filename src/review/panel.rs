@@ -845,15 +845,20 @@ pub fn sanitize_terminal_text(value: &str) -> String {
     sanitized
 }
 
-pub fn controlling_terminal_is_usable() -> bool {
-    io::stdin().is_terminal()
-        && io::stderr().is_terminal()
+/// The explanation path may receive its command from piped standard input, so
+/// only the controlling-terminal channel is required, not a terminal stdin.
+pub fn explanation_terminal_is_usable() -> bool {
+    io::stderr().is_terminal()
         && std::fs::OpenOptions::new()
             .read(true)
             .write(true)
             .open("/dev/tty")
             .is_ok()
         && std::env::var("TERM").as_deref() != Ok("dumb")
+}
+
+pub fn controlling_terminal_is_usable() -> bool {
+    io::stdin().is_terminal() && explanation_terminal_is_usable()
 }
 
 #[cfg(test)]

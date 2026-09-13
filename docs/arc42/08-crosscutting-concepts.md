@@ -185,6 +185,36 @@ reference is authoritative. Only an absent `api_key` permits provider-specific
 fallback followed by generic `WATN_API_KEY`. Readiness never consults the
 ephemeral E2E transport override.
 
+## Verbatim command delivery for explanation
+
+`watn explain` explains a command the developer already has, so the command is
+authoritative. The shell performs quoting and expansion before watn starts;
+watn receives the command as one literal argument or as literal standard-input
+bytes and never joins, re-splits, evaluates, or executes it. The supported
+forms are a single-quoted positional argument (canonical), a double-quoted
+argument when only single quotes need carrying, `--` before a command that
+begins with `-`, the `-` marker or piped standard input for a quoted heredoc,
+and `watn explain - <<'EOF'` for embedded single quotes, newlines, `$`, and
+backticks. A positional argument other than `-` takes precedence and standard
+input is not read. Empty input is a usage error, and one trailing `\n` or
+`\r\n` is removed from standard input. A second positional argument is refused
+rather than joined, because joining would silently change token boundaries.
+
+Because the caller's shell expands `$`, backticks, and `$(...)` before watn
+starts, watn cannot prevent that expansion; it only guarantees the bytes it
+receives. The explanation card shows those received bytes, so the developer can
+verify the command. The model's own command text is never displayed or adopted;
+model-written purposes survive only as an exact echo of the command and stages,
+or as an ordered, non-overlapping, verbatim stage cover with a non-empty purpose
+per stage. `-x` is rejected for explain, and no path executes the command.
+
+The explanation card needs a controlling terminal but not terminal stdin: the
+stdin/heredoc form pipes the command while the card renders and reads keys
+through `/dev/tty`. Its eligibility predicate is terminal stderr, `TERM` not
+`dumb`, and an open `/dev/tty`; the generated-command review gate additionally
+requires terminal stdin. A missing terminal is a non-zero diagnostic and no
+card opens.
+
 ## Transport isolation
 
 The endpoint override is a compile-time test capability, not a configuration

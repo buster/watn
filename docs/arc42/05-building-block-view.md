@@ -39,6 +39,7 @@ graph TB
     Shortcut --> LineEditor
     LineEditor --> CLI
     CLI --> Review[Review surface<br/>(Candidate state + panel)]
+    CLI -->|"watn explain <command>"| Review
     Review --> Output
 ```
 
@@ -51,7 +52,7 @@ graph TB
 | Provider Setup | Guide explicit provider identity, endpoint, and credential selection in a TTY, validate input, return a typed result, migrate the selected provider to its canonical name at final confirmation, and restore the terminal on every exit |
 | Setup Wizard | Own the coordinated draft, focused provider/model/shell ranges, separate model/reasoning questions, catalog status, review, back-navigation, shell desired state, and the shared setup visual language; shell pages list detected shells (PATH binaries plus existing managed blocks) preselected for direct toggling; no coordinated field is saved before final confirmation |
 | Output | Flush each command content chunk once, own spinner finish/clear behavior, and render final metadata separately after successful completion |
-| Review surface | Own review eligibility, buffered Candidate state, Command flow derivation, Purpose status, direct decision keys, the simple and detailed review views, Candidate replacement through the in-card model chooser, acceptance/cancellation outcomes, the permanent-disable release of the current Candidate to the command-output channel, and transient inline terminal rendering; never execute or write review-surface text to stdout |
+| Review surface | Own review eligibility, buffered Candidate state, Command flow derivation, Purpose status, direct decision keys, the simple and detailed review views, Candidate replacement through the in-card model chooser, acceptance/cancellation outcomes, the permanent-disable release of the current Candidate to the command-output channel, the explanation-only card for a developer-supplied command, and transient inline terminal rendering; never execute or write review-surface text to stdout |
 | Review card renderer | Render the framed card as the only review surface in two views: a simple default with the model short name, the windowed Stage stack with separators and selected-stage arrow, and the selected Stage purpose below the stack, and a detailed view adding Intent, the same stack, the full decision hints, and the model chooser tiers/search/picks with the active model marked; no separate flow or stage position rows and no support marker; color is a property of the terminal, not an adapter choice |
 | Command flow | Split a Candidate conservatively into visible stages and operators, preserve exact Stage text, and track unsupported portions without claiming semantic safety or marking them in the review surface |
 | Structured review response | Validate the review-mode provider response, retain model-written Stage purposes, reject stale or mismatched purpose data, and expose `ready`, `loading`, or `purpose-unavailable` status |

@@ -15,6 +15,7 @@ graph TB
     LineEditor["Bash Readline / Zsh ZLE / Fish commandline"]
 
     User -->|"question via args/stdin"| CLI
+    User -->|"watn explain <command> / -- / stdin"| CLI
     User -->|"watn completions <SHELL>"| CLI
     User -->|"provider, model, reasoning, and shell setup input"| CLI
     User -->|"rerun the original request after successful automatic setup"| CLI
@@ -31,6 +32,7 @@ graph TB
     LineEditor -->|"Ctrl-W current buffer"| CLI
     CLI -->|"replacement buffer text"| LineEditor
     CLI -->|"transient review surface on controlling-terminal channel"| LineEditor
+    CLI -->|"explanation-only review card on controlling-terminal channel"| User
     API -->|"SSE content events and [DONE]"| CLI
     Catalog -->|"model list"| CLI
     Shell -->|"command output"| User
@@ -40,7 +42,7 @@ graph TB
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`, review override, flag-only review switch); review decision keys (`e`/`r`/`c`, `d`/`?` view toggle, `D` disable review) and model-choice input in the review card; setup commands; one-question navigation and editing; typed model filter queries | In non-review mode, incrementally flushed shell command content on stdout and final metadata on stderr; in eligible review mode, a complete Candidate after `[DONE]`, a simple or detailed transient review surface on the controlling-terminal channel, and only the accepted Candidate or the Candidate released by a permanent review disable on the command-output channel; focused setup flows, first-run setup, guidance, or the existing confirmation prompt |
+| Developer | Positional question, stdin, flags (`-1`/`-2`/`-3`, `-x`, `--model`, `--provider`, review override, flag-only review switch); one existing command through `watn explain` as a single argument, after `--`, or on stdin; review decision keys (`e`/`r`/`c`, `d`/`?` view toggle, `D` disable review) and model-choice input in the review card; setup commands; one-question navigation and editing; typed model filter queries | In non-review mode, incrementally flushed shell command content on stdout and final metadata on stderr; in eligible review mode, a complete Candidate after `[DONE]`, a simple or detailed transient review surface on the controlling-terminal channel, and only the accepted Candidate or the Candidate released by a permanent review disable on the command-output channel; for `watn explain`, an explanation-only review card on the controlling-terminal channel with no command released to stdout; focused setup flows, first-run setup, guidance, or the existing confirmation prompt |
 | Shell user / completion caller | `watn completions <SHELL>` with one of `bash`, `elvish`, `fish`, `powershell`, or `zsh` | The selected shell's completion script on stdout only; the caller installs or sources it |
 | LLM provider and provider-local catalog | API key, completion endpoint, provider-local catalog endpoint, search query | HTTP POST to `/v1/chat/completions` and HTTP GET to `/models`, paginated `/models`, and `/models?search=...`; the same provider credential is used and catalog requests never receive chat completions |
 | System shell | Confirmation response (`y`/`n`/Enter) | Executed command (when confirmed) |
@@ -74,3 +76,4 @@ graph TB
 | Completion output | Generated Bash, Elvish, Fish, PowerShell, or Zsh script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |
 | Shell widget boundary | Native line-editor buffer plus `watn` on `PATH` | Reads one quoted question, captures stdout, keeps stderr visible, and replaces/repaints only after zero status and non-empty output |
 | Review surface boundary | Controlling-terminal channel, ANSI redraw, and review keys | Shows a small transient Command flow review in a simple default view or a detailed view without writing review-surface text to stdout; direct decision keys accept/edit/reject/cancel, switch the view, or disable the review permanently with the current Candidate released to the command-output channel, rejection opens a model chooser, and the typed results are `Accepted(candidate)`, `Cancelled`, `RejectRequested`, `RegenerateWith`, `DisableReviewPermanently`, or `Unavailable` |
+| Explanation entry point | One developer-supplied command as a single CLI argument, after `--`, or on standard input | Opens the explanation-only review card on the controlling-terminal channel; the command is delivered verbatim, never evaluated or executed, and no command is released to stdout |

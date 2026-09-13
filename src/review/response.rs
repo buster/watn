@@ -231,6 +231,28 @@ pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
     Some(ReviewCandidate::from_command(trimmed))
 }
 
+/// Apply a provider explanation to a developer-supplied command. The
+/// developer's command is authoritative and is never replaced. Model purposes
+/// are adopted only when the response echoes the command with the locally
+/// derived stages, or when its stage split provably covers the command.
+pub fn apply_explanation(command: &str, raw: &str) -> ReviewCandidate {
+    let mut candidate = ReviewCandidate::from_command(command);
+    if matches!(candidate.apply_response(raw), ReviewParseResult::Ready) {
+        return candidate;
+    }
+    candidate.mark_unavailable();
+    if let Some(payload) = locate_json_payload(raw) {
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload) {
+            if let Some((flow, stages)) = provider_stage_split(&candidate.command, &value) {
+                candidate.flow = flow;
+                candidate.stages = stages;
+                candidate.purpose_status = PurposeStatus::Ready;
+            }
+        }
+    }
+    candidate
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReviewCandidate {
     pub command: String,

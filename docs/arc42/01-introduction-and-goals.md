@@ -37,6 +37,7 @@ Top requirements:
 37. An enabled interactive request may open a small transient inline review surface after a complete candidate reaches `[DONE]`; the surface shows command flow, exact stage text, and model-written advisory stage purposes, supports refinement, and releases a command only after explicit acceptance
 38. Ctrl-W review preserves the original request in shell history, replaces the shell line-editor buffer only with the accepted Candidate, and never evaluates review output
 39. Review-mode output is buffered until `[DONE]`; review-surface bytes use the controlling-terminal channel and never stdout, while direct positional, interactive-stdin, and eligible `-x` consumers retain their existing output boundaries
+40. `watn explain` must open the explanation-only review card for a developer-supplied command, deliver that command verbatim as one argument, after `--`, or through standard input, never join, re-split, evaluate, or execute it, and show purpose-unavailable when no usable model is available
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 

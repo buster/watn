@@ -80,6 +80,11 @@
 | R-078 | A permanent review disable may release a Candidate the developer did not intend to use | Low | Low | The release follows an explicit `D` decision, ends the invocation immediately, never executes the Candidate, and names the re-enable switch on stderr |
 | R-079 | A catalog may publish pricing in a shape or unit other than the OpenRouter-style per-token fields, and a captured price would then be wrong | Low | Medium | Parse only the documented `pricing.prompt`/`pricing.completion` fields, treat negative components as absent, keep `CatalogPrice` separate from the persisted `ModelPricing` unit, and cover the conversion with a live-catalog-derived fixture |
 | R-080 | The project-owned runner can drift from the Givn 0.7.0 result contract or report counts that misclassify scenario outcomes | Medium | Medium | Counts come from the runner's own scenario statistics (`scenarios_stats()`); the runner's exit condition includes parsing and hook errors (`Writer::execution_has_failed()`) as well as failed steps; Givn rejects missing, malformed, failed, skipped, zero, or non-reconciling results; both scopes are validated manually before the next archive |
+| R-081 | The `explain` subcommand shadows natural-language questions whose first token is that word | Medium | Medium | Document the intentional reservation like the `completions` token; require a quoted question or `--` separator for a question beginning with `explain` |
+| R-082 | The caller's shell expands `$`, backticks, or `$(...)` before watn starts, so a command can reach the card already changed | Medium | High | Document single-quoted and quoted-heredoc forms for every expansion case; the card displays the bytes watn actually received so the developer can verify the command; watn makes no claim beyond argv |
+| R-083 | The single-argument rule rejects an unquoted multi-word command that the question path would have joined | Medium | Low | Return a usage error naming the quoting requirement instead of silently joining words; the error is deliberate because joining changes token boundaries |
+| R-084 | A model may echo a different command or fabricate stage purposes for an existing command | Medium | Medium | `apply_explanation` never replaces the developer's command and adopts purposes only for an exact echo or an ordered, non-overlapping, verbatim stage cover with a non-empty purpose per stage; otherwise purpose-unavailable |
+| R-085 | The standard-input form pipes the command while the card still needs terminal input and rendering | Low | Medium | Use an explain-specific eligibility predicate (terminal stderr, `TERM` not `dumb`, open `/dev/tty`) and cover the stdin form with a real PTY whose stdin is redirected from a file |
 
 ## Technical debt
 
@@ -187,6 +192,30 @@ The following consequences are accepted and mitigated explicitly:
   release only the accepted Candidate, eligible `-x` treats acceptance as its
   sole authorization, and disabled/non-review `-x` retains confirmation. R-075
   covers accidental boundary sharing.
+
+## Command-explanation consequence coverage
+
+The `watn explain` decision is recorded in
+`givn/changes/explain-command/design.md` (the qualification gate routed it
+there; its observable contract is owned by the `explain-command` Gherkin
+scenarios). Its durable consequences:
+
+- Reserved token: `explain` becomes a subcommand and changes how an unquoted
+  question beginning with that word is parsed; R-081 makes the quote/`--`
+  consequence visible.
+- Shell expansion boundary: expansion of `$`, backticks, and `$(...)` happens
+  in the caller's shell before watn starts; the documented single-quote and
+  quoted-heredoc forms plus the displayed received bytes are the only
+  mitigation. R-082 covers it.
+- Strict single-argument rule: unquoted multi-word commands are rejected
+  instead of joined, because joining changes token boundaries; R-083 records
+  the stricter-than-question-path behavior.
+- Model fidelity: the model can echo a different command or invent purposes;
+  `apply_explanation` keeps the developer's command authoritative and drops
+  purposes that do not provably cover it. R-084 covers the failure mode.
+- Terminal eligibility: the standard-input form needs a controlling terminal
+  without terminal stdin; the explain-specific predicate and PTY coverage are
+  the fix. R-085 covers it.
 
 ## ADR-0017 consequence coverage
 

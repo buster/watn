@@ -11,7 +11,7 @@ use crate::provider::{Message, Provider, RequestOptions, StreamEvent, StreamingR
 
 use super::buffer::ReviewBuffer;
 use super::panel::TierChoice;
-use super::response::{candidate_from_provider_response, ReviewCandidate};
+use super::response::{apply_explanation, candidate_from_provider_response, ReviewCandidate};
 
 const CANCEL_GRACE: Duration = Duration::from_millis(500);
 const CANCEL_POLL: Duration = Duration::from_millis(20);
@@ -80,6 +80,27 @@ pub fn parse_generated_candidate(generation: &Generation) -> Option<ReviewCandid
     let mut buffer = generation.buffer.clone();
     buffer.complete();
     candidate_from_provider_response(buffer.candidate()?)
+}
+
+/// Fetch an explanation for a developer-supplied command and apply it to the
+/// locally derived candidate. Provider failure keeps the command with
+/// unavailable purposes.
+pub fn explain_command_candidate(
+    provider: &dyn Provider,
+    command: &str,
+    messages: &[Message],
+    options: &RequestOptions,
+    interrupt: &Arc<AtomicBool>,
+    spinner: Option<Spinner>,
+) -> ReviewCandidate {
+    match generate_candidate(provider, messages, options, interrupt, spinner) {
+        Ok(generation) => {
+            let mut buffer = generation.buffer.clone();
+            buffer.complete();
+            apply_explanation(command, buffer.candidate().unwrap_or_default())
+        }
+        Err(_) => ReviewCandidate::from_command(command),
+    }
 }
 
 /// The configured model tiers in small/normal/thinking order.
