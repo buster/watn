@@ -189,7 +189,7 @@ Feature: Explain an existing command
     And  the review surface should be disabled in the configuration
 
   Scenario: The review-panel switches are inert for explain
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain --no-review-panel` with this single argument:
       """
       ls

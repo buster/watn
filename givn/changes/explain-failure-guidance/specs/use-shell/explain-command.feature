@@ -92,7 +92,7 @@ Feature: Explain an existing command
       """
     And  the explanation card should not show the text "echo standard input"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The review-panel switches are inert for explain
     Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain --no-review-panel` with this single argument:
