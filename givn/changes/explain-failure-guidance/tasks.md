@@ -277,13 +277,31 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     8 steps (8 passed)
     exit=0
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `80e8d8f`
 
 ## S7: The review-panel switches are inert for explain (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
+- [x] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "The review-panel switches are inert for explain"
+       ✘  When I run `watn explain --no-review-panel` with this single argument:
+          Step panicked. Captured output: PTY did not render label "esc close"; output: ""
+    exit=1
+
+    GREEN: $ ./run-tests.sh --name "The review-panel switches are inert for explain"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    6 steps (6 passed)
+    exit=0
+
+    REFACTOR: $ ./run-tests.sh --name "The review-panel switches are inert for explain"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    6 steps (6 passed)
+    exit=0
     ```
 - [ ] COMMIT hash: ``
 
