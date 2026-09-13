@@ -334,3 +334,13 @@ fn configured_provider_request_fails(world: &mut WatnWorld) {
     world.pending_mock_model = Some("test-model".to_string());
     world.pending_mock_output = Some("output".to_string());
 }
+
+#[given("a configured provider whose explanation does not cover the command")]
+fn configured_provider_not_covering(world: &mut WatnWorld) {
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some(
+        r#"{"review_version":1,"command":"git log --oneline","stages":[{"stage_text":"unrelated stage","purpose":"not covering"}],"purpose_status":"ready"}"#
+            .to_string(),
+    );
+    world.pending_mock_usage = Some(false);
+}

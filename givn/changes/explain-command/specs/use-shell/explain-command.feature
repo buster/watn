@@ -160,7 +160,7 @@ Feature: Explain an existing command
       """
     And the explanation card should show purpose-unavailable
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explanation that does not cover the command is not trusted
     Given a configured provider whose explanation does not cover the command
     When I run `watn explain` with this single argument:

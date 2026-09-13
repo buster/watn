@@ -236,21 +236,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): A failed explanation keeps the command reviewable` → hash: ``
+- [x] COMMIT: `feat(explain-command): A failed explanation keeps the command reviewable` → hash: `a25714b`
 
 ## S11: An explanation that does not cover the command is not trusted
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "An explanation that does not cover the command is not trusted"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "An explanation that does not cover the command is not trusted"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ Given a configured provider whose explanation does not cover the command
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: strict `apply_explanation` trust rules (exact echo or verbatim covering split); production code in `src/review/response.rs`, `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: strict `apply_explanation` trust rules (exact echo or verbatim covering split); production code in `src/review/response.rs`, `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 5 steps (5 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): An explanation that does not cover the command is not trusted` → hash: ``
 
