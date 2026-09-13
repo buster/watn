@@ -70,7 +70,7 @@ Feature: Explain an existing command
       """
 
   Scenario: A command read from standard input keeps its quoting and line breaks
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain -` in a terminal with this command on standard input:
       """
       awk '{print $1}' access.log

@@ -187,13 +187,43 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     6 steps (6 passed)
     exit=0
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `55e5123`
 
 ## S4: A command read from standard input keeps its quoting and line breaks (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
+- [x] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "A command read from standard input keeps its quoting and line breaks"
+      Scenario: A command read from standard input keeps its quoting and line breaks
+       ✘  When I run `watn explain -` in a terminal with this command on standard input:
+          Step panicked. Captured output: explain temp dir
+    Feature: Explain an existing command
+       ✘  Then the explanation card should show the stage:
+          Step panicked. Captured output: explanation card should show "awk '{print $1}' access.log", got:
+    exit=1
+
+    GREEN: $ ./run-tests.sh --name "A command read from standard input keeps its quoting and line breaks"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    10 steps (10 passed)
+    exit=0
+    # ready-provider Given now materializes the isolated config/temp dir; permanent copy re-based
+
+    REFACTOR: $ ./run-tests.sh --name "A command read from standard input keeps its quoting and line breaks"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    10 steps (10 passed)
+    exit=0
+
+    regression: $ ./run-tests.sh --name "Enter closes the explanation card|Shell metacharacters and embedded"
+    [Summary]
+    2 features
+    4 scenarios (4 passed)
+    24 steps (24 passed)
+    exit=0
     ```
 - [ ] COMMIT hash: ``
 
