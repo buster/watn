@@ -348,21 +348,55 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     10 steps (10 passed)
     exit=0
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `d8e6da8`
 
 ## S9: A configured provider without a usable credential is not contacted (@givn.modified)
 
-- [ ] RED: remove `@wip`; targeted run must fail (setup-delegation steps unimplemented).
+- [x] RED: remove `@wip`; targeted run must fail (setup-delegation steps unimplemented).
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A configured provider without a usable credential is not contacted"
+      Scenario: A configured provider without a usable credential is not contacted
+       ✘  When I run `watn explain` with this single argument and let the setup flow start:
+          Matched: tests/steps/explain_command_steps.rs:480:1
+          Step panicked. Captured output: not implemented
+    Feature: Explain an existing command
+       ✘  When I run `watn explain` with this single argument:
+          Step panicked. Captured output: PTY did not render label "esc close"; output: "warning: config file is world-readable (644)\r\n"
+    [Summary]
+    2 scenarios (2 failed)
+    6 steps (4 passed, 2 failed)
+    exit=1
     ```
-- [ ] GREEN: readiness delegation in `run_explain_command` (terminal stdin + config -> setup wizard; after cancel -> exit 1); new setup steps; permanent lockstep. Targeted run zero.
+- [x] GREEN: readiness delegation in `run_explain_command` (terminal stdin + config -> setup wizard; after cancel -> exit 1); new setup steps; permanent lockstep. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A configured provider without a usable credential is not contacted"
+      Scenario: A configured provider without a usable credential is not contacted
+       ✔  Given a configured provider without a usable credential
+       ✔  When I run `watn explain` with this single argument and let the setup flow start:
+       ✔  Then the setup flow should start
+       ✔  And no explanation card should open
+       ✔  And no provider request should have been made
+       ✔  When I abandon the setup flow
+       ✔  Then the exit status should be 1
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    14 steps (14 passed)
+    exit=0
+    # new steps: let the setup flow start / the setup flow should start / I abandon the setup flow;
+    # no explanation card should open now also inspects the live PTY snapshot; permanent copy re-based
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A configured provider without a usable credential is not contacted"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    14 steps (14 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): A configured provider without a usable credential is not contacted` -> hash: ``
 

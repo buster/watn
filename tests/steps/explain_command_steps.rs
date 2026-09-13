@@ -317,10 +317,14 @@ fn watn_reports_usage_error(world: &mut WatnWorld) {
 
 #[then("no explanation card should open")]
 fn no_explanation_card(world: &mut WatnWorld) {
-    let output = world.output.as_deref().unwrap_or_default();
+    let mut output = world.output.clone().unwrap_or_default();
+    if let Some(session) = world.pty_session.as_ref() {
+        output.push_str(&super::pty_snapshot(session));
+    }
+    let plain = watn::review::sanitize_terminal_text(&output);
     assert!(
-        !output.contains("esc close"),
-        "no explanation card should open, got:\n{output}"
+        !output.contains("esc close") && !plain.contains("esc close"),
+        "no explanation card should open, got:\n{plain}"
     );
 }
 
@@ -478,9 +482,17 @@ fn configured_provider_no_default_model(_world: &mut WatnWorld) {
 }
 
 #[when("I run `watn explain` with this single argument and let the setup flow start:")]
-fn run_explain_let_setup_flow_start(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_let_setup_flow_start(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    world.env_vars.insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(world, r#""$WATN_BIN" explain "$WATN_COMMAND""#);
+    let session = world.pty_session.as_ref().expect("setup flow PTY session");
+    super::pty_wait_for_label(session, "watn · setup");
 }
 
 #[when("I run `watn explain` with this single argument and let quick setup start:")]
@@ -522,13 +534,39 @@ fn run_explain_provider_custom(_world: &mut WatnWorld, step: &cucumber::gherkin:
 }
 
 #[when("I abandon the setup flow")]
-fn abandon_setup_flow(_world: &mut WatnWorld) {
-    unimplemented!()
+fn abandon_setup_flow(world: &mut WatnWorld) {
+    let session = world.pty_session.as_mut().expect("setup flow PTY session");
+    super::pty_write(session, "\x1b");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = watn::review::sanitize_terminal_text(&super::pty_snapshot(session));
+        if output.contains("n discard") && output.contains("return") {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "save/discard prompt was not rendered: {output:?}"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+    super::pty_write(session, "n");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let session = world.pty_session.take().expect("setup flow PTY session");
+    super::finish_pty_session(world, session);
 }
 
 #[then("the setup flow should start")]
-fn setup_flow_should_start(_world: &mut WatnWorld) {
-    unimplemented!()
+fn setup_flow_should_start(world: &mut WatnWorld) {
+    let session = world.pty_session.as_ref().expect("setup flow PTY session");
+    let output = watn::review::sanitize_terminal_text(&super::pty_snapshot(session));
+    assert!(
+        output.contains("watn · setup"),
+        "the setup flow should render its frame, got: {output:?}"
+    );
+    assert!(
+        !output.contains("esc close"),
+        "the setup flow should not open the explanation card, got: {output:?}"
+    );
 }
 
 #[then("watn should report that setup is complete and the command must be rerun")]
