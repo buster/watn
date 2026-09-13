@@ -292,3 +292,8 @@ fn no_explanation_card(world: &mut WatnWorld) {
         "no explanation card should open, got:\n{output}"
     );
 }
+
+#[when(expr = "I run watn explain with the arguments {string} and {string}")]
+fn run_explain_two_arguments(world: &mut WatnWorld, first: String, second: String) {
+    super::run_binary_with_state(world, &["explain", &first, &second], None);
+}
