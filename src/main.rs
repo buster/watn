@@ -862,8 +862,7 @@ fn run_explain_command(
         provider.is_some() || explicit_model.is_some() || std::env::var("WATN_PROVIDER").is_ok();
 
     if !explicit_selection
-        && (!config::provider_ready(&config, &provider_name)
-            || !config::model_roles_ready(&config))
+        && (!config::provider_ready(&config, &provider_name) || !config::model_roles_ready(&config))
     {
         if !std::io::stdin().is_terminal() {
             watn::provider::setup::print_setup_guidance();
