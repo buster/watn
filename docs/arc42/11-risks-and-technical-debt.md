@@ -85,6 +85,9 @@
 | R-083 | The single-argument rule rejects an unquoted multi-word command that the question path would have joined | Medium | Low | Return a usage error naming the quoting requirement instead of silently joining words; the error is deliberate because joining changes token boundaries |
 | R-084 | A model may echo a different command or fabricate stage purposes for an existing command | Medium | Medium | `apply_explanation` never replaces the developer's command and adopts purposes only for an exact echo or an ordered, non-overlapping, verbatim stage cover with a non-empty purpose per stage; otherwise purpose-unavailable |
 | R-085 | The standard-input form pipes the command while the card still needs terminal input and rendering | Low | Medium | Use an explain-specific eligibility predicate (terminal stderr, `TERM` not `dumb`, open `/dev/tty`) and cover the stdin form with a real PTY whose stdin is redirected from a file |
+| R-086 | `watn explain` now writes configuration through quick setup or the setup wizard when no usable model is configured, so a read-only-feeling command can mutate the user's configuration and shell integrations | Medium | High | Reuse the question path's exact TTY-gated setup surfaces and persistence boundaries; keep the delegation visible with the rerun hint; the card path itself performs no write, and the guidance path writes nothing |
+| R-087 | A failed explanation request now exits non-zero after the card closes, changing the exit status for scripts that relied on the previous success status | Medium | Low | Report the failure on stderr, keep the card and stdout behaviour unchanged, apply the mapped status only after the card closes, and document the status per error category |
+| R-088 | An unusable explanation response stays exit 0 while printing a diagnostic, so a script cannot distinguish it from a fully explained command | Low | Low | Treat the response as a successful request with deliberate safe degradation; the stderr diagnostic and the card's purpose-unavailable status are the observable signal, consistent with the existing untrusted-response contract |
 
 ## Technical debt
 
@@ -196,7 +199,7 @@ The following consequences are accepted and mitigated explicitly:
 ## Command-explanation consequence coverage
 
 The `watn explain` decision is recorded in
-`givn/changes/explain-command/design.md` (the qualification gate routed it
+`givn/archive/explain-command/design.md` (the qualification gate routed it
 there; its observable contract is owned by the `explain-command` Gherkin
 scenarios). Its durable consequences:
 
@@ -216,6 +219,23 @@ scenarios). Its durable consequences:
 - Terminal eligibility: the standard-input form needs a controlling terminal
   without terminal stdin; the explain-specific predicate and PTY coverage are
   the fix. R-085 covers it.
+
+The `explain-failure-guidance` change amends the readiness and failure
+consequences of that decision; its rationale is recorded in
+`givn/changes/explain-failure-guidance/design.md` (the qualification gate again
+routed it there; the observable contract is owned by the updated
+`explain-command` scenarios):
+
+- Readiness delegation: with no usable model and no explicit selection, explain
+  reuses the question path's setup trigger and never opens the card. The
+  configuration-writing side effect and the deliberate no-resume contract are
+  the durable costs; R-086 and the rerun hint make them visible.
+- Failure visibility: a failed explanation request keeps the card reviewable
+  but prints `explain request failed` on stderr and exits with the mapped
+  status after the card closes; R-087 covers the exit-status change.
+- Unusable responses: a response that is not usable as an explanation is named
+  on stderr while the invocation still exits 0, preserving the existing
+  untrusted-response contract; R-088 covers the residual script ambiguity.
 
 ## ADR-0017 consequence coverage
 

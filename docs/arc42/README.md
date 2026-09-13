@@ -80,8 +80,12 @@ acceptance is the sole execution authorization, while disabled or non-review
 `watn explain` opens the same card in explanation-only mode for a command the
 developer already has. The command is delivered verbatim as one argument, after
 `--`, or on standard input; watn never joins, re-splits, evaluates, or executes
-it. A usable model fills in the Stage purposes; otherwise the card shows the
-locally derived stages with purpose-unavailable, and no command is released.
+it. A usable model fills in the Stage purposes; when no usable model is
+configured and no provider or model was explicitly selected, watn starts quick
+setup or the setup wizard, or prints setup guidance, instead of opening the
+card. A failed explanation request keeps the command reviewable with
+purpose-unavailable and reports the failure with the mapped exit status; an
+unusable response is named on stderr and still exits 0. No command is released.
 
 ## Archive Status
 
