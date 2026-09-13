@@ -962,15 +962,30 @@ fn run_explain_command(
     let provider = registry
         .get(&provider_name)
         .expect("the active provider is registered");
-    let candidate = watn::review::session::explain_command_candidate(
+    let outcome = watn::review::session::explain_command_candidate(
         provider, &command, &messages, &options, &interrupt, spinner,
     );
+
+    let (candidate, failure_status) = match outcome {
+        Ok(watn::review::ExplanationOutcome::Ready(candidate)) => (candidate, None),
+        Ok(watn::review::ExplanationOutcome::Unusable { candidate, .. }) => (candidate, None),
+        Err(error) => {
+            if matches!(error, watn::error::Error::Interrupted) {
+                std::process::exit(130);
+            }
+            eprintln!("explain request failed: {error}");
+            (
+                watn::review::ReviewCandidate::from_command(&command),
+                Some(exit_code(&error)),
+            )
+        }
+    };
 
     if let Err(error) = run_explanation_card(candidate, context) {
         eprintln!("explain unavailable: {error}");
         std::process::exit(1);
     }
-    std::process::exit(0);
+    std::process::exit(failure_status.unwrap_or(0));
 }
 
 #[allow(clippy::too_many_arguments)]

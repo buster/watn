@@ -131,7 +131,7 @@ Feature: Explain an existing command
     When  I abandon the setup flow
     Then  the exit status should be 1
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A failed explanation keeps the command reviewable
     Given  a configured provider whose explanation request fails
     When  I run `watn explain` with this single argument:

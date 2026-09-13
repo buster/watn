@@ -398,21 +398,53 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     14 steps (14 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): A configured provider without a usable credential is not contacted` -> hash: ``
+- [x] COMMIT: `feat(explain-command): A configured provider without a usable credential is not contacted` -> hash: `0104fc0`
 
 ## S10: A failed explanation keeps the command reviewable (@givn.modified)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A failed explanation keeps the command reviewable"
+      Scenario: A failed explanation keeps the command reviewable
+       ✘  And watn should report that the explanation request failed
+          Matched: tests/steps/explain_command_steps.rs:592:1
+          Step panicked. Captured output: not implemented
+    [Summary]
+    9 steps (8 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: request-failure outcome + stderr diagnostic + exit code after the card closes (`src/main.rs`, `src/review/session.rs`). Targeted run zero.
+- [x] GREEN: request-failure outcome + stderr diagnostic + exit code after the card closes (`src/main.rs`, `src/review/session.rs`). Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A failed explanation keeps the command reviewable"
+      Scenario: A failed explanation keeps the command reviewable
+       ✔  Given a configured provider whose explanation request fails
+       ✔  When I run `watn explain` with this single argument:
+       ✔  Then the explanation card should show the stage:
+       ✔  And the explanation card should show purpose-unavailable
+       ✔  And watn should report that the explanation request failed
+       ✔  And the exit status should be 2
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    12 steps (12 passed)
+    exit=0
+    # ExplanationOutcome + apply_explanation_outcome (src/review/response.rs);
+    # explain_command_candidate -> Result<ExplanationOutcome, Error> (src/review/session.rs);
+    # failure status applied after run_explanation_card (src/main.rs); permanent copy re-based
+    $ cargo test --locked --lib
+    test result: ok. 87 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A failed explanation keeps the command reviewable"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    12 steps (12 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): A failed explanation keeps the command reviewable` -> hash: ``
 
