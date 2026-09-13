@@ -17,6 +17,7 @@ exclude = [
     "preview.gif",
     "givn/",
     "docs/",
+    ".githooks/",
     ".agents/",
     ".claude/",
     ".opencode/",
