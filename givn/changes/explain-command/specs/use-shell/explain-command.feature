@@ -203,7 +203,7 @@ Feature: Explain an existing command
       """
     And the review surface should be disabled in the configuration
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review-panel switches are inert for explain
     Given no config file exists
     When I run `watn explain --no-review-panel` with this single argument:

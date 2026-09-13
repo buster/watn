@@ -295,21 +295,25 @@ Design: `givn/changes/explain-command/design.md`.
     ```
     exit 0: 1 scenario (1 passed), 4 steps (4 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): The explanation card opens even when the review surface is disabled` → hash: ``
+- [x] COMMIT: `feat(explain-command): The explanation card opens even when the review surface is disabled` → hash: `75fc633`
 
 ## S14: The review-panel switches are inert for explain
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "The review-panel switches are inert for explain"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "The review-panel switches are inert for explain"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain --no-review-panel` with this single argument:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: switches accepted and not persisted or honored on the explain path; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
+- [x] GREEN: switches accepted and not persisted or honored on the explain path; production code in `src/main.rs`, `tests/steps/explain_command_steps.rs`. Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 3 steps (3 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 3 steps (3 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): The review-panel switches are inert for explain` → hash: ``
 
