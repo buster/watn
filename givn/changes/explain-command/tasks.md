@@ -59,33 +59,41 @@ Design: `givn/changes/explain-command/design.md`.
 
 ## S2: Shell metacharacters and embedded quoting reach the card unchanged
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "Shell metacharacters and embedded quoting reach the card unchanged"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain` with this single argument:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: production code for verbatim argument delivery and local flow derivation (`src/main.rs`, `src/review/response.rs`, `tests/steps/explain_command_steps.rs`). Single-scenario run must exit zero.
+- [x] GREEN: production code for verbatim argument delivery and local flow derivation (`src/main.rs`, `src/review/response.rs`, `tests/steps/explain_command_steps.rs`). Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed); all 4 stage assertions and purpose-unavailable pass
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed)
     ```
-- [ ] COMMIT: `feat(explain-command): Shell metacharacters and embedded quoting reach the card unchanged` → hash: ``
+- [x] COMMIT: `feat(explain-command): Shell metacharacters and embedded quoting reach the card unchanged` → hash: `0319495`
 
 ## S3: A command beginning with a dash passes after the option terminator
 
-- [ ] RED: remove `@wip`; run `./run-tests.sh --name "A command beginning with a dash passes after the option terminator"`; must exit non-zero.
+- [x] RED: remove `@wip`; run `./run-tests.sh --name "A command beginning with a dash passes after the option terminator"`; must exit non-zero.
   - Evidence:
     ```
+    exit 1: ✘ When I run `watn explain --` with this single argument:
+    Step panicked. Captured output: not implemented
     ```
-- [ ] GREEN: clap option terminator handling for the explain positional (`src/main.rs`). Single-scenario run must exit zero.
+- [x] GREEN: clap option terminator handling for the explain positional (`src/main.rs`). Single-scenario run must exit zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 3 steps (3 passed)
     ```
-- [ ] REFACTOR: re-run; still zero.
+- [x] REFACTOR: re-run; still zero.
   - Evidence:
     ```
+    exit 0: 1 scenario (1 passed), 3 steps (3 passed)
     ```
 - [ ] COMMIT: `feat(explain-command): A command beginning with a dash passes after the option terminator` → hash: ``
 

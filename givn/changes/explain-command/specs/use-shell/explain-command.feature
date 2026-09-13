@@ -62,7 +62,7 @@ Feature: Explain an existing command
       """
     And the explanation card should show purpose-unavailable
 
-  @givn.added @wip
+  @givn.added
   Scenario: A command beginning with a dash passes after the option terminator
     Given no config file exists
     When I run `watn explain --` with this single argument:
