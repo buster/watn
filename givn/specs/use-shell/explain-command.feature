@@ -59,7 +59,7 @@ Feature: Explain an existing command
     And  the explanation card should show purpose-unavailable
 
   Scenario: A command beginning with a dash passes after the option terminator
-    Given  no config file exists
+    Given  a configured provider whose explanation returns no stage purposes
     When  I run `watn explain --` with this single argument:
       """
       --version

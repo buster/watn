@@ -154,13 +154,38 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     exit=0
     # permanent copy re-based to the ready-provider Given in the same commit
     ```
-- [ ] COMMIT hash: ``
+- [x] COMMIT hash: `de2a82e`
 
 ## S3: A command beginning with a dash passes after the option terminator (@givn.modified)
 
-- [ ] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
+- [x] RED/GREEN/REFACTOR/COMMIT with the same scenario title.
   - Evidence:
     ```
+    RED: $ ./run-tests.sh --name "A command beginning with a dash passes after the option terminator"
+      Scenario: A command beginning with a dash passes after the option terminator
+       ✔  Given a configured provider whose explanation returns no stage purposes
+       ✔  When I run `watn explain --` with this single argument:
+       ✔  Then the explanation card should show the stage:
+    Feature: Explain an existing command
+      Scenario: A command beginning with a dash passes after the option terminator
+       ✔  Given no config file exists
+       ✘  When I run `watn explain --` with this single argument:
+          Step panicked. Captured output: PTY did not render label "esc close"; output: ""
+    exit=1
+
+    GREEN: $ ./run-tests.sh --name "A command beginning with a dash passes after the option terminator"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    6 steps (6 passed)
+    exit=0
+
+    REFACTOR: $ ./run-tests.sh --name "A command beginning with a dash passes after the option terminator"
+    [Summary]
+    2 features
+    2 scenarios (2 passed)
+    6 steps (6 passed)
+    exit=0
     ```
 - [ ] COMMIT hash: ``
 
