@@ -446,21 +446,47 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     12 steps (12 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): A failed explanation keeps the command reviewable` -> hash: ``
+- [x] COMMIT: `feat(explain-command): A failed explanation keeps the command reviewable` -> hash: `aeba739`
 
 ## S11: A network failure reports the mapped exit status (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A network failure reports the mapped exit status"
+      Scenario: A network failure reports the mapped exit status
+       ✘  Given a configured provider whose endpoint refuses connections
+          Matched: tests/steps/explain_command_steps.rs:474:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: connection-refused mock/step; assert exit 3. Targeted run zero.
+- [x] GREEN: connection-refused mock/step; assert exit 3. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A network failure reports the mapped exit status"
+      Scenario: A network failure reports the mapped exit status
+       ✔  Given a configured provider whose endpoint refuses connections
+       ✔  When I run `watn explain` with this single argument:
+       ✔  Then the explanation card should show the stage:
+       ✔  And the explanation card should show purpose-unavailable
+       ✔  And watn should report that the explanation request failed
+       ✔  And the exit status should be 3
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    6 steps (6 passed)
+    exit=0
+    # closed ephemeral port recorded, listener dropped, ready-provider config written against it
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A network failure reports the mapped exit status"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    6 steps (6 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): A network failure reports the mapped exit status` -> hash: ``
 

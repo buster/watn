@@ -472,8 +472,16 @@ fn configured_provider_no_stage_purposes(world: &mut WatnWorld) {
 }
 
 #[given("a configured provider whose endpoint refuses connections")]
-fn configured_provider_endpoint_refuses_connections(_world: &mut WatnWorld) {
-    unimplemented!()
+fn configured_provider_endpoint_refuses_connections(world: &mut WatnWorld) {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind closed-port listener");
+    let port = listener
+        .local_addr()
+        .expect("read closed-port address")
+        .port();
+    drop(listener);
+    world.raw_config = Some(format!(
+        "[defaults]\nprovider = \"test\"\nmodel = \"test-model\"\n\n[providers.test]\nendpoint = \"http://127.0.0.1:{port}\"\napi_key = \"test-key\"\n"
+    ));
 }
 
 #[given("a configured provider with no default model")]

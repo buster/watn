@@ -146,7 +146,7 @@ Feature: Explain an existing command
     And  watn should report that the explanation request failed
     And  the exit status should be 2
 
-  @givn.added @wip
+  @givn.added
   Scenario: A network failure reports the mapped exit status
     Given  a configured provider whose endpoint refuses connections
     When  I run `watn explain` with this single argument:
