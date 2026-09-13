@@ -33,7 +33,10 @@ fn close_explain_card(world: &mut WatnWorld, key: &str) -> String {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
         loop {
             let output = super::pty_snapshot(session);
-            if "esc close".split_whitespace().all(|word| output.contains(word)) {
+            if "esc close"
+                .split_whitespace()
+                .all(|word| output.contains(word))
+            {
                 card_open = true;
                 break;
             }
@@ -47,11 +50,7 @@ fn close_explain_card(world: &mut WatnWorld, key: &str) -> String {
         }
     }
     let mut session = world.pty_session.take().expect("explain pty session");
-    let still_running = session
-        .child
-        .try_wait()
-        .expect("poll pty child")
-        .is_none();
+    let still_running = session.child.try_wait().expect("poll pty child").is_none();
     if card_open && still_running {
         super::pty_write(&mut session, key);
     }
@@ -70,10 +69,11 @@ fn run_explain_then_enter(world: &mut WatnWorld, step: &cucumber::gherkin::Step)
         .expect("command docstring")
         .trim()
         .to_string();
-    world
-        .env_vars
-        .insert("WATN_COMMAND".to_string(), command);
-    prepare_explain_pty(world, r#""$WATN_BIN" explain "$WATN_COMMAND" > "$WATN_OUT""#);
+    world.env_vars.insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain "$WATN_COMMAND" > "$WATN_OUT""#,
+    );
     close_explain_card(world, "\r");
 }
 
@@ -113,10 +113,11 @@ fn run_explain_single_argument(world: &mut WatnWorld, step: &cucumber::gherkin::
         .expect("command docstring")
         .trim()
         .to_string();
-    world
-        .env_vars
-        .insert("WATN_COMMAND".to_string(), command);
-    prepare_explain_pty(world, r#""$WATN_BIN" explain "$WATN_COMMAND" > "$WATN_OUT""#);
+    world.env_vars.insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain "$WATN_COMMAND" > "$WATN_OUT""#,
+    );
     close_explain_card(world, "\x1b");
 }
 
@@ -144,10 +145,11 @@ fn run_explain_terminator(world: &mut WatnWorld, step: &cucumber::gherkin::Step)
         .expect("command docstring")
         .trim()
         .to_string();
-    world
-        .env_vars
-        .insert("WATN_COMMAND".to_string(), command);
-    prepare_explain_pty(world, r#""$WATN_BIN" explain -- "$WATN_COMMAND" > "$WATN_OUT""#);
+    world.env_vars.insert("WATN_COMMAND".to_string(), command);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain -- "$WATN_COMMAND" > "$WATN_OUT""#,
+    );
     close_explain_card(world, "\x1b");
 }
 
@@ -209,14 +211,17 @@ fn run_explain_stdin_marker(world: &mut WatnWorld, step: &cucumber::gherkin::Ste
         .trim()
         .to_string();
     let stdin_path = write_explain_stdin(world, &command);
-    world
-        .env_vars
-        .insert("WATN_STDIN".to_string(), stdin_path);
-    prepare_explain_pty(world, r#""$WATN_BIN" explain - < "$WATN_STDIN" > "$WATN_OUT""#);
+    world.env_vars.insert("WATN_STDIN".to_string(), stdin_path);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain - < "$WATN_STDIN" > "$WATN_OUT""#,
+    );
     close_explain_card(world, "\x1b");
 }
 
-#[then(expr = "the explanation card should show the stages {string} and {string} as separate stages")]
+#[then(
+    expr = "the explanation card should show the stages {string} and {string} as separate stages"
+)]
 fn card_shows_stages_separately(world: &mut WatnWorld, first: String, second: String) {
     let rendered = match world.pty_session.as_ref() {
         Some(session) => super::pty_snapshot(session),
@@ -243,25 +248,26 @@ fn card_shows_stages_separately(world: &mut WatnWorld, first: String, second: St
     );
 }
 
-#[when(expr = "I run `watn explain` in a terminal with the command {string} piped on standard input")]
+#[when(
+    expr = "I run `watn explain` in a terminal with the command {string} piped on standard input"
+)]
 fn run_explain_piped_command(world: &mut WatnWorld, command: String) {
     let stdin_path = write_explain_stdin(world, &command);
-    world
-        .env_vars
-        .insert("WATN_STDIN".to_string(), stdin_path);
-    prepare_explain_pty(world, r#""$WATN_BIN" explain < "$WATN_STDIN" > "$WATN_OUT""#);
+    world.env_vars.insert("WATN_STDIN".to_string(), stdin_path);
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain < "$WATN_STDIN" > "$WATN_OUT""#,
+    );
     close_explain_card(world, "\x1b");
 }
 
-#[when(expr = "I run watn explain with the argument {string} in a terminal with the command {string} on standard input")]
+#[when(
+    expr = "I run watn explain with the argument {string} in a terminal with the command {string} on standard input"
+)]
 fn run_explain_argument_over_stdin(world: &mut WatnWorld, argument: String, stdin_command: String) {
-    world
-        .env_vars
-        .insert("WATN_ARG".to_string(), argument);
+    world.env_vars.insert("WATN_ARG".to_string(), argument);
     let stdin_path = write_explain_stdin(world, &stdin_command);
-    world
-        .env_vars
-        .insert("WATN_STDIN".to_string(), stdin_path);
+    world.env_vars.insert("WATN_STDIN".to_string(), stdin_path);
     prepare_explain_pty(
         world,
         r#""$WATN_BIN" explain "$WATN_ARG" < "$WATN_STDIN" > "$WATN_OUT""#,
@@ -335,7 +341,6 @@ fn configured_provider_without_credential(world: &mut WatnWorld) {
             .body("data: {\"id\":\"1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"output\"},\"finish_reason\":\"stop\"}]}\ndata: [DONE]\n");
     });
     let mock_id = mock.id;
-    drop(mock);
     world.mock_server = crate::MockServerWrap(Some(server), Some(mock_id));
     world.raw_config = Some(format!(
         "[defaults]\nprovider = \"test\"\nmodel = \"test-model\"\n\n[providers.test]\nendpoint = \"http://127.0.0.1:{port}\"\n"
@@ -418,9 +423,7 @@ fn run_explain_no_review_panel(world: &mut WatnWorld, step: &cucumber::gherkin::
         .expect("command docstring")
         .trim()
         .to_string();
-    world
-        .env_vars
-        .insert("WATN_COMMAND".to_string(), command);
+    world.env_vars.insert("WATN_COMMAND".to_string(), command);
     prepare_explain_pty(
         world,
         r#""$WATN_BIN" explain --no-review-panel "$WATN_COMMAND" > "$WATN_OUT""#,

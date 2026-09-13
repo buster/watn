@@ -879,76 +879,70 @@ fn run_explain_command(
         model: model.clone(),
     };
 
-    let candidate = if config::provider_ready(&config, &provider_name)
-        && config::model_roles_ready(&config)
-    {
-        let provider_config = match resolve_provider(&config, &provider_name) {
-            Ok(provider_config) => provider_config,
-            Err(error) => {
-                let code = exit_code(&error);
-                eprintln!("{error}");
-                std::process::exit(code);
-            }
-        };
-        let api_key = match config::get_provider_api_key(&provider_name, &provider_config) {
-            Ok(api_key) => api_key,
-            Err(_) => {
-                run_explanation_card(
-                    watn::review::ReviewCandidate::from_command(&command),
-                    context,
-                )
-                .unwrap_or_else(|error| {
-                    eprintln!("explain unavailable: {error}");
-                    std::process::exit(1);
-                });
-                std::process::exit(0);
-            }
-        };
+    let candidate =
+        if config::provider_ready(&config, &provider_name) && config::model_roles_ready(&config) {
+            let provider_config = match resolve_provider(&config, &provider_name) {
+                Ok(provider_config) => provider_config,
+                Err(error) => {
+                    let code = exit_code(&error);
+                    eprintln!("{error}");
+                    std::process::exit(code);
+                }
+            };
+            let api_key = match config::get_provider_api_key(&provider_name, &provider_config) {
+                Ok(api_key) => api_key,
+                Err(_) => {
+                    run_explanation_card(
+                        watn::review::ReviewCandidate::from_command(&command),
+                        context,
+                    )
+                    .unwrap_or_else(|error| {
+                        eprintln!("explain unavailable: {error}");
+                        std::process::exit(1);
+                    });
+                    std::process::exit(0);
+                }
+            };
 
-        let interrupt = Arc::new(AtomicBool::new(false));
-        let int_flag = Arc::clone(&interrupt);
-        let _ = ctrlc::set_handler(move || {
-            int_flag.store(true, Ordering::SeqCst);
-        });
-        let mut registry = ProviderRegistry::new();
-        build_registry(
-            &mut registry,
-            &provider_name,
-            &provider_config.endpoint,
-            &api_key,
-            Arc::clone(&interrupt),
-        );
-        let messages = vec![
-            Message {
-                role: "system".to_string(),
-                content: explain_system_prompt(),
-            },
-            Message {
-                role: "user".to_string(),
-                content: command.clone(),
-            },
-        ];
-        let options = RequestOptions {
-            model: model.clone(),
-            temperature: None,
-            max_tokens: None,
-            reasoning_effort: config.tiers.reasoning.effort(Some(tier)),
+            let interrupt = Arc::new(AtomicBool::new(false));
+            let int_flag = Arc::clone(&interrupt);
+            let _ = ctrlc::set_handler(move || {
+                int_flag.store(true, Ordering::SeqCst);
+            });
+            let mut registry = ProviderRegistry::new();
+            build_registry(
+                &mut registry,
+                &provider_name,
+                &provider_config.endpoint,
+                &api_key,
+                Arc::clone(&interrupt),
+            );
+            let messages = vec![
+                Message {
+                    role: "system".to_string(),
+                    content: explain_system_prompt(),
+                },
+                Message {
+                    role: "user".to_string(),
+                    content: command.clone(),
+                },
+            ];
+            let options = RequestOptions {
+                model: model.clone(),
+                temperature: None,
+                max_tokens: None,
+                reasoning_effort: config.tiers.reasoning.effort(Some(tier)),
+            };
+            let spinner = Some(watn::output::spinner::Spinner::start(&model));
+            let provider = registry
+                .get(&provider_name)
+                .expect("the active provider is registered");
+            watn::review::session::explain_command_candidate(
+                provider, &command, &messages, &options, &interrupt, spinner,
+            )
+        } else {
+            watn::review::ReviewCandidate::from_command(&command)
         };
-        let spinner = Some(watn::output::spinner::Spinner::start(&model));
-        let provider = registry
-            .get(&provider_name)
-            .expect("the active provider is registered");
-        watn::review::session::explain_command_candidate(
-            provider,
-            &command,
-            &messages,
-            &options,
-            &interrupt,
-            spinner,
-        )
-    } else {
-        watn::review::ReviewCandidate::from_command(&command)
-    };
 
     if let Err(error) = run_explanation_card(candidate, context) {
         eprintln!("explain unavailable: {error}");

@@ -121,7 +121,10 @@ fn card_hides_internal_identifiers(world: &mut WatnWorld) {
 
 #[when("I close the explanation card")]
 fn close_explanation_card(world: &mut WatnWorld) {
-    let session = world.pty_session.as_ref().expect("live explain pty session");
+    let session = world
+        .pty_session
+        .as_ref()
+        .expect("live explain pty session");
     super::pty_wait_for_label(session, "esc close");
     let mut session = world.pty_session.take().expect("live explain pty session");
     super::pty_write(&mut session, "\x1b");
