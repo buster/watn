@@ -525,9 +525,18 @@ fn run_explain_let_quick_setup_start(world: &mut WatnWorld, step: &cucumber::ghe
 #[when(
     "I run `watn explain` in a terminal with this command on standard input and let it report setup guidance:"
 )]
-fn run_explain_stdin_setup_guidance(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_stdin_setup_guidance(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    let stdin_path = write_explain_stdin(world, &command);
+    world.env_vars.insert("WATN_STDIN".to_string(), stdin_path);
+    prepare_explain_pty(world, r#""$WATN_BIN" explain < "$WATN_STDIN""#);
+    let session = world.pty_session.take().expect("guidance PTY session");
+    super::finish_pty_session(world, session);
 }
 
 #[when("I run `watn explain` with this single argument and interrupt the request:")]
@@ -619,8 +628,12 @@ fn watn_reports_setup_complete_rerun(world: &mut WatnWorld) {
 }
 
 #[then("watn should report that setup is required")]
-fn watn_reports_setup_required(_world: &mut WatnWorld) {
-    unimplemented!()
+fn watn_reports_setup_required(world: &mut WatnWorld) {
+    let output = watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        output.contains("watn setup"),
+        "the transcript should report that setup is required, got: {output:?}"
+    );
 }
 
 #[then("watn should report an unknown provider error")]
