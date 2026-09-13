@@ -221,7 +221,7 @@ Feature: Explain an existing command
     Then  no explanation card should open
     And  the exit status should be 130
 
-  @givn.added @wip
+  @givn.added
   Scenario: A command supplied through standard input without a usable model reports setup guidance
     Given  no config file exists
     When  I run `watn explain` in a terminal with this command on standard input and let it report setup guidance:

@@ -685,21 +685,48 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     4 steps (4 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): Interrupting the explanation request opens no card` -> hash: ``
+- [x] COMMIT: `feat(explain-command): Interrupting the explanation request opens no card` -> hash: `540adc2`
 
 ## S16: A command supplied through standard input without a usable model reports setup guidance (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A command supplied through standard input without a usable model reports setup guidance"
+      Scenario: A command supplied through standard input without a usable model reports setup guidance
+       ✘  When I run `watn explain` in a terminal with this command on standard input and let it report setup guidance:
+          Matched: tests/steps/explain_command_steps.rs:525:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: guidance + exit 1 when setup is needed but stdin is not a terminal. Targeted run zero.
+- [x] GREEN: guidance + exit 1 when setup is needed but stdin is not a terminal. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A command supplied through standard input without a usable model reports setup guidance"
+      Scenario: A command supplied through standard input without a usable model reports setup guidance
+       ✔  Given no config file exists
+       ✔  When I run `watn explain` in a terminal with this command on standard input and let it report setup guidance:
+       ✔  Then watn should report that setup is required
+       ✔  And no explanation card should open
+       ✔  And no provider request should have been made
+       ✔  And the exit status should be 1
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    6 steps (6 passed)
+    exit=0
+    # step redirects the docstring through a temp file as stdin; the readiness
+    # gate's non-terminal branch prints the existing setup guidance and exits 1.
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "A command supplied through standard input without a usable model reports setup guidance"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    6 steps (6 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): A command supplied through standard input without a usable model reports setup guidance` -> hash: ``
 
