@@ -560,22 +560,37 @@ fn run_explain_interrupt_request(world: &mut WatnWorld, step: &cucumber::gherkin
     super::finish_pty_session(world, session);
 }
 
+fn run_explain_with_provider_flag(
+    world: &mut WatnWorld,
+    provider: &str,
+    step: &cucumber::gherkin::Step,
+) {
+    let command = step
+        .docstring
+        .as_deref()
+        .expect("command docstring")
+        .trim()
+        .to_string();
+    let _ = std::fs::remove_file("/tmp/watn-explain-should-not-run");
+    let session = super::start_pty_session(world, &["--provider", provider, "explain", &command]);
+    world.pty_session = Some(session);
+    let session = world.pty_session.take().expect("provider flag PTY session");
+    super::finish_pty_session(world, session);
+}
+
 #[when("I run `watn --provider missing explain` with this single argument in a terminal:")]
-fn run_explain_provider_missing(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_provider_missing(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    run_explain_with_provider_flag(world, "missing", step);
 }
 
 #[when("I run `watn --provider openrouter explain` with this single argument in a terminal:")]
-fn run_explain_provider_openrouter(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_provider_openrouter(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    run_explain_with_provider_flag(world, "openrouter", step);
 }
 
 #[when("I run `watn --provider custom explain` with this single argument in a terminal:")]
-fn run_explain_provider_custom(_world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = step;
-    unimplemented!()
+fn run_explain_provider_custom(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    run_explain_with_provider_flag(world, "custom", step);
 }
 
 #[when("I abandon the setup flow")]
@@ -637,13 +652,21 @@ fn watn_reports_setup_required(world: &mut WatnWorld) {
 }
 
 #[then("watn should report an unknown provider error")]
-fn watn_reports_unknown_provider(_world: &mut WatnWorld) {
-    unimplemented!()
+fn watn_reports_unknown_provider(world: &mut WatnWorld) {
+    let output = watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        output.contains("unknown provider"),
+        "the transcript should report an unknown provider, got: {output:?}"
+    );
 }
 
 #[then("watn should report a missing credential error")]
-fn watn_reports_missing_credential(_world: &mut WatnWorld) {
-    unimplemented!()
+fn watn_reports_missing_credential(world: &mut WatnWorld) {
+    let output = watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        output.contains("api key"),
+        "the transcript should report a missing credential, got: {output:?}"
+    );
 }
 
 #[then("watn should report that the explanation request failed")]

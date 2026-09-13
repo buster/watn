@@ -728,21 +728,52 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     6 steps (6 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): A command supplied through standard input without a usable model reports setup guidance` -> hash: ``
+- [x] COMMIT: `feat(explain-command): A command supplied through standard input without a usable model reports setup guidance` -> hash: `746d936`
 
 ## S17: An explicit provider selection with a broken configuration reports its error (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explicit provider selection with a broken configuration reports its error"
+      Scenario: An explicit provider selection with a broken configuration reports its error
+       ✘  When I run `watn --provider missing explain` with this single argument in a terminal:
+          Matched: tests/steps/explain_command_steps.rs:563:1
+          Step panicked. Captured output: not implemented
+    exit=1
     ```
-- [ ] GREEN: strict explicit-selection resolution (`watn --provider missing explain ...` exit 1; `watn --provider openrouter explain ...` exit 2). Targeted run zero.
+- [x] GREEN: strict explicit-selection resolution (`watn --provider missing explain ...` exit 1; `watn --provider openrouter explain ...` exit 2). Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explicit provider selection with a broken configuration reports its error"
+      Scenario: An explicit provider selection with a broken configuration reports its error
+       ✔  Given no config file exists
+       ✔  When I run `watn --provider missing explain` with this single argument in a terminal:
+       ✔  Then watn should report an unknown provider error
+       ✔  And no explanation card should open
+       ✔  And the exit status should be 1
+       ✔  When I run `watn --provider openrouter explain` with this single argument in a terminal:
+       ✔  Then watn should report a missing credential error
+       ✔  And no explanation card should open
+       ✔  And the exit status should be 2
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    9 steps (9 passed)
+    exit=0
+    # top-level provider flag steps start the PTY directly with the flag before
+    # the subcommand; strict resolution (S1) reports unknown provider (exit 1) and
+    # missing credential (exit 2) with no card.
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An explicit provider selection with a broken configuration reports its error"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    9 steps (9 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): An explicit provider selection with a broken configuration reports its error` -> hash: ``
 
