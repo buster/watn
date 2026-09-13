@@ -883,6 +883,7 @@ fn run_explain_command(
                     eprintln!("{error}");
                     std::process::exit(exit_code(&error));
                 }
+                print_explain_rerun_hint();
                 std::process::exit(0);
             }
             Ok(SetupWizardOutcome::Cancelled(cancellation)) => {

@@ -585,21 +585,62 @@ Design: `givn/changes/explain-failure-guidance/design.md`.
     13 steps (13 passed)
     exit=0
     ```
-- [ ] COMMIT: `feat(explain-command): An unconfigured machine starts quick setup instead of explaining` -> hash: ``
+- [x] COMMIT: `feat(explain-command): An unconfigured machine starts quick setup instead of explaining` -> hash: `1be1e10`
 
 ## S14: An existing configuration without a usable model completes the setup wizard (@givn.added)
 
-- [ ] RED: remove `@wip`; targeted run must fail.
+- [x] RED: remove `@wip`; targeted run must fail.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An existing configuration without a usable model completes the setup wizard"
+      Scenario: An existing configuration without a usable model completes the setup wizard
+       ✘  When I run `watn explain` with this single argument and let the setup flow start:
+          Matched: tests/steps/explain_command_steps.rs:492:1
+          Step panicked. Captured output: PTY did not render label "watn · setup"; output:
+          "... Asking test-model · 0.0s ... explain response was not usable: invalid explanation JSON ...
+           ┌ watn · review ... git log --oneline | head -5 ... purpose-unavailable ... esc close ..."
+    exit=1
+    # the harness rebuild made the catalog fixture ready; explain opened the card
+    # instead of the wizard. RED is the real failure.
     ```
-- [ ] GREEN: wizard delegation (terminal stdin, config exists), rerun hint, exit 0, no card, no request. Targeted run zero.
+- [x] GREEN: wizard delegation (terminal stdin, config exists), rerun hint, exit 0, no card, no request. Targeted run zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An existing configuration without a usable model completes the setup wizard"
+      Scenario: An existing configuration without a usable model completes the setup wizard
+       ✔  Given a configured provider with catalog models "model-small", "model-middle", and "model-large"
+       ✔  When I run `watn explain` with this single argument and let the setup flow start:
+       ✔  Then the setup flow should start
+       ✔  When I configure the provider and models through the wizard
+       ✔  And I complete the optional shell pages without integrations
+       ✔  Then watn should exit successfully
+       ✔  And watn should report that setup is complete and the command must be rerun
+       ✔  And no explanation card should open
+       ✔  And no provider request should have been made
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    9 steps (9 passed)
+    exit=0
+    # harness: `preserve_explain_config` keeps the catalog fixture's provider
+    # model-less while rewriting the mock endpoint; setup_wizard_steps accepts the
+    # preselected provider on the provider-choice entry; wizard-save branch prints
+    # the rerun hint and exits 0.
+    # shared-step regressions:
+    $ ./run-tests.sh --e2e --name "Setup wizard guides provider and model configuration page by page"
+    1 scenario (1 passed), 11 steps (11 passed), exit=0
+    $ ./run-tests.sh --e2e --name "Provider setup configures an OpenAI provider with an environment credential"
+    1 scenario (1 passed), 12 steps (12 passed), exit=0
     ```
-- [ ] REFACTOR: re-run; zero.
+- [x] REFACTOR: re-run; zero.
   - Evidence:
     ```
+    $ ./run-tests.sh --name "An existing configuration without a usable model completes the setup wizard"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    9 steps (9 passed)
+    exit=0
     ```
 - [ ] COMMIT: `feat(explain-command): An existing configuration without a usable model completes the setup wizard` -> hash: ``
 
