@@ -190,7 +190,7 @@ Feature: Explain an existing command
     Then watn should report a usage error
     And the file "/tmp/watn-explain-should-not-run" should not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: The explanation card opens even when the review surface is disabled
     Given the persisted review surface is disabled
     When I run `watn explain` with this single argument:
