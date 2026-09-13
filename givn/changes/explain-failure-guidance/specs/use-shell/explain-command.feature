@@ -196,7 +196,7 @@ Feature: Explain an existing command
     And  no provider request should have been made
     And  no explanation card should open
 
-  @givn.added @wip
+  @givn.added
   Scenario: An existing configuration without a usable model completes the setup wizard
     Given  a configured provider with catalog models "model-small", "model-middle", and "model-large"
     When  I run `watn explain` with this single argument and let the setup flow start:

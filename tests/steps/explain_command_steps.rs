@@ -498,6 +498,11 @@ fn run_explain_let_setup_flow_start(world: &mut WatnWorld, step: &cucumber::gher
         .trim()
         .to_string();
     world.env_vars.insert("WATN_COMMAND".to_string(), command);
+    if world.raw_config.is_some() {
+        world
+            .pending_config
+            .insert("preserve_explain_config".to_string(), "1".to_string());
+    }
     prepare_explain_pty(world, r#""$WATN_BIN" explain "$WATN_COMMAND""#);
     let session = world.pty_session.as_ref().expect("setup flow PTY session");
     super::pty_wait_for_label(session, "watn · setup");

@@ -340,6 +340,15 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                         .replace("http://localhost:4000", &base_url)
                 };
                 has_config = !no_config;
+            } else if world.pending_config.contains_key("preserve_explain_config") {
+                // Explain setup-delegation scenarios need the fixture's own
+                // default provider and model roles to stay unready; the mock
+                // endpoint is rewritten so the delegated wizard can still
+                // reach the catalog.
+                let raw = world.raw_config.clone().unwrap_or_default();
+                config_content = rewrite_provider_endpoints(&raw, &base_url)
+                    .replace("http://localhost:4000", &base_url);
+                has_config = !no_config;
             } else {
                 let raw = world.raw_config.clone().unwrap_or_default();
                 let mut lines: Vec<&str> = raw.lines().collect();

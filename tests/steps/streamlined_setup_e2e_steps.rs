@@ -41,7 +41,7 @@ fn provider_choices_are_visible(world: &mut WatnWorld) {
 fn choose_openai_provider(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
     pty_write(session, "\x1b[A\r");
-    wait_for_page(session, "URL");
+    super::setup_wizard_steps::wait_for_editor(session, "URL");
 }
 
 #[when(regex = r##"^choose environment variable "([^\"]+)"$"##)]
@@ -252,7 +252,7 @@ fn choose_openrouter_provider(world: &mut WatnWorld) {
     pty_write(session, "\x1b[A");
     std::thread::sleep(std::time::Duration::from_millis(100));
     pty_write(session, "\r");
-    wait_for_page(session, "URL");
+    super::setup_wizard_steps::wait_for_editor(session, "URL");
 }
 
 #[when("accept the default completion endpoint")]

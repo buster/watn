@@ -229,12 +229,57 @@ fn enter_api_key(world: &mut WatnWorld, key: String) {
 
 #[when("I configure the provider and models through the wizard")]
 fn configure_provider_and_models(world: &mut WatnWorld) {
+    accept_preselected_provider(world);
     enter_default_endpoint(world);
     choose_configuration_storage(world);
     enter_api_key(world, "sk-wizard-key".to_string());
     choose_two_models(world, "model-small".to_string(), "model-middle".to_string());
     type_large_model(world, "model-large".to_string());
     confirm_large_model(world);
+}
+
+/// The title of the last editor box rendered by the wizard. Page changes
+/// re-render the active editor box, so the last `(editing)` marker names the
+/// page that currently owns the input.
+pub(crate) fn latest_editor_title(output: &str) -> Option<String> {
+    let index = output.rfind("(editing)")?;
+    let before = &output[..index];
+    let start = before
+        .rfind('┌')
+        .map(|position| position + '┌'.len_utf8())
+        .unwrap_or(0);
+    Some(before[start..].trim().to_string())
+}
+
+pub(crate) fn wait_for_editor(session: &super::PtySession, title: &str) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        let output = strip_ansi(&pty_snapshot(session));
+        if latest_editor_title(&output).as_deref() == Some(title) {
+            return;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("setup editor {title:?} was not rendered: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
+/// The wizard opens on the provider choice page when an existing custom
+/// provider must be confirmed; accept the preselected provider before the URL
+/// page. Scenarios that already chose a provider land on the URL page and skip
+/// this.
+fn accept_preselected_provider(world: &mut WatnWorld) {
+    let on_provider_choice = {
+        let session = world.pty_session.as_ref().expect("setup PTY session");
+        let output = strip_ansi(&pty_snapshot(session));
+        latest_editor_title(&output).as_deref() == Some("Provider")
+    };
+    if on_provider_choice {
+        let session = world.pty_session.as_mut().expect("setup PTY session");
+        pty_write(session, "\r");
+        wait_for_editor(session, "URL");
+    }
 }
 
 #[when(regex = r#"^choose "([^"]+)" and "([^"]+)" with Enter$"#)]
