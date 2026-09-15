@@ -4108,14 +4108,18 @@ fn review_close_without_accepting(world: &mut WatnWorld) {
     }
 }
 
-fn unusable_response_state_file_path(world: &WatnWorld) -> std::path::PathBuf {
-    let state_home = world
-        .env_vars
-        .get("XDG_STATE_HOME")
-        .expect("XDG_STATE_HOME for the unusable-response state file");
-    std::path::PathBuf::from(state_home)
-        .join("watn")
-        .join("last-unusable-response.txt")
+pub(crate) fn unusable_response_state_file_path(world: &WatnWorld) -> std::path::PathBuf {
+    if let Some(state_home) = world.env_vars.get("XDG_STATE_HOME") {
+        return std::path::PathBuf::from(state_home)
+            .join("watn")
+            .join("last-unusable-response.txt");
+    }
+    world
+        .temp_dir
+        .as_ref()
+        .expect("temp dir for the unusable-response state file")
+        .path()
+        .join("home/.local/state/watn/last-unusable-response.txt")
 }
 
 #[then("the raw provider response should be saved to the unusable-response state file")]

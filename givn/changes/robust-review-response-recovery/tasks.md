@@ -763,29 +763,63 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S13: Verbose explain prints the raw provider response after the card closes
 
-- [ ] RED: remove `@wip`; write the `watn explain -v` PTY step and the
+- [x] RED: remove `@wip`; write the `watn explain -v` PTY step and the
   raw-response assertion; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: Verbose explain prints the raw provider response after the card closes
+     ✔  Given a configured provider whose explanation covers the command:
+     ✘  When I run `watn explain -v` with that command as one argument in a terminal and close the card
+        Step failed:
+        Matched: tests/steps/explain_command_steps.rs:752:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    2 steps (1 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/main.rs` — `Explain::verbose` and the post-card raw-response
+- [x] GREEN: `src/main.rs` — `Explain::verbose` and the post-card raw-response
   printer; `src/review/session.rs` — return the `StreamingResponse` from
   `explain_command_candidate`. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/main.rs, src/review/session.rs
+    Scenario: Verbose explain prints the raw provider response after the card closes
+     ✔  Given a configured provider whose explanation covers the command:
+     ✔  When I run `watn explain -v` with that command as one argument in a terminal and close the card
+     ✔  Then the explain invocation should report the raw provider response
+     ✔  And the command-output channel should contain no command
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    4 steps (4 passed)
+    # production files: src/main.rs (Explain::verbose, print_raw_response after
+    # the card, capture on unusable), src/review/session.rs
+    # (explain_command_candidate returns the response and passes finish_reason)
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "Verbose explain prints the raw provider response after the card closes"
+    1 scenario (1 passed), 4 steps (4 passed)
+    $ ./run-tests.sh
+    [Summary]
+    24 features
+    258 scenarios (258 passed)
+    1569 steps (1569 passed)
+    # the e2e suite initially regressed (4 direct-review scenarios) because the
+    # new early return refused command-only text; fixed by falling back to
+    # command text when no JSON region exists or it is not review-shaped:
+    $ ./run-tests.sh --e2e
+    [Summary]
+    25 features
+    89 scenarios (89 passed)
+    682 steps (682 passed)
     ```
-- [ ] COMMIT: `feat(explain): Verbose explain prints the raw provider response after the card closes`.
+- [x] COMMIT: `feat(explain): Verbose explain prints the raw provider response after the card closes`.
   - Evidence:
     ```
-    <commit hash>
+    75d1aed
     ```
 
 ## S14: An unusable explanation response is saved for bug reports
