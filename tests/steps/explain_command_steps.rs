@@ -749,16 +749,33 @@ fn card_names_stage_mismatch(world: &mut WatnWorld) {
     assert_card_contains(world, "the response stages did not match the command");
 }
 
-#[when("I run `watn explain -v` with that command as one argument in a terminal")]
+#[when("I run `watn explain -v` with that command as one argument in a terminal and close the card")]
 fn run_explain_verbose(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    prepare_explain_pty(
+        world,
+        r#""$WATN_BIN" explain -v "$WATN_COMMAND" > "$WATN_OUT""#,
+    );
+    let session = world.pty_session.as_ref().expect("explain pty session");
+    super::pty_wait_for_label(session, "esc close");
+    let mut session = world.pty_session.take().expect("live explain pty session");
+    super::pty_write(&mut session, "\x1b");
+    let _ = super::finish_pty_session(world, session);
+    if let Some(path) = &world.review.stdout_path {
+        world.review.command_output = std::fs::read_to_string(path).unwrap_or_default();
+    }
 }
 
 #[then("the explain invocation should report the raw provider response")]
 fn explain_reports_raw_response(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let transcript = world.output.clone().unwrap_or_default();
+    assert!(
+        transcript.contains("raw provider response"),
+        "the verbose explain output should name the raw provider response: {transcript:?}"
+    );
+    assert!(
+        transcript.contains("review_version"),
+        "the verbose explain output should contain the raw provider payload: {transcript:?}"
+    );
 }
 
 #[then("the explain invocation should name the unusable-response state file path")]

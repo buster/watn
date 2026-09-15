@@ -417,7 +417,9 @@ pub fn candidate_from_provider_response_with_finish(
             ReviewParseResult::PurposeUnavailable(error) => validation_error = Some(error),
         }
     }
-    let region = locate_json_region(trimmed)?;
+    let Some(region) = locate_json_region(trimmed) else {
+        return Some(ReviewCandidate::from_command(trimmed));
+    };
     if !looks_like_review_payload(region) {
         return Some(ReviewCandidate::from_command(trimmed));
     }

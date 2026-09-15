@@ -12,8 +12,8 @@ use crate::provider::{Message, Provider, RequestOptions, StreamEvent, StreamingR
 use super::buffer::ReviewBuffer;
 use super::panel::TierChoice;
 use super::response::{
-    apply_explanation_outcome, candidate_from_provider_response_with_finish, ExplanationOutcome,
-    ReviewCandidate,
+    apply_explanation_outcome_with_finish, candidate_from_provider_response_with_finish,
+    ExplanationOutcome, ReviewCandidate,
 };
 
 const CANCEL_GRACE: Duration = Duration::from_millis(500);
@@ -91,6 +91,8 @@ pub fn parse_generated_candidate(generation: &Generation) -> Option<ReviewCandid
 /// Fetch an explanation for a developer-supplied command and report the
 /// provider outcome. A request failure is returned to the caller instead of
 /// being swallowed; the caller keeps the developer's command reviewable.
+/// The completed provider response is returned so the caller can print it
+/// verbatim under `-v` and capture it for a bug report.
 pub fn explain_command_candidate(
     provider: &dyn Provider,
     command: &str,
@@ -98,14 +100,16 @@ pub fn explain_command_candidate(
     options: &RequestOptions,
     interrupt: &Arc<AtomicBool>,
     spinner: Option<Spinner>,
-) -> Result<ExplanationOutcome, Error> {
+) -> Result<(ExplanationOutcome, StreamingResponse), Error> {
     let generation = generate_candidate(provider, messages, options, interrupt, spinner)?;
     let mut buffer = generation.buffer.clone();
     buffer.complete();
-    Ok(apply_explanation_outcome(
+    let outcome = apply_explanation_outcome_with_finish(
         command,
         buffer.candidate().unwrap_or_default(),
-    ))
+        generation.response.finish_reason.as_deref(),
+    );
+    Ok((outcome, generation.response))
 }
 
 /// The configured model tiers in small/normal/thinking order.

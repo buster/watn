@@ -39,14 +39,13 @@ Feature: Explanation response recovery and diagnostics
     Then  the explanation card should show purpose-unavailable
     And  the explanation card should name that the response stages did not match the command
 
-  @givn.added @wip
+  @givn.added
   Scenario: Verbose explain prints the raw provider response after the card closes
     Given  a configured provider whose explanation covers the command:
       """
       git log --oneline | head -5
       """
-    When  I run `watn explain -v` with that command as one argument in a terminal
-    And  I close the explanation card
+    When  I run `watn explain -v` with that command as one argument in a terminal and close the card
     Then  the explain invocation should report the raw provider response
     And  the command-output channel should contain no command
 
