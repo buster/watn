@@ -3991,20 +3991,71 @@ fn review_hides_raw_payload(world: &mut WatnWorld) {
 
 #[given("a configured provider that serves this structured review response:")]
 fn review_served_structured_response(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
-    let _ = (world, step);
-    unimplemented!()
+    let response = step
+        .docstring
+        .as_deref()
+        .expect("served structured response docstring")
+        .trim()
+        .to_string();
+    world.review.structured_response = Some(response);
+}
+
+fn start_direct_review_run(world: &mut WatnWorld, question: &str, verbose: bool) {
+    let payload = world
+        .review
+        .structured_response
+        .clone()
+        .expect("served structured review response");
+    world.review.e2e = true;
+    world.pending_mock_output = Some(payload);
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_usage = Some(false);
+    world.temp_dir = None;
+    world.raw_config = None;
+    super::ensure_test_env(world);
+    let binary = super::find_binary();
+    world
+        .env_vars
+        .insert("WATN_BIN".to_string(), binary.display().to_string());
+    if !world.env_vars.contains_key("XDG_STATE_HOME") {
+        let state_home = world
+            .temp_dir
+            .as_ref()
+            .expect("direct review temp dir")
+            .path()
+            .join("state");
+        world.env_vars.insert(
+            "XDG_STATE_HOME".to_string(),
+            state_home.display().to_string(),
+        );
+    }
+    let out = world
+        .temp_dir
+        .as_ref()
+        .expect("direct review temp dir")
+        .path()
+        .join("stdout.txt");
+    world.review.stdout_path = Some(out.clone());
+    world
+        .env_vars
+        .insert("WATN_OUT".to_string(), out.display().to_string());
+    world
+        .env_vars
+        .insert("WATN_QUESTION".to_string(), question.to_string());
+    let flag = if verbose { " -v" } else { "" };
+    let script = format!(r#""$WATN_BIN"{flag} "$WATN_QUESTION" > "$WATN_OUT""#);
+    let session = super::start_pty_command(world, "sh", &["-c", &script]);
+    world.pty_session = Some(session);
 }
 
 #[when(expr = "I run `watn -v` for {string} in an eligible terminal")]
 fn review_run_verbose_direct(world: &mut WatnWorld, question: String) {
-    let _ = (world, question);
-    unimplemented!()
+    start_direct_review_run(world, &question, true);
 }
 
 #[when(expr = "I run `watn` for {string} in an eligible terminal")]
 fn review_run_direct(world: &mut WatnWorld, question: String) {
-    let _ = (world, question);
-    unimplemented!()
+    start_direct_review_run(world, &question, false);
 }
 
 #[when("I close the review surface without accepting")]
@@ -4015,8 +4066,15 @@ fn review_close_without_accepting(world: &mut WatnWorld) {
 
 #[then("the review invocation should report the raw provider response")]
 fn review_reports_raw_response(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let transcript = world.output.clone().unwrap_or_default();
+    assert!(
+        transcript.contains("raw provider response"),
+        "the verbose review output should name the raw provider response: {transcript:?}"
+    );
+    assert!(
+        transcript.contains("review_version"),
+        "the verbose review output should contain the raw provider payload: {transcript:?}"
+    );
 }
 
 #[then(expr = "the review invocation should show the command {string}")]

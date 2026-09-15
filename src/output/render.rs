@@ -61,6 +61,14 @@ pub fn print_reasoning(reasoning: &str) -> io::Result<()> {
     stderr.flush()
 }
 
+/// Print the raw provider response for a bug report. Used by the review and
+/// explanation paths under `-v`, after the review surface has closed.
+pub fn print_raw_response(raw: &str) -> io::Result<()> {
+    let mut stderr = io::stderr();
+    writeln!(stderr, "raw provider response:\n{}", raw.trim_end())?;
+    stderr.flush()
+}
+
 pub fn print_metadata(
     model: &str,
     tok_s: f64,

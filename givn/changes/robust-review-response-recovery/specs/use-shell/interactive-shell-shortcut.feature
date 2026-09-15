@@ -47,7 +47,7 @@ Feature: Review response recovery and diagnostics
     Then  the review surface should show purpose-unavailable
     And  the review surface should name that the response stages did not match the command
 
-  @givn.added @wip
+  @givn.added
   Scenario: Verbose review prints the raw provider response after the surface closes
     Given  a configured provider that serves this structured review response:
       """

@@ -1229,6 +1229,7 @@ fn run_review_path(
                     let _ = render::print_reasoning(reasoning);
                 }
             }
+            let _ = render::print_raw_response(&accepted_response.full_content);
         }
 
         let cost = config.pricing.get(&accepted_response.model).map(|p| {
