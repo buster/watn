@@ -749,7 +749,9 @@ fn card_names_stage_mismatch(world: &mut WatnWorld) {
     assert_card_contains(world, "the response stages did not match the command");
 }
 
-#[when("I run `watn explain -v` with that command as one argument in a terminal and close the card")]
+#[when(
+    "I run `watn explain -v` with that command as one argument in a terminal and close the card"
+)]
 fn run_explain_verbose(world: &mut WatnWorld) {
     prepare_explain_pty(
         world,

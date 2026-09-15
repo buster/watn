@@ -430,14 +430,11 @@ pub fn candidate_from_provider_response_with_finish(
             || value.get("command").is_some()
             || value.get("purpose_status").is_some()
         {
-            let Some(command) = value
+            let command = value
                 .get("command")
                 .and_then(|command| command.as_str())
                 .map(normalize_command)
-                .filter(|command| !command.is_empty())
-            else {
-                return None;
-            };
+                .filter(|command| !command.is_empty())?;
             if let Some((flow, stages)) = provider_stage_split(&command, &value) {
                 let mut candidate = ReviewCandidate::from_command(&command);
                 candidate.flow = flow;
@@ -446,14 +443,13 @@ pub fn candidate_from_provider_response_with_finish(
                 return Some(candidate);
             }
             let mut candidate = ReviewCandidate::from_command(command);
-            let reason = validation_error.unwrap_or_else(|| unreadable_reason(&repaired, incomplete));
+            let reason =
+                validation_error.unwrap_or_else(|| unreadable_reason(&repaired, incomplete));
             candidate.mark_unavailable(reason);
             return Some(candidate);
         }
     }
-    let Some(command) = recover_command_value(&repaired) else {
-        return None;
-    };
+    let command = recover_command_value(&repaired)?;
     let mut candidate = ReviewCandidate::from_command(&command);
     let reason = validation_error.unwrap_or_else(|| unreadable_reason(&repaired, incomplete));
     candidate.mark_unavailable(reason);
@@ -1058,8 +1054,12 @@ mod tests {
 
     #[test]
     fn payload_cut_off_inside_the_command_recovers_nothing() {
-        assert!(candidate_from_provider_response(r#"{"review_version":1,"command":"df -"#).is_none());
-        assert!(candidate_from_provider_response(r#"{"review_version":1,"command":"df -h"#).is_none());
+        assert!(
+            candidate_from_provider_response(r#"{"review_version":1,"command":"df -"#).is_none()
+        );
+        assert!(
+            candidate_from_provider_response(r#"{"review_version":1,"command":"df -h"#).is_none()
+        );
     }
 
     #[test]
@@ -1087,7 +1087,8 @@ mod tests {
             Some(ReviewResponseError::IncompleteResponse)
         ));
 
-        let command_only = candidate_from_provider_response("awk '{print $1}' file.txt").expect("command text");
+        let command_only =
+            candidate_from_provider_response("awk '{print $1}' file.txt").expect("command text");
         assert_eq!(command_only.command, "awk '{print $1}' file.txt");
     }
 
