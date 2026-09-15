@@ -3942,8 +3942,10 @@ fn review_response_with_control_characters(world: &mut WatnWorld) {
 
 #[given(expr = "the provider returns a structured review response cut off after the command {string}")]
 fn review_response_truncated_after_command(world: &mut WatnWorld, command: String) {
-    let _ = (world, command);
-    unimplemented!()
+    let response = format!(
+        "{{\"review_version\":1,\"command\":\"{command}\",\"stages\":[{{\"stage_text\":\"{command}\",\"purpose\":\"Show local disk"
+    );
+    world.review.structured_response = Some(response);
 }
 
 #[given("the provider returns a structured review response cut off inside the command")]
@@ -3960,8 +3962,12 @@ fn review_response_with_unescaped_quotes(world: &mut WatnWorld) {
 
 #[then("the review surface should name that the provider response was incomplete")]
 fn review_names_incomplete_response(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    assert_review_rendered_contains(world, "the provider response was incomplete");
+}
+
+#[then("the review surface should show purpose-unavailable")]
+fn review_shows_purpose_unavailable(world: &mut WatnWorld) {
+    assert_review_rendered_contains(world, "purpose-unavailable");
 }
 
 #[then("the review surface should name that the provider response was not valid JSON")]

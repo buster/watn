@@ -1,4 +1,5 @@
 use super::panel::{sanitize_terminal_text, InlineLayout, ReviewPanelState};
+use super::PurposeStatus;
 
 const MAX_CARD_ROWS: u16 = 18;
 const HIDDEN_STAGE_MARKER: &str = "⋮";
@@ -215,12 +216,22 @@ fn colorize_command(command: &str, ink: &Ink) -> String {
 
 fn purpose_text(state: &ReviewPanelState) -> String {
     let candidate = state.candidate();
-    candidate
+    if let Some(purpose) = candidate
         .stages
         .get(state.flow_stage)
         .and_then(|stage| stage.purpose.as_deref())
-        .map(sanitize_terminal_text)
-        .unwrap_or_else(|| candidate.purpose_status.label().to_string())
+    {
+        return sanitize_terminal_text(purpose);
+    }
+    let label = candidate.purpose_status.label();
+    match candidate
+        .unavailable_reason
+        .as_ref()
+        .filter(|_| candidate.purpose_status == PurposeStatus::Unavailable)
+    {
+        Some(reason) => format!("{label} · {}", reason.card_reason()),
+        None => label.to_string(),
+    }
 }
 
 /// The user-facing instruction printed on stderr before a permanently released

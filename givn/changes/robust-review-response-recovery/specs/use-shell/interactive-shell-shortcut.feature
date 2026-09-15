@@ -11,7 +11,7 @@ Feature: Review response recovery and diagnostics
     And  the review surface should show the stage purpose "Show local disk usage."
     And  the review surface should not claim that purposes are loading
 
-  @givn.added @wip
+  @givn.added
   Scenario: A review response cut off after a complete command stays reviewable
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     And  the provider returns a structured review response cut off after the command "df -h"

@@ -17,7 +17,8 @@ pub use panel::{
     PanelOutcome, ReviewContext, ReviewOperation, ReviewPanelState, TierChoice,
 };
 pub use response::{
-    apply_explanation, apply_explanation_outcome, candidate_from_provider_response,
+    apply_explanation, apply_explanation_outcome, apply_explanation_outcome_with_finish,
+    candidate_from_provider_response, candidate_from_provider_response_with_finish,
     parse_structured_review_response, CandidateIdentity, ExplanationOutcome, PurposeStatus,
     ReviewCandidate, ReviewParseResult, ReviewResponse, ReviewResponseError, ReviewStage,
     REVIEW_VERSION,

@@ -127,6 +127,7 @@ fn parse_sse_stream<R: BufRead>(
     let mut reasoning_content = String::new();
     let mut final_usage = None;
     let mut response_model = requested_model.to_string();
+    let mut finish_reason = None;
 
     let mut line = String::new();
     let mut first_event_at = None;
@@ -180,6 +181,9 @@ fn parse_sse_stream<R: BufRead>(
 
         if let Some(choices) = chunk["choices"].as_array() {
             for choice in choices {
+                if let Some(reason) = choice["finish_reason"].as_str() {
+                    finish_reason = Some(reason.to_string());
+                }
                 let delta = &choice["delta"];
                 if let Some(content) = delta["content"].as_str() {
                     if !content.is_empty() {
@@ -221,6 +225,7 @@ fn parse_sse_stream<R: BufRead>(
         } else {
             Some(reasoning_content)
         },
+        finish_reason,
     })
 }
 
@@ -323,6 +328,25 @@ data: [DONE]
         assert_eq!(usage.completion_tokens, 20);
         assert_eq!(response.model, "response-model");
     }
+    #[test]
+    fn records_the_last_non_null_finish_reason() {
+        let body = br#"data: {"model":"model","choices":[{"delta":{"content":"df -h"},"finish_reason":null}]}
+
+data: {"model":"model","choices":[{"delta":{},"finish_reason":"length"}]}
+
+data: [DONE]
+"#;
+        let response = parse_sse_stream(
+            Cursor::new(body),
+            "requested-model",
+            &mut |_| Ok(()),
+            &AtomicBool::new(false),
+        )
+        .expect("valid finish-reason stream should parse");
+
+        assert_eq!(response.finish_reason.as_deref(), Some("length"));
+    }
+
     #[test]
     fn aborts_when_interrupt_flag_is_set() {
         let body = br#"data: {"model":"model","choices":[{"delta":{"content":"printf"}}]}

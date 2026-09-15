@@ -97,32 +97,59 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S1: A review response with literal line breaks and tabs in its values is read as a structured response
 
-- [ ] RED: remove `@wip`; write the given step (payload with real `\n` and
+- [x] RED: remove `@wip`; write the given step (payload with real `\n` and
   `\t` bytes inside a purpose); run
   `./run-tests.sh --name "A review response with literal line breaks and tabs in its values is read as a structured response"`; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: A review response with literal line breaks and tabs in its values is read as a structured response
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✘  And the provider returns a structured review response with literal line breaks and tabs inside its values
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:3937:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    2 steps (1 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/response.rs` — repair raw control characters inside
+- [x] GREEN: `src/review/response.rs` — repair raw control characters inside
   string values in `parse_structured_review_response`, and normalize the
   response command before validation so a repaired response reaches `Ready`.
   Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/response.rs
+    Scenario: A review response with literal line breaks and tabs in its values is read as a structured response
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✔  And the provider returns a structured review response with literal line breaks and tabs inside its values
+     ✔  When I invoke Ctrl-W with the current input
+     ✔  Then the review surface should show the command "df -h"
+     ✔  And the review surface should show the stage purpose "Show local disk usage."
+     ✔  And the review surface should not claim that purposes are loading
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    6 steps (6 passed)
+    # production files: src/review/response.rs (repair_json_control_characters,
+    # parse_structured_review_response, validate normalization)
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; then full `./run-tests.sh`
+- [x] REFACTOR: clean up; targeted run still zero; then full `./run-tests.sh`
   green (shared parser).
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "A review response with literal line breaks and tabs in its values is read as a structured response"
+    1 scenario (1 passed), 6 steps (6 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    246 scenarios (246 passed)
+    1507 steps (1507 passed)
     ```
-- [ ] COMMIT: `feat(review): A review response with literal line breaks and tabs in its values is read as a structured response`.
+- [x] COMMIT: `feat(review): A review response with literal line breaks and tabs in its values is read as a structured response`.
   - Evidence:
     ```
-    <commit hash>
+    0b24aaf
     ```
 
 ## S2: A review response cut off after a complete command stays reviewable

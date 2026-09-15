@@ -486,7 +486,7 @@ fn main() {
     let options = RequestOptions {
         model: model.clone(),
         temperature: None,
-        max_tokens: None,
+        max_tokens: review_enabled.then_some(4096),
         reasoning_effort,
     };
 
@@ -956,7 +956,7 @@ fn run_explain_command(
     let options = RequestOptions {
         model: model.clone(),
         temperature: None,
-        max_tokens: None,
+        max_tokens: Some(4096),
         reasoning_effort: config.tiers.reasoning.effort(Some(tier)),
     };
     let spinner = Some(watn::output::spinner::Spinner::start(&model));
@@ -1025,7 +1025,10 @@ fn run_review_path(
     config: &watn::config::types::Config,
 ) -> ! {
     let raw = buffer.candidate().unwrap_or_default();
-    let candidate = match watn::review::candidate_from_provider_response(raw) {
+    let candidate = match watn::review::candidate_from_provider_response_with_finish(
+        raw,
+        response.finish_reason.as_deref(),
+    ) {
         Some(candidate) => candidate,
         None => {
             eprintln!("review unavailable: no complete command candidate");
@@ -1169,7 +1172,7 @@ fn run_review_path(
                 let options = RequestOptions {
                     model: model.clone(),
                     temperature: None,
-                    max_tokens: None,
+                    max_tokens: Some(4096),
                     reasoning_effort: config.tiers.reasoning.effort(Some(&tier)),
                 };
                 panel
