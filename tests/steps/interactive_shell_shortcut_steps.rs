@@ -3942,7 +3942,9 @@ fn review_response_with_control_characters(world: &mut WatnWorld) {
     world.review.structured_response = Some(response.to_string());
 }
 
-#[given(expr = "the provider returns a structured review response cut off after the command {string}")]
+#[given(
+    expr = "the provider returns a structured review response cut off after the command {string}"
+)]
 fn review_response_truncated_after_command(world: &mut WatnWorld, command: String) {
     let response = format!(
         "{{\"review_version\":1,\"command\":\"{command}\",\"stages\":[{{\"stage_text\":\"{command}\",\"purpose\":\"Show local disk"
@@ -3952,8 +3954,7 @@ fn review_response_truncated_after_command(world: &mut WatnWorld, command: Strin
 
 #[given("the provider returns a structured review response cut off inside the command")]
 fn review_response_truncated_inside_command(world: &mut WatnWorld) {
-    world.review.structured_response =
-        Some("{\"review_version\":1,\"command\":\"df -".to_string());
+    world.review.structured_response = Some("{\"review_version\":1,\"command\":\"df -".to_string());
 }
 
 #[given("the provider returns a structured review response whose values contain unescaped quotation marks")]
@@ -4023,10 +4024,9 @@ fn start_direct_review_run(world: &mut WatnWorld, question: &str, verbose: bool)
             .path()
             .join("state-blocker");
         std::fs::write(&blocker, "not a directory").expect("write state blocker");
-        world.env_vars.insert(
-            "XDG_STATE_HOME".to_string(),
-            blocker.display().to_string(),
-        );
+        world
+            .env_vars
+            .insert("XDG_STATE_HOME".to_string(), blocker.display().to_string());
     }
     if let Some(previous) = world.review.prefilled_state_response.clone() {
         let state_dir = world
@@ -4098,7 +4098,10 @@ fn review_run_direct(world: &mut WatnWorld, question: String) {
 
 #[when("I close the review surface without accepting")]
 fn review_close_without_accepting(world: &mut WatnWorld) {
-    let session = world.pty_session.as_mut().expect("direct review PTY session");
+    let session = world
+        .pty_session
+        .as_mut()
+        .expect("direct review PTY session");
     super::pty_wait_for_label(session, "⏎");
     super::pty_write(session, "\x1b");
     let session = world.pty_session.take().expect("direct review PTY session");
@@ -4176,7 +4179,9 @@ fn unusable_response_state_dir_blocked(world: &mut WatnWorld) {
     world.review.blocked_state_dir = true;
 }
 
-#[then("the review invocation should warn that the unusable-response state file could not be written")]
+#[then(
+    "the review invocation should warn that the unusable-response state file could not be written"
+)]
 fn review_warns_state_file_write(world: &mut WatnWorld) {
     let transcript = world.output.clone().unwrap_or_default();
     assert!(

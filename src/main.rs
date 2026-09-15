@@ -983,8 +983,10 @@ fn run_explain_command(
             (candidate, None, Some(response))
         }
         Ok((watn::review::ExplanationOutcome::Unusable { candidate, reason }, response)) => {
-            let mut message =
-                format!("explain response was not usable: {}", reason.explain_reason());
+            let mut message = format!(
+                "explain response was not usable: {}",
+                reason.explain_reason()
+            );
             match watn::review::capture_unusable_response(&response.full_content) {
                 Ok(path) => {
                     message.push_str(&format!("; raw response saved to {}", path.display()))
@@ -1033,10 +1035,7 @@ fn print_explain_rerun_hint() {
 
 /// Report the unusable-response capture after the review surface has closed.
 /// A write failure only warns; the review outcome is unchanged.
-fn print_capture_diagnostics(
-    path: &Option<std::path::PathBuf>,
-    error: &Option<String>,
-) {
+fn print_capture_diagnostics(path: &Option<std::path::PathBuf>, error: &Option<String>) {
     if let Some(error) = error {
         eprintln!("warning: could not save the unusable provider response: {error}");
     }
@@ -1087,9 +1086,9 @@ fn run_review_path(
             eprintln!("review unavailable: no complete command candidate");
             match watn::review::capture_unusable_response(raw) {
                 Ok(path) => eprintln!("raw provider response saved to {}", path.display()),
-                Err(error) => eprintln!(
-                    "warning: could not save the unusable provider response: {error}"
-                ),
+                Err(error) => {
+                    eprintln!("warning: could not save the unusable provider response: {error}")
+                }
             }
             std::process::exit(1);
         }
@@ -1250,13 +1249,16 @@ fn run_review_path(
                     Ok(generation) => {
                         match watn::review::session::parse_generated_candidate(&generation) {
                             Some(candidate) => {
-                                if candidate.purpose_status == watn::review::PurposeStatus::Unavailable
+                                if candidate.purpose_status
+                                    == watn::review::PurposeStatus::Unavailable
                                 {
                                     let mut regeneration_buffer = generation.buffer.clone();
                                     regeneration_buffer.complete();
-                                    if let Some(regeneration_raw) = regeneration_buffer.candidate() {
-                                        match watn::review::capture_unusable_response(regeneration_raw)
-                                        {
+                                    if let Some(regeneration_raw) = regeneration_buffer.candidate()
+                                    {
+                                        match watn::review::capture_unusable_response(
+                                            regeneration_raw,
+                                        ) {
                                             Ok(path) => capture_path = Some(path),
                                             Err(error) => capture_error = Some(error.to_string()),
                                         }
