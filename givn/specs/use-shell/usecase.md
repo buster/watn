@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:f2609f0901b7a0885364127404f4f04e3d26d36e6955d607cc73321c9a70284f -->
+<!-- givn:base-sha256:52c9877f0b6882edc507e592d8ca43f4fcf564cb909c93c95eb4dcd0cc794d55 -->
 # Use case: use-shell
 
 ## Level
@@ -54,7 +54,8 @@ command request, or runs `watn explain` with a command they already have.
 - An existing command supplied for explanation is never generated, edited, accepted, or executed; its card closes on Enter or Escape.
 - A failed explanation request keeps the explained command reviewable with purpose-unavailable and reports the failure; watn never releases or executes it.
 - An interrupted explanation request opens no card and exits 130, preserving the existing interrupt contract.
-- An unusable explanation response keeps the explained command reviewable with purpose-unavailable and names the unusable response.
+- An unusable explanation response keeps the explained command reviewable with purpose-unavailable, names the reason, and is captured for bug reports.
+- An unusable review response keeps the provider-written command reviewable with purpose-unavailable, names the reason in the surface, and is captured for bug reports; a review-shaped payload is never shown as the command, and the raw provider response is printable with `-v`.
 - Active eligible `-x` requires `-x` and review acceptance, without a second prompt; disabled or non-review `-x` retains the existing confirmation.
 
 ## Rules
