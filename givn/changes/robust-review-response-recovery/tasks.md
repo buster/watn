@@ -554,28 +554,53 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S9: A usable review response does not overwrite the captured unusable response
 
-- [ ] RED: remove `@wip`; write the sentinel prefill and the unchanged-file
+- [x] RED: remove `@wip`; write the sentinel prefill and the unchanged-file
   assertion; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: A usable review response does not overwrite the captured unusable response
+     ✘  Given an unusable-response state file that already holds a previous response
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:4160:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    1 step (1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/main.rs` — capture only when the response is unusable. Run
+- [x] GREEN: `src/main.rs` — capture only when the response is unusable. Run
   targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/main.rs
+    Scenario: A usable review response does not overwrite the captured unusable response
+     ✔  Given an unusable-response state file that already holds a previous response
+     ✔  And a configured provider that serves this review response:
+     ✔  When I run `watn` for "show disk usage" in an eligible terminal
+     ✔  And I close the review surface without accepting
+     ✔  Then the unusable-response state file should still hold the previous response
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    # production files: none beyond S7 (capture already guards on
+    # PurposeStatus::Unavailable); step helper prefills the state file
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "A usable review response does not overwrite the captured unusable response"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    254 scenarios (254 passed)
+    1552 steps (1552 passed)
     ```
-- [ ] COMMIT: `feat(review): A usable review response does not overwrite the captured unusable response`.
+- [x] COMMIT: `feat(review): A usable review response does not overwrite the captured unusable response`.
   - Evidence:
     ```
-    <commit hash>
+    57274fa
     ```
 
 ## S10: An explanation response with literal line breaks in its values is read as a structured response

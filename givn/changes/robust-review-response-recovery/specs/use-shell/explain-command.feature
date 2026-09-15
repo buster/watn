@@ -2,7 +2,7 @@
 
 Feature: Explanation response recovery and diagnostics
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explanation response with literal line breaks in its values is read as a structured response
     Given  a configured provider whose explanation response contains literal line breaks inside its values
     When  I run `watn explain` with this single argument:
