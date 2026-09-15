@@ -708,30 +708,57 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S12: The explanation card names why stage purposes are unavailable
 
-- [ ] RED: remove `@wip`; change the shared not-covering fixture so the
+- [x] RED: remove `@wip`; change the shared not-covering fixture so the
   response command echoes the developer's command (stages still mismatch); add
   the reason assertion; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: The explanation card names why stage purposes are unavailable
+     ✔  Given a configured provider whose explanation does not cover the command
+     ✔  When I run `watn explain` with this single argument:
+     ✔  Then the explanation card should show purpose-unavailable
+     ✘  And the explanation card should name that the response stages did not match the command
+        Step failed:
+        Matched: tests/steps/explain_command_steps.rs:747:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    4 steps (3 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/card.rs` / `src/review/response.rs` — explain-domain
+- [x] GREEN: `src/review/card.rs` / `src/review/response.rs` — explain-domain
   card reason for the stage mismatch. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/card.rs, src/review/response.rs
+    Scenario: The explanation card names why stage purposes are unavailable
+     ✔  Given a configured provider whose explanation does not cover the command
+     ✔  When I run `watn explain` with this single argument:
+     ✔  Then the explanation card should show purpose-unavailable
+     ✔  And the explanation card should name that the response stages did not match the command
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    4 steps (4 passed)
+    # production files: none beyond S2 (the shared card_reason mapping);
+    # fixture now echoes the developer's command so validation reaches StageMismatch
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green
   (permanent "does not cover" scenario).
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "The explanation card names why stage purposes are unavailable"
+    1 scenario (1 passed), 4 steps (4 passed)
+    $ ./run-tests.sh
+    [Summary]
+    24 features
+    257 scenarios (257 passed)
+    1565 steps (1565 passed)
     ```
-- [ ] COMMIT: `feat(explain): The explanation card names why stage purposes are unavailable`.
+- [x] COMMIT: `feat(explain): The explanation card names why stage purposes are unavailable`.
   - Evidence:
     ```
-    <commit hash>
+    07fbbfc
     ```
 
 ## S13: Verbose explain prints the raw provider response after the card closes

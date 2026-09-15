@@ -188,6 +188,13 @@ enum Commands {
             help = "Accepted for compatibility; explain always opens the explanation card"
         )]
         no_review_panel: bool,
+
+        #[arg(
+            short = 'v',
+            long = "verbose",
+            help = "Print the raw provider response to stderr after the card closes"
+        )]
+        verbose: bool,
     },
 }
 
@@ -284,12 +291,15 @@ fn main() {
                 model_thinking: model_thinking.clone(),
             }),
             Commands::Completions { shell } => run_completions(shell),
-            Commands::Explain { command, .. } => run_explain_command(
+            Commands::Explain {
+                command, verbose, ..
+            } => run_explain_command(
                 command.clone(),
                 cli.execute,
                 cli.provider.as_deref(),
                 cli.model.as_deref(),
                 cli.tier(),
+                *verbose || cli.verbose,
             ),
         }
         return;
@@ -826,6 +836,7 @@ fn run_explain_command(
     provider: Option<&str>,
     explicit_model: Option<&str>,
     tier: Option<&str>,
+    verbose: bool,
 ) -> ! {
     if execute {
         eprintln!("explain never executes a command; remove -x");
@@ -967,14 +978,23 @@ fn run_explain_command(
         provider, &command, &messages, &options, &interrupt, spinner,
     );
 
-    let (candidate, failure_status) = match outcome {
-        Ok(watn::review::ExplanationOutcome::Ready(candidate)) => (candidate, None),
-        Ok(watn::review::ExplanationOutcome::Unusable { candidate, reason }) => {
-            eprintln!(
-                "explain response was not usable: {}",
-                reason.explain_reason()
-            );
-            (candidate, None)
+    let (candidate, failure_status, raw_response) = match outcome {
+        Ok((watn::review::ExplanationOutcome::Ready(candidate), response)) => {
+            (candidate, None, Some(response))
+        }
+        Ok((watn::review::ExplanationOutcome::Unusable { candidate, reason }, response)) => {
+            let mut message =
+                format!("explain response was not usable: {}", reason.explain_reason());
+            match watn::review::capture_unusable_response(&response.full_content) {
+                Ok(path) => {
+                    message.push_str(&format!("; raw response saved to {}", path.display()))
+                }
+                Err(error) => message.push_str(&format!(
+                    "; warning: could not save the unusable provider response: {error}"
+                )),
+            }
+            eprintln!("{message}");
+            (candidate, None, Some(response))
         }
         Err(error) => {
             if matches!(error, watn::error::Error::Interrupted) {
@@ -984,6 +1004,7 @@ fn run_explain_command(
             (
                 watn::review::ReviewCandidate::from_command(&command),
                 Some(exit_code(&error)),
+                None,
             )
         }
     };
@@ -995,6 +1016,11 @@ fn run_explain_command(
     if let Err(error) = run_explanation_card(candidate, context) {
         eprintln!("explain unavailable: {error}");
         std::process::exit(1);
+    }
+    if verbose {
+        if let Some(response) = &raw_response {
+            let _ = render::print_raw_response(&response.full_content);
+        }
     }
     std::process::exit(failure_status.unwrap_or(0));
 }
