@@ -273,29 +273,55 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S4: A review response cut off inside the command releases nothing
 
-- [ ] RED: remove `@wip`; write the given step (unterminated command value);
+- [x] RED: remove `@wip`; write the given step (unterminated command value);
   run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: A review response cut off inside the command releases nothing
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✘  And the provider returns a structured review response cut off inside the command
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:3951:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    2 steps (1 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/response.rs` — the scanner refuses an unterminated
+- [x] GREEN: `src/review/response.rs` — the scanner refuses an unterminated
   value and a review-shaped payload never falls through to command text. Run
   targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/response.rs
+    Scenario: A review response cut off inside the command releases nothing
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✔  And the provider returns a structured review response cut off inside the command
+     ✔  When I invoke Ctrl-W with the current input
+     ✔  Then the original Bash command line should remain unchanged
+     ✔  And no candidate should be released to the shell
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    # production files: none beyond S2 (the scanner already refuses an
+    # unterminated value; unit test payload_cut_off_inside_the_command_recovers_nothing)
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "A review response cut off inside the command releases nothing"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    249 scenarios (249 passed)
+    1526 steps (1526 passed)
     ```
-- [ ] COMMIT: `feat(review): A review response cut off inside the command releases nothing`.
+- [x] COMMIT: `feat(review): A review response cut off inside the command releases nothing`.
   - Evidence:
     ```
-    <commit hash>
+    3d9ab4f
     ```
 
 ## S5: The review surface names why stage purposes are unavailable

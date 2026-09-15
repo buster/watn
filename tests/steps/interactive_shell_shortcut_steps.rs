@@ -2422,7 +2422,7 @@ fn review_mismatched_stage_text(world: &mut WatnWorld) {
         "review_version": 1,
         "command": "df -h",
         "stages": [{"stage_text": "not the derived stage", "purpose": "Wrong stage text."}],
-        "purpose_status": "incomplete"
+        "purpose_status": "ready"
     })
     .to_string();
     world.review.structured_response = Some(response);

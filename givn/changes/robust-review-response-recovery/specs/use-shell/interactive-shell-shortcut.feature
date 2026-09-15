@@ -39,7 +39,7 @@ Feature: Review response recovery and diagnostics
     Then  the original Bash command line should remain unchanged
     And  no candidate should be released to the shell
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review surface names why stage purposes are unavailable
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     And  the provider returns a review response with mismatched stage text
