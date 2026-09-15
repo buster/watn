@@ -134,12 +134,62 @@ fn locate_json_payload(raw: &str) -> Option<&str> {
     (end > start).then(|| trimmed[start..=end].trim())
 }
 
+/// Escape raw C0 control characters that appear inside JSON string values so
+/// serde can read a payload whose values contain literal line breaks or tabs.
+/// Characters outside strings are left untouched.
+fn repair_json_control_characters(payload: &str) -> String {
+    let mut repaired = String::with_capacity(payload.len());
+    let mut in_string = false;
+    let mut escaped = false;
+    for character in payload.chars() {
+        if !in_string {
+            if character == '"' {
+                in_string = true;
+            }
+            repaired.push(character);
+            continue;
+        }
+        if escaped {
+            escaped = false;
+            match character {
+                '\n' => repaired.push_str("\\n"),
+                '\r' => repaired.push_str("\\r"),
+                '\t' => repaired.push_str("\\t"),
+                control if (control as u32) < 0x20 => {
+                    repaired.push_str(&format!("\\u{:04x}", control as u32));
+                }
+                other => repaired.push(other),
+            }
+            continue;
+        }
+        match character {
+            '\\' => {
+                escaped = true;
+                repaired.push(character);
+            }
+            '"' => {
+                in_string = false;
+                repaired.push(character);
+            }
+            '\n' => repaired.push_str("\\n"),
+            '\r' => repaired.push_str("\\r"),
+            '\t' => repaired.push_str("\\t"),
+            control if (control as u32) < 0x20 => {
+                repaired.push_str(&format!("\\u{:04x}", control as u32));
+            }
+            other => repaired.push(other),
+        }
+    }
+    repaired
+}
+
 /// Parse the structured response object. Markdown fences and surrounding prose
 /// are tolerated; command-only provider output is deliberately not a parseable
 /// review response.
 pub fn parse_structured_review_response(raw: &str) -> Result<ReviewResponse, ReviewResponseError> {
     let payload = locate_json_payload(raw).unwrap_or_else(|| raw.trim());
-    serde_json::from_str(payload)
+    let repaired = repair_json_control_characters(payload);
+    serde_json::from_str(&repaired)
         .map_err(|error| ReviewResponseError::InvalidJson(error.to_string()))
 }
 
@@ -398,7 +448,7 @@ impl ReviewCandidate {
         if response.command.trim().is_empty() {
             return Err(ReviewResponseError::EmptyCommand);
         }
-        if response.command != self.command {
+        if normalize_command(&response.command) != self.command {
             return Err(ReviewResponseError::CommandMismatch);
         }
         let expected = self.flow.stage_texts().collect::<Vec<_>>();

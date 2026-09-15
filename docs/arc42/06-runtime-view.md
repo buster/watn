@@ -106,14 +106,23 @@ sequenceDiagram
     Editor->>CLI: question plus review context
     CLI->>Provider: stream Candidate
     CLI-->>User: existing progress line
-    Provider-->>CLI: complete structured response at [DONE]
-    CLI->>CLI: validate response and derive Command flow
+    Provider-->>CLI: complete response at [DONE]
+    CLI->>CLI: repair string values, validate response, recover command
+    alt structured response validated
+        CLI->>CLI: derive Command flow from the provider command
+    else malformed, truncated, or unmatched review-shaped payload
+        CLI->>CLI: recover the provider-written command when possible; purposes unavailable with a Purpose reason
+        CLI->>CLI: capture the unusable response in the state file
+    else no recoverable command
+        CLI-->>User: review unavailable; release nothing
+        CLI->>CLI: capture the unusable response in the state file
+    end
     CLI->>Panel: show Candidate and Command flow
     Panel-->>User: exact Stage text, purposes/status, direct decision hints
     opt structured response supports delayed purposes
         Panel-->>User: loading status, then updated model-written purposes
     else command-only or invalid structured response
-        Panel-->>User: purpose-unavailable status
+        Panel-->>User: purpose-unavailable status with the Purpose reason
     end
     User->>Panel: navigate, decide, edit, rephrase, reject, or escalate
     Panel-->>Panel: refresh current candidate state
@@ -121,23 +130,33 @@ sequenceDiagram
     Panel->>Output: accepted Candidate only after cleanup
     Panel-->>Editor: restore prompt and return candidate
     Editor-->>User: history comment and accepted buffer
+    opt verbose
+        CLI-->>User: raw provider response on stderr
+    end
+    opt unusable response
+        CLI-->>User: saved-response path on stderr
+    end
 ```
 
 Cancellation, portable-panel failure, empty output, generation failure, and
 rejection release no Candidate. A structured-response or purpose failure keeps
-the selected Candidate reviewable with `purpose-unavailable`; incomplete flow
-keeps the raw text and tracks unsupported portions internally without marking
-them in the surface. The Candidate shown for a
+the selected Candidate reviewable with `purpose-unavailable` and a Purpose
+reason; incomplete flow keeps the raw text and tracks unsupported portions
+internally without marking them in the surface. The Candidate shown for a
 command-only or invalid response is the provider's own command text: Watn
-recovers a complete non-empty command from a fenced or JSON-shaped payload and
-otherwise shows `Unavailable` without opening the surface. When the payload's
-trimmed stage text agrees with the locally derived stages and every stage has a
-non-empty purpose, those provider-written purposes stay visible even if the
-status word is outside the contract; provider-written commands with line breaks
-are normalized to one line before the flow is derived. A provider stage split
-is trusted when every stage text appears verbatim in the command, in order,
-without overlap and with only whitespace or shell separators between; that
-split then becomes the displayed Command flow. The card opens in a simple view
+repairs literal control characters inside string values, recovers a complete
+non-empty command from a fenced, JSON-shaped, or truncated payload, and
+otherwise shows `Unavailable` without opening the surface. A review-shaped
+payload is never displayed as the command. An unusable provider response is
+captured in the state file and its path is named on stderr after the surface
+closes; `-v` additionally prints the raw provider response on stderr at that
+point. When the payload's trimmed stage text agrees with the locally derived
+stages and every stage has a non-empty purpose, those provider-written purposes
+stay visible even if the status word is outside the contract; provider-written
+commands with line breaks are normalized to one line before the flow is
+derived. A provider stage split is trusted when every stage text appears
+verbatim in the command, in order, without overlap and with only whitespace or
+shell separators between; that split then becomes the displayed Command flow. The card opens in a simple view
 that names the model short name, stacks the command flow with separators and a
 selected-stage arrow, and shows the selected stage's marked purpose below the
 stack; `d` or `?` switches to the detailed view and back. Arrows move stages in
@@ -271,10 +290,11 @@ sequenceDiagram
         alt request succeeds
             Provider-->>CLI: SSE content and [DONE]
             alt response usable
-                CLI->>CLI: apply_explanation_outcome -> Ready
+                CLI->>CLI: repair string values and apply_explanation_outcome -> Ready
             else response not usable
                 CLI->>User: explain response was not usable on stderr
-                CLI->>CLI: keep the command with purpose-unavailable
+                CLI->>CLI: keep the command with purpose-unavailable and the Purpose reason
+                CLI->>CLI: capture the unusable response in the state file
             end
         else request fails
             Provider--xCLI: HTTP, authentication, or network error
@@ -288,6 +308,9 @@ sequenceDiagram
     CLI->>TTY: explanation-only review card
     User->>TTY: arrows, Enter, or Escape
     TTY-->>CLI: close; release nothing
+    opt verbose
+        CLI-->>User: raw provider response on stderr
+    end
     CLI-->>User: exit 0, or the mapped request-failure status
 ```
 
@@ -313,8 +336,13 @@ missing-credential (exit 2) error. When the request itself fails, the card still
 opens with the developer's command and `purpose-unavailable`,
 `explain request failed: <error>` is printed to stderr, and the invocation exits
 with the mapped status after the card closes. A response that is not usable as
-an explanation prints `explain response was not usable: <reason>` and exits 0.
-Ctrl+C during the request opens no card and exits 130.
+an explanation prints `explain response was not usable: <reason>` and exits 0;
+its card shows `purpose-unavailable` with the Purpose reason, and the raw
+response is captured in the state file with the saved path named on stderr.
+Literal control characters inside string values are repaired before the echo is
+checked, and a response cut off after a complete command echo keeps the
+developer's command reviewable. Ctrl+C during the request opens no card and
+exits 130.
 
 ## Scenario: Generate a shell completion script
 

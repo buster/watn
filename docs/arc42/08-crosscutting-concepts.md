@@ -153,18 +153,36 @@ current invocation.
 
 The review-mode provider response is structured and contains a version, a
 complete Candidate command, exact Stage text, model-written Stage purposes, and
-Purpose status. A valid structured response can show `loading` for delayed
-purposes. A command-only, invalid, stale, or mismatched response shows
-`purpose-unavailable` without replacing the Candidate with locally authored
-purpose text. A purpose failure keeps the Candidate reviewable. A fenced or
-prose-wrapped structured response is recognized, and a JSON-shaped payload with
-a complete command keeps that provider-written command reviewable as
-`purpose-unavailable`. Rendered review values flatten line breaks and tabs so
-they occupy one inline row. Provider-written stage purposes are kept only when
-their stage text provably covers the command verbatim, in order, without
-overlap, with every purpose non-empty — either as an exact provider split or as
-the derived stage text; missing or mismatched purposes show `purpose-unavailable` and Watn
-never authors substitute text.
+Purpose status. Reading is tolerant before validation: literal line breaks,
+carriage returns, and tabs inside string values are repaired, and a complete
+provider-written command is recovered from a malformed or truncated payload
+when it can be delimited unambiguously. A valid structured response can show
+`loading` for delayed purposes. A command-only, invalid, stale, or mismatched
+response shows `purpose-unavailable` with a Purpose reason and without
+replacing the Candidate with locally authored purpose text. A purpose failure
+keeps the Candidate reviewable. A fenced or prose-wrapped structured response
+is recognized, and a JSON-shaped payload with a complete command keeps that
+provider-written command reviewable as `purpose-unavailable`. A review-shaped
+payload is never displayed as the command; when no command can be recovered,
+the review is `Unavailable` and releases nothing. Rendered review values
+flatten line breaks and tabs so they occupy one inline row. Provider-written
+stage purposes are kept only when their stage text provably covers the command
+verbatim, in order, without overlap, with every purpose non-empty — either as
+an exact provider split or as the derived stage text; missing or mismatched
+purposes show `purpose-unavailable` and Watn never authors substitute text.
+
+## Provider response diagnostics
+
+Every unusable provider response is captured best-effort in the single
+overwritten state file `$XDG_STATE_HOME/watn/last-unusable-response.txt`
+(default `~/.local/state/watn/last-unusable-response.txt`) so a bug report can
+attach what the provider actually sent. The capture is never configuration and
+keeps no history. A capture failure prints a warning and does not change the
+review outcome. The saved path is named on stderr after the review surface
+closes, because the surface owns the controlling terminal while it is open.
+With `-v`/`--verbose`, the raw provider response itself is printed to stderr at
+the same point for review and explanation requests; stdout remains the
+command-output channel and is never used for diagnostics.
 
 The review card paints colors only when the terminal supports them
 (`NO_COLOR` unset, `TERM` not `dumb`, and a color-capable terminal type);
@@ -231,10 +249,14 @@ developer's command and `purpose-unavailable`, `explain request failed:
 <error>` is printed to stderr, and the invocation exits with the mapped status
 (auth/API 2, network 3, config/IO 1) after the card closes. A response that is
 not usable as an explanation prints `explain response was not usable:
-<reason>`, keeps the card reviewable with `purpose-unavailable`, and exits 0
-because the request itself succeeded and the safe degradation is deliberate.
-Ctrl+C during the request opens no card and exits 130. The explained command is
-never generated, replaced, edited, evaluated, or executed on any path.
+<reason>`, keeps the card reviewable with `purpose-unavailable` and the Purpose
+reason, captures the raw response in the state file with the saved path named
+on stderr, and exits 0 because the request itself succeeded and the safe
+degradation is deliberate. Literal control characters inside string values are
+repaired before the echo is checked, so a line-broken explanation response is
+read like a valid one. Ctrl+C during the request opens no card and exits 130.
+The explained command is never generated, replaced, edited, evaluated, or
+executed on any path.
 
 ## Transport isolation
 
@@ -379,6 +401,11 @@ accumulated reasoning content is printed to stderr on its own line prefixed with
 `reasoning:`. It is buffered until completion, so it is absent from stderr while
 the provider is still sending content. If the model returned no reasoning
 content, or if the stream failed, nothing additional is printed.
+
+For review and explanation requests, `-v` additionally prints the raw provider
+response to stderr after the review surface closes, labelled as the raw
+provider response. It is never printed while the card owns the terminal and
+never written to stdout.
 
 The verbose flag is independent of the thinking tier. Any tier with `-v` will print reasoning content if the API returns it. Without `-v`, reasoning content is accumulated into the response struct but not printed.
 

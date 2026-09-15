@@ -711,3 +711,53 @@ fn watn_reports_configuration_error(world: &mut WatnWorld) {
         "stderr or the terminal transcript should report a configuration error, got stderr: {stderr:?}, transcript: {transcript:?}"
     );
 }
+
+// --- robust-review-response-recovery step skeletons (RED/GREEN per tasks.md) ---
+
+#[given("a configured provider whose explanation response contains literal line breaks inside its values")]
+fn configured_provider_line_broken_explanation(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[given("a configured provider whose explanation response is cut off after the command")]
+fn configured_provider_truncated_explanation(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then(expr = "the explanation card should show the stage purpose {string}")]
+fn card_shows_stage_purpose(world: &mut WatnWorld, purpose: String) {
+    let _ = (world, purpose);
+    unimplemented!()
+}
+
+#[then("the explanation card should name that the provider response was incomplete")]
+fn card_names_incomplete_response(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the explanation card should name that the response stages did not match the command")]
+fn card_names_stage_mismatch(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[when("I run `watn explain -v` with that command as one argument in a terminal")]
+fn run_explain_verbose(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the explain invocation should report the raw provider response")]
+fn explain_reports_raw_response(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the explain invocation should name the unusable-response state file path")]
+fn explain_names_state_file_path(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}

@@ -10,7 +10,7 @@
 | Stream sink | The synchronous CLI callback that writes and flushes command content; it is not a worker channel and does not render reasoning |
 | DONE marker | The exact SSE data payload `[DONE]` that is required for successful stream completion |
 | Truncated stream | A provider response that reaches EOF or a read failure before the DONE marker; visible content is preserved but the result is a network error |
-| XDG | XDG Base Directory Specification; watn uses the config directory (`$XDG_CONFIG_HOME/watn/`, normally `~/.config/watn/`) and does not use an XDG data directory |
+| XDG | XDG Base Directory Specification; watn uses the config directory (`$XDG_CONFIG_HOME/watn/`, normally `~/.config/watn/`) and the state directory (`$XDG_STATE_HOME/watn/`, normally `~/.local/state/watn/`) for the Unusable-response capture, and does not use an XDG data directory |
 | LiteLLM | A legacy configuration section and optional external proxy retained as unrelated data; streamlined setup does not contact or migrate it for model discovery |
 | Raw output | Plain text without ANSI escape codes; suitable for scripting and pipes |
 | TTY detection | Runtime check of whether stdin is a terminal (interactive) or a pipe (scripting); automatic onboarding requires an implicit selection and a TTY |
@@ -109,8 +109,14 @@
 | Intent | The current natural-language request that produces a Candidate; a rephrase replaces the visible active Intent and direct command editing does not change it |
 | Stage text | The exact command text assigned to one visible Command flow stage; it is not a paraphrase or a generated explanation |
 | Stage purpose | Concise model-written advisory text explaining why one stage is present and what it contributes to the Intent; it is not a semantic safety verdict or locally invented text |
-| Purpose status | The review state `ready`, `loading`, or `purpose-unavailable` for model-written Stage purposes; `loading` is valid only for a structured response that supports delayed purposes |
-| Structured review response | The review-mode provider response containing `review_version`, a complete `command`, exact `stage_text` entries, model-written purposes or a supported delayed-purpose state, and `purpose_status` |
+| Purpose status | The review state `ready`, `loading`, or `purpose-unavailable` for model-written Stage purposes; `loading` is valid only for a structured response that supports delayed purposes. Anti-terms: not the Purpose reason |
+| Provider response | The raw text one provider request returns before Watn interprets it; a Structured review response is a provider response that satisfies the review contract, while command-only text, prose, and malformed JSON are provider responses that do not |
+| Unusable provider response | A provider response from which Watn cannot adopt model-written Stage purposes; it may still yield a recovered provider-written command with purpose-unavailable. Anti-terms: not a failed request (no response arrived) and not a Candidate |
+| Purpose reason | The short plain-language statement of why Stage purposes are unavailable (`the provider response was incomplete`, `the provider response was not valid JSON`, `the response stages did not match the command`); shown in the review surface and never invented from model text. Anti-terms: not the Purpose status label and not a Stage purpose |
+| Unusable-response capture | The single overwritten state file `$XDG_STATE_HOME/watn/last-unusable-response.txt` holding the most recent Unusable provider response for a bug report; written best-effort, never configuration, and never a history |
+| Response repair | The deterministic preparation of a provider response before strict validation: raw line breaks, carriage returns, and tabs inside JSON string values become escapes, so a repaired response is treated like a valid one. Anti-terms: not JSON repair of arbitrary syntax and not a second parser |
+| Response recovery | The delimiter-bounded extraction of the provider-written `command` value from a JSON-shaped provider response whose strict validation failed; the recovered command stays reviewable with purpose-unavailable. Anti-terms: not command generation, not command repair, and not purpose invention |
+| Structured review response | The review-mode provider response containing `review_version`, a complete `command`, exact `stage_text` entries, model-written purposes or a supported delayed-purpose state, and `purpose_status`; it is read tolerantly (repaired string values, recovered command) before strict validation decides what may be adopted |
 | Command-output channel | The existing stdout channel carrying only the accepted Candidate for a review-eligible accepted direct path, or the current Candidate released by a permanent review disable; it is not the controlling-terminal channel |
 | Controlling-terminal channel | The terminal descriptor used for the transient Review surface and ANSI cleanup; it never carries review text through stdout |
 | Shell line-editor buffer | The current editable command line owned by Bash Readline, Zsh ZLE, or Fish `commandline`; Watn changes it only after accepted Ctrl-W review |

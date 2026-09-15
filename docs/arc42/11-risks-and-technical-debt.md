@@ -72,7 +72,7 @@
 | R-070 | A provider or explanation failure can leave a stale candidate or stale purpose visible | Medium | Medium | Bind refresh state to the current candidate, show loading/unavailable status, preserve the candidate for review, and reject stale updates |
 | R-071 | Terminal color and box-drawing support differ across terminals and multiplexers | Medium | Low | Render the same card in monochrome when color is unavailable; never require alternate-screen or enhanced-renderer support |
 | R-076 | Persisting the review preference can fail or overwrite concurrent configuration edits | Low | Low | Load-modify-save through the atomic config path, preserve all other settings, and warn without changing the current invocation when the write fails |
-| R-072 | A structured review response may contain invalid, stale, or mismatched Stage purposes | Medium | Medium | Validate response version, complete Candidate command, exact Stage text, purpose status, and current Candidate identity; tolerate markdown fences and surrounding prose, recover the provider-written command from JSON-shaped payloads, keep provider-written purposes when their stage text agrees with the derived flow or provably covers the command as an ordered, non-overlapping verbatim split, tolerate unknown status words and line-broken commands, show purpose-unavailable and retain reviewability on failure, and release nothing when no usable command exists |
+| R-072 | A structured review response may contain invalid, stale, or mismatched Stage purposes | Medium | Medium | Validate response version, complete Candidate command, exact Stage text, purpose status, and current Candidate identity; repair literal control characters inside string values, tolerate markdown fences and surrounding prose, recover the provider-written command from malformed or truncated JSON-shaped payloads, never display a review-shaped payload as the command, keep provider-written purposes when their stage text agrees with the derived flow or provably covers the command as an ordered, non-overlapping verbatim split, tolerate unknown status words and line-broken commands, show purpose-unavailable with a Purpose reason and retain reviewability on failure, and release nothing when no usable command exists |
 | R-073 | Buffering review-eligible output until `[DONE]` may make generation feel slower or leak output through an alternate path | Medium | High | Preserve the existing progress line first, use the existing synchronous callback with a review-only buffered sink, release only after an explicit final decision, and assert stdout/controlling-terminal separation |
 | R-074 | Inline review cleanup may leave terminal state or conflict with shell repaint | Medium | High | Restore cursor, raw mode, and occupied rows on every outcome; leave final prompt repaint to the shell line editor; cover acceptance, cancellation, interruption, and failure in a fixed-size Bash PTY |
 | R-075 | Direct, Ctrl-W, and `-x` consumers may accidentally share the wrong output or authorization boundary | Medium | High | Keep the consumer routing matrix explicit, resolve review eligibility before generation, and assert direct stdout, Ctrl-W history/buffer, disabled paths, and eligible/non-review `-x` separately |
@@ -88,6 +88,9 @@
 | R-086 | `watn explain` now writes configuration through quick setup or the setup wizard when no usable model is configured, so a read-only-feeling command can mutate the user's configuration and shell integrations | Medium | High | Reuse the question path's exact TTY-gated setup surfaces and persistence boundaries; keep the delegation visible with the rerun hint; the card path itself performs no write, and the guidance path writes nothing |
 | R-087 | A failed explanation request now exits non-zero after the card closes, changing the exit status for scripts that relied on the previous success status | Medium | Low | Report the failure on stderr, keep the card and stdout behaviour unchanged, apply the mapped status only after the card closes, and document the status per error category |
 | R-088 | An unusable explanation response stays exit 0 while printing a diagnostic, so a script cannot distinguish it from a fully explained command | Low | Low | Treat the response as a successful request with deliberate safe degradation; the stderr diagnostic and the card's purpose-unavailable status are the observable signal, consistent with the existing untrusted-response contract |
+| R-089 | The unusable-response capture can contain command text, including secrets embedded in a command | Low | Medium | Keep one overwritten file under the user's state directory with no history, write only for unusable responses, never treat it as configuration, warn without failing when the write fails, and document the path |
+| R-090 | A command recovered from a malformed or truncated payload may not be the command the model intended | Medium | Medium | Recover only the provider's own delimited text, never author or repair command text, keep Stage purposes unavailable, require explicit acceptance, and release nothing when recovery is ambiguous |
+| R-091 | Raising the review/explanation completion cap increases the worst-case cost of a request | Low | Low | Scope the higher cap to review and explanation requests only; truncated responses still degrade safely through repair and recovery |
 
 ## Technical debt
 
@@ -178,9 +181,17 @@ The following consequences are accepted and mitigated explicitly:
 ## Review-mode consequence coverage
 
 - Structured review response: version, complete Candidate command, exact Stage
-  text, and model-written Stage purposes are validated together. Invalid, stale,
-  or mismatched purpose data becomes `purpose-unavailable`; the Candidate stays
-  reviewable and no locally authored purpose text is substituted.
+  text, and model-written Stage purposes are validated together after tolerant
+  reading repairs string values and recovers a complete provider-written
+  command. Invalid, stale, or mismatched purpose data becomes
+  `purpose-unavailable` with a Purpose reason; the Candidate stays reviewable
+  and no locally authored purpose text is substituted. A review-shaped payload
+  is never displayed as the command. R-072 covers response drift; R-090 covers
+  a recovered command that differs from the model's intent.
+- Response diagnostics: an unusable provider response is captured in the
+  overwritten state file, the saved path is named on stderr after the surface
+  closes, and `-v` prints the raw response; a write failure only warns. R-089
+  covers the command text (and possible secrets) in the state file.
 - Review buffering amendment to ADR-0015: the synchronous callback remains the
   provider boundary, but eligible review requests use an in-memory buffered sink
   until `[DONE]`. The progress line remains first; final acceptance is the only
@@ -235,7 +246,12 @@ routed it there; the observable contract is owned by the updated
   status after the card closes; R-087 covers the exit-status change.
 - Unusable responses: a response that is not usable as an explanation is named
   on stderr while the invocation still exits 0, preserving the existing
-  untrusted-response contract; R-088 covers the residual script ambiguity.
+  untrusted-response contract; R-088 covers the residual script ambiguity. The
+  card names the Purpose reason, the response is captured in the state file,
+  and `-v` prints it raw; R-089 covers the captured command text. A response
+  with literal line breaks is repaired before the echo check, and a response
+  cut off after a complete command echo keeps the developer's command
+  reviewable.
 
 ## ADR-0017 consequence coverage
 

@@ -3931,3 +3931,125 @@ fn review_truncated_stage_marker(world: &mut WatnWorld) {
 fn review_hidden_window_marker(world: &mut WatnWorld) {
     assert_review_rendered_contains(world, "⋮");
 }
+
+// --- robust-review-response-recovery step skeletons (RED/GREEN per tasks.md) ---
+
+#[given("the provider returns a structured review response with literal line breaks and tabs inside its values")]
+fn review_response_with_control_characters(world: &mut WatnWorld) {
+    let response = "{\"review_version\":1,\"command\":\"df -h\",\"stages\":[{\"stage_text\":\"df -h\",\"purpose\":\"Show local disk\nusage.\tKeep it simple.\"}],\"purpose_status\":\"ready\"}";
+    world.review.structured_response = Some(response.to_string());
+}
+
+#[given(expr = "the provider returns a structured review response cut off after the command {string}")]
+fn review_response_truncated_after_command(world: &mut WatnWorld, command: String) {
+    let _ = (world, command);
+    unimplemented!()
+}
+
+#[given("the provider returns a structured review response cut off inside the command")]
+fn review_response_truncated_inside_command(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[given("the provider returns a structured review response whose values contain unescaped quotation marks")]
+fn review_response_with_unescaped_quotes(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review surface should name that the provider response was incomplete")]
+fn review_names_incomplete_response(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review surface should name that the provider response was not valid JSON")]
+fn review_names_invalid_json(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review surface should name that the response stages did not match the command")]
+fn review_names_stage_mismatch(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review surface should not show the raw provider payload")]
+fn review_hides_raw_payload(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[given("a configured provider that serves this structured review response:")]
+fn review_served_structured_response(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
+    let _ = (world, step);
+    unimplemented!()
+}
+
+#[when(expr = "I run `watn -v` for {string} in an eligible terminal")]
+fn review_run_verbose_direct(world: &mut WatnWorld, question: String) {
+    let _ = (world, question);
+    unimplemented!()
+}
+
+#[when(expr = "I run `watn` for {string} in an eligible terminal")]
+fn review_run_direct(world: &mut WatnWorld, question: String) {
+    let _ = (world, question);
+    unimplemented!()
+}
+
+#[when("I close the review surface without accepting")]
+fn review_close_without_accepting(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review invocation should report the raw provider response")]
+fn review_reports_raw_response(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then(expr = "the review invocation should show the command {string}")]
+fn review_invocation_shows_command(world: &mut WatnWorld, command: String) {
+    let _ = (world, command);
+    unimplemented!()
+}
+
+#[then("the raw provider response should be saved to the unusable-response state file")]
+fn unusable_response_saved(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review invocation should name the unusable-response state file path")]
+fn review_names_state_file_path(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[given("the unusable-response state directory cannot be created")]
+fn unusable_response_state_dir_blocked(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the review invocation should warn that the unusable-response state file could not be written")]
+fn review_warns_state_file_write(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[given("an unusable-response state file that already holds a previous response")]
+fn unusable_response_state_file_prefilled(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
+
+#[then("the unusable-response state file should still hold the previous response")]
+fn unusable_response_state_file_unchanged(world: &mut WatnWorld) {
+    let _ = world;
+    unimplemented!()
+}
