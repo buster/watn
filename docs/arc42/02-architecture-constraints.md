@@ -12,7 +12,7 @@
 | OpenAI-compatible chat-completions API shape | Must work with any provider that exposes the `/v1/chat/completions` endpoint and its SSE response framing |
 | Complete SSE termination | A successful streaming response must provide a `[DONE]` data event; EOF without it is a truncated network failure even when content was received |
 | Single blocking stream consumer | The current CLI consumes provider events through a synchronous content callback; no async runtime, worker channel, or background output path is introduced |
-| XDG Base Directory Specification | Watn uses `$XDG_CONFIG_HOME/watn/config.toml` for configuration, defaulting to `~/.config/watn/config.toml`; it does not use an XDG data directory |
+| XDG Base Directory Specification | Watn uses `$XDG_CONFIG_HOME/watn/config.toml` for configuration, defaulting to `~/.config/watn/config.toml`, and `$XDG_STATE_HOME/watn/` for the Unusable-response capture, defaulting to `~/.local/state/watn/`; it does not use an XDG data directory |
 | TOML for config files | Rust ecosystem standard; serde + toml crate |
 | Provider model endpoint with optional `?search=` query support | Server-side model filtering for catalogs larger than one page; providers that do not support search report a clear error rather than silently filtering only the local page |
 | Ratatui/crossterm terminal interaction | Provider onboarding and model selection must work as keyboard-driven terminal flows in the existing single binary; automatic onboarding is TTY-only |
@@ -27,7 +27,7 @@
 | Shell widget invocation is non-evaluating | Generated widgets use native line-editor APIs, invoke `command watn -- "$question"` through `PATH`, preserve stderr diagnostics, and never evaluate captured stdout |
 | Review surface is inline and controlling-terminal bound | The explanatory review surface must be small and transient, must not switch to the alternate screen, must render through the controlling-terminal channel, and must keep stdout reserved for the accepted Candidate |
 | Review output is explicit | Review-eligible Candidates are buffered until `[DONE]` and explicit final acceptance; cancellation or failure releases no Candidate, and eligible `-x` requires both the flag and review acceptance |
-| Structured review response is validated | Review mode accepts the structured provider response only when its version, complete command, exact stage text, and model-written purpose data match the current Candidate; otherwise purpose status is `purpose-unavailable` |
+| Structured review response is validated | Review mode accepts the structured provider response only when its version, complete command, exact stage text, and model-written purpose data match the current Candidate; otherwise purpose status is `purpose-unavailable`. Reading is tolerant before validation: literal control characters inside string values are repaired, a complete provider-written command may be recovered from a malformed or truncated payload, and a review-shaped payload is never treated as command text |
 | Shortcut writes are atomic and marker-owned | A target must have zero markers or exactly one ordered marker pair; valid replacements use a same-directory temporary file and rename, while malformed targets are unchanged |
 | Permanent scenario titles are repository-wide unique | A behavior has one canonical owner in the active Gherkin tree; overlap findings are reviewed before archive rather than silently accumulated |
 

@@ -57,10 +57,12 @@ graph TB
     TTY["is_terminal() check"]
     Env["WATN_* env vars"]
     Config["~/.config/watn/config.toml"]
+    StateFile["~/.local/state/watn/last-unusable-response.txt"]
 
     CLI --> TTY
     CLI --> Env
     CLI --> Config
+    CLI --> StateFile
 ```
 
 | Interface | Technology / Protocol | Direction |
@@ -68,6 +70,7 @@ graph TB
 | LLM provider | HTTPS + SSE (OpenAI chat-completions, complete with `[DONE]`) | Outbound |
 | Legacy `[litellm]` data | TOML configuration | Read and preserved as unrelated data; not contacted by streamlined setup |
 | Config file | TOML | Read (user path), atomic snapshot write after command confirmation, provider-local catalog state, credential representation, and tier/reasoning assignment with Unix mode `0600` |
+| Unusable-response state file | Plain text, overwritten per unusable provider response | Write only; the most recent unusable response for a bug report; never read as configuration |
 | Environment | `WATN_*` variables | Read |
 | Stdin | TTY or pipe | TTY detection and question/input read |
 | Stdout | Raw text or ANSI-rendered | Write |
@@ -76,4 +79,4 @@ graph TB
 | Completion output | Generated Bash, Elvish, Fish, PowerShell, or Zsh script | Outbound to stdout only; no config, provider, or shell-startup interface is touched |
 | Shell widget boundary | Native line-editor buffer plus `watn` on `PATH` | Reads one quoted question, captures stdout, keeps stderr visible, and replaces/repaints only after zero status and non-empty output |
 | Review surface boundary | Controlling-terminal channel, ANSI redraw, and review keys | Shows a small transient Command flow review in a simple default view or a detailed view without writing review-surface text to stdout; direct decision keys accept/edit/reject/cancel, switch the view, or disable the review permanently with the current Candidate released to the command-output channel, rejection opens a model chooser, and the typed results are `Accepted(candidate)`, `Cancelled`, `RejectRequested`, `RegenerateWith`, `DisableReviewPermanently`, or `Unavailable` |
-| Explanation entry point | One developer-supplied command as a single CLI argument, after `--`, or on standard input | Opens the explanation-only review card on the controlling-terminal channel when a usable model is configured; otherwise delegates to quick setup, the setup wizard, or setup guidance instead of opening the card; the command is delivered verbatim, never evaluated or executed, and no command is released to stdout; a failed explanation request keeps the card reviewable and reports the failure with the mapped exit status |
+| Explanation entry point | One developer-supplied command as a single CLI argument, after `--`, or on standard input | Opens the explanation-only review card on the controlling-terminal channel when a usable model is configured; otherwise delegates to quick setup, the setup wizard, or setup guidance instead of opening the card; the command is delivered verbatim, never evaluated or executed, and no command is released to stdout; a failed explanation request keeps the card reviewable and reports the failure with the mapped exit status; an unusable response keeps the card reviewable with a named reason, is captured in the state file, and is named on stderr |

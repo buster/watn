@@ -10,7 +10,7 @@ Top requirements:
 1. Ask a question and receive a copy-pasteable shell command
 2. Three model tiers (small/fast via `-1`, normal via `-2`, thinking via `-3`)
 3. The thinking tier sends a reasoning-effort signal to the API
-4. A `-v`/`--verbose` flag prints the model's buffered reasoning content to stderr after successful completion
+4. A `-v`/`--verbose` flag prints the model's buffered reasoning content to stderr after successful completion, and prints the raw provider response for review and explanation requests after the review surface closes
 5. Optional execution with user confirmation (`-x` prompts "Execute now? [Y/n]")
 6. Provider-derived model discovery through the selected provider's catalog endpoint
 7. Layered configuration: CLI flags > env vars > user config > built-in defaults
@@ -38,6 +38,7 @@ Top requirements:
 38. Ctrl-W review preserves the original request in shell history, replaces the shell line-editor buffer only with the accepted Candidate, and never evaluates review output
 39. Review-mode output is buffered until `[DONE]`; review-surface bytes use the controlling-terminal channel and never stdout, while direct positional, interactive-stdin, and eligible `-x` consumers retain their existing output boundaries
 40. `watn explain` must open the explanation-only review card for a developer-supplied command, deliver that command verbatim as one argument, after `--`, or through standard input, never join, re-split, evaluate, or execute it; when no usable model is configured and no provider or model was explicitly selected it must start setup or print setup guidance instead of opening the card, and a failed or unusable explanation must keep the command reviewable with purpose-unavailable and a visible diagnostic
+41. Review-mode and explanation provider responses must be read tolerantly — literal line breaks inside string values, unescaped quotation marks, and a response cut off after a complete command must not become the displayed command — and a review-shaped payload must never be shown as a command; when Stage purposes are unavailable the review surface must name the reason, the raw provider response must be printable with `-v`, and every unusable response must be captured in the state file for a bug report
 
 See `givn/specs/` for the permanent executable Gherkin specifications.
 
