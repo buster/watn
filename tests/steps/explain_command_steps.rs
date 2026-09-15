@@ -373,7 +373,7 @@ fn configured_provider_request_fails(world: &mut WatnWorld) {
 fn configured_provider_not_covering(world: &mut WatnWorld) {
     world.pending_mock_model = Some("test-model".to_string());
     world.pending_mock_output = Some(
-        r#"{"review_version":1,"command":"git log --oneline","stages":[{"stage_text":"unrelated stage","purpose":"not covering"}],"purpose_status":"ready"}"#
+        r#"{"review_version":1,"command":"git log --oneline | head -5","stages":[{"stage_text":"unrelated stage","purpose":"not covering"}],"purpose_status":"ready"}"#
             .to_string(),
     );
     world.pending_mock_usage = Some(false);
@@ -746,8 +746,7 @@ fn card_names_incomplete_response(world: &mut WatnWorld) {
 
 #[then("the explanation card should name that the response stages did not match the command")]
 fn card_names_stage_mismatch(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    assert_card_contains(world, "the response stages did not match the command");
 }
 
 #[when("I run `watn explain -v` with that command as one argument in a terminal")]

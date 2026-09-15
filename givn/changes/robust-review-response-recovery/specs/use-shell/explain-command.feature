@@ -29,7 +29,7 @@ Feature: Explanation response recovery and diagnostics
     And  the explanation card should show purpose-unavailable
     And  the explanation card should name that the provider response was incomplete
 
-  @givn.added @wip
+  @givn.added
   Scenario: The explanation card names why stage purposes are unavailable
     Given  a configured provider whose explanation does not cover the command
     When  I run `watn explain` with this single argument:

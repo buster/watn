@@ -655,29 +655,55 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S11: An explanation response cut off after a complete command keeps the command reviewable
 
-- [ ] RED: remove `@wip`; write the truncated explanation fixture and the
+- [x] RED: remove `@wip`; write the truncated explanation fixture and the
   incomplete-reason assertion; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: An explanation response cut off after a complete command keeps the command reviewable
+     ✘  Given a configured provider whose explanation response is cut off after the command
+        Step failed:
+        Matched: tests/steps/explain_command_steps.rs:727:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    1 step (1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/session.rs` — pass the provider `finish_reason` into
+- [x] GREEN: `src/review/session.rs` — pass the provider `finish_reason` into
   `apply_explanation_outcome`; `src/review/response.rs` — the truncated echo
   keeps the developer's command with the incomplete reason. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/session.rs, src/review/response.rs
+    Scenario: An explanation response cut off after a complete command keeps the command reviewable
+     ✔  Given a configured provider whose explanation response is cut off after the command
+     ✔  When I run `watn explain` with this single argument:
+     ✔  Then the explanation card should show the stage:
+     ✔  And the explanation card should show purpose-unavailable
+     ✔  And the explanation card should name that the provider response was incomplete
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    # production files: none beyond S2 (the payload-shape truncation check in
+    # apply_explanation_outcome names the incomplete reason; the finish_reason
+    # parameter is threaded with the S13 signature change)
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "An explanation response cut off after a complete command keeps the command reviewable"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ ./run-tests.sh
+    [Summary]
+    24 features
+    256 scenarios (256 passed)
+    1561 steps (1561 passed)
     ```
-- [ ] COMMIT: `feat(explain): An explanation response cut off after a complete command keeps the command reviewable`.
+- [x] COMMIT: `feat(explain): An explanation response cut off after a complete command keeps the command reviewable`.
   - Evidence:
     ```
-    <commit hash>
+    9fc1025
     ```
 
 ## S12: The explanation card names why stage purposes are unavailable
