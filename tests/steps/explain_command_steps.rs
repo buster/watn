@@ -726,8 +726,12 @@ fn configured_provider_line_broken_explanation(world: &mut WatnWorld) {
 
 #[given("a configured provider whose explanation response is cut off after the command")]
 fn configured_provider_truncated_explanation(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    world.pending_mock_model = Some("test-model".to_string());
+    world.pending_mock_output = Some(
+        "{\"review_version\":1,\"command\":\"git log --oneline | head -5\",\"stages\":[{\"stage_text\":\"git log --oneline\",\"purpose\":\"List the commits.\""
+            .to_string(),
+    );
+    world.pending_mock_usage = Some(false);
 }
 
 #[then(expr = "the explanation card should show the stage purpose {string}")]
@@ -737,8 +741,7 @@ fn card_shows_stage_purpose(world: &mut WatnWorld, purpose: String) {
 
 #[then("the explanation card should name that the provider response was incomplete")]
 fn card_names_incomplete_response(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    assert_card_contains(world, "the provider response was incomplete");
 }
 
 #[then("the explanation card should name that the response stages did not match the command")]

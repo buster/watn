@@ -15,7 +15,7 @@ Feature: Explanation response recovery and diagnostics
       """
     And  the explanation card should show the stage purpose "List the commits."
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explanation response cut off after a complete command keeps the command reviewable
     Given  a configured provider whose explanation response is cut off after the command
     When  I run `watn explain` with this single argument:
