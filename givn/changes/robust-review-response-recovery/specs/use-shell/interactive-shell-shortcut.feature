@@ -21,7 +21,7 @@ Feature: Review response recovery and diagnostics
     And  the review surface should name that the provider response was incomplete
     And  final acceptance should still be required
 
-  @givn.added @wip
+  @givn.added
   Scenario: A review response whose values contain unescaped quotation marks is still read
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     And  the provider returns a structured review response whose values contain unescaped quotation marks

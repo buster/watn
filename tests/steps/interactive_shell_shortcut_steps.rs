@@ -3956,8 +3956,8 @@ fn review_response_truncated_inside_command(world: &mut WatnWorld) {
 
 #[given("the provider returns a structured review response whose values contain unescaped quotation marks")]
 fn review_response_with_unescaped_quotes(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let response = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show disks "local"."}],"purpose_status":"ready"}"#;
+    world.review.structured_response = Some(response.to_string());
 }
 
 #[then("the review surface should name that the provider response was incomplete")]
@@ -3972,20 +3972,21 @@ fn review_shows_purpose_unavailable(world: &mut WatnWorld) {
 
 #[then("the review surface should name that the provider response was not valid JSON")]
 fn review_names_invalid_json(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    assert_review_rendered_contains(world, "the provider response was not valid JSON");
 }
 
 #[then("the review surface should name that the response stages did not match the command")]
 fn review_names_stage_mismatch(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    assert_review_rendered_contains(world, "the response stages did not match the command");
 }
 
 #[then("the review surface should not show the raw provider payload")]
 fn review_hides_raw_payload(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let rendered = world.review.rendered.join("\n");
+    assert!(
+        !rendered.contains("review_version"),
+        "the review surface must not show the raw provider payload: {rendered:?}"
+    );
 }
 
 #[given("a configured provider that serves this structured review response:")]

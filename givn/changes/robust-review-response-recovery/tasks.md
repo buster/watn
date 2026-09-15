@@ -154,13 +154,23 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S2: A review response cut off after a complete command stays reviewable
 
-- [ ] RED: remove `@wip`; write the given step (payload truncated after the
+- [x] RED: remove `@wip`; write the given step (payload truncated after the
   command's closing quote); run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: A review response cut off after a complete command stays reviewable
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✘  And the provider returns a structured review response cut off after the command "df -h"
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:3943:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    2 steps (1 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/response.rs` — payload-shape truncation detection,
+- [x] GREEN: `src/review/response.rs` — payload-shape truncation detection,
   the delimiter-bounded `recover_command_value` (closing quote or next review
   field; never end-of-input), `ReviewResponseError::IncompleteResponse`, and
   `unavailable_reason` on the candidate; `src/review/card.rs` renders the
@@ -169,19 +179,42 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
   `max_tokens` to 4096 (unit test on the request options). Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/response.rs, src/review/card.rs,
-    # src/provider/openai_compat.rs, src/provider/mod.rs, src/main.rs
+    Scenario: A review response cut off after a complete command stays reviewable
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✔  And the provider returns a structured review response cut off after the command "df -h"
+     ✔  When I invoke Ctrl-W with the current input
+     ✔  Then the review surface should show the command "df -h"
+     ✔  And the review surface should show purpose-unavailable
+     ✔  And the review surface should name that the provider response was incomplete
+     ✔  And final acceptance should still be required
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    7 steps (7 passed)
+    $ cargo test --locked --lib --features test-support review::response
+    test result: ok. 24 passed; 0 failed
+    # production files: src/review/response.rs (locate_json_region,
+    # looks_like_review_payload, unescape_json_string, recover_command_value,
+    # unreadable_reason, IncompleteResponse, card_reason, unavailable_reason,
+    # candidate_from_provider_response_with_finish), src/review/card.rs,
+    # src/review/session.rs, src/provider/mod.rs, src/provider/openai_compat.rs,
+    # src/main.rs (review/explain max_tokens 4096)
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "A review response cut off after a complete command stays reviewable"
+    1 scenario (1 passed), 7 steps (7 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    247 scenarios (247 passed)
+    1514 steps (1514 passed)
     ```
-- [ ] COMMIT: `feat(review): A review response cut off after a complete command stays reviewable`.
+- [x] COMMIT: `feat(review): A review response cut off after a complete command stays reviewable`.
   - Evidence:
     ```
-    <commit hash>
+    9fb145f
     ```
 ## S3: A review response whose values contain unescaped quotation marks is still read
 
