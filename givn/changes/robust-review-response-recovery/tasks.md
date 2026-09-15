@@ -440,31 +440,61 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S7: An unusable provider response is saved for bug reports
 
-- [ ] RED: remove `@wip`; write the PTY steps (state-file read, path naming);
+- [x] RED: remove `@wip`; write the PTY steps (state-file read, path naming);
   run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: An unusable provider response is saved for bug reports
+     ✘  Given a configured provider that serves this review response:
+        Step doesn't match any function
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    1 step (1 failed)
+    exit=1
+    # after adding the given, the direct close step matched the e2e widget
+    # cancel step and failed waiting for HIST<<, confirming RED for the
+    # direct-path diagnostics
     ```
-- [ ] GREEN: `src/config/mod.rs` — `unusable_response_path()` from
+- [x] GREEN: `src/config/mod.rs` — `unusable_response_path()` from
   `$XDG_STATE_HOME` with `~/.local/state` fallback; `src/review/diagnostics.rs`
   (new) — `capture_unusable_response` writes the raw payload with mode `0600`;
   `src/main.rs` — capture every unusable review response and name the saved
   path on stderr after the surface closes. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/config/mod.rs, src/review/diagnostics.rs, src/main.rs
+    Scenario: An unusable provider response is saved for bug reports
+     ✔  Given a configured provider that serves this review response:
+     ✔  When I run `watn` for "show disk usage" in an eligible terminal
+     ✔  And I close the review surface without accepting
+     ✔  Then the raw provider response should be saved to the unusable-response state file
+     ✔  And the review invocation should name the unusable-response state file path
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    $ cargo test --locked --lib --features test-support review::diagnostics
+    test result: ok. 2 passed; 0 failed
+    # production files: src/config/mod.rs (xdg_state_dir, unusable_response_path),
+    # src/review/diagnostics.rs (capture_unusable_response), src/review/mod.rs,
+    # src/main.rs (capture on unusable initial and regenerated candidates,
+    # print_capture_diagnostics on accept, cancel, and disable)
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "An unusable provider response is saved for bug reports"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    252 scenarios (252 passed)
+    1541 steps (1541 passed)
     ```
-- [ ] COMMIT: `feat(review): An unusable provider response is saved for bug reports`.
+- [x] COMMIT: `feat(review): An unusable provider response is saved for bug reports`.
   - Evidence:
     ```
-    <commit hash>
+    3c28749
     ```
 
 ## S8: An unwritable unusable-response state file does not break the review

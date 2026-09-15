@@ -69,7 +69,7 @@ Feature: Review response recovery and diagnostics
     Then  the raw provider response should be saved to the unusable-response state file
     And  the review invocation should name the unusable-response state file path
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unwritable unusable-response state file does not break the review
     Given  a configured provider that serves this review response:
       """

@@ -957,6 +957,7 @@ pub struct ReviewState {
     pub cleanup: String,
     pub narrow: bool,
     pub e2e: bool,
+    pub blocked_state_dir: bool,
     pub stdout_path: Option<std::path::PathBuf>,
     pub color_incapable: bool,
 }
@@ -4013,6 +4014,19 @@ fn start_direct_review_run(world: &mut WatnWorld, question: &str, verbose: bool)
     world.temp_dir = None;
     world.raw_config = None;
     super::ensure_test_env(world);
+    if world.review.blocked_state_dir {
+        let blocker = world
+            .temp_dir
+            .as_ref()
+            .expect("direct review temp dir")
+            .path()
+            .join("state-blocker");
+        std::fs::write(&blocker, "not a directory").expect("write state blocker");
+        world.env_vars.insert(
+            "XDG_STATE_HOME".to_string(),
+            blocker.display().to_string(),
+        );
+    }
     let binary = super::find_binary();
     world
         .env_vars
@@ -4121,20 +4135,26 @@ fn review_reports_raw_response(world: &mut WatnWorld) {
 
 #[then(expr = "the review invocation should show the command {string}")]
 fn review_invocation_shows_command(world: &mut WatnWorld, command: String) {
-    let _ = (world, command);
-    unimplemented!()
+    let transcript =
+        watn::review::sanitize_terminal_text(&world.output.clone().unwrap_or_default());
+    assert!(
+        transcript.contains(&command),
+        "the review invocation should show the command {command:?}: {transcript:?}"
+    );
 }
 
 #[given("the unusable-response state directory cannot be created")]
 fn unusable_response_state_dir_blocked(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    world.review.blocked_state_dir = true;
 }
 
 #[then("the review invocation should warn that the unusable-response state file could not be written")]
 fn review_warns_state_file_write(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let transcript = world.output.clone().unwrap_or_default();
+    assert!(
+        transcript.contains("could not save the unusable provider response"),
+        "the review invocation should warn about the failed capture: {transcript:?}"
+    );
 }
 
 #[given("an unusable-response state file that already holds a previous response")]
