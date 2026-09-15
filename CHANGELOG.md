@@ -6,6 +6,55 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-15
+
+### Bug Fixes
+
+- **robust-review-response-recovery:** Rebase the use-case delta on the current permanent base
+
+- **deps:** Bump rustls to 0.23.45 for RUSTSEC-2026-0285
+
+
+### Documentation
+
+- **robust-review-response-recovery:** Review sign-off, design re-review, and README update
+
+
+### Features
+
+- **review:** A review response with literal line breaks and tabs in its values is read as a structured response
+
+- **review:** A review response cut off after a complete command stays reviewable
+
+- **review:** A review response whose values contain unescaped quotation marks is still read
+
+- **review:** A review response cut off inside the command releases nothing
+
+- **review:** The review surface names why stage purposes are unavailable
+
+- **review:** Verbose review prints the raw provider response after the surface closes
+
+- **review:** An unusable provider response is saved for bug reports
+
+- **review:** An unwritable unusable-response state file does not break the review
+
+- **review:** A usable review response does not overwrite the captured unusable response
+
+- **explain:** An explanation response with literal line breaks in its values is read as a structured response
+
+- **explain:** An explanation response cut off after a complete command keeps the command reviewable
+
+- **explain:** The explanation card names why stage purposes are unavailable
+
+- **explain:** Verbose explain prints the raw provider response after the card closes
+
+- **explain:** An unusable explanation response is saved for bug reports
+
+
+### Other Changes
+
+- Satisfy rustfmt and clippy question-mark gates
+
 ## [0.5.0] - 2026-09-13
 
 ### Bug Fixes
@@ -1196,3 +1245,5 @@ Bright fireant
 [0.4.1]: https://github.com/buster/watn/compare/v0.4.0...v0.4.1
 
 [0.5.0]: https://github.com/buster/watn/compare/v0.4.1...v0.5.0
+
+[0.5.1]: https://github.com/buster/watn/compare/v0.5.0...v0.5.1
