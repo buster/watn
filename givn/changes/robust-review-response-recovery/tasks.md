@@ -499,29 +499,57 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S8: An unwritable unusable-response state file does not break the review
 
-- [ ] RED: remove `@wip`; write the unwritable-directory given step and the
+- [x] RED: remove `@wip`; write the unwritable-directory given step and the
   warning assertion; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: An unwritable unusable-response state file does not break the review
+     ✔  Given a configured provider that serves this review response:
+     ✘  And the unusable-response state directory cannot be created
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:4128:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    2 steps (1 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/diagnostics.rs` / `src/main.rs` — warn on capture
+- [x] GREEN: `src/review/diagnostics.rs` / `src/main.rs` — warn on capture
   failure without changing the review outcome or exit status. Run targeted;
   zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/diagnostics.rs, src/main.rs
+    Scenario: An unwritable unusable-response state file does not break the review
+     ✔  Given a configured provider that serves this review response:
+     ✔  And the unusable-response state directory cannot be created
+     ✔  When I run `watn` for "show disk usage" in an eligible terminal
+     ✔  And I close the review surface without accepting
+     ✔  Then the review invocation should show the command "df -h"
+     ✔  And the review invocation should warn that the unusable-response state file could not be written
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    6 steps (6 passed)
+    # production files: src/main.rs (print_capture_diagnostics on cancel and
+    # disable, warning wording); step helper creates the blocker after the
+    # isolated config exists
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "An unwritable unusable-response state file does not break the review"
+    1 scenario (1 passed), 6 steps (6 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    253 scenarios (253 passed)
+    1547 steps (1547 passed)
     ```
-- [ ] COMMIT: `feat(review): An unwritable unusable-response state file does not break the review`.
+- [x] COMMIT: `feat(review): An unwritable unusable-response state file does not break the review`.
   - Evidence:
     ```
-    <commit hash>
+    a0e3466
     ```
 
 ## S9: A usable review response does not overwrite the captured unusable response

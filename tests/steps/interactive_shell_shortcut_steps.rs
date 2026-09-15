@@ -958,6 +958,7 @@ pub struct ReviewState {
     pub narrow: bool,
     pub e2e: bool,
     pub blocked_state_dir: bool,
+    pub prefilled_state_response: Option<String>,
     pub stdout_path: Option<std::path::PathBuf>,
     pub color_incapable: bool,
 }
@@ -4027,6 +4028,29 @@ fn start_direct_review_run(world: &mut WatnWorld, question: &str, verbose: bool)
             blocker.display().to_string(),
         );
     }
+    if let Some(previous) = world.review.prefilled_state_response.clone() {
+        let state_dir = world
+            .temp_dir
+            .as_ref()
+            .expect("direct review temp dir")
+            .path()
+            .join("state")
+            .join("watn");
+        std::fs::create_dir_all(&state_dir).expect("create state directory");
+        std::fs::write(state_dir.join("last-unusable-response.txt"), previous)
+            .expect("prefill state file");
+        world.env_vars.insert(
+            "XDG_STATE_HOME".to_string(),
+            world
+                .temp_dir
+                .as_ref()
+                .expect("direct review temp dir")
+                .path()
+                .join("state")
+                .display()
+                .to_string(),
+        );
+    }
     let binary = super::find_binary();
     world
         .env_vars
@@ -4159,12 +4183,22 @@ fn review_warns_state_file_write(world: &mut WatnWorld) {
 
 #[given("an unusable-response state file that already holds a previous response")]
 fn unusable_response_state_file_prefilled(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    world.review.prefilled_state_response =
+        Some("{\"previous\":\"unusable response\"}".to_string());
 }
 
 #[then("the unusable-response state file should still hold the previous response")]
 fn unusable_response_state_file_unchanged(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let previous = world
+        .review
+        .prefilled_state_response
+        .clone()
+        .expect("prefilled state response");
+    let path = unusable_response_state_file_path(world);
+    let saved = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("state file {} should exist: {error}", path.display()));
+    assert_eq!(
+        saved, previous,
+        "a usable response must not overwrite the captured unusable response"
+    );
 }

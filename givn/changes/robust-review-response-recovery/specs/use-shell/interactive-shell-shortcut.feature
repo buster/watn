@@ -81,7 +81,7 @@ Feature: Review response recovery and diagnostics
     Then  the review invocation should show the command "df -h"
     And  the review invocation should warn that the unusable-response state file could not be written
 
-  @givn.added @wip
+  @givn.added
   Scenario: A usable review response does not overwrite the captured unusable response
     Given  an unusable-response state file that already holds a previous response
     And  a configured provider that serves this review response:
