@@ -1022,9 +1022,12 @@ mod tests {
 
     #[test]
     fn literal_control_characters_inside_values_are_repaired() {
-        let raw = "{\"review_version\":1,\"command\":\"df -h\",\"stages\":[{\"stage_text\":\"df -h\",\"purpose\":\"Show local disk\nusage.\tKeep it simple.\"}],\"purpose_status\":\"ready\"}";
+        let raw = "{\"review_version\":1,\"command\":\"df -h\",\"stages\":[{\"stage_text\":\"df -h\",\"purpose\":\"Show local disk\nusage.\r\tKeep it simple.\u{1}\"}],\"purpose_status\":\"ready\"}";
         let parsed = parse_structured_review_response(raw).expect("repaired payload parses");
-        assert_eq!(parsed.stages[0].purpose.as_deref(), Some("Show local disk\nusage.\tKeep it simple."));
+        assert_eq!(
+            parsed.stages[0].purpose.as_deref(),
+            Some("Show local disk\nusage.\r\tKeep it simple.\u{1}")
+        );
 
         let candidate = candidate_from_provider_response(raw).expect("candidate");
         assert_eq!(candidate.command, "df -h");

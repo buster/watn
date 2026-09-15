@@ -150,6 +150,16 @@ persist the choice they set; without a question they only persist and exit.
 Direct edits commit with `Enter`, discard with `Escape`, and still require final
 acceptance.
 
+A provider response that is not valid JSON, is cut off, or has mismatched
+stages is never shown as the command: watn recovers the provider-written
+command when it can and shows `purpose-unavailable` with the reason in the
+card. The raw response is saved to
+`$XDG_STATE_HOME/watn/last-unusable-response.txt` (normally
+`~/.local/state/watn/last-unusable-response.txt`) and the path is named on
+stderr after the surface closes, so a bug report can attach what the provider
+actually sent. `-v`/`--verbose` prints the raw provider response to stderr
+after the surface closes.
+
 ### Explain an existing command
 
 `watn explain '<command>'` opens the explanation card for a command you already
@@ -172,7 +182,9 @@ usable model is configured, `watn explain` starts quick setup or the setup
 wizard (or prints setup guidance when the command arrives through a pipe)
 instead of opening the card. A failed explanation request is reported on
 stderr, and the card still opens with the command's stages and
-`purpose-unavailable`.
+`purpose-unavailable`. An unusable response names the reason in the card and is
+saved for a bug report the same way as a review response; `watn explain -v`
+prints the raw provider response to stderr after the card closes.
 
 ### Shell shortcut
 

@@ -146,19 +146,27 @@ mapping is fixed so the step assertions cannot drift:
 
 | Condition | Card reason |
 |---|---|
-| No structured response at all (command-only text) | `the provider returned no structured review response` |
 | JSON-shaped payload that cannot be read | `the provider response was not valid JSON` |
 | Payload cut off before completion | `the provider response was incomplete` |
 | Version outside the contract | `the provider response version is not supported` |
-| Command mismatch (review path) | `the provider response did not match the request` |
-| Command mismatch (explain path) | `the explanation does not match the explained command` |
+| Empty command value (explain path; the review path releases nothing) | `the provider response command is empty` |
+| Command mismatch | `the provider response did not match the command` |
 | Stage text mismatch | `the response stages did not match the command` |
 | Missing stage purpose | `the provider response is missing a stage purpose` |
 | No delayed-purpose request | `the provider response has no delayed-purpose request` |
 
-`ReviewResponseError::card_reason()` owns the review-path wording;
-`explain_reason()` keeps the explain-path wording. Neither may use the
-anti-term `candidate`.
+`ReviewResponseError::card_reason()` owns the card wording for both paths;
+`explain_reason()` keeps the longer stderr wording for the
+`explain response was not usable` diagnostic. Neither may use the anti-term
+`candidate`.
+
+On the review path, command-only text (a provider response with no review
+shape at all) keeps the bare `purpose-unavailable` label: it is not a
+Structured review response, no `ReviewResponseError` describes it, and no
+reason is attached. It is still captured as an unusable provider response,
+like every other unavailable candidate. On the explain path every unreadable
+response, review-shaped or not, is named: command-only text maps to
+`the provider response was not valid JSON`.
 
 ## Step Definitions
 
@@ -190,7 +198,7 @@ E2E runner command (`verify.e2e_command`):
 
 No new `@e2e` scenarios are added, so no new E2E step files are created.
 
-New and changed step responsibilities:
+## Step Responsibilities
 
 | Step | Behaviour |
 |---|---|
