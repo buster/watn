@@ -605,28 +605,52 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S10: An explanation response with literal line breaks in its values is read as a structured response
 
-- [ ] RED: remove `@wip`; write the JSON-serialized SSE fixture given step and
+- [x] RED: remove `@wip`; write the JSON-serialized SSE fixture given step and
   the stage-purpose assertion; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: An explanation response with literal line breaks in its values is read as a structured response
+     ✘  Given a configured provider whose explanation response contains literal line breaks inside its values
+        Step failed:
+        Matched: tests/steps/explain_command_steps.rs:717:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    1 step (1 failed)
+    exit=1
     ```
-- [ ] GREEN: reuse the S1 repair through `apply_explanation_outcome`; the
+- [x] GREEN: reuse the S1 repair through `apply_explanation_outcome`; the
   fixture must echo the developer's command exactly. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: none expected beyond S1 (reuse); investigate if the list is empty for the wrong reason
+    Scenario: An explanation response with literal line breaks in its values is read as a structured response
+     ✔  Given a configured provider whose explanation response contains literal line breaks inside its values
+     ✔  When I run `watn explain` with this single argument:
+     ✔  Then the explanation card should show the stage:
+     ✔  And the explanation card should show the stage purpose "List the commits."
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    4 steps (4 passed)
+    # production files: none beyond S1 (repair already shared); the fixture
+    # delivers the newline as a JSON escape through the SSE frame
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "An explanation response with literal line breaks in its values is read as a structured response"
+    1 scenario (1 passed), 4 steps (4 passed)
+    $ ./run-tests.sh
+    [Summary]
+    24 features
+    255 scenarios (255 passed)
+    1556 steps (1556 passed)
     ```
-- [ ] COMMIT: `feat(explain): An explanation response with literal line breaks in its values is read as a structured response`.
+- [x] COMMIT: `feat(explain): An explanation response with literal line breaks in its values is read as a structured response`.
   - Evidence:
     ```
-    <commit hash>
+    5648312
     ```
 
 ## S11: An explanation response cut off after a complete command keeps the command reviewable
