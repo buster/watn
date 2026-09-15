@@ -780,6 +780,11 @@ fn explain_reports_raw_response(world: &mut WatnWorld) {
 
 #[then("the explain invocation should name the unusable-response state file path")]
 fn explain_names_state_file_path(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let path = super::interactive_shell_shortcut_steps::unusable_response_state_file_path(world);
+    let transcript = world.output.clone().unwrap_or_default();
+    assert!(
+        transcript.contains(path.to_string_lossy().as_ref()),
+        "the explain invocation should name {} in: {transcript:?}",
+        path.display()
+    );
 }

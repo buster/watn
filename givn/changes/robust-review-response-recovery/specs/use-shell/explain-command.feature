@@ -49,7 +49,7 @@ Feature: Explanation response recovery and diagnostics
     Then  the explain invocation should report the raw provider response
     And  the command-output channel should contain no command
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unusable explanation response is saved for bug reports
     Given  a configured provider whose explanation does not cover the command
     When  I run `watn explain` with this single argument:
