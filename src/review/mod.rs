@@ -1,5 +1,6 @@
 mod buffer;
 mod card;
+pub mod diagnostics;
 mod flow;
 mod panel;
 mod response;
@@ -10,6 +11,7 @@ pub use buffer::ReviewBuffer;
 pub use card::{
     color_terminal_supports_card, disable_hint, render_card_lines, terminal_supports_color,
 };
+pub use diagnostics::capture_unusable_response;
 pub use flow::{derive_command_flow, CommandFlow, CommandStage, StageSupport, UnsupportedSpan};
 pub use panel::{
     controlling_terminal_is_usable, explanation_terminal_is_usable, sanitize_terminal_text,

@@ -384,32 +384,58 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S6: Verbose review prints the raw provider response after the surface closes
 
-- [ ] RED: remove `@wip`; write the PTY steps (`a configured provider that
+- [x] RED: remove `@wip`; write the PTY steps (`a configured provider that
   serves this structured review response:`, `I run watn -v for ... in an
   eligible terminal`, `I cancel the review surface` direct variant, transcript
   assertions); run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: Verbose review prints the raw provider response after the surface closes
+     ✘  Given a configured provider that serves this structured review response:
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:3992:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    1 step (1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/output/render.rs` — labelled raw-response printer on stderr;
+- [x] GREEN: `src/output/render.rs` — labelled raw-response printer on stderr;
   `src/main.rs` — print after `panel.finish()` for the review path and thread
   the accepted response's `finish_reason` into the initial parse. Run
   targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/output/render.rs, src/main.rs
+    Scenario: Verbose review prints the raw provider response after the surface closes
+     ✔  Given a configured provider that serves this structured review response:
+     ✔  When I run `watn -v` for "show disk usage" in an eligible terminal
+     ✔  And I accept the candidate in the review surface
+     ✔  Then the review invocation should report the raw provider response
+     ✔  And normal command output should contain only "df -h"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    # production files: src/output/render.rs (print_raw_response), src/main.rs
+    # (verbose print after panel.finish(); initial parse already threaded
+    # finish_reason in S2), step helper start_direct_review_run
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "Verbose review prints the raw provider response after the surface closes"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    251 scenarios (251 passed)
+    1536 steps (1536 passed)
     ```
-- [ ] COMMIT: `feat(review): Verbose review prints the raw provider response after the surface closes`.
+- [x] COMMIT: `feat(review): Verbose review prints the raw provider response after the surface closes`.
   - Evidence:
     ```
-    <commit hash>
+    c5bd4ca
     ```
 
 ## S7: An unusable provider response is saved for bug reports
