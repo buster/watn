@@ -31,7 +31,7 @@ Feature: Review response recovery and diagnostics
     And  the review surface should show purpose-unavailable
     And  the review surface should name that the provider response was not valid JSON
 
-  @givn.added @wip
+  @givn.added
   Scenario: A review response cut off inside the command releases nothing
     Given  an installed Bash shortcut and a provider candidate for "show disk usage"
     And  the provider returns a structured review response cut off inside the command
