@@ -824,46 +824,102 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S14: An unusable explanation response is saved for bug reports
 
-- [ ] RED: remove `@wip`; write the state-file read and path-naming
+- [x] RED: remove `@wip`; write the state-file read and path-naming
   assertions; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: An unusable explanation response is saved for bug reports
+     ✔  Given a configured provider whose explanation does not cover the command
+     ✔  When I run `watn explain` with this single argument:
+     ✘  Then the raw provider response should be saved to the unusable-response state file
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:4121:1
+        Step panicked. Captured output: XDG_STATE_HOME for the unusable-response state file
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    3 steps (2 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/main.rs` — capture the unusable explanation response and
+- [x] GREEN: `src/main.rs` — capture the unusable explanation response and
   name the path in the existing stderr diagnostic. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/main.rs
+    Scenario: An unusable explanation response is saved for bug reports
+     ✔  Given a configured provider whose explanation does not cover the command
+     ✔  When I run `watn explain` with this single argument:
+     ✔  Then the raw provider response should be saved to the unusable-response state file
+     ✔  And the explain invocation should name the unusable-response state file path
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    4 steps (4 passed)
+    # production files: none beyond S13 (capture and path naming landed with the
+    # explain response return); the shared state-path helper resolves the
+    # default ~/.local/state location when no XDG_STATE_HOME override is set
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "An unusable explanation response is saved for bug reports"
+    1 scenario (1 passed), 4 steps (4 passed)
+    $ ./run-tests.sh
+    [Summary]
+    24 features
+    259 scenarios (259 passed)
+    1573 steps (1573 passed)
+    $ ./run-tests.sh --e2e
+    [Summary]
+    25 features
+    89 scenarios (89 passed)
+    682 steps (682 passed)
     ```
-- [ ] COMMIT: `feat(explain): An unusable explanation response is saved for bug reports`.
+- [x] COMMIT: `feat(explain): An unusable explanation response is saved for bug reports`.
   - Evidence:
     ```
-    <commit hash>
+    b0a3763
     ```
 
 ## Final verification
 
-- [ ] Full regular suite green: `./run-tests.sh`.
+- [x] Full regular suite green: `./run-tests.sh`.
   - Evidence:
     ```
-    <paste summary>
+    [Summary]
+    24 features
+    259 scenarios (259 passed)
+    1573 steps (1573 passed)
     ```
-- [ ] Full e2e suite green: `./run-tests.sh --e2e` (no new `@e2e` scenarios;
+- [x] Full e2e suite green: `./run-tests.sh --e2e` (no new `@e2e` scenarios;
   confirms the unchanged e2e contract).
   - Evidence:
     ```
-    <paste summary>
+    [Summary]
+    25 features
+    89 scenarios (89 passed)
+    682 steps (682 passed)
     ```
-- [ ] `givn lint --change robust-review-response-recovery` exits 0 or 2 with
+- [x] `givn lint --change robust-review-response-recovery` exits 0 or 2 with
   only accepted advisory findings.
   - Evidence:
     ```
-    <paste>
+    $ givn lint --change robust-review-response-recovery
+    givn lint: 2 file(s) checked — clean
+    exit=0
+    # the earlier advisory [SHAPE]/[SUBST] findings resolved once the scenarios
+    # were implemented; the design-review record lists the accepted heuristics
+    ```
+- [x] Final sanity: no `unimplemented!()`/`todo!()` remains in the touched
+  step files; 14 scenario commits match the 14 scenario tasks; the touched
+  production files are covered by unit tests or Gherkin scenarios.
+  - Evidence:
+    ```
+    $ rg -n "unimplemented!|todo!\(\)" tests/steps/interactive_shell_shortcut_steps.rs tests/steps/explain_command_steps.rs
+    (no matches)
+    $ git log --oneline fdb3c60..HEAD | wc -l
+    14
+    # production files touched: src/review/response.rs, src/review/card.rs,
+    # src/review/diagnostics.rs, src/review/session.rs, src/review/mod.rs,
+    # src/provider/mod.rs, src/provider/openai_compat.rs, src/output/render.rs,
+    # src/config/mod.rs, src/main.rs
     ```

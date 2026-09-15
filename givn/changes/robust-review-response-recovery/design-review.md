@@ -27,6 +27,8 @@ finding and asked the operator the two decisions that change cost or privacy.
 | R13 | The review-shape classifier had no stated rules while a guarded behavior depends on it. | The design states the quoted-key signal and the command-only counterexample. |
 | R14 | The standard SSE mock helper escapes only quotes, so a literal newline fixture would split the event. | Recorded as an anticipated obstacle: the new fixtures JSON-serialize their content. |
 | R15 | The runtime view captured only malformed/truncated payloads, not unmatched ones. | Updated the sequence diagram and prose to capture every unusable response, including no-recoverable-command and mismatch. |
+| R16 | After implementation, `design.md` was edited (still uncommitted) to document the as-built card wording: one `Command mismatch` row, `card_reason()` owning both card paths, `explain_reason()` keeping the stderr wording. The committed design still carried two path-split rows and an unimplemented command-only row while the code had the single wording since S2 (`9fb145f`), so design and code had drifted without a re-review. | Re-reviewed in fresh context (see below); the table now matches `card_reason()` arm-for-arm and gains the missing empty-command reason. |
+| R17 | The re-review found the new command-only paragraph wrong on two counts: on the explain path plain text maps to `the provider response was not valid JSON` rather than a bare label, and on the review path command-only text is still captured as an unusable provider response. | Paragraph scoped per path and reworded to the glossary term; no code change. |
 
 ## Operator decisions
 
@@ -72,6 +74,33 @@ findings only:
   reason naming). No consolidation is warranted inside this change.
 - The verbose scenario shape-matches the regeneration scenario because both
   drive the real binary; their observables differ.
+
+## Re-review after implementation
+
+`design.md` was edited after the original sign-off to document the as-built
+reason wording (R16). Per the review gate, the changed decision was re-reviewed
+in a fresh context: the subagent read the updated design, the original review
+record, both delta specs, the use-case delta, the permanent `use-shell` specs,
+the implementation (`src/review/response.rs`, `src/review/card.rs`,
+`src/review/session.rs`, `src/main.rs`, `src/review/diagnostics.rs`,
+`src/config/mod.rs`, `src/provider/*`, `src/output/render.rs`), the glossary,
+and the arc42 update.
+
+Verified in the re-review:
+
+- Every row of the updated Purpose-reason table matches a `card_reason()` arm
+  string-for-string; `card.rs` renders `card_reason()` for both the review and
+  explanation cards.
+- No delta or permanent scenario asserts any superseded wording; the explain
+  stderr diagnostic still uses `explain_reason()`.
+- The glossary's Purpose-reason examples are a subset of `card_reason()`; no
+  stale wording exists under `docs/`.
+- No structural consequence: ADR `NOT_QUALIFIED` stands and the arc42 chapter
+  table is unchanged.
+
+Findings R17 fixed in `design.md` (path-scoped wording, capture wording). No
+operator decision changed, no mandatory check is deferred, and `givn lint`
+still exits 0.
 
 ## Hardening applied
 
