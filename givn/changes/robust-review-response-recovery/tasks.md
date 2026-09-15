@@ -326,32 +326,60 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
 
 ## S5: The review surface names why stage purposes are unavailable
 
-- [ ] RED: remove `@wip`; change the shared mismatched-stage fixture to
+- [x] RED: remove `@wip`; change the shared mismatched-stage fixture to
   `"purpose_status":"ready"` (keeps the permanent scenario green); write the
   reason assertion step; run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    # before the fixture change the card names the invalid-JSON reason:
+    Scenario: The review surface names why stage purposes are unavailable
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✔  And the provider returns a review response with mismatched stage text
+     ✔  When I invoke Ctrl-W with the current input
+     ✔  Then the review surface should show purpose-unavailable
+     ✘  And the review surface should name that the response stages did not match the command
+        card showed: purpose-unavailable · the provider response was not valid JSON
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    5 steps (4 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/response.rs` — carry the validation error into
+- [x] GREEN: `src/review/response.rs` — carry the validation error into
   `unavailable_reason` in the fallback path and add `card_reason()` per the
   design mapping; `src/review/card.rs` renders `purpose-unavailable · <reason>`.
   Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/response.rs, src/review/card.rs
+    Scenario: The review surface names why stage purposes are unavailable
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✔  And the provider returns a review response with mismatched stage text
+     ✔  When I invoke Ctrl-W with the current input
+     ✔  Then the review surface should show purpose-unavailable
+     ✔  And the review surface should name that the response stages did not match the command
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    # production files: none beyond S2 (validation_error and card_reason landed
+    # there); fixture status changed to "ready" so the stage-mismatch path is reached
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green
   (permanent mismatch and invalid-response scenarios).
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "The review surface names why stage purposes are unavailable"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    250 scenarios (250 passed)
+    1531 steps (1531 passed)
     ```
-- [ ] COMMIT: `feat(review): The review surface names why stage purposes are unavailable`.
+- [x] COMMIT: `feat(review): The review surface names why stage purposes are unavailable`.
   - Evidence:
     ```
-    <commit hash>
+    fe224d4
     ```
 
 ## S6: Verbose review prints the raw provider response after the surface closes
