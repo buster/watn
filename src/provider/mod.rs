@@ -37,6 +37,7 @@ pub struct StreamingResponse {
     pub full_content: String,
     pub elapsed_secs: f64,
     pub reasoning_content: Option<String>,
+    pub finish_reason: Option<String>,
 }
 
 pub trait Provider: Send + Sync {

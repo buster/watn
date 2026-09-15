@@ -44,6 +44,7 @@ pub struct ReviewResponse {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReviewResponseError {
     InvalidJson(String),
+    IncompleteResponse,
     UnsupportedVersion(u32),
     EmptyCommand,
     CommandMismatch,
@@ -56,6 +57,7 @@ impl std::fmt::Display for ReviewResponseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidJson(error) => write!(f, "invalid review JSON: {error}"),
+            Self::IncompleteResponse => write!(f, "review response is incomplete"),
             Self::UnsupportedVersion(version) => {
                 write!(f, "unsupported review response version: {version}")
             }
@@ -80,6 +82,7 @@ impl ReviewResponseError {
     pub fn explain_reason(&self) -> String {
         match self {
             Self::InvalidJson(error) => format!("invalid explanation JSON: {error}"),
+            Self::IncompleteResponse => "the explanation response is incomplete".to_string(),
             Self::UnsupportedVersion(version) => {
                 format!("unsupported explanation version: {version}")
             }
@@ -93,6 +96,26 @@ impl ReviewResponseError {
             Self::MissingPurpose => "the explanation is missing a stage purpose".to_string(),
             Self::InvalidLoadingResponse => {
                 "the explanation has no delayed-purpose request".to_string()
+            }
+        }
+    }
+
+    /// Plain-language Purpose reason rendered in the review surface. The card
+    /// is shared by the review and explain paths, so the wording must not use
+    /// the anti-term "candidate" and must not name an internal parser term.
+    pub fn card_reason(&self) -> String {
+        match self {
+            Self::InvalidJson(_) => "the provider response was not valid JSON".to_string(),
+            Self::IncompleteResponse => "the provider response was incomplete".to_string(),
+            Self::UnsupportedVersion(_) => {
+                "the provider response version is not supported".to_string()
+            }
+            Self::EmptyCommand => "the provider response command is empty".to_string(),
+            Self::CommandMismatch => "the provider response did not match the command".to_string(),
+            Self::StageMismatch => "the response stages did not match the command".to_string(),
+            Self::MissingPurpose => "the provider response is missing a stage purpose".to_string(),
+            Self::InvalidLoadingResponse => {
+                "the provider response has no delayed-purpose request".to_string()
             }
         }
     }
@@ -132,6 +155,109 @@ fn locate_json_payload(raw: &str) -> Option<&str> {
     let start = trimmed.find('{')?;
     let end = trimmed.rfind('}')?;
     (end > start).then(|| trimmed[start..=end].trim())
+}
+
+/// Locate the JSON-shaped region of a provider payload, including an
+/// unterminated object: from the first `{` (or the body of a markdown fence)
+/// to the end of the payload. Used only for tolerant recovery; strict parsing
+/// still uses `locate_json_payload`.
+fn locate_json_region(raw: &str) -> Option<&str> {
+    let trimmed = raw.trim();
+    if let Some(fence_start) = trimmed.find("```") {
+        let after_fence = &trimmed[fence_start + 3..];
+        if let Some(line_end) = after_fence.find('\n') {
+            let body = &after_fence[line_end + 1..];
+            let end = body.find("```").unwrap_or(body.len());
+            let region = body[..end].trim_start();
+            if !region.is_empty() {
+                return Some(region);
+            }
+        }
+    }
+    let start = trimmed.find('{')?;
+    Some(trimmed[start..].trim_end())
+}
+
+/// A payload is review-shaped when it names a review field. Command-only text
+/// that merely contains braces (for example `awk '{print $1}' file.txt`) stays
+/// command text.
+fn looks_like_review_payload(text: &str) -> bool {
+    text.contains("\"review_version\"")
+        || text.contains("\"command\"")
+        || text.contains("\"purpose_status\"")
+}
+
+/// Decode the JSON escapes of a recovered string value. Unescaped characters
+/// pass through unchanged.
+fn unescape_json_string(value: &str) -> String {
+    let mut result = String::with_capacity(value.len());
+    let mut characters = value.chars();
+    while let Some(character) = characters.next() {
+        if character != '\\' {
+            result.push(character);
+            continue;
+        }
+        match characters.next() {
+            Some('n') => result.push('\n'),
+            Some('r') => result.push('\r'),
+            Some('t') => result.push('\t'),
+            Some('"') => result.push('"'),
+            Some('\\') => result.push('\\'),
+            Some('/') => result.push('/'),
+            Some('u') => {
+                let hex: String = characters.by_ref().take(4).collect();
+                if let Ok(code) = u32::from_str_radix(&hex, 16) {
+                    if let Some(decoded) = char::from_u32(code) {
+                        result.push(decoded);
+                    }
+                }
+            }
+            Some(other) => result.push(other),
+            None => {}
+        }
+    }
+    result
+}
+
+/// Recover the provider-written `command` value from a review-shaped payload
+/// whose strict parsing failed. The value ends at the next review field or at
+/// a closing quote that ends the payload; a value cut off inside the command
+/// has no closing quote and recovers nothing.
+fn recover_command_value(payload: &str) -> Option<String> {
+    let key = payload.find("\"command\"")?;
+    let after_key = &payload[key + "\"command\"".len()..];
+    let after_colon = after_key.trim_start().strip_prefix(':')?.trim_start();
+    let value = after_colon.strip_prefix('"')?;
+    let delimiters = [
+        "\",\"stages\"",
+        "\",\"purpose_status\"",
+        "\",\"purpose_request\"",
+        "\"}",
+    ];
+    let end = delimiters
+        .iter()
+        .filter_map(|delimiter| value.find(delimiter))
+        .min();
+    let raw_value = match end {
+        Some(end) => &value[..end],
+        None => value.trim_end().strip_suffix('"')?,
+    };
+    let command = normalize_command(&unescape_json_string(raw_value));
+    (!command.is_empty()).then_some(command)
+}
+
+/// The reason an unreadable review-shaped payload is unusable: incomplete when
+/// the response was cut off, otherwise invalid JSON.
+fn unreadable_reason(payload: &str, incomplete: bool) -> ReviewResponseError {
+    if incomplete {
+        return ReviewResponseError::IncompleteResponse;
+    }
+    let repaired = repair_json_control_characters(payload);
+    let error = serde_json::from_str::<serde_json::Value>(&repaired)
+        .err()
+        .map(|error| error.to_string())
+        .unwrap_or_else(|| "provider response could not be read".to_string());
+    ReviewResponseError::InvalidJson(error)
 }
 
 /// Escape raw C0 control characters that appear inside JSON string values so
@@ -263,48 +389,73 @@ fn provider_stage_split(
 /// - A valid structured response keeps its command and model-written purposes.
 /// - A non-canonical response keeps model-written purposes when their stage
 ///   text matches the derived stages and every purpose is non-empty.
-/// - A JSON-shaped payload that fails strict validation contributes only its
-///   provider-written command; purposes stay unavailable.
-/// - A non-JSON payload is treated as command text.
+/// - A review-shaped payload that fails strict validation contributes only its
+///   provider-written command; purposes stay unavailable with a named reason.
+/// - A review-shaped payload is never treated as command text.
+/// - A non-review payload is treated as command text.
 /// - `None` means no usable command exists: the review is `Unavailable`.
 pub fn candidate_from_provider_response(raw: &str) -> Option<ReviewCandidate> {
+    candidate_from_provider_response_with_finish(raw, None)
+}
+
+/// Like `candidate_from_provider_response`, with the provider's completion
+/// signal so a response cut off by the token limit names itself incomplete.
+pub fn candidate_from_provider_response_with_finish(
+    raw: &str,
+    finish_reason: Option<&str>,
+) -> Option<ReviewCandidate> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return None;
     }
+    let mut validation_error: Option<ReviewResponseError> = None;
     if let Ok(parsed) = parse_structured_review_response(trimmed) {
         let command = normalize_command(&parsed.command);
         let mut candidate = ReviewCandidate::from_command(&command);
-        if matches!(
-            candidate.apply_response(trimmed),
-            ReviewParseResult::Ready | ReviewParseResult::Loading
-        ) {
+        match candidate.apply_response(trimmed) {
+            ReviewParseResult::Ready | ReviewParseResult::Loading => return Some(candidate),
+            ReviewParseResult::PurposeUnavailable(error) => validation_error = Some(error),
+        }
+    }
+    let region = locate_json_region(trimmed)?;
+    if !looks_like_review_payload(region) {
+        return Some(ReviewCandidate::from_command(trimmed));
+    }
+    let incomplete = finish_reason == Some("length") || !trimmed.ends_with('}');
+    let repaired = repair_json_control_characters(region);
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&repaired) {
+        if value.get("review_version").is_some()
+            || value.get("command").is_some()
+            || value.get("purpose_status").is_some()
+        {
+            let Some(command) = value
+                .get("command")
+                .and_then(|command| command.as_str())
+                .map(normalize_command)
+                .filter(|command| !command.is_empty())
+            else {
+                return None;
+            };
+            if let Some((flow, stages)) = provider_stage_split(&command, &value) {
+                let mut candidate = ReviewCandidate::from_command(&command);
+                candidate.flow = flow;
+                candidate.stages = stages;
+                candidate.purpose_status = PurposeStatus::Ready;
+                return Some(candidate);
+            }
+            let mut candidate = ReviewCandidate::from_command(command);
+            let reason = validation_error.unwrap_or_else(|| unreadable_reason(&repaired, incomplete));
+            candidate.mark_unavailable(reason);
             return Some(candidate);
         }
     }
-    if let Some(payload) = locate_json_payload(trimmed) {
-        if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload) {
-            if value.get("review_version").is_some()
-                || value.get("command").is_some()
-                || value.get("purpose_status").is_some()
-            {
-                let command = value
-                    .get("command")
-                    .and_then(|command| command.as_str())
-                    .map(normalize_command)
-                    .filter(|command| !command.is_empty())?;
-                if let Some((flow, stages)) = provider_stage_split(&command, &value) {
-                    let mut candidate = ReviewCandidate::from_command(&command);
-                    candidate.flow = flow;
-                    candidate.stages = stages;
-                    candidate.purpose_status = PurposeStatus::Ready;
-                    return Some(candidate);
-                }
-                return Some(ReviewCandidate::from_command(command));
-            }
-        }
-    }
-    Some(ReviewCandidate::from_command(trimmed))
+    let Some(command) = recover_command_value(&repaired) else {
+        return None;
+    };
+    let mut candidate = ReviewCandidate::from_command(&command);
+    let reason = validation_error.unwrap_or_else(|| unreadable_reason(&repaired, incomplete));
+    candidate.mark_unavailable(reason);
+    Some(candidate)
 }
 
 /// The result of applying a provider explanation to a developer-supplied
@@ -326,23 +477,41 @@ pub enum ExplanationOutcome {
 /// echoes the command with the locally derived stages, or when its stage
 /// split provably covers the command.
 pub fn apply_explanation_outcome(command: &str, raw: &str) -> ExplanationOutcome {
+    apply_explanation_outcome_with_finish(command, raw, None)
+}
+
+/// Like `apply_explanation_outcome`, with the provider's completion signal so
+/// a response cut off by the token limit names itself incomplete.
+pub fn apply_explanation_outcome_with_finish(
+    command: &str,
+    raw: &str,
+    finish_reason: Option<&str>,
+) -> ExplanationOutcome {
     let mut candidate = ReviewCandidate::from_command(command);
     let reason = match candidate.apply_response(raw) {
         ReviewParseResult::Ready => return ExplanationOutcome::Ready(candidate),
         ReviewParseResult::PurposeUnavailable(error) => error,
         ReviewParseResult::Loading => ReviewResponseError::InvalidLoadingResponse,
     };
-    candidate.mark_unavailable();
     if let Some(payload) = locate_json_payload(raw) {
         if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload) {
             if let Some((flow, stages)) = provider_stage_split(&candidate.command, &value) {
                 candidate.flow = flow;
                 candidate.stages = stages;
                 candidate.purpose_status = PurposeStatus::Ready;
+                candidate.unavailable_reason = None;
                 return ExplanationOutcome::Ready(candidate);
             }
         }
     }
+    let truncated = finish_reason == Some("length")
+        || (looks_like_review_payload(raw) && !raw.trim().ends_with('}'));
+    let reason = if truncated {
+        ReviewResponseError::IncompleteResponse
+    } else {
+        reason
+    };
+    candidate.mark_unavailable(reason.clone());
     ExplanationOutcome::Unusable { candidate, reason }
 }
 
@@ -364,6 +533,7 @@ pub struct ReviewCandidate {
     pub flow: CommandFlow,
     pub stages: Vec<ReviewStage>,
     pub purpose_status: PurposeStatus,
+    pub unavailable_reason: Option<ReviewResponseError>,
     pub generation: u64,
     pub review_version: Option<u32>,
 }
@@ -378,6 +548,7 @@ impl ReviewCandidate {
             flow,
             stages,
             purpose_status: PurposeStatus::Unavailable,
+            unavailable_reason: None,
             generation: 0,
             review_version: None,
         }
@@ -409,12 +580,12 @@ impl ReviewCandidate {
         let response = match parse_structured_review_response(raw) {
             Ok(response) => response,
             Err(error) => {
-                self.mark_unavailable();
+                self.mark_unavailable(error.clone());
                 return Some(ReviewParseResult::PurposeUnavailable(error));
             }
         };
         if let Err(error) = self.validate(&response) {
-            self.mark_unavailable();
+            self.mark_unavailable(error.clone());
             return Some(ReviewParseResult::PurposeUnavailable(error));
         }
 
@@ -425,7 +596,9 @@ impl ReviewCandidate {
             PurposeStatus::Ready => ReviewParseResult::Ready,
             PurposeStatus::Loading => ReviewParseResult::Loading,
             PurposeStatus::Unavailable => {
-                ReviewParseResult::PurposeUnavailable(ReviewResponseError::InvalidLoadingResponse)
+                let reason = ReviewResponseError::InvalidLoadingResponse;
+                self.mark_unavailable(reason.clone());
+                ReviewParseResult::PurposeUnavailable(reason)
             }
         })
     }
@@ -435,6 +608,7 @@ impl ReviewCandidate {
         self.flow = derive_command_flow(&self.command);
         self.stages = unavailable_stages(&self.flow);
         self.purpose_status = PurposeStatus::Unavailable;
+        self.unavailable_reason = None;
         self.review_version = None;
         self.generation = self.generation.saturating_add(1);
     }
@@ -483,9 +657,10 @@ impl ReviewCandidate {
         }
     }
 
-    fn mark_unavailable(&mut self) {
+    fn mark_unavailable(&mut self, reason: ReviewResponseError) {
         self.purpose_status = PurposeStatus::Unavailable;
         self.stages = unavailable_stages(&self.flow);
+        self.unavailable_reason = Some(reason);
     }
 }
 
@@ -502,8 +677,9 @@ fn unavailable_stages(flow: &CommandFlow) -> Vec<ReviewStage> {
 mod tests {
     use super::{
         apply_explanation_outcome, candidate_from_provider_response,
-        parse_structured_review_response, ExplanationOutcome, PurposeStatus, ReviewCandidate,
-        ReviewParseResult, ReviewResponseError, REVIEW_VERSION,
+        candidate_from_provider_response_with_finish, parse_structured_review_response,
+        ExplanationOutcome, PurposeStatus, ReviewCandidate, ReviewParseResult, ReviewResponseError,
+        REVIEW_VERSION,
     };
 
     const COMMAND: &str = "git log --since='7 days ago' | xargs -n1 git show --stat";
@@ -840,5 +1016,102 @@ mod tests {
         let trailing_text = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df","purpose":"x"}],"purpose_status":"ready"}"#;
         let candidate = candidate_from_provider_response(trailing_text).unwrap();
         assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+    }
+
+    #[test]
+    fn literal_control_characters_inside_values_are_repaired() {
+        let raw = "{\"review_version\":1,\"command\":\"df -h\",\"stages\":[{\"stage_text\":\"df -h\",\"purpose\":\"Show local disk\nusage.\tKeep it simple.\"}],\"purpose_status\":\"ready\"}";
+        let parsed = parse_structured_review_response(raw).expect("repaired payload parses");
+        assert_eq!(parsed.stages[0].purpose.as_deref(), Some("Show local disk\nusage.\tKeep it simple."));
+
+        let candidate = candidate_from_provider_response(raw).expect("candidate");
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Ready);
+    }
+
+    #[test]
+    fn truncated_payload_after_the_command_recovers_it_as_incomplete() {
+        let raw = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show local disk"#;
+        let candidate = candidate_from_provider_response(raw).expect("recovered command");
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+        assert_eq!(
+            candidate.unavailable_reason,
+            Some(ReviewResponseError::IncompleteResponse)
+        );
+
+        let with_finish = candidate_from_provider_response_with_finish(
+            r#"{"review_version":1,"command":"df -h","stages":[]"#,
+            Some("length"),
+        )
+        .expect("recovered command");
+        assert_eq!(
+            with_finish.unavailable_reason,
+            Some(ReviewResponseError::IncompleteResponse)
+        );
+    }
+
+    #[test]
+    fn payload_cut_off_inside_the_command_recovers_nothing() {
+        assert!(candidate_from_provider_response(r#"{"review_version":1,"command":"df -"#).is_none());
+        assert!(candidate_from_provider_response(r#"{"review_version":1,"command":"df -h"#).is_none());
+    }
+
+    #[test]
+    fn unescaped_quotation_marks_in_values_keep_the_recovered_command() {
+        let raw = r#"{"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show disks "local"."}],"purpose_status":"ready"}"#;
+        let candidate = candidate_from_provider_response(raw).expect("recovered command");
+        assert_eq!(candidate.command, "df -h");
+        assert_eq!(candidate.purpose_status, PurposeStatus::Unavailable);
+        assert!(matches!(
+            candidate.unavailable_reason,
+            Some(ReviewResponseError::InvalidJson(_))
+        ));
+    }
+
+    #[test]
+    fn review_shaped_payloads_are_never_shown_as_commands() {
+        let no_command = r#"{"review_version":1,"stages":[],"purpose_status":"ready"}"#;
+        assert!(candidate_from_provider_response(no_command).is_none());
+
+        let broken = r#"{"review_version":1,"command":"df -h","stages":"broken"#;
+        let candidate = candidate_from_provider_response(broken).expect("recovered command");
+        assert_eq!(candidate.command, "df -h");
+        assert!(matches!(
+            candidate.unavailable_reason,
+            Some(ReviewResponseError::IncompleteResponse)
+        ));
+
+        let command_only = candidate_from_provider_response("awk '{print $1}' file.txt").expect("command text");
+        assert_eq!(command_only.command, "awk '{print $1}' file.txt");
+    }
+
+    #[test]
+    fn card_reason_wording_is_plain_language() {
+        assert_eq!(
+            ReviewResponseError::IncompleteResponse.card_reason(),
+            "the provider response was incomplete"
+        );
+        assert_eq!(
+            ReviewResponseError::StageMismatch.card_reason(),
+            "the response stages did not match the command"
+        );
+        for error in [
+            ReviewResponseError::InvalidJson("broken".to_string()),
+            ReviewResponseError::IncompleteResponse,
+            ReviewResponseError::UnsupportedVersion(9),
+            ReviewResponseError::EmptyCommand,
+            ReviewResponseError::CommandMismatch,
+            ReviewResponseError::StageMismatch,
+            ReviewResponseError::MissingPurpose,
+            ReviewResponseError::InvalidLoadingResponse,
+        ] {
+            let reason = error.card_reason();
+            assert!(!reason.is_empty());
+            assert!(
+                !reason.contains("candidate") && !reason.contains("review response"),
+                "card reason leaked an internal term: {reason:?}"
+            );
+        }
     }
 }

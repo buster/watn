@@ -12,7 +12,7 @@ use crate::provider::{Message, Provider, RequestOptions, StreamEvent, StreamingR
 use super::buffer::ReviewBuffer;
 use super::panel::TierChoice;
 use super::response::{
-    apply_explanation_outcome, candidate_from_provider_response, ExplanationOutcome,
+    apply_explanation_outcome, candidate_from_provider_response_with_finish, ExplanationOutcome,
     ReviewCandidate,
 };
 
@@ -82,7 +82,10 @@ pub fn generate_candidate(
 pub fn parse_generated_candidate(generation: &Generation) -> Option<ReviewCandidate> {
     let mut buffer = generation.buffer.clone();
     buffer.complete();
-    candidate_from_provider_response(buffer.candidate()?)
+    candidate_from_provider_response_with_finish(
+        buffer.candidate()?,
+        generation.response.finish_reason.as_deref(),
+    )
 }
 
 /// Fetch an explanation for a developer-supplied command and report the
