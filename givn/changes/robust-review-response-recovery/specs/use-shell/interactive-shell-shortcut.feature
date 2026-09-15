@@ -49,7 +49,7 @@ Feature: Review response recovery and diagnostics
 
   @givn.added
   Scenario: Verbose review prints the raw provider response after the surface closes
-    Given  a configured provider that serves this structured review response:
+    Given  a configured provider that serves this review response:
       """
       {"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show local disk usage."}],"purpose_status":"ready"}
       """
@@ -58,14 +58,14 @@ Feature: Review response recovery and diagnostics
     Then  the review invocation should report the raw provider response
     And  normal command output should contain only "df -h"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unusable provider response is saved for bug reports
     Given  a configured provider that serves this review response:
       """
       {"review_version":1,"command":"df -h","stages":[{"stage_text":"not the derived stage","purpose":"Wrong stage text."}],"purpose_status":"ready"}
       """
     When  I run `watn` for "show disk usage" in an eligible terminal
-    And  I cancel the review surface
+    And  I close the review surface without accepting
     Then  the raw provider response should be saved to the unusable-response state file
     And  the review invocation should name the unusable-response state file path
 
@@ -77,17 +77,17 @@ Feature: Review response recovery and diagnostics
       """
     And  the unusable-response state directory cannot be created
     When  I run `watn` for "show disk usage" in an eligible terminal
-    And  I cancel the review surface
+    And  I close the review surface without accepting
     Then  the review invocation should show the command "df -h"
     And  the review invocation should warn that the unusable-response state file could not be written
 
   @givn.added @wip
   Scenario: A usable review response does not overwrite the captured unusable response
     Given  an unusable-response state file that already holds a previous response
-    And  a configured provider that serves this structured review response:
+    And  a configured provider that serves this review response:
       """
       {"review_version":1,"command":"df -h","stages":[{"stage_text":"df -h","purpose":"Show local disk usage."}],"purpose_status":"ready"}
       """
     When  I run `watn` for "show disk usage" in an eligible terminal
-    And  I cancel the review surface
+    And  I close the review surface without accepting
     Then  the unusable-response state file should still hold the previous response

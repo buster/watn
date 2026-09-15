@@ -3989,7 +3989,7 @@ fn review_hides_raw_payload(world: &mut WatnWorld) {
     );
 }
 
-#[given("a configured provider that serves this structured review response:")]
+#[given("a configured provider that serves this review response:")]
 fn review_served_structured_response(world: &mut WatnWorld, step: &cucumber::gherkin::Step) {
     let response = step
         .docstring
@@ -4060,8 +4060,50 @@ fn review_run_direct(world: &mut WatnWorld, question: String) {
 
 #[when("I close the review surface without accepting")]
 fn review_close_without_accepting(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    let session = world.pty_session.as_mut().expect("direct review PTY session");
+    super::pty_wait_for_label(session, "⏎");
+    super::pty_write(session, "\x1b");
+    let session = world.pty_session.take().expect("direct review PTY session");
+    let _ = super::finish_pty_session(world, session);
+    if let Some(path) = &world.review.stdout_path {
+        world.review.command_output = std::fs::read_to_string(path).unwrap_or_default();
+    }
+}
+
+fn unusable_response_state_file_path(world: &WatnWorld) -> std::path::PathBuf {
+    let state_home = world
+        .env_vars
+        .get("XDG_STATE_HOME")
+        .expect("XDG_STATE_HOME for the unusable-response state file");
+    std::path::PathBuf::from(state_home)
+        .join("watn")
+        .join("last-unusable-response.txt")
+}
+
+#[then("the raw provider response should be saved to the unusable-response state file")]
+fn unusable_response_saved(world: &mut WatnWorld) {
+    let expected = world
+        .pending_mock_output
+        .clone()
+        .expect("served provider payload");
+    let path = unusable_response_state_file_path(world);
+    let saved = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("state file {} should exist: {error}", path.display()));
+    assert_eq!(
+        saved, expected,
+        "the state file must hold the raw provider response"
+    );
+}
+
+#[then("the review invocation should name the unusable-response state file path")]
+fn review_names_state_file_path(world: &mut WatnWorld) {
+    let path = unusable_response_state_file_path(world);
+    let transcript = world.output.clone().unwrap_or_default();
+    assert!(
+        transcript.contains(path.to_string_lossy().as_ref()),
+        "the review invocation should name {} in: {transcript:?}",
+        path.display()
+    );
 }
 
 #[then("the review invocation should report the raw provider response")]
@@ -4080,18 +4122,6 @@ fn review_reports_raw_response(world: &mut WatnWorld) {
 #[then(expr = "the review invocation should show the command {string}")]
 fn review_invocation_shows_command(world: &mut WatnWorld, command: String) {
     let _ = (world, command);
-    unimplemented!()
-}
-
-#[then("the raw provider response should be saved to the unusable-response state file")]
-fn unusable_response_saved(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
-}
-
-#[then("the review invocation should name the unusable-response state file path")]
-fn review_names_state_file_path(world: &mut WatnWorld) {
-    let _ = world;
     unimplemented!()
 }
 

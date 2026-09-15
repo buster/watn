@@ -18,6 +18,25 @@ pub fn xdg_config_path() -> PathBuf {
     base.join("watn").join("config.toml")
 }
 
+/// The state directory for non-configuration diagnostics. Uses
+/// `$XDG_STATE_HOME`, falling back to `~/.local/state`.
+pub fn xdg_state_dir() -> PathBuf {
+    let base = if let Ok(dir) = std::env::var("XDG_STATE_HOME") {
+        PathBuf::from(dir)
+    } else if let Ok(home) = std::env::var("HOME") {
+        PathBuf::from(home).join(".local").join("state")
+    } else {
+        PathBuf::from(".")
+    };
+    base.join("watn")
+}
+
+/// The overwritten state file holding the most recent unusable provider
+/// response for a bug report.
+pub fn unusable_response_path() -> PathBuf {
+    xdg_state_dir().join("last-unusable-response.txt")
+}
+
 pub fn config_file_exists() -> bool {
     xdg_config_path().exists()
 }

@@ -1005,6 +1005,23 @@ fn print_explain_rerun_hint() {
     eprintln!("setup complete; rerun `watn explain` with the command");
 }
 
+/// Report the unusable-response capture after the review surface has closed.
+/// A write failure only warns; the review outcome is unchanged.
+fn print_capture_diagnostics(
+    path: &Option<std::path::PathBuf>,
+    error: &Option<String>,
+) {
+    if let Some(error) = error {
+        eprintln!("warning: could not save the unusable provider response: {error}");
+    }
+    if let Some(path) = path {
+        eprintln!(
+            "provider response was not usable; raw response saved to {}",
+            path.display()
+        );
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_review_path(
     registry: &ProviderRegistry,
@@ -1025,13 +1042,29 @@ fn run_review_path(
     config: &watn::config::types::Config,
 ) -> ! {
     let raw = buffer.candidate().unwrap_or_default();
+    let mut capture_path: Option<std::path::PathBuf> = None;
+    let mut capture_error: Option<String> = None;
     let candidate = match watn::review::candidate_from_provider_response_with_finish(
         raw,
         response.finish_reason.as_deref(),
     ) {
-        Some(candidate) => candidate,
+        Some(candidate) => {
+            if candidate.purpose_status == watn::review::PurposeStatus::Unavailable {
+                match watn::review::capture_unusable_response(raw) {
+                    Ok(path) => capture_path = Some(path),
+                    Err(error) => capture_error = Some(error.to_string()),
+                }
+            }
+            candidate
+        }
         None => {
             eprintln!("review unavailable: no complete command candidate");
+            match watn::review::capture_unusable_response(raw) {
+                Ok(path) => eprintln!("raw provider response saved to {}", path.display()),
+                Err(error) => eprintln!(
+                    "warning: could not save the unusable provider response: {error}"
+                ),
+            }
             std::process::exit(1);
         }
     };
@@ -1119,6 +1152,7 @@ fn run_review_path(
             Ok(watn::review::PanelOutcome::Accepted(candidate)) => break candidate,
             Ok(watn::review::PanelOutcome::Cancelled) => {
                 let _ = panel.finish();
+                print_capture_diagnostics(&capture_path, &capture_error);
                 std::process::exit(0);
             }
             Ok(watn::review::PanelOutcome::DisableReviewPermanently) => {
@@ -1127,6 +1161,7 @@ fn run_review_path(
                     Ok(()) => {
                         let _ = panel.finish();
                         eprintln!("{}", watn::review::disable_hint(color));
+                        print_capture_diagnostics(&capture_path, &capture_error);
                         println!("{command}");
                         std::process::exit(0);
                     }
@@ -1189,6 +1224,18 @@ fn run_review_path(
                     Ok(generation) => {
                         match watn::review::session::parse_generated_candidate(&generation) {
                             Some(candidate) => {
+                                if candidate.purpose_status == watn::review::PurposeStatus::Unavailable
+                                {
+                                    let mut regeneration_buffer = generation.buffer.clone();
+                                    regeneration_buffer.complete();
+                                    if let Some(regeneration_raw) = regeneration_buffer.candidate() {
+                                        match watn::review::capture_unusable_response(regeneration_raw)
+                                        {
+                                            Ok(path) => capture_path = Some(path),
+                                            Err(error) => capture_error = Some(error.to_string()),
+                                        }
+                                    }
+                                }
                                 panel.state.apply_regeneration(
                                     tier.clone(),
                                     model.clone(),
@@ -1223,6 +1270,7 @@ fn run_review_path(
 
     {
         use std::io::Write as _;
+        print_capture_diagnostics(&capture_path, &capture_error);
         if verbose {
             if let Some(reasoning) = &accepted_response.reasoning_content {
                 if !reasoning.trim().is_empty() {
