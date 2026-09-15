@@ -218,29 +218,57 @@ Design: `givn/changes/robust-review-response-recovery/design.md`.
     ```
 ## S3: A review response whose values contain unescaped quotation marks is still read
 
-- [ ] RED: remove `@wip`; write the given step (unescaped quotes in a stage
+- [x] RED: remove `@wip`; write the given step (unescaped quotes in a stage
   purpose); run the named scenario; must exit non-zero.
   - Evidence:
     ```
-    <paste>
+    Scenario: A review response whose values contain unescaped quotation marks is still read
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✘  And the provider returns a structured review response whose values contain unescaped quotation marks
+        Step failed:
+        Matched: tests/steps/interactive_shell_shortcut_steps.rs:3957:1
+        Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    2 steps (1 passed, 1 failed)
+    exit=1
     ```
-- [ ] GREEN: `src/review/response.rs` — `looks_like_review_payload`,
+- [x] GREEN: `src/review/response.rs` — `looks_like_review_payload`,
   recovery of the command from the malformed payload, and the
   not-valid-JSON Purpose reason. Run targeted; zero.
   - Evidence:
     ```
-    <paste>
-    # production files: src/review/response.rs
+    Scenario: A review response whose values contain unescaped quotation marks is still read
+     ✔  Given an installed Bash shortcut and a provider candidate for "show disk usage"
+     ✔  And the provider returns a structured review response whose values contain unescaped quotation marks
+     ✔  When I invoke Ctrl-W with the current input
+     ✔  Then the review surface should show the command "df -h"
+     ✔  And the review surface should not show the raw provider payload
+     ✔  And the review surface should show purpose-unavailable
+     ✔  And the review surface should name that the provider response was not valid JSON
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    7 steps (7 passed)
+    # production files: none beyond S2 (recovery and reason already landed);
+    # step assertions for the raw-payload guard and the reason wording
     ```
-- [ ] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
+- [x] REFACTOR: clean up; targeted run still zero; full `./run-tests.sh` green.
   - Evidence:
     ```
-    <paste targeted + full summary>
+    $ ./run-tests.sh --name "A review response whose values contain unescaped quotation marks is still read"
+    1 scenario (1 passed), 7 steps (7 passed)
+    $ ./run-tests.sh
+    [Summary]
+    23 features
+    248 scenarios (248 passed)
+    1521 steps (1521 passed)
     ```
-- [ ] COMMIT: `feat(review): A review response whose values contain unescaped quotation marks is still read`.
+- [x] COMMIT: `feat(review): A review response whose values contain unescaped quotation marks is still read`.
   - Evidence:
     ```
-    <commit hash>
+    86137de
     ```
 
 ## S4: A review response cut off inside the command releases nothing

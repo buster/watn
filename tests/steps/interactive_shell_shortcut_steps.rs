@@ -3950,8 +3950,8 @@ fn review_response_truncated_after_command(world: &mut WatnWorld, command: Strin
 
 #[given("the provider returns a structured review response cut off inside the command")]
 fn review_response_truncated_inside_command(world: &mut WatnWorld) {
-    let _ = world;
-    unimplemented!()
+    world.review.structured_response =
+        Some("{\"review_version\":1,\"command\":\"df -".to_string());
 }
 
 #[given("the provider returns a structured review response whose values contain unescaped quotation marks")]
