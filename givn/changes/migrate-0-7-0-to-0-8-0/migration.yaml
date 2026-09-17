@@ -1,0 +1,11 @@
+schema_version: 1
+source_version: 0.7.0
+target_version: 0.8.0
+tool_version: 0.8.0
+upgrade_commit: 7d1d3988ace0394cb1fb29b9dfa06d9729143186
+bundles:
+- sequence: 1
+  id: migrate-0-7-0-to-0-8-0
+  source_version: 0.7.0
+  target_version: 0.8.0
+  order: 60
