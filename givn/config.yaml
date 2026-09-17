@@ -8,7 +8,7 @@
 #    - Uncommented key/value lines are user-owned and are never touched by
 #      `givn upgrade`.
 #    - To override a setting: uncomment the relevant key and edit its value.
-#    - After `givn upgrade`: review the managed Git commit via `git show` and
+#    - After `givn upgrade`: review the managed revision (for example `git show` on Git, `fossil diff --checkin current` on Fossil) and
 #      resolve project-specific migration work in the visible maintenance change.
 # ============================================================================
 
