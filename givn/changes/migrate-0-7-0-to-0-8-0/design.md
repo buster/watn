@@ -348,3 +348,98 @@ The tests classify by kind, not count; there is no numeric cap.
 ## Completion boundary
 
 This generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood, including any follow-up changes a bundle names.
+
+---
+
+# Inventory (migrate-0-7-0-to-0-8-0)
+
+Recorded 2026-09-17. Corpus inspected: `givn spec tree` (4 permanent use cases, 1 fragment), `givn/specs/`, `givn/personas/`, `givn/ideation/terminal-wow-factor/` (personas, terms, seed, questions), `docs/adr/` (26 records), `docs/arc42/` (chapters, register), `givn/config.yaml`, `givn/artifacts/`, `givn/skills/`.
+
+This change edited no corpus artifact except the term collision-check cells in `givn/ideation/terminal-wow-factor/domain-terms.md` (Phase 4 exception). Every row below names exactly one deviation family and one follow-up change. No archived change is named as a pending follow-up.
+
+## Phase 1 — Use-case model
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/specs/configure-interactive/usecase.md | R1 goal conjunction ("Complete Watn's guided setup flows" + "persist a working configuration"); level discipline: `!` owns six capabilities and also Includes `!` children; R8 channel-shaped use-case name (`interactive`); Includes overlap with configure-model | promote to `+` or split into child leaves, re-home the six capabilities, resolve the overlapping Includes, rename the use case | split-configure-interactive |
+| givn/specs/configure-interactive/usecase.md | R5 extension ("Cancellation before confirmation leaves no unconfirmed state") omits its main-flow step and the guarantee it protects | rewrite the extension with its step reference and protected guarantee | split-configure-interactive |
+| givn/specs/configure-interactive/unified-setup-wizard.feature | R8 component-shaped capability name (wizard UI component) | rename capability and file, update every reference | rename-configure-interactive-capabilities |
+| givn/specs/configure-interactive/auto-init-config.feature | R8 component-shaped capability name (config artifact) | rename capability and file, update every reference | rename-configure-interactive-capabilities |
+| givn/specs/configure-interactive/highlight-active-setup-input.feature | R8 presentation-mechanism capability name | rename capability and file, update every reference | rename-configure-interactive-capabilities |
+| givn/specs/configure-interactive/responsive-setup-model-filtering.feature | R8 mechanism/quality-shaped capability name | rename capability and file, update every reference | rename-configure-interactive-capabilities |
+| givn/specs/configure-interactive/setup-persistence.feature | R8 mechanism-shaped capability name | rename capability and file, update every reference | rename-configure-interactive-capabilities |
+| givn/specs/configure-model/usecase.md | R1 goal conjunction (model tiers + catalog sources + reasoning behavior as three outcomes); level discipline: `!` owns eight capabilities and Includes the `!` child configure-provider | promote to `+` or split into child leaves, re-home the eight capabilities, resolve the Includes overlap | split-configure-model |
+| givn/specs/configure-model/usecase.md | R5 extension ("A missing catalog source leaves the active provider unchanged") omits its main-flow step | rewrite the extension with its step reference | split-configure-model |
+| givn/specs/configure-model/ratatui-model-picker.feature | R8 framework-component capability name (ratatui) | rename capability and file, update every reference | rename-configure-model-capabilities |
+| givn/specs/configure-model/streamlined-setup.feature | R8 mechanism-shaped capability name | rename capability and file, update every reference | rename-configure-model-capabilities |
+| givn/specs/configure-provider/usecase.md | R5 extension ("An incomplete provider request opens setup...") omits its main-flow step | rewrite the extension with its step reference | refocus-configure-provider |
+| givn/specs/configure-provider/provider-setup-widget-layout.feature | R8 widget-layout mechanism capability name | rename capability and file, update every reference | rename-configure-provider-capabilities |
+| givn/specs/use-shell/usecase.md | R1 goal conjunction (interactive shortcut that explains and refines + direct explanation entry point); R2 three listed actors with no declared primary and a bare system actor (`Shell line editor`, rule 7 notation); R7 mechanism vocabulary in Main flow and guarantees (`[DONE]`, command-output channel, controlling-terminal channel, insertion point) | split into child leaves, declare one primary actor, rewrite Main flow and guarantees in goal language | split-use-shell |
+| givn/specs/use-shell/usecase.md | R5 every extension omits its main-flow step reference; R6 preconditions carry main-flow behavior ("A usable model fills in stage purposes; when none is usable...") | rewrite extensions with step references; move flow behavior out of preconditions | split-use-shell |
+| givn/specs/use-shell/interactive-shell-shortcut.feature | R8 mechanism/channel-shaped capability name (shortcut) | rename capability and file, update every reference | rename-use-shell-capabilities |
+| givn/specs/use-shell/shell-completions.feature | R8 mechanism-shaped capability name | rename capability and file, update every reference | rename-use-shell-capabilities |
+| givn/specs/fragments/fragment.md | R8 mechanism capability names (transport, config, incremental-sse-rendering, search-concurrency) | rename capabilities and files, update every reference | rename-corpus-infra-capabilities |
+
+Observations (no row): the ideation use-case `givn/ideation/terminal-wow-factor/use-cases/use-explanatory-shell-shortcut.md` is preserved exploratory material, not a permanent use case, and is not retrofitted; its capabilities were mapped into `use-shell`. The `configure-*` use cases record `Personas: none` without a reason — a forward reference for those use cases' next change.
+
+## Phase 2 — Personas
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/personas/terminal-developer--interactive.md | schema gap: flat Role / Interests / Goals / Pain points / Vocabulary / Decision record instead of Stable core (Role, Authority boundary, Evaluation capability, Own vocabulary, Success criterion) plus Running record and Topic stances; topic-specific stances ("safe" = retained control; direct editing must not alter intent; cancellation preserves state) sit in the decision record | convert to the 0.8.0 persona schema and move topic-specific demands to `## Topic stances` | reformat-terminal-developer-persona |
+| givn/ideation/terminal-wow-factor/personas/terminal-developer--interactive.md | biography copy of the permanent persona instead of a `Reuse:` header plus new record entries; topic-only `## Open demands` and `## Confirmation status` sections | convert to `Reuse: terminal-developer--interactive, base <date>; this file adds record entries only` plus append-only record entries | refresh-terminal-wow-factor-persona-record |
+
+Observations (no row): no dangling `## Personas` reference exists (`givn lint` reports no `[PERS ]` finding; the single declared reference resolves to `givn/personas/terminal-developer--interactive.md`). The permanent persona is not sliced by mechanism and does not collapse multiple authority boundaries, so no identity-criteria split is needed.
+
+## Phase 3 — ADRs
+
+Re-qualification verdicts (all 20 accepted and proposed records) are recorded in this change's `arc42.md`. Audit rows:
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| docs/adr/ (26 records), docs/arc42/09-architecture-decisions.md | wrong storage root: records live at `docs/adr/` instead of `docs/arc42/adr/`; `docs/arc42/adr/README.md` and `docs/arc42/adr/adr-template.md` are missing; chapter 09 register lacks Status and Date columns and links to the old root | move the records to `docs/arc42/adr/`, create the ADR directory index, scaffold the template from the 0.8.0 binary, rebuild the chapter-09 register with ADR / Title / Status / Date / File rows | migrate-adr-storage |
+| docs/arc42/09-architecture-decisions.md | register embeds a long ADR-0011 decision summary beyond link/status/date register information | trim to register rows; keep any still-current rationale once in the owning capability spec | migrate-adr-storage |
+| docs/arc42/adr/adr-template.md | absent; when scaffolded it must not carry a pre-passed verdict | scaffold via `givn addons enable arc42`; confirm no `ADR-QUALIFICATION: PASS` or `qualification: QUALIFIED` remains | migrate-adr-storage |
+| docs/adr/ (26 records) | missing YAML frontmatter (status/date/decision-makers/consulted/informed), no `## Qualification` verdict and checklist, missing `## Pros and Cons of the Options` and `## More Information`; nonstandard section names in 0008 and 0025; nonconforming superseded status text in 0007, 0008, 0011, 0013 | retrofit every record to the 0.8.0 MADR template; normalize status values to the allowed set | migrate-adr-schema |
+| docs/adr/0005-execution-with-confirmation.md | re-qualification fails: product-behavior exclusion (F3) — the `-x` opt-in and confirmation gate is workflow authorization owned by Gherkin | move the rationale once to `givn/specs/fragments/ask.feature`; remove the record from the register and both indexes; keep the audit note in `arc42.md`; never copy it into `docs/arc42/adr/archive/` | retire-nonqualifying-adrs |
+| docs/adr/0010-ratatui-model-picker.md | proposed record whose owning change (`ratatui-model-picker`) has archived; re-qualification fails single-change reversibility (F1) and product-behavior exclusion (F3) | move the rationale once to `givn/specs/configure-model/ratatui-model-picker.feature`; remove the record from the register and both indexes; keep the audit note | retire-nonqualifying-adrs |
+| docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md | proposed record whose owning change (`provider-setup-widget-layout`) has archived; re-qualification fails single-change reversibility (F1) and product-behavior exclusion (F3) | move the rationale once to `givn/specs/configure-provider/provider-setup-widget-layout.feature`; remove the record from the register and both indexes; keep the audit note | retire-nonqualifying-adrs |
+| docs/adr/0006, 0007, 0008, 0011, 0013, 0014 | superseded records remain in the active register at the wrong root; 0007 and 0008 are only partially superseded and their remaining current rationale is unrecorded; 0008 leaves stale risk R-008 in chapter 11 | normalize status to `superseded by ADR-NNNN`, move to `docs/arc42/adr/archive/`, update both indexes, move any still-current rationale once to its capability spec, clear the stale chapter-11 risk | archive-superseded-adrs |
+
+Observations (no row): the design contains no new Technology Decision that passes the falsification tests, so no new MADR is created in this change (Phase 3 step 6). No project-local `adr-template.md` copy with a pre-passed verdict exists.
+
+## Phase 4 — Smaller adoptions
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/ideation/terminal-wow-factor/changes/use-explanatory-shell-shortcut.md | no valid seed status line (`givn lint` `[SEED ]` advisory); the seed was consumed by the archived `use-explanatory-shell-shortcut` change; confirmed decisions carry no option treatment and the open questions are not in the full content schema | stamp `Status: implemented in use-explanatory-shell-shortcut`; add option treatment to the accepted decisions; record the open questions in the full content schema | stamp-use-explanatory-shell-shortcut-seed |
+| givn/ideation/terminal-wow-factor/domain-terms.md | term records lack the term/status/definition/contrast/first-use/collision-check schema; `candidate`, `confirmed`, and `rejected` statuses are not recorded | migrate the eight entries to the 0.8.0 term-record schema; rejected terms keep their definition and reason and are never deleted | migrate-terminal-wow-factor-term-records |
+| givn/ideation/terminal-wow-factor/domain-terms.md | confirmed terms carried no re-run collision evidence | **edited in this change**: `command flow` and `candidate` searches re-run 2026-09-17 with commands and hit counts in the collision-check cells; no competing usage found | (this change) |
+
+Observations (no row): no use-case rule or guarantee carries an unresolved prerequisite — no `(open: Q<N>)` marker exists and the single parked ideation question (Q8 decision transport) was resolved by the archived implementing change. The only active proposal (this change) has no open questions; archived proposals are historical and are not rewritten, so no `D<n>` ledger row exists. Dialog policy and the severity/routing output were re-read, not repaired.
+
+## Phase 5 — Ejected overrides
+
+No ejected override carries pre-0.8.0 rule text or a stale default, so no row exists:
+
+- `givn/config.yaml`: the uncommented `addons:` block matches the 0.8.0 addon set (all eight addons enabled) and `skills.targets: [opencode, agents, claude]` is a genuine project setting. No rule text is present.
+- `givn/artifacts/` and `givn/skills/`: no override files exist.
+
+## Validation
+
+1. This change edited no corpus artifact except the term collision-check cells in `givn/ideation/terminal-wow-factor/domain-terms.md`.
+2. Every row names a follow-up change; no archived change is named as a pending follow-up.
+3. `givn lint` reports 27 files checked with advisory findings only (no blocking finding); `givn check review` is run by the review artifact.
+4. The inventory is committed with this change; the maintenance change archives once every row has a disposition and a follow-up.
+
+## Follow-up changes
+
+Phase 1: `split-configure-interactive`, `rename-configure-interactive-capabilities`, `split-configure-model`, `rename-configure-model-capabilities`, `refocus-configure-provider`, `rename-configure-provider-capabilities`, `split-use-shell`, `rename-use-shell-capabilities`, `rename-corpus-infra-capabilities`.
+
+Phase 2: `reformat-terminal-developer-persona`, `refresh-terminal-wow-factor-persona-record`.
+
+Phase 3: `migrate-adr-storage`, `migrate-adr-schema`, `retire-nonqualifying-adrs`, `archive-superseded-adrs`.
+
+Phase 4: `stamp-use-explanatory-shell-shortcut-seed`, `migrate-terminal-wow-factor-term-records`.
+
+Suggested order: storage before schema before retirement/archive for the ADRs; per-use-case splits before their capability renames; persona and term/seed follow-ups are independent. Each follow-up runs as a normal change with its own specification deltas, review, and archive.
