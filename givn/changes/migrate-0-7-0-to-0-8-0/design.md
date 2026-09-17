@@ -361,7 +361,7 @@ This change edited no corpus artifact except the term collision-check cells in `
 
 | Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
 |---|---|---|---|
-| givn/specs/configure-interactive/usecase.md | R1 goal conjunction ("Complete Watn's guided setup flows" + "persist a working configuration"); level discipline: `!` owns six capabilities and also Includes `!` children; R8 channel-shaped use-case name (`interactive`); Includes overlap with configure-model | promote to `+` or split into child leaves, re-home the six capabilities, resolve the overlapping Includes, rename the use case | split-configure-interactive |
+| givn/specs/configure-interactive/usecase.md | R1 goal conjunction ("Complete Watn's guided setup flows" + "persist a working configuration"); R9 oversized leaf (Main flow spans provider, model, reasoning, and shell goal areas); level discipline: `!` owns six capabilities and also Includes `!` children; R8 channel-shaped use-case name (`interactive`); Includes overlap with configure-model | promote to `+` or split into child leaves, re-home the six capabilities, resolve the overlapping Includes, rename the use case | split-configure-interactive |
 | givn/specs/configure-interactive/usecase.md | R5 extension ("Cancellation before confirmation leaves no unconfirmed state") omits its main-flow step and the guarantee it protects | rewrite the extension with its step reference and protected guarantee | split-configure-interactive |
 | givn/specs/configure-interactive/unified-setup-wizard.feature | R8 component-shaped capability name (wizard UI component) | rename capability and file, update every reference | rename-configure-interactive-capabilities |
 | givn/specs/configure-interactive/auto-init-config.feature | R8 component-shaped capability name (config artifact) | rename capability and file, update every reference | rename-configure-interactive-capabilities |
@@ -371,16 +371,55 @@ This change edited no corpus artifact except the term collision-check cells in `
 | givn/specs/configure-model/usecase.md | R1 goal conjunction (model tiers + catalog sources + reasoning behavior as three outcomes); level discipline: `!` owns eight capabilities and Includes the `!` child configure-provider | promote to `+` or split into child leaves, re-home the eight capabilities, resolve the Includes overlap | split-configure-model |
 | givn/specs/configure-model/usecase.md | R5 extension ("A missing catalog source leaves the active provider unchanged") omits its main-flow step | rewrite the extension with its step reference | split-configure-model |
 | givn/specs/configure-model/ratatui-model-picker.feature | R8 framework-component capability name (ratatui) | rename capability and file, update every reference | rename-configure-model-capabilities |
-| givn/specs/configure-model/streamlined-setup.feature | R8 mechanism-shaped capability name | rename capability and file, update every reference | rename-configure-model-capabilities |
-| givn/specs/configure-provider/usecase.md | R5 extension ("An incomplete provider request opens setup...") omits its main-flow step | rewrite the extension with its step reference | refocus-configure-provider |
+| givn/specs/configure-model/model-autosuggest.feature | R8 UI-mechanism capability name; the actor outcome is finding a model | rename capability and file, update every reference | rename-configure-model-capabilities |
+| givn/specs/configure-provider/usecase.md | R5 extension ("An incomplete provider request opens setup...") omits its main-flow step; R1 and R9 re-checked and pass (one success outcome, single-goal flow) | rewrite the extension with its step reference | refocus-configure-provider |
 | givn/specs/configure-provider/provider-setup-widget-layout.feature | R8 widget-layout mechanism capability name | rename capability and file, update every reference | rename-configure-provider-capabilities |
-| givn/specs/use-shell/usecase.md | R1 goal conjunction (interactive shortcut that explains and refines + direct explanation entry point); R2 three listed actors with no declared primary and a bare system actor (`Shell line editor`, rule 7 notation); R7 mechanism vocabulary in Main flow and guarantees (`[DONE]`, command-output channel, controlling-terminal channel, insertion point) | split into child leaves, declare one primary actor, rewrite Main flow and guarantees in goal language | split-use-shell |
+| givn/specs/use-shell/usecase.md | R1 goal conjunction (interactive shortcut that explains and refines + direct explanation entry point); R2 three listed actors with no declared primary and a bare system actor (`Shell line editor`, rule 7 notation); R7 mechanism vocabulary in Main flow and guarantees (`[DONE]`, command-output channel, controlling-terminal channel, insertion point); R9 oversized leaf (shortcut review plus explanation as separate goal areas) | split into child leaves, declare one primary actor, rewrite Main flow and guarantees in goal language | split-use-shell |
 | givn/specs/use-shell/usecase.md | R5 every extension omits its main-flow step reference; R6 preconditions carry main-flow behavior ("A usable model fills in stage purposes; when none is usable...") | rewrite extensions with step references; move flow behavior out of preconditions | split-use-shell |
 | givn/specs/use-shell/interactive-shell-shortcut.feature | R8 mechanism/channel-shaped capability name (shortcut) | rename capability and file, update every reference | rename-use-shell-capabilities |
 | givn/specs/use-shell/shell-completions.feature | R8 mechanism-shaped capability name | rename capability and file, update every reference | rename-use-shell-capabilities |
 | givn/specs/fragments/fragment.md | R8 mechanism capability names (transport, config, incremental-sse-rendering, search-concurrency) | rename capabilities and files, update every reference | rename-corpus-infra-capabilities |
 
 Observations (no row): the ideation use-case `givn/ideation/terminal-wow-factor/use-cases/use-explanatory-shell-shortcut.md` is preserved exploratory material, not a permanent use case, and is not retrofitted; its capabilities were mapped into `use-shell`. The `configure-*` use cases record `Personas: none` without a reason — a forward reference for those use cases' next change.
+
+### R8 name audit (rule 2 applied to every permanent name)
+
+| Name | Kind | R8 | Rationale |
+|---|---|---|---|
+| configure-interactive | use case | FAIL | names the interactive channel/mode rather than the actor goal |
+| configure-model | use case | PASS | goal-shaped (configure a model) |
+| configure-provider | use case | PASS | goal-shaped (configure a provider) |
+| use-shell | use case | PASS | names the context of the actor goal; the shell is the user's environment, not a Watn component |
+| corpus-infra | fragment | PASS | describes the specification boundary, not a system component |
+| unified-setup-wizard | capability | FAIL | wizard UI component |
+| setup-persistence | capability | FAIL | internal persistence mechanism |
+| quicksetup | capability | PASS | flow/action name |
+| responsive-setup-model-filtering | capability | FAIL | mechanism/quality name |
+| highlight-active-setup-input | capability | FAIL | rendering mechanism |
+| auto-init-config | capability | FAIL | config component/mechanism |
+| reasoning-policy | capability | PASS | domain policy |
+| streamlined-setup | capability | PASS | flow name |
+| reasoning | capability | PASS | domain concept |
+| ratatui-model-picker | capability | FAIL | framework component |
+| credential-sources | capability | PASS | glossary domain concept |
+| models | capability | PASS | domain concept |
+| catalog-source | capability | PASS | glossary domain concept |
+| model-autosuggest | capability | FAIL | UI-mechanism name; the actor outcome is finding a model |
+| provider-setup-widget-layout | capability | FAIL | widget-layout mechanism |
+| provider-setup | capability | PASS | flow name |
+| providers | capability | PASS | domain concept |
+| interactive-shell-shortcut | capability | FAIL | mechanism/channel name (key binding) |
+| shell-completions | capability | FAIL | mechanism name (generated artifact) |
+| explain-command | capability | PASS | action name |
+| ask | capability | PASS | action name |
+| cancel-running-completion | capability | PASS | action name |
+| config | capability | FAIL | component name |
+| incremental-sse-rendering | capability | FAIL | mechanism name |
+| release-truth | capability | PASS | project concept |
+| search-concurrency | capability | FAIL | mechanism name |
+| transport | capability | FAIL | component name |
+
+R9 oversized-leaf check: configure-interactive FAIL (four goal areas in the main flow), use-shell FAIL (shortcut review plus explanation), configure-model PASS (the flow sequences subfunctions of one outcome; its defect is the R1 goal conjunction), configure-provider PASS (single goal).
 
 ## Phase 2 — Personas
 
@@ -397,16 +436,17 @@ Re-qualification verdicts (all 20 accepted and proposed records) are recorded in
 
 | Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
 |---|---|---|---|
-| docs/adr/ (26 records), docs/arc42/09-architecture-decisions.md | wrong storage root: records live at `docs/adr/` instead of `docs/arc42/adr/`; `docs/arc42/adr/README.md` and `docs/arc42/adr/adr-template.md` are missing; chapter 09 register lacks Status and Date columns and links to the old root | move the records to `docs/arc42/adr/`, create the ADR directory index, scaffold the template from the 0.8.0 binary, rebuild the chapter-09 register with ADR / Title / Status / Date / File rows | migrate-adr-storage |
+| docs/adr/ (26 records), docs/arc42/09-architecture-decisions.md, docs/arc42/README.md | wrong storage root: records live at `docs/adr/` instead of `docs/arc42/adr/`; `docs/arc42/adr/README.md` and `docs/arc42/adr/adr-template.md` are missing; chapter 09 register lacks Status and Date columns and links to the old root; `docs/arc42/README.md` also links `../adr/...` | move the records to `docs/arc42/adr/`, create the ADR directory index, scaffold the template from the 0.8.0 binary, rebuild the chapter-09 register with ADR / Title / Status / Date / File rows, update the `docs/arc42/README.md` links | migrate-adr-storage |
 | docs/arc42/09-architecture-decisions.md | register embeds a long ADR-0011 decision summary beyond link/status/date register information | trim to register rows; keep any still-current rationale once in the owning capability spec | migrate-adr-storage |
 | docs/arc42/adr/adr-template.md | absent; when scaffolded it must not carry a pre-passed verdict | scaffold via `givn addons enable arc42`; confirm no `ADR-QUALIFICATION: PASS` or `qualification: QUALIFIED` remains | migrate-adr-storage |
-| docs/adr/ (26 records) | missing YAML frontmatter (status/date/decision-makers/consulted/informed), no `## Qualification` verdict and checklist, missing `## Pros and Cons of the Options` and `## More Information`; nonstandard section names in 0008 and 0025; nonconforming superseded status text in 0007, 0008, 0011, 0013 | retrofit every record to the 0.8.0 MADR template; normalize status values to the allowed set | migrate-adr-schema |
+| docs/adr/ (26 records) | missing YAML frontmatter (status/date/decision-makers/consulted/informed), no 0.8.0 `## Qualification` verdict and checklist (ADR-0026 carries a pre-0.8.0 `## Qualification` block that ends `Route: NEW_ADR`), missing `## Pros and Cons of the Options` and `## More Information`; nonstandard section names in 0008 and 0025; nonconforming superseded status text in 0007, 0008, 0011, 0013, 0014 | retrofit every record to the 0.8.0 MADR template; replace ADR-0026's pre-0.8.0 qualification block with the 0.8.0 verdict; normalize status values to the allowed set | migrate-adr-schema |
 | docs/adr/0005-execution-with-confirmation.md | re-qualification fails: product-behavior exclusion (F3) — the `-x` opt-in and confirmation gate is workflow authorization owned by Gherkin | move the rationale once to `givn/specs/fragments/ask.feature`; remove the record from the register and both indexes; keep the audit note in `arc42.md`; never copy it into `docs/arc42/adr/archive/` | retire-nonqualifying-adrs |
 | docs/adr/0010-ratatui-model-picker.md | proposed record whose owning change (`ratatui-model-picker`) has archived; re-qualification fails single-change reversibility (F1) and product-behavior exclusion (F3) | move the rationale once to `givn/specs/configure-model/ratatui-model-picker.feature`; remove the record from the register and both indexes; keep the audit note | retire-nonqualifying-adrs |
 | docs/adr/0012-structured-widget-composition-for-terminal-setup-views.md | proposed record whose owning change (`provider-setup-widget-layout`) has archived; re-qualification fails single-change reversibility (F1) and product-behavior exclusion (F3) | move the rationale once to `givn/specs/configure-provider/provider-setup-widget-layout.feature`; remove the record from the register and both indexes; keep the audit note | retire-nonqualifying-adrs |
-| docs/adr/0006, 0007, 0008, 0011, 0013, 0014 | superseded records remain in the active register at the wrong root; 0007 and 0008 are only partially superseded and their remaining current rationale is unrecorded; 0008 leaves stale risk R-008 in chapter 11 | normalize status to `superseded by ADR-NNNN`, move to `docs/arc42/adr/archive/`, update both indexes, move any still-current rationale once to its capability spec, clear the stale chapter-11 risk | archive-superseded-adrs |
+| docs/adr/0022-verbatim-reasoning-values.md | re-qualification fails product-behavior exclusion (F3) and single-change reversibility (F1): the accepted/persisted reasoning value domain and the `off` omission are state values owned by the capability spec | move the rationale once to `givn/specs/configure-model/reasoning-policy.feature`; remove the record from the register and both indexes; keep the audit note; treat ADR-0007's supersession chain accordingly | retire-nonqualifying-adrs |
+| docs/adr/0006, 0007, 0008, 0011, 0013, 0014 | superseded records remain in the active register at the wrong root; 0007 and 0008 are only partially superseded; 0011 is partially superseded with current rationale still in chapters 2, 4, and 11; their remaining current rationale is unrecorded; 0008 leaves stale risk R-008 in chapter 11 | normalize status to `superseded by ADR-NNNN`, move to `docs/arc42/adr/archive/`, update both indexes, move any still-current rationale once to its capability spec, clear the stale chapter-11 risk | archive-superseded-adrs |
 
-Observations (no row): the design contains no new Technology Decision that passes the falsification tests, so no new MADR is created in this change (Phase 3 step 6). No project-local `adr-template.md` copy with a pre-passed verdict exists.
+Observations (no row): the design contains no new Technology Decision that passes the falsification tests, so no new MADR is created in this change (Phase 3 step 6). No project-local `adr-template.md` copy with a pre-passed verdict exists. Re-tested for F1/F3 after the grilling: ADR-0020 (focused-vs-coordinated write-authority boundary) and ADR-0023 (persisted provider-identity migration contract) retain independent boundaries and stay qualified.
 
 ## Phase 4 — Smaller adoptions
 
@@ -442,4 +482,6 @@ Phase 3: `migrate-adr-storage`, `migrate-adr-schema`, `retire-nonqualifying-adrs
 
 Phase 4: `stamp-use-explanatory-shell-shortcut-seed`, `migrate-terminal-wow-factor-term-records`.
 
-Suggested order: storage before schema before retirement/archive for the ADRs; per-use-case splits before their capability renames; persona and term/seed follow-ups are independent. Each follow-up runs as a normal change with its own specification deltas, review, and archive.
+Suggested order: for the ADRs, `migrate-adr-storage` before `migrate-adr-schema` before `retire-nonqualifying-adrs` and `archive-superseded-adrs`; run the capability renames before `retire-nonqualifying-adrs`, because two canonical destinations are capability feature files that the renames may move (or record the destination by capability ID instead of file path). Per-use-case splits before their capability renames; persona and term/seed follow-ups are independent. Each follow-up runs as a normal change with its own specification deltas, review, and archive.
+
+Accepted risk (design-review): named follow-ups are not enforced by a runtime gate, so the migration could archive with the follow-ups unstarted. The migration contract deliberately permits named (not yet scaffolded) follow-ups and makes the inventory the durable record; the mitigation is that this inventory is committed with the change and every follow-up id is listed above, and the migration is only complete when the follow-ups archive.

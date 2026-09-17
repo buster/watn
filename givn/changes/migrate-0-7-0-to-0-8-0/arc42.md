@@ -24,13 +24,15 @@ This is a maintenance change: its durable output is the migration inventory in
 named follow-up changes through the normal gates, so no chapter is edited here.
 
 ADR action: CANONICAL_ARTIFACT
-ADR target: `givn/specs/fragments/ask.feature` (ADR-0005), `givn/specs/configure-model/ratatui-model-picker.feature` (ADR-0010), `givn/specs/configure-provider/provider-setup-widget-layout.feature` (ADR-0012)
+ADR target: `givn/specs/fragments/ask.feature` (ADR-0005), `givn/specs/configure-model/ratatui-model-picker.feature` (ADR-0010), `givn/specs/configure-provider/provider-setup-widget-layout.feature` (ADR-0012), `givn/specs/configure-model/reasoning-policy.feature` (ADR-0022)
 
 Verdict convention for this re-qualification: a retained record is `QUALIFIED`
 with all five gates `PASS` and is routed `AMEND_ADR` to itself because the
 storage and schema follow-ups amend the record to the 0.8.0 MADR contract; the
 decision itself is retained unchanged. Superseded records are historical and
 are not re-qualified; their archival is tracked in the `design.md` inventory.
+ADR-0026 carries a pre-0.8.0 `## Qualification` block; the schema follow-up
+replaces it with the 0.8.0 verdict.
 
 ### Structured verdicts (accepted and proposed records)
 
@@ -48,14 +50,14 @@ are not re-qualified; their archival is tracked in the `design.md` inventory.
 | ADR-0019 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0019 | options: worker plus bounded grace vs read-timeout polling vs kill vs async; cancellation contract and exit 130 |
 | ADR-0020 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0020 | options: save per page vs snapshot until final confirmation; coordinated-write boundary |
 | ADR-0021 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0021 | options: retain LiteLLM precedence vs provider-local discovery; catalog and credential authority |
-| ADR-0022 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0022 | options: closed set vs non-empty strings with suggestions; persisted value-domain contract |
-| ADR-0023 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0023 | options: preserve arbitrary keys vs migrate the selected key to `custom`; configuration migration contract |
+| ADR-0023 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0023 | options: preserve arbitrary keys vs migrate the selected key to `custom`; persisted provider-identity migration contract |
 | ADR-0024 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0024 | options: direct replacement vs same-directory temporary write and rename; persistence-safety boundary |
 | ADR-0025 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0025 | options: additive tree vs registry and journal vs one behavior inventory; repository-wide specification ownership |
 | ADR-0026 | QUALIFIED | PASS | PASS | PASS | PASS | PASS | SUPPORTING | AMEND_ADR | ADR-0026 | options: plain-line quick setup vs slim coordinator mode vs coordinator only; first-run entry contract and dual-surface boundary |
 | ADR-0005 | NOT_QUALIFIED | PASS | FAIL | FAIL | FAIL | PASS | NONE | CANONICAL_ARTIFACT | givn/specs/fragments/ask.feature | see verdict block below |
 | ADR-0010 | NOT_QUALIFIED | PASS | FAIL | FAIL | FAIL | PASS | NONE | CANONICAL_ARTIFACT | givn/specs/configure-model/ratatui-model-picker.feature | see verdict block below |
 | ADR-0012 | NOT_QUALIFIED | PASS | FAIL | FAIL | FAIL | PASS | NONE | CANONICAL_ARTIFACT | givn/specs/configure-provider/provider-setup-widget-layout.feature | see verdict block below |
+| ADR-0022 | NOT_QUALIFIED | PASS | FAIL | FAIL | FAIL | PASS | NONE | CANONICAL_ARTIFACT | givn/specs/configure-model/reasoning-policy.feature | see verdict block below |
 
 ### Verdict blocks for non-qualifying records
 
@@ -131,13 +133,39 @@ destination: givn/specs/configure-provider/provider-setup-widget-layout.feature
 audit note: rationale moves once; the record leaves the chapter-09 register and docs/arc42/adr/README.md; it is never copied into docs/arc42/adr/archive/
 ```
 
+```text
+ADR-0022 — Verbatim reasoning values
+qualification: NOT_QUALIFIED
+alternatives: PASS
+architectural_impact: FAIL
+durable_consequence: FAIL
+lower_level_artifact: FAIL
+existing_adr_check: PASS
+must_be_shared: NONE
+routing: CANONICAL_ARTIFACT
+canonical_artifact: givn/specs/configure-model/reasoning-policy.feature
+target_adr: null
+replacement_adr: null
+evidence:
+  alternatives: ["closed set", "non-empty strings with catalog suggestions"]
+  architectural_impact: ["no component, authority, or deployment boundary: the decision fixes an accepted value domain and the `off` omission, both state values"]
+  durable_consequence: ["reversible within one change touching the reasoning policy; the behavior is asserted by capability scenarios"]
+  lower_level_artifact: ["reasoning-policy.feature owns the persisted/sent value contract ('Minimal reasoning is persisted and sent'); request mechanics belong to design/code"]
+  existing_adr_check: ["register search: ADR-0007 is the superseded predecessor for the reasoning-value domain; no other record owns this boundary"]
+failing test: F3 product-behavior exclusion (also F1 single-change reversibility)
+destination: givn/specs/configure-model/reasoning-policy.feature
+audit note: rationale moves once; the record leaves the chapter-09 register and docs/arc42/adr/README.md; it is never copied into docs/arc42/adr/archive/
+```
+
 ### Superseded records (historical, not re-qualified)
 
 ADR-0006, ADR-0007, ADR-0008, ADR-0011, ADR-0013, and ADR-0014 keep their
 superseded status and move to `docs/arc42/adr/archive/` in the
-`archive-superseded-adrs` follow-up; ADR-0007 and ADR-0008 need their
-nonconforming status text normalized and any still-current rationale moved once
-to its capability spec.
+`archive-superseded-adrs` follow-up; ADR-0007, ADR-0008, ADR-0011, and
+ADR-0014 need their nonconforming status text normalized, and any still-current
+rationale (notably ADR-0011's TTY boundary, typed cancellation, credential
+precedence, and transport guard, still present in chapters 2, 4, and 11) moved
+once to its capability spec.
 
 ## Status
 
