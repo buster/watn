@@ -177,6 +177,20 @@ givn_config_version: "0.8.0"
 #
 # grill_with_docs: false   # set to true to enable
 
+# --- Generated-rules policy ---------------------------------------------------
+# Whether Givn's generated rules (skills, commands, plugins, hooks, and the
+# attribution plumbing) are repository content or stay on this machine.
+#   local-only  (default) - the rules are written locally and kept out of the
+#                           repository; a tracked rule is removed from the
+#                           current revision without deleting its file.
+#   versioned             - the rules are repository content, staged and
+#                           committed like source.
+# An absent key resolves to local-only. An unrecognized value warns and
+# continues as local-only. AGENTS.md is never staged by Givn under either
+# policy; the fenced ignore block is project content and may be committed.
+#
+# rules: local-only
+
 # --- Skill agent targets ------------------------------------------------------
 # Which agent targets receive the generated skills and commands.
 # `givn init` asks for this selection (default: opencode only); `givn skills
