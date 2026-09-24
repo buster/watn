@@ -626,18 +626,11 @@ fn main() {
                 }
             }
 
-            let cost = config.pricing.get(&response.model).map(|p| {
-                let input_cost = p.input
-                    * response.final_usage.as_ref().map_or(0, |u| u.prompt_tokens) as f64
-                    / 1_000_000.0;
-                let output_cost = p.output
-                    * response
-                        .final_usage
-                        .as_ref()
-                        .map_or(0, |u| u.completion_tokens) as f64
-                    / 1_000_000.0;
-                input_cost + output_cost
-            });
+            let cost = watn::amount::billed_amount(
+                response.final_usage.as_ref(),
+                config.pricing.get(&response.model),
+            )
+            .map(|amount| amount.usd());
 
             let elapsed = response.elapsed_secs;
             let tok_s = if elapsed > 0.0 {
@@ -671,6 +664,7 @@ fn main() {
                                 tier: tier.unwrap_or("1").to_string(),
                                 provider: provider_name.to_string(),
                                 model: model.clone(),
+                                amount: surface_amount(&response, &config),
                             };
                             if let Err(error) = run_explanation_card(candidate, context) {
                                 eprintln!("explanation unavailable: {error}");
@@ -939,6 +933,7 @@ fn run_explain_command(
         tier: tier.to_string(),
         provider: provider_name.clone(),
         model: model.clone(),
+        amount: None,
     };
 
     let interrupt = Arc::new(AtomicBool::new(false));
@@ -1047,6 +1042,19 @@ fn print_capture_diagnostics(path: &Option<std::path::PathBuf>, error: &Option<S
     }
 }
 
+/// The billed amount to show at the Model label of a surface: only when the
+/// provider reported usage and a recorded price matches the reported model.
+fn surface_amount(
+    response: &StreamingResponse,
+    config: &watn::config::types::Config,
+) -> Option<String> {
+    let billed = watn::amount::billed_amount(
+        response.final_usage.as_ref(),
+        config.pricing.get(&response.model),
+    )?;
+    billed.usage_reported().then(|| billed.cents_text())
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_review_path(
     registry: &ProviderRegistry,
@@ -1099,6 +1107,7 @@ fn run_review_path(
         tier: tier.to_string(),
         provider: provider.to_string(),
         model: model.to_string(),
+        amount: surface_amount(response, config),
     };
     let size = crossterm::terminal::size().unwrap_or((80, 24));
     let layout = watn::review::InlineLayout::for_dimensions(size.0, size.1);
@@ -1268,6 +1277,7 @@ fn run_review_path(
                                     tier.clone(),
                                     model.clone(),
                                     candidate,
+                                    surface_amount(&generation.response, config),
                                 );
                                 accepted_response = generation.response;
                             }
@@ -1308,21 +1318,11 @@ fn run_review_path(
             let _ = render::print_raw_response(&accepted_response.full_content);
         }
 
-        let cost = config.pricing.get(&accepted_response.model).map(|p| {
-            let input_cost = p.input
-                * accepted_response
-                    .final_usage
-                    .as_ref()
-                    .map_or(0, |u| u.prompt_tokens) as f64
-                / 1_000_000.0;
-            let output_cost = p.output
-                * accepted_response
-                    .final_usage
-                    .as_ref()
-                    .map_or(0, |u| u.completion_tokens) as f64
-                / 1_000_000.0;
-            input_cost + output_cost
-        });
+        let cost = watn::amount::billed_amount(
+            accepted_response.final_usage.as_ref(),
+            config.pricing.get(&accepted_response.model),
+        )
+        .map(|amount| amount.usd());
         let elapsed = accepted_response.elapsed_secs;
         let tok_s = if elapsed > 0.0 {
             accepted_response

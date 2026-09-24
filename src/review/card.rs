@@ -261,15 +261,24 @@ pub fn model_short_name(model: &str) -> String {
     }
 }
 
-fn header_right(state: &ReviewPanelState, detailed: bool) -> String {
-    if detailed {
+fn header_right(state: &ReviewPanelState, detailed: bool, budget: usize) -> String {
+    let label = if detailed {
         format!(
             "◆ tier {} · {}/{}",
             state.context.tier, state.context.provider, state.context.model
         )
     } else {
         format!("◆ {}", model_short_name(&state.context.model))
+    };
+    let Some(amount) = state.context.amount.as_deref() else {
+        return ellipsize(&label, budget);
+    };
+    let suffix = format!(" · {amount} ¢");
+    let suffix_width = visible_len(&suffix);
+    if budget < suffix_width + 2 {
+        return ellipsize(&label, budget);
     }
+    format!("{}{}", ellipsize(&label, budget - suffix_width), suffix)
 }
 
 /// One stage as a row group: the selected stage carries an amber arrow, the
@@ -599,13 +608,10 @@ pub fn render_card_lines(
     }
 
     let top_left = format!(" {} · {} ", ink.white("watn"), ink.dim("review"));
-    let right = ellipsize(
-        &header_right(state, detailed),
-        inner
-            .saturating_sub(visible_len(&top_left))
-            .saturating_sub(2),
-    );
-    let right = ink.border(&right);
+    let right_budget = inner
+        .saturating_sub(visible_len(&top_left))
+        .saturating_sub(2);
+    let right = ink.border(&header_right(state, detailed, right_budget));
     let fill = inner.saturating_sub(visible_len(&top_left) + visible_len(&right));
     let mut lines = vec![format!(
         "{}{}{}{}{}",
@@ -662,6 +668,7 @@ mod tests {
                 tier: "1".to_string(),
                 provider: "loopback".to_string(),
                 model: "review-model".to_string(),
+                amount: None,
             },
             ReviewCandidate::from_command("git log --oneline | head -5"),
         )
@@ -804,6 +811,7 @@ mod tests {
                 tier: "1".to_string(),
                 provider: "loopback".to_string(),
                 model: "review-model".to_string(),
+                amount: None,
             },
             candidate,
         );

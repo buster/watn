@@ -961,6 +961,12 @@ pub struct ReviewState {
     pub prefilled_state_response: Option<String>,
     pub stdout_path: Option<std::path::PathBuf>,
     pub color_incapable: bool,
+    /// Recorded per-million prices keyed by model id, as the scenarios configure them.
+    pub prices: Vec<(String, f64, f64)>,
+    /// The completed response's reported usage; `None` means no report.
+    pub reported_usage: Option<(u32, u32)>,
+    /// The regenerated response's reported usage; `None` means no report.
+    pub regeneration_usage: Option<(u32, u32)>,
 }
 
 fn review_context(intent: &str, tier: &str, model: &str) -> watn::review::ReviewContext {
@@ -975,7 +981,47 @@ fn review_context(intent: &str, tier: &str, model: &str) -> watn::review::Review
         tier: tier.to_string(),
         provider: "loopback".to_string(),
         model: model.to_string(),
+        amount: None,
     }
+}
+
+/// The model id the review context uses for an empty configured model.
+pub(crate) fn effective_review_model(state: &ReviewState) -> String {
+    if state.model.is_empty() {
+        "review-model".to_string()
+    } else {
+        state.model.clone()
+    }
+}
+
+/// The billed amount the surface shows for one request: the recorded price of
+/// the reported model paired with the usage the response reported, or nothing
+/// when either is missing.
+fn surface_amount_for(
+    state: &ReviewState,
+    model: &str,
+    usage: Option<(u32, u32)>,
+) -> Option<String> {
+    let (_, input, output) = state.prices.iter().find(|(id, _, _)| id == model)?;
+    let pricing = watn::config::types::ModelPricing {
+        input: *input,
+        output: *output,
+    };
+    let usage = usage.map(
+        |(prompt_tokens, completion_tokens)| watn::provider::TokenUsage {
+            prompt_tokens,
+            completion_tokens,
+        },
+    );
+    let billed = watn::amount::billed_amount(usage.as_ref(), Some(&pricing))?;
+    billed.usage_reported().then(|| billed.cents_text())
+}
+
+/// The rendered surface as plain text, without ANSI escapes or frame glyphs.
+pub(crate) fn review_rendered_plain(world: &WatnWorld) -> String {
+    strip_ansi(&review_rendered_text(world))
+        .replace("\r\n", "\n")
+        .replace(['│', '┌', '┐', '└', '┘', '─'], " ")
 }
 
 fn review_layout(world: &WatnWorld) -> watn::review::InlineLayout {
@@ -1206,7 +1252,9 @@ fn build_review_panel(world: &mut WatnWorld) {
     };
     let intent = world.review.intent.clone();
     let tier = world.review.tier.clone();
-    let context = review_context(&intent, &tier, &world.review.model);
+    let model = effective_review_model(&world.review);
+    let mut context = review_context(&intent, &tier, &model);
+    context.amount = surface_amount_for(&world.review, &model, world.review.reported_usage);
     world.review.context = Some(context.clone());
     world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
     render_surface(world);
@@ -2125,7 +2173,7 @@ fn review_model_selection_open(world: &mut WatnWorld) {
 #[when(expr = "I select {string}")]
 fn review_select_model(world: &mut WatnWorld, model: String) {
     let candidate = watn::review::ReviewCandidate::from_command(REVIEW_SELECTED_MODEL_COMMAND);
-    panel_mut(world).select_model(model, candidate);
+    panel_mut(world).select_model(model, candidate, None);
     render_surface(world);
 }
 
@@ -3105,7 +3153,13 @@ fn regenerate_through_session(
     })
     .join()
     .expect("regeneration thread panicked");
-    panel_mut(world).apply_regeneration(tier.to_string(), model.to_string(), candidate.clone());
+    let amount = surface_amount_for(&world.review, model, world.review.regeneration_usage);
+    panel_mut(world).apply_regeneration(
+        tier.to_string(),
+        model.to_string(),
+        candidate.clone(),
+        amount,
+    );
     candidate
 }
 

@@ -74,6 +74,9 @@ pub struct ReviewContext {
     pub tier: String,
     pub provider: String,
     pub model: String,
+    /// The billed amount of the request that produced the surface, in cents,
+    /// as the Model label's companion. `None` when no amount exists.
+    pub amount: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -219,9 +222,11 @@ impl ReviewPanelState {
         tier: impl Into<String>,
         model: impl Into<String>,
         candidate: ReviewCandidate,
+        amount: Option<String>,
     ) {
         self.context.tier = tier.into();
         self.context.model = model.into();
+        self.context.amount = amount;
         self.chooser = None;
         self.input_mode = PanelInputMode::Review;
         self.regeneration_error = None;
@@ -230,10 +235,16 @@ impl ReviewPanelState {
 
     /// Applies the selected model to the next candidate only. The configured
     /// model is restored once that candidate cycle completes.
-    pub fn select_model(&mut self, model: impl Into<String>, candidate: ReviewCandidate) {
+    pub fn select_model(
+        &mut self,
+        model: impl Into<String>,
+        candidate: ReviewCandidate,
+        amount: Option<String>,
+    ) {
         let model = model.into();
         self.pending_model = Some(model.clone());
         self.context.model = model;
+        self.context.amount = amount;
         self.chooser = None;
         self.replace_current(candidate);
     }
@@ -889,6 +900,7 @@ mod tests {
                 tier: "1".to_string(),
                 provider: "openrouter".to_string(),
                 model: "model-a".to_string(),
+                amount: None,
             },
             ReviewCandidate::from_command("df -h"),
         )
@@ -1009,6 +1021,7 @@ mod tests {
                 tier: "1".to_string(),
                 provider: "test".to_string(),
                 model: "model".to_string(),
+                amount: None,
             },
             candidate,
         );
@@ -1053,7 +1066,7 @@ mod tests {
         let lines =
             crate::review::render_card_lines(&panel, InlineLayout::for_dimensions(80, 24), true);
         assert!(lines.iter().any(|line| line.contains("Picks")));
-        panel.select_model("model-b", ReviewCandidate::from_command("ls -la"));
+        panel.select_model("model-b", ReviewCandidate::from_command("ls -la"), None);
         assert_eq!(panel.candidate().command, "ls -la");
         assert!(panel.model_selection().is_none());
         panel.complete_model_selection();
@@ -1126,6 +1139,7 @@ mod tests {
                 tier: "1".to_string(),
                 provider: "loopback".to_string(),
                 model: "model".to_string(),
+                amount: None,
             },
             ReviewCandidate::from_command(""),
         );
