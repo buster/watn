@@ -268,6 +268,17 @@ jobs:
             exit 1
           fi
 
+          release_section="$(awk -v version="$RELEASE_VERSION" '
+            index($0, "## [" version "]") == 1 { in_release = 1; next }
+            in_release && /^## \[/ { exit }
+            in_release { print }
+          ' CHANGELOG.md)"
+          if ! grep -q '^### ' <<<"$release_section"; then
+            printf 'generated changelog has no user-visible change for %s\n' \
+              "$RELEASE_VERSION" >&2
+            exit 1
+          fi
+
       - name: Run formatting and validation checks
         shell: bash
         run: |
@@ -489,6 +500,17 @@ jobs:
 
           if ! grep -Eq "^## \[$release_version\]($| - )" CHANGELOG.md; then
             printf 'CHANGELOG.md has no release heading for %s\n' "$release_version" >&2
+            exit 1
+          fi
+
+          release_section="$(awk -v version="$release_version" '
+            index($0, "## [" version "]") == 1 { in_release = 1; next }
+            in_release && /^## \[/ { exit }
+            in_release { print }
+          ' CHANGELOG.md)"
+          if ! grep -q '^### ' <<<"$release_section"; then
+            printf 'CHANGELOG.md has no user-visible change for %s\n' \
+              "$release_version" >&2
             exit 1
           fi
 

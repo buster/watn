@@ -51,11 +51,11 @@ prepare job's `Generate reviewed changelog` step and the publish job's
 `Validate release identity` step both extract the release section and require
 at least one `### ` group before the version commit, tag, or `cargo publish`.
 
-- [ ] Add the guard to both steps; keep the `github_release` check as a
+- [x] Add the guard to both steps; keep the `github_release` check as a
       backstop.
-- [ ] Manual evidence: run the guard's `awk | grep` against the existing
-      0.5.0 section (passes) and against an empty-section sample (fails);
-      paste both outputs.
+- [x] Manual evidence: the guard's `awk | grep` against the existing 0.5.0
+      section prints `0.5.0 guard: PASS`; against a section with no `### `
+      group it prints `empty-section guard: FAIL (expected)`.
 - [ ] COMMIT: `feat(release-truth): <release note sign-off>` with body
       `Task: Release guard (D1)`. Record the hash.
 
