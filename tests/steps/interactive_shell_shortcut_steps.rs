@@ -967,6 +967,10 @@ pub struct ReviewState {
     pub reported_usage: Option<(u32, u32)>,
     /// The regenerated response's reported usage; `None` means no report.
     pub regeneration_usage: Option<(u32, u32)>,
+    /// The model id the provider reports, when it differs from the configured one.
+    pub reported_model: Option<String>,
+    /// The request produced no complete candidate at all.
+    pub no_candidate: bool,
 }
 
 fn review_context(intent: &str, tier: &str, model: &str) -> watn::review::ReviewContext {
@@ -1232,7 +1236,7 @@ fn review_invoke_disabled_ctrl_w(world: &mut WatnWorld, input: &str) {
 }
 
 fn build_review_panel(world: &mut WatnWorld) {
-    if world.review.card_open_fails {
+    if world.review.card_open_fails || world.review.no_candidate {
         world.review.surface_open = false;
         world.review.panel = None;
         world.review.rendered.clear();
@@ -1253,8 +1257,13 @@ fn build_review_panel(world: &mut WatnWorld) {
     let intent = world.review.intent.clone();
     let tier = world.review.tier.clone();
     let model = effective_review_model(&world.review);
+    let billed_model = world
+        .review
+        .reported_model
+        .clone()
+        .unwrap_or_else(|| model.clone());
     let mut context = review_context(&intent, &tier, &model);
-    context.amount = surface_amount_for(&world.review, &model, world.review.reported_usage);
+    context.amount = surface_amount_for(&world.review, &billed_model, world.review.reported_usage);
     world.review.context = Some(context.clone());
     world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
     render_surface(world);

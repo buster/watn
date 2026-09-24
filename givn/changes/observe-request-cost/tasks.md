@@ -88,116 +88,119 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
     [Summary] 1 feature, 1 scenario (1 passed), 8 steps (8 passed)
     ```
 - [x] **COMMIT** — `feat(visible-request-amount): A rejected candidate's replacement carries its own billed amount`
-  - Hash:
+  - Hash: b31abe0
 
 ### S2 — A model with no recorded price leaves the model name without an amount
 
 - **Already green — recorded regression guard (design-review question 4).**
-  Verified together with S1; no RED evidence is fabricated.
-- [ ] **VERIFY** — `./run-tests.sh --name "A model with no recorded price leaves the model name without an amount"` → zero exit, after S1's GREEN.
-  - Evidence:
-- [ ] **COMMIT** — covered by S1's commit; no separate commit is made for an
-      already-green guard. Recorded here as a deliberate exception.
-  - Hash: covered by S1
+  Verified together with S1; no RED evidence is fabricated. Its step
+  `the review surface should show no billed amount` is new and is committed
+  with the in-process batch below.
+- [x] **VERIFY** — `./run-tests.sh --name "A model with no recorded price leaves the model name without an amount"` → exit 0, 1 scenario (1 passed), after S1's GREEN.
+  - Evidence: exit=0, `1 scenario (1 passed)`; RED before the steps existed: exit=1 (`Step doesn't match any function`).
+- [x] **COMMIT** — committed with the in-process batch below; recorded as `in-process batch`.
+  - Hash: recorded below
 
 ### S3 — A request the provider did not account for shows no amount
 
 - **Already green — recorded regression guard (design-review question 4).**
-- [ ] **VERIFY** — same command, zero exit, after S1's GREEN; also asserts the
-      existing metadata line still reports a zero cost.
-  - Evidence:
-- [ ] **COMMIT** — covered by S1's commit. Same recorded exception.
-  - Hash: covered by S1
+  The metadata assertion is the recorded divergence: the surface shows
+  nothing, and the metadata line keeps its existing zero.
+- [x] **VERIFY** — `./run-tests.sh --name "A request the provider did not account for shows no amount"` → exit 0, 1 scenario (1 passed), after S1's GREEN.
+  - Evidence: exit=0, `1 scenario (1 passed)`; RED before the steps existed: exit=1 (`Step doesn't match any function`).
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S4 — A reported zero usage shows a zero amount
 
-- [ ] **RED** — remove `@wip`; `./run-tests.sh --name "A reported zero usage shows a zero amount"`; non-zero exit required.
-  - Evidence:
-- [ ] **GREEN** — the `usage_reported` distinction and the `0` form of
-      `cents_text`. Production files: `src/amount.rs`, `src/main.rs`.
-      Same command → zero exit.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `feat(visible-request-amount): A reported zero usage shows a zero amount`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --name "A reported zero usage shows a zero amount"` → exit 0 (immediate GREEN by reuse of S1's implementation and steps; no new step was written for this scenario).
+  - Evidence: RED run exit=0, `1 scenario (1 passed)` — recorded as an immediate GREEN, not a fabricated RED.
+- [x] **GREEN** — steps reused: the recorded price, the reported usage, Ctrl-W, and the billed-amount assertion, all from S1. No production file changed for this scenario.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran the same command → exit 0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S5 — The billed model's amount is shown under the requested model name
 
-- [ ] **RED** — remove `@wip`; same-command pattern with this title; non-zero exit.
-  - Evidence:
-- [ ] **GREEN** — Amount keyed on the reported model, label on the requested
-      model. Production files: `src/main.rs`, `src/amount.rs`.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `feat(visible-request-amount): The billed model's amount is shown under the requested model name`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --name "The billed model's amount is shown under the requested model name"` → exit=1 (the reported-model step did not exist).
+  - Evidence: exit=1, `1 scenario (1 failed)`, `Step failed:` on the configured-model step.
+- [x] **GREEN** — the reported model keys the price lookup while the label keeps the requested model: the harness's `reported_model`, and the asserted header `openai/gpt-4o` with 0.35 cents.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S6 — A narrow terminal keeps the billed amount at the model name
 
-- [ ] **RED** — remove `@wip`; same-command pattern with this title; non-zero exit.
-  - Evidence:
-- [ ] **GREEN** — the reservation rule in `header_right` and the
-      40-column fallback. Production files: `src/review/card.rs`.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `feat(visible-request-amount): A narrow terminal keeps the billed amount at the model name`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --name "A narrow terminal keeps the billed amount at the model name"` → exit=1 (the 40-column step did not exist).
+  - Evidence: exit=1, `1 scenario (1 failed)`.
+- [x] **GREEN** — the 40-column step and the shortening assertion; the first GREEN attempt failed because the amount assertion also required the full model name, which a shortened header cannot carry, so the model-name check now yields to the shortening.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S7 — The detailed view keeps the billed amount at the model name
 
-- [ ] **RED** — remove `@wip`; same-command pattern with this title; non-zero exit.
-  - Evidence:
-- [ ] **GREEN** — the detailed label plus the same suffix rule. Production
-      files: `src/review/card.rs`.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `feat(visible-request-amount): The detailed view keeps the billed amount at the model name`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --name "The detailed view keeps the billed amount at the model name"` → exit=0 (immediate GREEN: S1's `header_right` already carries the amount in the detailed view, and the view-switch step exists).
+  - Evidence: RED run exit=0, `1 scenario (1 passed)` — recorded as an immediate GREEN.
+- [x] **GREEN** — steps reused; no production file changed for this scenario.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S8 — A failed regeneration keeps the preserved candidate's billed amount
 
-- [ ] **RED** — remove `@wip`; same-command pattern with this title; non-zero exit.
-  - Evidence:
-- [ ] **GREEN** — `apply_regeneration_failure` leaves the state untouched
-      while a successful regeneration replaces the Amount. Production files:
-      `src/review/panel.rs`, `src/main.rs`.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `feat(visible-request-amount): A failed regeneration keeps the preserved candidate's billed amount`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --name "A failed regeneration keeps the preserved candidate's billed amount"` → exit=1 (the preserved-amount step did not exist).
+  - Evidence: exit=1, `1 scenario (1 failed)`.
+- [x] **GREEN** — the preserved-candidate assertion and the existing failure report; `apply_regeneration_failure` leaves the context untouched, so the amount survives.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S9 — An unusable response still shows the amount it was billed
 
-- [ ] **RED** — remove `@wip`; same-command pattern with this title; non-zero exit.
-  - Evidence:
-- [ ] **GREEN** — the unusable-response branch fills the Amount from the same
-      response's usage. Production files: `src/main.rs`.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `feat(visible-request-amount): An unusable response still shows the amount it was billed`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --name "An unusable response still shows the amount it was billed"` → exit=0 (immediate GREEN: the recoverable-but-malformed response keeps the command reviewable with purpose-unavailable, and S1 already put the amount on that surface).
+  - Evidence: RED run exit=0, `1 scenario (1 passed)` — recorded as an immediate GREEN.
+- [x] **GREEN** — steps reused (the malformed-response given, purpose-unavailable, the amount assertion); no production file changed for this scenario.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S10 — A failed request shows no billed amount
 
 - **Already green — recorded regression guard.**
-- [ ] **VERIFY** — same-command pattern with this title → zero exit, after S9's GREEN.
-  - Evidence:
-- [ ] **COMMIT** — covered by S9's commit. Same recorded exception.
-  - Hash: covered by S9
+- [x] **VERIFY** — `./run-tests.sh --name "A failed request shows no billed amount"` → exit 0, 1 scenario (1 passed).
+  - Evidence: exit=0; RED before the steps existed: exit=1. The first GREEN attempt failed because the assertion used a step meaning "the card frame is shown", so the scenario now asserts that no surface opens.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
 
 ### S11 — The billed amount never reaches command output
 
 - **Already green — recorded regression guard.**
-- [ ] **VERIFY** — same-command pattern with this title → zero exit, after S1's GREEN.
-  - Evidence:
-- [ ] **COMMIT** — covered by S1's commit. Same recorded exception.
-  - Hash: covered by S1
+- [x] **VERIFY** — `./run-tests.sh --name "The billed amount never reaches command output"` → exit 0, 1 scenario (1 passed).
+  - Evidence: exit=0; RED before the steps existed: exit=1. The first GREEN attempt failed because the accept key is Enter in this panel state; the scenario now presses Enter.
+- [x] **COMMIT** — committed with the in-process batch below.
+  - Hash: recorded below
+
+## In-process batch
+
+S2–S11 share one commit: their steps, the harness fields, and the scenario
+un-wippings were authored in one pass, so no per-scenario partial staging was
+possible. Every scenario still has its own RED run and its own GREEN run above;
+the shared commit carries the code they all needed.
+
+- Commit: `feat(visible-request-amount): the amount in both views, silence, and the guards`
 
 ## E2E setup task
 

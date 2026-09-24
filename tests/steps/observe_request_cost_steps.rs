@@ -97,15 +97,162 @@ fn review_surface_shows_billed_amount(world: &mut WatnWorld, cents: String) {
             "a request the provider accounted for must not read as zero: {header:?}"
         );
     }
-    let model = world
-        .review
-        .panel
-        .as_ref()
-        .map(|panel| panel.context.model.clone())
-        .unwrap_or_else(|| effective_review_model(&world.review));
-    let model = model_short_name(&model);
+    if !header.contains('…') {
+        let model = world
+            .review
+            .panel
+            .as_ref()
+            .map(|panel| panel.context.model.clone())
+            .unwrap_or_else(|| effective_review_model(&world.review));
+        let model = model_short_name(&model);
+        assert!(
+            header.contains(&model),
+            "the billed amount should appear with the model name {model:?}, got {header:?}"
+        );
+    }
+}
+
+#[then("the review surface should not open")]
+fn review_surface_does_not_open(world: &mut WatnWorld) {
     assert!(
-        header.contains(&model),
-        "the billed amount should appear with the model name {model:?}, got {header:?}"
+        !world.review.surface_open && world.review.rendered.is_empty(),
+        "a failed request opens no surface, got {:?}",
+        world.review.rendered
+    );
+}
+
+/// The header line of the rendered surface, without frame glyphs.
+fn rendered_header(world: &WatnWorld) -> String {
+    let plain = review_rendered_plain(world);
+    plain
+        .lines()
+        .find(|line| line.contains('◆'))
+        .unwrap_or_else(|| panic!("the surface should show a model label, got:\n{plain}"))
+        .to_string()
+}
+
+#[then("the review surface should show no billed amount")]
+fn review_surface_shows_no_billed_amount(world: &mut WatnWorld) {
+    let plain = review_rendered_plain(world);
+    assert!(
+        !plain.contains('¢'),
+        "no billed amount should be shown, got:\n{plain}"
+    );
+}
+
+#[then("no billed amount should be shown")]
+fn no_billed_amount_is_shown(world: &mut WatnWorld) {
+    let plain = review_rendered_plain(world);
+    assert!(
+        !plain.contains('¢'),
+        "no billed amount should be shown, got:\n{plain}"
+    );
+}
+
+#[given("the provider response reports no usage")]
+fn provider_response_reports_no_usage(world: &mut WatnWorld) {
+    world.review.reported_usage = None;
+}
+
+#[then("the metadata amount for the request should be zero")]
+fn metadata_amount_is_zero(world: &mut WatnWorld) {
+    let model = effective_review_model(&world.review);
+    let (_, input, output) = world
+        .review
+        .prices
+        .iter()
+        .find(|(id, _, _)| *id == model)
+        .unwrap_or_else(|| panic!("a recorded price for {model:?}"));
+    let pricing = watn::config::types::ModelPricing {
+        input: *input,
+        output: *output,
+    };
+    let billed = watn::amount::billed_amount(None, Some(&pricing))
+        .expect("a recorded price yields a metadata amount");
+    assert!(!billed.usage_reported());
+    assert_eq!(
+        billed.usd(),
+        0.0,
+        "an unaccounted request keeps the metadata line's existing zero"
+    );
+}
+
+#[given(expr = "the configured model is {string} reported by the provider as {string}")]
+fn configured_model_reported_as(world: &mut WatnWorld, model: String, reported: String) {
+    world.review.model = model;
+    world.review.reported_model = Some(reported);
+}
+
+#[given("the review terminal is 40 columns wide")]
+fn review_terminal_is_narrow(world: &mut WatnWorld) {
+    world.review.narrow = true;
+}
+
+#[then("the review surface should shorten the model name to fit")]
+fn review_surface_shortens_model_name(world: &mut WatnWorld) {
+    let header = rendered_header(world);
+    let model = model_short_name(&effective_review_model(&world.review));
+    assert!(
+        header.contains('…'),
+        "the model name should be shortened to fit, got {header:?}"
+    );
+    assert!(
+        !header.contains(&model),
+        "the full model name {model:?} should not fit at this width, got {header:?}"
+    );
+}
+
+#[then(expr = "the preserved candidate should still show its billed amount of {string} cents")]
+fn preserved_candidate_keeps_amount(world: &mut WatnWorld, cents: String) {
+    let expected: f64 = cents.parse().expect("a numeric expected amount");
+    let header = rendered_header(world);
+    let amount_text = header
+        .split('·')
+        .map(str::trim)
+        .find(|part| part.ends_with('¢'))
+        .unwrap_or_else(|| {
+            panic!("the preserved candidate should keep its amount, got {header:?}")
+        });
+    let shown_text = amount_text.trim_end_matches('¢').trim();
+    let shown: f64 = shown_text
+        .parse()
+        .unwrap_or_else(|_| panic!("a numeric shown amount, got {shown_text:?}"));
+    assert!(
+        (shown - expected).abs() < f64::EPSILON,
+        "the preserved candidate should keep {expected} cents, got {shown_text:?}"
+    );
+    let panel = world.review.panel.as_ref().expect("review panel state");
+    assert_eq!(
+        panel.candidate().command,
+        world.review.candidate_command,
+        "the preserved candidate is the one the failed regeneration started from"
+    );
+}
+
+#[given("the provider request fails before completing")]
+fn provider_request_fails(world: &mut WatnWorld) {
+    world.review.no_candidate = true;
+}
+
+#[then(expr = "the released command should be exactly {string}")]
+fn released_command_is_exactly(world: &mut WatnWorld, command: String) {
+    let released = world
+        .review
+        .released
+        .clone()
+        .expect("an accepted candidate should be released");
+    assert_eq!(
+        released, command,
+        "the released command should carry nothing but the accepted candidate"
+    );
+}
+
+#[then("no billed amount should be shown in the released command")]
+fn released_command_has_no_amount(world: &mut WatnWorld) {
+    let released = world.review.released.clone().unwrap_or_default();
+    let output = world.review.command_output.clone();
+    assert!(
+        !released.contains('¢') && !output.contains('¢'),
+        "no billed amount may reach the released command: released={released:?} output={output:?}"
     );
 }
