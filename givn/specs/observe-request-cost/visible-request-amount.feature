@@ -124,3 +124,11 @@ Feature: Billed amount of a request
     And  the explanation card should show a billed amount of "1" cents with the model name
     When  I close the explanation card
     Then  the command-output channel should contain no command
+
+  Scenario: A provider's unknown model falls back to the requested model's recorded price
+    Given  an installed Bash shortcut and a provider candidate "find . -type f"
+    And  the configured model is "~deepseek/deepseek-flash-latest" reported by the provider as "deepseek/deepseek-v4.1-flash"
+    And  a recorded price of 0.04 input and 1.00 output per million tokens for the model "~deepseek/deepseek-flash-latest"
+    And  the provider response reports 1200 prompt and 90 completion tokens
+    When  I invoke Ctrl-W with current input "find all files"
+    Then  the review surface should show a billed amount of "0.01" cents with the model name

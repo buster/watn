@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:8fdcab5ef549c3817795239ec535f04d311c10d3646d02f520b90268850c1122 -->
 # Use case: observe-request-cost
 
 ## Level
@@ -30,7 +31,7 @@ response.
 1. Terminal developer submits a question or hands an existing command to be
    explained; Watn requests one completion from the selected model.
 2. Provider reports the billed usage with the completed response; Watn pairs
-   that usage with the recorded price of the model the provider reported into
+   that usage with the recorded price that applies to the request into
    the request's Amount.
 3. Watn opens the review surface for the completed response.
 4. Watn shows the Amount with the Model label of the surface.
@@ -41,7 +42,7 @@ response.
 ## Extensions
 
 - 1: The request fails, is interrupted, or ends before a complete response → no Amount appears on any surface the existing failure contract opens, and that contract is unchanged; protects the Minimal guarantee.
-- 2: The model the provider reported has no recorded price → no Amount exists; step 4 shows the Model label alone with nothing in the Amount's place; protects "no Amount is invented".
+- 2: Neither the model the provider reported nor the model the request was sent with has a recorded price → no Amount exists; step 4 shows the Model label alone with nothing in the Amount's place; protects "no Amount is invented".
 - 2: The completed response carries no usage report → no Amount exists even when a price is recorded; step 4 shows the Model label alone; protects "a request the provider did not account for is never shown as free".
 - 2: The completed response cannot be adopted as a structured review response or explanation → the surface still opens under its existing purpose-unavailable contract and the Amount still appears, because the request completed and the provider billed it.
 - 3: The surface names no model → no Amount is shown; protects "no Amount appears without a Model label".
@@ -52,10 +53,12 @@ response.
 
 ## Rules
 
-- The Amount is the value the request's cost computation produces: the usage the provider reported for the completed request, paired with the recorded per-million price of the model the provider reported, expressed in cents. This case owns showing that value in the surface; the computation and its rules stay with the corpus substrate.
+- The Amount is the value the request's cost computation produces: the usage the provider reported for the completed request, paired with the recorded per-million price that applies to the request, expressed in cents. This case owns showing that value in the surface; the computation and its rules stay with the corpus substrate.
+- The Amount is rendered with one significant digit and never more than four decimal places of a cent, trailing zeros trimmed, whole cents from one cent on. An Amount below the last displayed step reads `0`.
 - Usage means the response carried a usage report. The surface distinguishes that presence from a reported zero, which the existing stderr line cannot.
 - The Amount is never estimated, assumed, or substituted: no fallback price, no per-million rate, no session total, no comparison.
-- The Amount is shown only when the request reported usage and a recorded price matches the model the provider reported. Otherwise the Model label stands alone.
+- The price that applies to a request is the recorded price of the model the provider reported; when that model has no recorded price, it is the recorded price of the model the request was sent with.
+- The Amount is shown only when the request reported usage and a price applies. Otherwise the Model label stands alone.
 - The Amount belongs to the model the provider billed for, and the Model label keeps naming the model the request was sent with. When the two differ, the Amount is still shown: it is the billed truth.
 - A request the provider did not account for is never displayed as zero; a request the provider did account for shows what it was billed, including a genuine zero.
 - No Amount appears without a Model label.
@@ -67,17 +70,18 @@ response.
 
 ## Examples
 
-- `watn "find the 5 largest files in the commit history"` with a model priced 0.15 input and 0.60 output per million tokens and a response reporting 1200 prompt and 90 completion tokens: the Amount is 0.0234 cents, shown with the model name.
-- The same invocation with a model configured by hand and no recorded price: the Model label appears with no Amount and no substitute for it.
-- After a rejection, the candidate is regenerated with a model priced 2.50 input and 10.00 output per million tokens and a response reporting 1500 prompt and 200 completion tokens: the surface shows 0.575 cents in place of the previous Amount.
-- The request is sent with `openai/gpt-4o` while the provider reports `gpt-4o-2024-08-06`, which carries the recorded price: the Model label keeps the requested name and the Amount comes from the reported model — 1000 prompt and 100 completion tokens is 0.35 cents.
-- `watn explain 'git log --oneline | head -5'` with a priced model and a response reporting 800 prompt and 120 completion tokens: the card shows 0.0192 cents with the model name; closing it releases nothing.
+- `watn "find the 5 largest files in the commit history"` with a model priced 0.15 input and 0.60 output per million tokens and a response reporting 1200 prompt and 90 completion tokens: the Amount is 0.02 cents, shown with the model name.
+- The same invocation with a model configured by hand and no recorded price for either the reported or the requested model: the Model label appears with no Amount and no substitute for it.
+- A configured alias such as `~deepseek/deepseek-flash-latest` priced at 0.04 input and 1.00 output per million tokens, answered by the provider as `deepseek/deepseek-v4.1-flash` with 1200 prompt and 90 completion tokens: the Model label keeps the configured name and the Amount is 0.01 cents, from the requested model's recorded price.
+- After a rejection, the candidate is regenerated with a model priced 2.50 input and 10.00 output per million tokens and a response reporting 1500 prompt and 200 completion tokens: the surface shows 0.6 cents in place of the previous Amount.
+- The request is sent with `openai/gpt-4o` while the provider reports `gpt-4o-2024-08-06`, which carries the recorded price: the Model label keeps the requested name and the Amount comes from the reported model — 1000 prompt and 100 completion tokens is 0.4 cents.
+- `watn explain 'git log --oneline | head -5'` with a priced model and a response reporting 800 prompt and 120 completion tokens: the card shows 0.02 cents with the model name; closing it releases nothing.
 - A 40-column terminal: the Model label is shortened and the Amount stays visible.
 
 ## Minimal guarantee
 
-When the request reported no usage or no recorded price matches the model the
-provider reported, no Amount and no substitute for it is displayed, and the
+When the request reported no usage, or no price applies to either the reported
+or the requested model, no Amount and no substitute for it is displayed, and the
 surface behaves exactly as it does without this case.
 
 ## Success guarantee
