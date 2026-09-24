@@ -50,3 +50,11 @@ the terminal or surrendering control to an opaque automation step.
   not semantic validation of command risk.
 - Direct command editing must never silently alter the original intent.
 - Cancellation or failure must preserve the original shell/input state.
+- 2026-09-24, promoted from the `visible-request-cost` topic — cost stance. The
+  developer pays the provider bill for their own requests and weighs a decision
+  partly by what it costs. An amount they pay for must reach them inside the
+  surface that asks for the next decision, not on a line that scrolls away, and
+  a silently absent number is not one they can act on. This adds no spending
+  authority, budget, or accounting responsibility: the authority boundary
+  (decides what reaches the shell) and the evaluation capability (judges whether
+  a proposed action is trustworthy) are unchanged.

@@ -134,6 +134,22 @@ plain-line question flow without the ratatui coordinator.
 | `model-picker` | Provides model-search and local-filter logic; the wizard selects the complete-catalog local path or incomplete-catalog remote path, and remote results use a stale-generation guard |
 | `ConfigWriter` | Serialize a candidate snapshot atomically, persist selected tier assignments, verbatim reasoning strings, and captured per-million prices, enforce Unix mode `0600`, and preserve unrelated fields |
 
+### Amount
+
+**Responsibility:** Turn one completed request's reported usage and the
+recorded per-million price of the model the provider reported into the money
+that request was billed, and render it for the surface in cents.
+
+| Element | Responsibility |
+|---|---|
+| `BilledAmount` | The money one completed request was billed, in USD, together with whether the response carried a usage report at all |
+| `billed_amount(usage, price)` | `None` when no recorded price matches the reported model; otherwise the amount, computed exactly as the stderr metadata line always has — a price entry without a usage report still yields `0.0` for that line |
+| `cents_text()` | The surface form: four decimals of a cent, trailing zeros trimmed, a genuine zero as `0`, so a request the provider accounted for is never displayed as zero |
+
+The Amount is presentation input only: it travels to the review surface and the
+explanation card through the review context and never reaches the
+command-output channel.
+
 ### Exec
 
 **Responsibility:** Execute returned command in system shell.

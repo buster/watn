@@ -118,6 +118,7 @@ sequenceDiagram
         CLI->>CLI: capture the unusable response in the state file
     end
     CLI->>Panel: show Candidate and Command flow
+    CLI->>Panel: show the Amount billed for this request at the Model label
     Panel-->>User: exact Stage text, purposes/status, direct decision hints
     opt structured response supports delayed purposes
         Panel-->>User: loading status, then updated model-written purposes
@@ -306,6 +307,7 @@ sequenceDiagram
         end
     end
     CLI->>TTY: explanation-only review card
+    CLI->>TTY: show the Amount billed for the explanation request at the Model label
     User->>TTY: arrows, Enter, or Escape
     TTY-->>CLI: close; release nothing
     opt verbose

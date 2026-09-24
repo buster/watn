@@ -91,6 +91,7 @@
 | R-089 | The unusable-response capture can contain command text, including secrets embedded in a command | Low | Medium | Keep one overwritten file under the user's state directory with no history, write only for unusable responses, never treat it as configuration, warn without failing when the write fails, and document the path |
 | R-090 | A command recovered from a malformed or truncated payload may not be the command the model intended | Medium | Medium | Recover only the provider's own delimited text, never author or repair command text, keep Stage purposes unavailable, require explicit acceptance, and release nothing when recovery is ambiguous |
 | R-091 | Raising the review/explanation completion cap increases the worst-case cost of a request | Low | Low | Scope the higher cap to review and explanation requests only; truncated responses still degrade safely through repair and recovery |
+| R-092 | The Amount is absent whenever no recorded price matches the model the provider reported, and that absence is silent, so a model configured without a price looks the same as a free request and the developer has no in-surface signal to fix it | Medium | Medium | Keep the silence deliberate and consistent with the stderr line, which already omits the money portion; the configuration path (`watn models`, `watn setup`) remains where a missing price is visible, and the divergence between the stderr line's `$0.0000` and the surface's silence is documented in chapter 8 |
 
 ## Technical debt
 
