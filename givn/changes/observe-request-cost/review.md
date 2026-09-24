@@ -95,17 +95,26 @@ computed amount into that same covered card, so it carries no behaviour of its
 own. Recorded follow-up: an end-to-end scenario for the confirmation prompt's
 explanation choice would remove even this.
 
-## Deterministic gate dispositions
+## Overlap dispositions
 
-`givn lint --change observe-request-cost` reports shape and subset advisories
-between scenarios that share steps. Dispositions: `A rejected candidate's
-replacement carries its own billed amount` and the amount scenarios keep
-distinct invariants (replacement versus first display); the guard scenarios
-(`A model with no recorded price…`, `A request the provider did not account
-for…`, `A failed request shows no billed amount`, `The billed amount never
-reaches command output`) are recorded regression guards, classified in
-`tasks.md` and in `design-review.md`. No removed/added pair exists in this
-change.
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| The review surface shows the billed amount of the request that produced it | A rejected candidate's replacement carries its own billed amount | boundary |
+| The review surface shows the billed amount of the request that produced it | A reported zero usage shows a zero amount | boundary |
+| The review surface shows the billed amount of the request that produced it | The detailed view keeps the billed amount at the model name | boundary |
+| A rejected candidate's replacement carries its own billed amount | A reported zero usage shows a zero amount | boundary |
+| A rejected candidate's replacement carries its own billed amount | The detailed view keeps the billed amount at the model name | boundary |
+| A reported zero usage shows a zero amount | The detailed view keeps the billed amount at the model name | boundary |
+
+All six pairs share a step shape because the amount is asserted the same way,
+but each asserts a different invariant: a first display through the real binary,
+replacement on regeneration, the genuinely-zero case that a non-zero assertion
+must reject, and the detailed layout with its own label and reservation. None is
+a variant of another; merging any pair would lose a rule.
+
+## Split-or-keep
+
+No scenario exceeds the deterministic long-scenario threshold.
 
 ## Persona conformance
 

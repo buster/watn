@@ -65,9 +65,10 @@ was billed:
 Route reported no signal (top candidates tied at 13.00), so no recommendation
 column is recorded.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| visible-request-amount | `NEW in observe-request-cost` | The amount informs no accept-or-regenerate decision — that reading was rejected during ideation — so it advances no existing goal's success guarantee and belongs to no existing capability. The surface it appears in stays `use-shell`'s; the computation and its stderr line stay with `ask`, `incremental-sse-rendering`, and `config`. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| visible-request-amount | — (route reported no signal) | `NEW in observe-request-cost` | The amount informs no accept-or-regenerate decision — that reading was rejected during ideation — so it advances no existing goal's success guarantee and belongs to no existing capability. The surface it appears in stays `use-shell`'s; the computation and its stderr line stay with `ask`, `incremental-sse-rendering`, and `config`. |
+| interactive-shell-shortcut | — (route reported no signal) | `EXTEND interactive-shell-shortcut` | The change carries one `@givn.modified` scenario for this capability: `Developer accepts an explained candidate from Ctrl-W` now asserts the shell buffer holds exactly the accepted candidate and no billed amount, so the new capability's "never command output" rule is proven on the shortcut path. No new behaviour is added to this capability. |
 
 Document amendments this change must carry, because one existing rule
 contradicts the new behaviour: the review goal's simple-view rule, "names only
