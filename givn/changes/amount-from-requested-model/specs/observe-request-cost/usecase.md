@@ -1,4 +1,5 @@
 <!-- givn:base-sha256:8fdcab5ef549c3817795239ec535f04d311c10d3646d02f520b90268850c1122 -->
+# Use case: observe-request-cost
 
 ## Level
 
