@@ -42,9 +42,9 @@ file and becomes the GitHub release body.
 `givn spec route` reports no signal; the decision is recorded with its
 rationale.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| release-truth | EXTEND release-truth | The changelog is the release's public statement of what watn does; release-truth already owns release metadata and documentation claims. |
+| Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
+|---|---|---|---|
+| release-truth | no signal | `EXTEND release-truth` | The changelog is the release's public statement of what watn does; release-truth already owns release metadata and documentation claims. |
 
 ## Out of Scope
 
