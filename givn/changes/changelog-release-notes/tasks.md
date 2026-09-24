@@ -56,27 +56,31 @@ at least one `### ` group before the version commit, tag, or `cargo publish`.
 - [x] Manual evidence: the guard's `awk | grep` against the existing 0.5.0
       section prints `0.5.0 guard: PASS`; against a section with no `### `
       group it prints `empty-section guard: FAIL (expected)`.
-- [ ] COMMIT: `feat(release-truth): <release note sign-off>` with body
-      `Task: Release guard (D1)`. Record the hash.
+- [x] COMMIT: `ef6f197` — release note subject, body
+      `Task: release guard (D1) before the version commit, tag, and publish.`
 
 ## S1 — A changelog section keeps only user-visible groups
 
 (`@givn.added`, regular, `release-truth`)
 
-- [ ] **RED** — remove `@wip` from this scenario only. Add the five new
+- [x] **RED** — remove `@wip` from this scenario only. Add the five new
       steps to `tests/steps/release_truth_steps.rs` with `unimplemented!()`
       bodies. Run
       `./run-tests.sh --name "A changelog section keeps only user-visible groups"`.
-  - Evidence: exit non-zero; capture the unimplemented-step failure.
-- [ ] **GREEN** — implement the fixture, the git-cliff invocation, and the
+  - Evidence: exit=1; `1 scenario (1 failed)`; `Step panicked. Captured
+    output: not implemented`; `Step doesn't match` was not needed because the
+    step existed as a stub.
+- [x] **GREEN** — implement the fixture, the git-cliff invocation, and the
       assertions; rewrite the `commit_parsers` in `cliff.toml` to the five
       user-visible groups plus the skip-all fallback (keep `^fix\(e2e\)`);
       add the pinned git-cliff install to the CI acceptance job.
   - Production files: `cliff.toml`, `.github/workflows/ci.yml`,
     `tests/steps/release_truth_steps.rs`.
-  - Evidence: same command → exit 0, `1 scenario (1 passed)`.
-- [ ] **REFACTOR** — clean up the fixture helper; same command → exit 0.
-  - Evidence: exit 0.
+  - Evidence: same command → exit=0, `1 scenario (1 passed)`, `5 steps
+    (5 passed)`.
+- [x] **REFACTOR** — `cargo fmt --all`; `cargo clippy --locked
+      --all-targets -- -D warnings` → `Finished`; same command → exit=0,
+      `1 scenario (1 passed)`.
 - [ ] COMMIT: one atomic revision for RED+GREEN+REFACTOR; subject is the
       release note, body `Scenario: A changelog section keeps only
       user-visible groups`. Record the revision hash in `tasks.md`.

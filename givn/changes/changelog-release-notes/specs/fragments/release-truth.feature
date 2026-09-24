@@ -10,7 +10,7 @@ Feature: Release truth and repository cleanup
     Then  the changelog lists "Explain an existing shell command without executing it" exactly once
     And  the changelog lists no documentation entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: A changelog section keeps only user-visible groups
     Given  a release range with a feature, a bug fix, a performance change, a revert, and a breaking change
     And  a documentation, a refactoring, a test, a chore, and an uncategorised revision in the same range

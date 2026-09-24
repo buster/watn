@@ -49,6 +49,20 @@ jobs:
       - name: Run library tests
         run: cargo test --locked --lib
 
+      - name: Cache pinned test tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/
+          key: watn-test-tools-${{ runner.os }}-${{ runner.arch }}-git-cliff-2.13.1
+
+      - name: Install pinned git-cliff for changelog scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git-cliff --version 2>/dev/null | grep -Fq 'git-cliff 2.13.1'; then
+            cargo install git-cliff --version 2.13.1 --locked
+          fi
+
       - name: Run acceptance scenarios
         shell: bash
         run: |

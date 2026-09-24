@@ -12,6 +12,8 @@ pub struct ReleaseTruthState {
     pub library_status: Option<bool>,
     pub active_docs: Option<String>,
     pub archive_status: Option<String>,
+    pub changelog_output: Option<String>,
+    pub(crate) changelog_fixture: Option<ChangelogFixture>,
 }
 
 impl fmt::Debug for ReleaseTruthState {
@@ -24,6 +26,7 @@ impl fmt::Debug for ReleaseTruthState {
             .field("library_status", &self.library_status)
             .field("active_docs", &self.active_docs.is_some())
             .field("archive_status", &self.archive_status.is_some())
+            .field("changelog_output", &self.changelog_output.is_some())
             .finish()
     }
 }
@@ -265,6 +268,171 @@ fn archived_not_current(world: &mut crate::WatnWorld) {
         .expect("archive docs");
     let normalized = docs.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(normalized.contains("not current architecture snapshots"));
+}
+
+pub(crate) struct ChangelogFixture {
+    dir: tempfile::TempDir,
+    base: String,
+}
+
+pub(crate) fn changelog_fixture() -> ChangelogFixture {
+    let dir = tempfile::tempdir().expect("create changelog fixture directory");
+    let hooks = dir.path().join("no-hooks");
+    std::fs::create_dir_all(&hooks).expect("create empty hooks directory");
+    let run = |args: &[&str]| {
+        let output = Command::new("git")
+            .current_dir(dir.path())
+            .args(args)
+            .output()
+            .unwrap_or_else(|error| panic!("run git {args:?}: {error}"));
+        assert!(
+            output.status.success(),
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        output
+    };
+    run(&["init", "--quiet"]);
+    run(&["config", "user.name", "Watn Changelog Fixture"]);
+    run(&["config", "user.email", "changelog-fixture@example.invalid"]);
+    run(&["config", "commit.gpgsign", "false"]);
+    run(&[
+        "config",
+        "core.hooksPath",
+        hooks.to_str().expect("hooks path is UTF-8"),
+    ]);
+    run(&["commit", "--allow-empty", "--quiet", "-m", "chore: base"]);
+    let base = String::from_utf8_lossy(&run(&["rev-parse", "HEAD"]).stdout)
+        .trim()
+        .to_string();
+    ChangelogFixture { dir, base }
+}
+
+impl ChangelogFixture {
+    pub(crate) fn root(&self) -> &std::path::Path {
+        self.dir.path()
+    }
+
+    pub(crate) fn commit(&self, message: &str) {
+        let output = Command::new("git")
+            .current_dir(self.root())
+            .args(["commit", "--allow-empty", "--quiet", "-m", message])
+            .output()
+            .expect("record changelog fixture commit");
+        assert!(
+            output.status.success(),
+            "fixture commit failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    fn range(&self) -> String {
+        format!("{}..HEAD", self.base)
+    }
+}
+
+fn find_git_cliff() -> std::path::PathBuf {
+    if Command::new("git-cliff").arg("--version").output().is_ok() {
+        return std::path::PathBuf::from("git-cliff");
+    }
+    panic!(
+        "git-cliff is required for the changelog scenarios; install the pinned version with \
+         `cargo install git-cliff --version 2.13.1 --locked`"
+    );
+}
+
+fn changelog_output(world: &crate::WatnWorld) -> &str {
+    world
+        .release_truth
+        .changelog_output
+        .as_deref()
+        .expect("changelog output")
+}
+
+#[given("a release range with a feature, a bug fix, a performance change, a revert, and a breaking change")]
+fn release_range_with_visible_changes(world: &mut crate::WatnWorld) {
+    let fixture = changelog_fixture();
+    fixture.commit("feat(probe): Feature note appears");
+    fixture.commit("fix(probe): Fix note appears");
+    fixture.commit("perf(probe): Performance note appears");
+    fixture.commit("revert(probe): Revert note appears");
+    fixture.commit("feat(probe)!: Breaking note appears");
+    world.release_truth.changelog_fixture = Some(fixture);
+}
+
+#[given("a documentation, a refactoring, a test, a chore, and an uncategorised revision in the same range")]
+fn release_range_with_noise(world: &mut crate::WatnWorld) {
+    let fixture = world
+        .release_truth
+        .changelog_fixture
+        .as_ref()
+        .expect("a changelog fixture is required first");
+    fixture.commit("docs(probe): Documentation note appears");
+    fixture.commit("refactor(probe): Refactoring note appears");
+    fixture.commit("test(probe): Test note appears");
+    fixture.commit("chore(probe): Chore note appears");
+    fixture.commit("misc(probe): Uncategorised note appears");
+}
+
+#[when("I generate the changelog for the release range")]
+fn generate_changelog(world: &mut crate::WatnWorld) {
+    let fixture = world
+        .release_truth
+        .changelog_fixture
+        .as_ref()
+        .expect("a changelog fixture is required first");
+    let config = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("cliff.toml");
+    let output = Command::new(find_git_cliff())
+        .arg("--config")
+        .arg(&config)
+        .arg(fixture.range())
+        .current_dir(fixture.root())
+        .output()
+        .expect("run git-cliff");
+    assert!(
+        output.status.success(),
+        "git-cliff failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.release_truth.changelog_output =
+        Some(String::from_utf8_lossy(&output.stdout).to_string());
+}
+
+#[then(
+    "the changelog section lists the feature, the bug fix, the performance change, the revert, and the breaking change"
+)]
+fn changelog_lists_visible_changes(world: &mut crate::WatnWorld) {
+    let output = changelog_output(world);
+    for expected in [
+        "### Features",
+        "### Bug Fixes",
+        "### Performance",
+        "### Reverts",
+        "### Breaking Changes",
+        "Feature note appears",
+        "Fix note appears",
+        "Performance note appears",
+        "Revert note appears",
+        "Breaking note appears",
+    ] {
+        assert!(
+            output.contains(expected),
+            "changelog is missing {expected:?}: {output}"
+        );
+    }
+}
+
+#[then(
+    regex = r##"^the changelog section contains no "Documentation", "Refactoring", or "Other Changes" group$"##
+)]
+fn changelog_has_no_noise_groups(world: &mut crate::WatnWorld) {
+    let output = changelog_output(world);
+    for forbidden in ["### Documentation", "### Refactoring", "### Other Changes"] {
+        assert!(
+            !output.contains(forbidden),
+            "changelog contains forbidden group {forbidden:?}: {output}"
+        );
+    }
 }
 
 fn active_docs_text(world: &crate::WatnWorld) -> &str {
