@@ -76,9 +76,10 @@ disposition is required, and the two scenarios are short.
 
 ## README impact decision
 
-README-IMPACT: none — the change adjusts release tooling and the generated
-release notes; no consumer-visible command, flag, configuration key, or
-terminal output changes.
+README-IMPACT: none
+
+Reason: the change adjusts release tooling and the generated release notes; no
+consumer-visible command, flag, configuration key, or terminal output changes.
 
 ## Coverage classification
 
