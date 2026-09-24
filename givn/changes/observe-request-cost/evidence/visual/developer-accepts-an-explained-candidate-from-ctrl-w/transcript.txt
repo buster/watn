@@ -1,4 +1,4 @@
-/tmp/.tmpmeDPVE/home/.bashrc: Zeile 32: bind: Warnung: Zeileneditierung ist nicht aktiviert.
+/tmp/.tmpwJBivm/home/.bashrc: Zeile 32: bind: Warnung: Zeileneditierung ist nicht aktiviert.
 warning: config file is world-readable (644)
 ◈  Asking test-model · 0.0s  watn · review                                                                                          ◆ test-model 
                                                                                                                         

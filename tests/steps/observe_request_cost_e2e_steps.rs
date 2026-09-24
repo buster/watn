@@ -30,8 +30,23 @@ fn e2e_configured_model_with_price(world: &mut WatnWorld, model: String, input: 
 }
 
 /// Commit one scenario's terminal transcript as its visual evidence.
-pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, _rendered: &str) {
-    commit_transcript(world, slug);
+pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, rendered: &str) {
+    let text = if rendered.trim().is_empty() {
+        if let Some(session) = world.pty_session.as_ref() {
+            crate::steps::observe_request_cost_steps::plain_surface_text(
+                &crate::steps::pty_snapshot(session),
+            )
+        } else {
+            crate::steps::observe_request_cost_steps::plain_surface_text(&world.review.transcript)
+        }
+    } else {
+        rendered.to_string()
+    };
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("givn/changes/observe-request-cost/evidence/visual")
+        .join(slug);
+    std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
+    std::fs::write(dir.join("transcript.txt"), text).expect("commit the scenario transcript");
 }
 
 fn commit_transcript(world: &WatnWorld, slug: &str) {
@@ -50,7 +65,7 @@ fn commit_transcript(world: &WatnWorld, slug: &str) {
     std::fs::write(dir.join("transcript.txt"), rendered).expect("commit the scenario transcript");
 }
 
-fn assert_terminal_shows_billed_amount(world: &WatnWorld, cents: &str) {
+fn assert_terminal_shows_billed_amount(world: &WatnWorld, cents: &str) -> String {
     let session = world.pty_session.as_ref().expect("PTY session");
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
     while !crate::steps::pty_snapshot(session).contains('¢') && std::time::Instant::now() < deadline
@@ -61,16 +76,18 @@ fn assert_terminal_shows_billed_amount(world: &WatnWorld, cents: &str) {
         &crate::steps::pty_snapshot(session),
     );
     crate::steps::observe_request_cost_steps::assert_shows_billed_amount(&rendered, cents, None);
+    rendered
 }
 
 #[then(
     expr = "the explanation card should show a billed amount of {string} cents with the model name"
 )]
 fn e2e_explanation_card_shows_billed_amount(world: &mut WatnWorld, cents: String) {
-    assert_terminal_shows_billed_amount(world, &cents);
-    commit_transcript(
+    let rendered = assert_terminal_shows_billed_amount(world, &cents);
+    commit_e2e_transcript(
         world,
         "the-explanation-card-shows-the-billed-amount-of-its-explanation-request",
+        &rendered,
     );
 }
 

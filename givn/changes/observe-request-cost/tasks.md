@@ -87,8 +87,16 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
      ✔  Then the review surface should show a billed amount of "0.575" cents with the model name
     [Summary] 1 feature, 1 scenario (1 passed), 8 steps (8 passed)
     ```
-- [x] **COMMIT** — `feat(visible-request-amount): A rejected candidate's replacement carries its own billed amount`
+- [x] COMMIT: `b31abe0` - `feat(visible-request-amount): A rejected candidate's replacement carries its own billed amount`
   - Hash: b31abe0
+
+## In-process batch (S2–S11)
+
+One commit covers these ten scenarios: their steps, the harness fields, and the
+scenario un-wippings were authored in one pass, so no per-scenario partial
+staging was possible. Each scenario below keeps its own RED and GREEN run.
+
+- [x] COMMIT: `48bbfb5` - `feat(visible-request-amount): the amount in both views, silence, and the guards`
 
 ### S2 — A model with no recorded price leaves the model name without an amount
 
@@ -98,7 +106,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   with the in-process batch below.
 - [x] **VERIFY** — `./run-tests.sh --name "A model with no recorded price leaves the model name without an amount"` → exit 0, 1 scenario (1 passed), after S1's GREEN.
   - Evidence: exit=0, `1 scenario (1 passed)`; RED before the steps existed: exit=1 (`Step doesn't match any function`).
-- [x] **COMMIT** — committed with the in-process batch below; recorded as `in-process batch`.
   - Hash: 48bbfb5
 
 ### S3 — A request the provider did not account for shows no amount
@@ -108,7 +115,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   nothing, and the metadata line keeps its existing zero.
 - [x] **VERIFY** — `./run-tests.sh --name "A request the provider did not account for shows no amount"` → exit 0, 1 scenario (1 passed), after S1's GREEN.
   - Evidence: exit=0, `1 scenario (1 passed)`; RED before the steps existed: exit=1 (`Step doesn't match any function`).
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S4 — A reported zero usage shows a zero amount
@@ -119,7 +125,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran the same command → exit 0.
   - Evidence: exit=0.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S5 — The billed model's amount is shown under the requested model name
@@ -130,7 +135,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S6 — A narrow terminal keeps the billed amount at the model name
@@ -141,7 +145,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S7 — The detailed view keeps the billed amount at the model name
@@ -152,7 +155,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S8 — A failed regeneration keeps the preserved candidate's billed amount
@@ -163,7 +165,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S9 — An unusable response still shows the amount it was billed
@@ -174,7 +175,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S10 — A failed request shows no billed amount
@@ -182,7 +182,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
 - **Already green — recorded regression guard.**
 - [x] **VERIFY** — `./run-tests.sh --name "A failed request shows no billed amount"` → exit 0, 1 scenario (1 passed).
   - Evidence: exit=0; RED before the steps existed: exit=1. The first GREEN attempt failed because the assertion used a step meaning "the card frame is shown", so the scenario now asserts that no surface opens.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ### S11 — The billed amount never reaches command output
@@ -190,7 +189,6 @@ table, cents form), `design-review.md` (the five decisions), `arc42.md`.
 - **Already green — recorded regression guard.**
 - [x] **VERIFY** — `./run-tests.sh --name "The billed amount never reaches command output"` → exit 0, 1 scenario (1 passed).
   - Evidence: exit=0; RED before the steps existed: exit=1. The first GREEN attempt failed because the accept key is Enter in this panel state; the scenario now presses Enter.
-- [x] **COMMIT** — committed with the in-process batch below.
   - Hash: 48bbfb5
 
 ## Review finding: the too-narrow fallback needed a scenario
@@ -207,10 +205,7 @@ bucket 2, missing test coverage, and is resolved here.
   - Evidence: exit=0, `1 scenario (1 passed)`; S6 re-run after the step change: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — `test(visible-request-amount): A terminal too narrow for the amount keeps the model name`
-  - Hash: recorded in review.md
-
-## In-process batch
+- [x] COMMIT: `3a853a1` - `test(visible-request-amount): A terminal too narrow for the amount keeps the model name`
 
 S2–S11 share one commit: their steps, the harness fields, and the scenario
 un-wippings were authored in one pass, so no per-scenario partial staging was
@@ -244,7 +239,6 @@ the shared commit carries the code they all needed.
   - Evidence: exit=0, `1 scenario (1 passed)`, after the assertion learned to read the framed header through the border glyphs and to take the model name from the configured model.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — `test(e2e): the billed amount on the review surface and the explanation card`
   - Hash: db227a2
 
 ### S13 — The explanation card shows the billed amount of its explanation request
@@ -255,7 +249,6 @@ the shared commit carries the code they all needed.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — `test(e2e): the billed amount on the review surface and the explanation card`
   - Hash: db227a2
 
 ### S14 — Developer accepts an explained candidate from Ctrl-W (modified permanent scenario)
@@ -266,12 +259,13 @@ the shared commit carries the code they all needed.
   - Evidence: exit=0, `1 scenario (1 passed)`.
 - [x] **REFACTOR** — no change; re-ran → exit=0.
   - Evidence: exit=0.
-- [x] **COMMIT** — `test(e2e): the billed amount on the review surface and the explanation card`
   - Hash: db227a2
 
 The three end-to-end scenarios share one commit: their steps and the small
 harness change were authored in one pass. Each has its own RED and GREEN run
 above.
+
+- [x] COMMIT: `db227a2` - `test(e2e): the billed amount on the review surface and the explanation card`
 
 ## Final verification
 

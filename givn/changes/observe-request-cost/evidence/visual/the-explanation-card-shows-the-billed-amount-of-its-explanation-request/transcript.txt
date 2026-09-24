@@ -1,0 +1,20 @@
+warning: config file is world-readable (644)
+◈  Asking gpt-4o-mini · 0.0s  watn · review                                                                  ◆ tier 1 · test/gpt-4o-mini · 1.35 ¢ 
+  Intent    explain command                                                                                             
+                                                                                                                        
+    ▶ git log --oneline |                                                                                               
+      head -5                                                                                                           
+                                                                                                                        
+      ↳ Explains stage 1                                                                                                
+                                                                                                                        
+  esc close                                                                                                             
+                                                                                                                          watn · review                                                                  ◆ tier 1 · test/gpt-4o-mini · 1.35 ¢ 
+  Intent    explain command                                                                                             
+                                                                                                                        
+      git log --oneline |                                                                                               
+    ▶ head -5                                                                                                           
+                                                                                                                        
+      ↳ Explains stage 2                                                                                                
+                                                                                                                        
+  esc close                                                                                                             
+                                                                                                                        
