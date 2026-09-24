@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "observe-request-cost",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1790254265,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "3e424f2b975c04910e53c5669b9c09484eaad091",
+  "tested_revision": "3e424f2b975c04910e53c5669b9c09484eaad091",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 55.723319145
+    },
+    "regular": {
+      "status": "passed",
+      "total": 271,
+      "passed": 271,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 42.685574953
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 20975,
+    "line_valid": 22592,
+    "line_percent": 92
+  },
+  "started_at_unix": 1790254945,
+  "finished_at_unix": 1790255207
 }
