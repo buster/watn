@@ -29,6 +29,27 @@ fn e2e_configured_model_with_price(world: &mut WatnWorld, model: String, input: 
     world.review.model = model;
 }
 
+/// Commit one scenario's terminal transcript as its visual evidence.
+pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, _rendered: &str) {
+    commit_transcript(world, slug);
+}
+
+fn commit_transcript(world: &WatnWorld, slug: &str) {
+    let rendered = if world.review.e2e && world.pty_session.is_some() {
+        let session = world.pty_session.as_ref().expect("PTY session");
+        crate::steps::observe_request_cost_steps::plain_surface_text(&crate::steps::pty_snapshot(
+            session,
+        ))
+    } else {
+        crate::steps::observe_request_cost_steps::plain_surface_text(&world.review.transcript)
+    };
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("givn/changes/observe-request-cost/evidence/visual")
+        .join(slug);
+    std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
+    std::fs::write(dir.join("transcript.txt"), rendered).expect("commit the scenario transcript");
+}
+
 fn assert_terminal_shows_billed_amount(world: &WatnWorld, cents: &str) {
     let session = world.pty_session.as_ref().expect("PTY session");
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
@@ -47,6 +68,10 @@ fn assert_terminal_shows_billed_amount(world: &WatnWorld, cents: &str) {
 )]
 fn e2e_explanation_card_shows_billed_amount(world: &mut WatnWorld, cents: String) {
     assert_terminal_shows_billed_amount(world, &cents);
+    commit_transcript(
+        world,
+        "the-explanation-card-shows-the-billed-amount-of-its-explanation-request",
+    );
 }
 
 #[then("the Bash command line should be exactly the accepted candidate")]
@@ -64,5 +89,9 @@ fn e2e_bash_line_has_no_amount(world: &mut WatnWorld) {
         !world.review.bash_command_line.contains('¢'),
         "no billed amount may reach the shell buffer, got {:?}",
         world.review.bash_command_line
+    );
+    commit_transcript(
+        world,
+        "developer-accepts-an-explained-candidate-from-ctrl-w",
     );
 }

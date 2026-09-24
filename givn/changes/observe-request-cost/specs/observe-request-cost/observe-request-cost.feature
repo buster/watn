@@ -116,6 +116,16 @@ Feature: Billed amount of a request
     Then the released command should be exactly "find . -type f"
     And no billed amount should be shown in the released command
 
+  @givn.added
+  Scenario: A terminal too narrow for the amount keeps the model name
+    Given an installed Bash shortcut and a provider candidate "find . -type f"
+    And a recorded price of 0.15 input and 0.60 output per million tokens for the configured model
+    And the provider response reports 1200 prompt and 90 completion tokens
+    And the review terminal is 24 columns wide
+    When I invoke Ctrl-W with current input "find all files"
+    Then the review surface should show a framed card
+    And the review surface should show no billed amount
+
   @givn.added @e2e
   Scenario: The explanation card shows the billed amount of its explanation request
     Given a configured provider whose explanation covers the command:

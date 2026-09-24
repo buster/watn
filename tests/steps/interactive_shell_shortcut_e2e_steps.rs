@@ -205,6 +205,7 @@ fn e2e_accept_candidate(world: &mut WatnWorld) {
     pty_wait_for_label(session, "⏎");
     pty_write(session, "\r");
     let output = pty_wait_for_label(session, "HIST<<");
+    world.review.transcript = output.clone();
     let line = marker_value_first(&output, "LINE<<");
     let history = marker_value_last(&output, "HIST<<");
     world.review.bash_command_line = line;

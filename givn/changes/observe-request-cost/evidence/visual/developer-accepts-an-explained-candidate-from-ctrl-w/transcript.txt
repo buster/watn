@@ -1,0 +1,12 @@
+/tmp/.tmpmeDPVE/home/.bashrc: Zeile 32: bind: Warnung: Zeileneditierung ist nicht aktiviert.
+warning: config file is world-readable (644)
+◈  Asking test-model · 0.0s  watn · review                                                                                          ◆ test-model 
+                                                                                                                        
+    ▶ printf 'accepted' > /tmp/watn-shortcut-should-not-run                                                             
+                                                                                                                        
+      ↳ Write the accepted marker without executing it.                                                                 
+                                                                                                                        
+  ⏎ accept · ↑↓ stage · d/? details · esc                                                                               
+                                                                                                                        test-model · 0 tok/s · 0.1s · ¯\_(ツ)_/¯
+LINE<<printf 'accepted' > /tmp/watn-shortcut-should-not-run>>
+HIST<<    1  # inspect recent log changes>>

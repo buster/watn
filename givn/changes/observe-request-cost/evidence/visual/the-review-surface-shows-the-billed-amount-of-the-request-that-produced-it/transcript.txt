@@ -1,0 +1,9 @@
+warning: config file is world-readable (644)
+◈  Asking gpt-4o-mini · 0.0s  watn · review                                                                                ◆ gpt-4o-mini · 1.35 ¢ 
+                                                                                                                        
+    ▶ find . -type f                                                                                                    
+                                                                                                                        
+      ↳ purpose-unavailable                                                                                             
+                                                                                                                        
+  ⏎ accept · ↑↓ stage · d/? details · esc                                                                               
+                                                                                                                        

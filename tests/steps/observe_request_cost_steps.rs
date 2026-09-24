@@ -164,6 +164,13 @@ fn review_surface_shows_billed_amount(world: &mut WatnWorld, cents: String) {
         .unwrap_or_else(|| effective_review_model(&world.review));
     let model = model_short_name(&model);
     assert_shows_billed_amount(&plain, &cents, Some(&model));
+    if world.review.e2e {
+        crate::steps::observe_request_cost_e2e_steps::commit_e2e_transcript(
+            world,
+            "the-review-surface-shows-the-billed-amount-of-the-request-that-produced-it",
+            &plain,
+        );
+    }
 }
 
 #[then("the review surface should not open")]
@@ -237,9 +244,10 @@ fn configured_model_reported_as(world: &mut WatnWorld, model: String, reported: 
     world.review.reported_model = Some(reported);
 }
 
-#[given("the review terminal is 40 columns wide")]
-fn review_terminal_is_narrow(world: &mut WatnWorld) {
+#[given(expr = "the review terminal is {int} columns wide")]
+fn review_terminal_is_narrow(world: &mut WatnWorld, width: u16) {
     world.review.narrow = true;
+    world.review.terminal_width = Some(width);
 }
 
 #[then("the review surface should shorten the model name to fit")]

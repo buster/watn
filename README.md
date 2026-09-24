@@ -138,7 +138,8 @@ confirmation.
 ### Review surface
 
 The review surface opens on the controlling terminal after a complete candidate
-in a simple default view: the model name, the command flow as a stage stack with
+in a simple default view: the model name with the amount the provider billed for
+the request, the command flow as a stage stack with
 every part on its own row and its separator shown at the end of the preceding
 row, and the selected stage's short description. Arrow keys move the selected
 stage; `Enter` accepts, `d` or `?` switches to the detailed view, and `Escape`
@@ -149,6 +150,13 @@ permanently: watn ends, prints the current command, and shows an amber
 persist the choice they set; without a question they only persist and exit.
 Direct edits commit with `Enter`, discard with `Escape`, and still require final
 acceptance.
+
+The amount is in cents, computed from the tokens the provider reported for that
+request and the model's recorded price; it is replaced when a rejected candidate
+is regenerated with another model. When no recorded price matches the model the
+provider reports, the model name stands alone and nothing replaces the amount;
+the post-request stderr line keeps its existing `$0.0000` behaviour. When the
+header cannot hold both, the model name is shortened first.
 
 A provider response that is not valid JSON, is cut off, or has mismatched
 stages is never shown as the command: watn recovers the provider-written
@@ -163,7 +171,8 @@ after the surface closes.
 ### Explain an existing command
 
 `watn explain '<command>'` opens the explanation card for a command you already
-have. The command reaches watn verbatim as exactly one argument; watn never
+have; the card names the model and the amount the explanation request was
+billed, like the review surface. The command reaches watn verbatim as exactly one argument; watn never
 joins, re-splits, evaluates, or executes it. Use `--` before a command that
 begins with a dash, and a quoted heredoc or `-` for commands that contain both
 quote kinds, `$`, backticks, or line breaks:

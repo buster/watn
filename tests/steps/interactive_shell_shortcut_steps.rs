@@ -971,6 +971,11 @@ pub struct ReviewState {
     pub reported_model: Option<String>,
     /// The request produced no complete candidate at all.
     pub no_candidate: bool,
+    /// The captured terminal text of an end-to-end session, kept after the
+    /// session closes so the scenario can commit its transcript.
+    pub transcript: String,
+    /// An explicit review terminal width, when a scenario sets one.
+    pub terminal_width: Option<u16>,
 }
 
 fn review_context(intent: &str, tier: &str, model: &str) -> watn::review::ReviewContext {
@@ -1029,7 +1034,9 @@ pub(crate) fn review_rendered_plain(world: &WatnWorld) -> String {
 }
 
 fn review_layout(world: &WatnWorld) -> watn::review::InlineLayout {
-    if world.review.narrow {
+    if let Some(width) = world.review.terminal_width {
+        watn::review::InlineLayout::for_dimensions(width, 8)
+    } else if world.review.narrow {
         watn::review::InlineLayout::for_dimensions(40, 8)
     } else {
         watn::review::InlineLayout::for_dimensions(100, 40)
