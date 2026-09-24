@@ -113,14 +113,22 @@ in the changed regions.
 
 ## Overlap dispositions
 
-| Scenario A | Scenario B | Disposition |
-|---|---|---|
-| Any of the eight permanent scenarios this change modifies | its `@givn.modified` copy in the delta | Supersession, not duplication: the delta copy is the same scenario with the new expectation, it replaces the permanent text at the merge, and both copies run identically while the change is open (the runner executes permanent and delta specs together). |
-| A provider's unknown model falls back to the requested model's recorded price | The metadata line prices a request from the requested model when the reported model has none | Boundary: one proves the surface's amount for an aliased configuration, the other proves the stderr metadata line's price source; they share the lookup and nothing else. |
-| The detailed view keeps the billed amount at the model name | A narrow terminal keeps the billed amount at the model name | Boundary: different layout budgets (view choice vs. width), the same amount as a side condition. |
+`givn lint --change amount-from-requested-model` exits 0 and reports 19 SHAPE
+and 41 SUBST advisories. Every one of them falls into the classes below; the
+counts add up to the reported totals.
+
+| Class | Pairs | Disposition |
+|---|---:|---|
+| Delta scenario × delta scenario, same step shape | 6 SHAPE | Boundary: the nine amount scenarios share a shape because the amount is asserted the same way, but each asserts a different invariant — a first display through a different price source, replacement on regeneration, the genuinely-zero case, the whole-cent rounding on the real terminal, and the distinct label/layout of each view. Merging any pair would lose a rule. |
+| Permanent scenario × its `@givn.modified` copy | 13 SHAPE, 24 SUBST | Supersession, not duplication: the delta copy is the same scenario with the new expectation; it replaces the permanent text at the merge, and both run identically while the change is open because the runner executes permanent and delta specs together. |
+| Delta scenario × any other permanent amount scenario | 12 SUBST | Boundary, as in the first row: subset advisories fire because every amount scenario ends at the same assertion, which is the assertion, not the invariant. |
+| `A provider's unknown model falls back to the requested model's recorded price` × `The billed model's amount is shown under the requested model name` | — | Boundary: the first proves the price *source* when the reported model has no entry at all (an alias), the second proves the label keeps the requested name while the amount comes from a *priced* reported model. Neither rule implies the other. |
+| Delta metadata scenario × `A usage-only final event supplies cost and throughput metadata` | 1 SUBST | Boundary: the ask scenario proves the metadata line's price source for a reported model with no recorded price; the incremental-SSE scenario proves the metadata line's behaviour for a usage-only final event with a recorded price. Different rules, same line. |
+| Explanation-card modification × `use-shell` explain scenarios | 3 SUBST | Boundary: the modified scenario adds the billed amount to a card whose stages, purposes, escaping, and closing behaviour are asserted elsewhere; it does not re-state them. |
 
 No `@givn.removed` scenario exists in this change, so there is no removed+added
-pair to explain.
+pair to explain as supersession or unrelated work. No two scenarios were
+removed and re-added: the eight modifications replace their own titles.
 
 ## Split-or-keep
 
@@ -163,5 +171,6 @@ including the requested-model fallback and the residual silence. Committed in
 - [x] Persona disposition recorded
 - [x] README-IMPACT recorded and the README edited
 - [x] No `@wip` left in scope; no `@e2e` tag removed
+- [x] `givn lint --change amount-from-requested-model` exits 0; its 19 SHAPE and 41 SUBST advisories are dispositioned above
 
 REVIEW: PASS
