@@ -44,7 +44,7 @@ rationale.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| release-truth | no signal | `EXTEND release-truth` | The changelog is the release's public statement of what watn does; release-truth already owns release metadata and documentation claims. |
+| release-truth | no signal | `NEW in fragments` | The capability already lives in the `corpus-infra` fragment (`fragment.md` declares it) and the changelog is the release's public statement of what watn does; the checker resolves `EXTEND` only against the use-case corpus, so the fragment form is the declared decision. |
 
 ## Out of Scope
 

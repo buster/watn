@@ -10,6 +10,11 @@ Persona disposition: `terminal-developer--interactive` is the only confirmed
 persona and remains a review lens (reader of the published release notes); it
 is not a Gherkin actor, and no persona biography appears in the specs.
 
+Routing: the proposal records `NEW in fragments` for `release-truth`. The
+capability already lives in the `corpus-infra` fragment, but `givn check
+review` resolves `EXTEND` only against the use-case corpus, so the fragment
+form is the declared decision for a fragment capability.
+
 Interface classification, opposite tested: a browser-rendered page is a Web UI.
 The opposite does not hold here — the change renders no page and adds no
 screen; its outputs are a generated Markdown section and a CLI process.
