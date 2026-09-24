@@ -33,6 +33,12 @@ regular subprocess and asserts its stderr; it adds no inventory entry, because
 the interaction — submitting a question and reading the metadata line — already
 belongs to `ask`'s own inventory.
 
+The proposal's routing row for `ask` first read `EXTEND ask`;
+`givn check review` rejected it because fragment capabilities are not part of the
+use-case corpus. The row now records the fragment form, `NEW in fragments`, with
+the fragment's own declaration as the reason; the delta path under
+`specs/fragments/` is unchanged.
+
 ## Arc42 implementation conformance
 
 | Chapter / fact | Durable source | Implementation evidence | Result |
@@ -113,22 +119,57 @@ in the changed regions.
 
 ## Overlap dispositions
 
-`givn lint --change amount-from-requested-model` exits 0 and reports 19 SHAPE
-and 41 SUBST advisories. Every one of them falls into the classes below; the
-counts add up to the reported totals.
+`givn lint --change amount-from-requested-model` exits 0 and reports 19 SHAPE and
+41 SUBST advisories. The 19 shape matches are dispositioned one by one below.
 
-| Class | Pairs | Disposition |
-|---|---:|---|
-| Delta scenario × delta scenario, same step shape | 6 SHAPE | Boundary: the nine amount scenarios share a shape because the amount is asserted the same way, but each asserts a different invariant — a first display through a different price source, replacement on regeneration, the genuinely-zero case, the whole-cent rounding on the real terminal, and the distinct label/layout of each view. Merging any pair would lose a rule. |
-| Permanent scenario × its `@givn.modified` copy | 13 SHAPE, 24 SUBST | Supersession, not duplication: the delta copy is the same scenario with the new expectation; it replaces the permanent text at the merge, and both run identically while the change is open because the runner executes permanent and delta specs together. |
-| Delta scenario × any other permanent amount scenario | 12 SUBST | Boundary, as in the first row: subset advisories fire because every amount scenario ends at the same assertion, which is the assertion, not the invariant. |
-| `A provider's unknown model falls back to the requested model's recorded price` × `The billed model's amount is shown under the requested model name` | — | Boundary: the first proves the price *source* when the reported model has no entry at all (an alias), the second proves the label keeps the requested name while the amount comes from a *priced* reported model. Neither rule implies the other. |
-| Delta metadata scenario × `A usage-only final event supplies cost and throughput metadata` | 1 SUBST | Boundary: the ask scenario proves the metadata line's price source for a reported model with no recorded price; the incremental-SSE scenario proves the metadata line's behaviour for a usage-only final event with a recorded price. Different rules, same line. |
-| Explanation-card modification × `use-shell` explain scenarios | 3 SUBST | Boundary: the modified scenario adds the billed amount to a card whose stages, purposes, escaping, and closing behaviour are asserted elsewhere; it does not re-state them. |
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| A provider's unknown model falls back to the requested model's recorded price | The review surface shows the billed amount of the request that produced it | boundary |
+| A provider's unknown model falls back to the requested model's recorded price | A rejected candidate's replacement carries its own billed amount | boundary |
+| A provider's unknown model falls back to the requested model's recorded price | The detailed view keeps the billed amount at the model name | boundary |
+| The review surface shows the billed amount of the request that produced it | A rejected candidate's replacement carries its own billed amount | boundary |
+| The review surface shows the billed amount of the request that produced it | The detailed view keeps the billed amount at the model name | boundary |
+| A rejected candidate's replacement carries its own billed amount | The detailed view keeps the billed amount at the model name | boundary |
+| The review surface shows the billed amount of the request that produced it | A provider's unknown model falls back to the requested model's recorded price | boundary |
+| The review surface shows the billed amount of the request that produced it | A rejected candidate's replacement carries its own billed amount | boundary |
+| The review surface shows the billed amount of the request that produced it | The detailed view keeps the billed amount at the model name | boundary |
+| A rejected candidate's replacement carries its own billed amount | A provider's unknown model falls back to the requested model's recorded price | boundary |
+| A rejected candidate's replacement carries its own billed amount | The review surface shows the billed amount of the request that produced it | boundary |
+| A rejected candidate's replacement carries its own billed amount | The detailed view keeps the billed amount at the model name | boundary |
+| A reported zero usage shows a zero amount | A provider's unknown model falls back to the requested model's recorded price | boundary |
+| A reported zero usage shows a zero amount | The review surface shows the billed amount of the request that produced it | boundary |
+| A reported zero usage shows a zero amount | A rejected candidate's replacement carries its own billed amount | boundary |
+| A reported zero usage shows a zero amount | The detailed view keeps the billed amount at the model name | boundary |
+| The detailed view keeps the billed amount at the model name | A provider's unknown model falls back to the requested model's recorded price | boundary |
+| The detailed view keeps the billed amount at the model name | The review surface shows the billed amount of the request that produced it | boundary |
+| The detailed view keeps the billed amount at the model name | A rejected candidate's replacement carries its own billed amount | boundary |
+
+Every pair is a boundary, not a duplicate: the amount scenarios share a shape
+because an amount is asserted the same way, but each asserts a different
+invariant — a first display from a price source that only the requested model
+carries, replacement on regeneration, the reported zero that the non-zero
+assertions must reject, the whole-cent rounding read off the real terminal, and
+the distinct label and layout of each view. Merging any pair would lose a rule.
+
+The pairs repeat because the permanent scenarios and their `@givn.modified`
+copies both exist while the change is open; the delta copy is the same scenario
+with the new expectation, it supersedes its own title at the merge, and no
+scenario is paired with itself.
+
+The 41 SUBST advisories are two effects of the same mechanics: the modified
+copies are subsets of their own permanent counterparts, and every amount
+scenario is a subset of another one that asserts the same shape — in particular
+`The billed model's amount is shown under the requested model name`, which shows
+the amount from a priced reported model while the added scenario shows it from
+the requested model's price. The one advisory outside the capability compares
+the `ask` fragment's metadata scenario with
+`A usage-only final event supplies cost and throughput metadata`: different
+rules on the same line (the price source versus the usage-only final event), and
+neither subsumes the other. All are boundary or supersession dispositions, not
+duplicates.
 
 No `@givn.removed` scenario exists in this change, so there is no removed+added
-pair to explain as supersession or unrelated work. No two scenarios were
-removed and re-added: the eight modifications replace their own titles.
+pair to explain as supersession or unrelated work.
 
 ## Split-or-keep
 

@@ -46,7 +46,7 @@ Amount is invisible for exactly the configuration form the README recommends.
 | Proposed capability | Route's recommendation | Decision | Rationale |
 |---|---|---|---|
 | visible-request-amount | — (route reported no signal) | `EXTEND visible-request-amount` | The new scenario asserts the Amount rule this capability already owns; the resolution order of its price lookup is part of that rule. |
-| ask | — (route reported no signal) | `EXTEND ask` | The post-request metadata line belongs to the corpus substrate's asking capability; one scenario asserts its cost appears when only the requested model's price is recorded. |
+| ask | — (route reported no signal) | `NEW in fragments` | The `ask` scenario lives in the `corpus-infra` fragment: its capability is declared in `givn/specs/fragments/fragment.md`, the delta keeps the fragment's path (`specs/fragments/ask.feature`), and fragment capabilities carry no interactions. One scenario is added to that capability, asserting the post-request metadata line's cost when only the requested model's price is recorded. |
 
 ## Out of Scope
 
