@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "changelog-release-notes",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "f9e4f3a05335f0c95bd03363319a4d56159643e4",
+  "tested_revision": "f9e4f3a05335f0c95bd03363319a4d56159643e4",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 92,
+      "passed": 92,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 56.266251949
+    },
+    "regular": {
+      "status": "passed",
+      "total": 274,
+      "passed": 274,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 44.93385777
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 21188,
+    "line_valid": 22812,
+    "line_percent": 92
+  },
   "started_at_unix": 1790266452,
-  "finished_at_unix": null
+  "finished_at_unix": 1790266727
 }
