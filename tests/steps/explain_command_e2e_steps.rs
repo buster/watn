@@ -146,7 +146,10 @@ fn close_explanation_card(world: &mut WatnWorld) {
         .join("evidence/visual/developer-explains-an-existing-command-in-the-review-card");
     std::fs::create_dir_all(&dir).expect("create evidence directory");
     let path = dir.join("transcript.txt");
-    if std::fs::read_to_string(&path).ok().as_deref() != Some(plain.as_str()) {
+    // Evidence is captured once and then frozen: rewriting it on every run made
+    // the transcript drift with the progress line's timing and left the working
+    // tree dirty during an archive verification run.
+    if !path.exists() {
         std::fs::write(&path, plain).expect("write evidence transcript");
     }
 }

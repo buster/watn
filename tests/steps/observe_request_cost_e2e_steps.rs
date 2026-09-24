@@ -42,27 +42,23 @@ pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, rendered: &st
     } else {
         rendered.to_string()
     };
+    // The progress line carries the run's elapsed time, so it is not part of
+    // the surface evidence; dropping it keeps the committed transcript stable
+    // across runs.
+    let stable: String = text
+        .lines()
+        .filter(|line| !line.contains('◈'))
+        .collect::<Vec<_>>()
+        .join("\n");
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("givn/changes/observe-request-cost/evidence/visual")
         .join(slug);
     std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
-    std::fs::write(dir.join("transcript.txt"), text).expect("commit the scenario transcript");
-}
-
-fn commit_transcript(world: &WatnWorld, slug: &str) {
-    let rendered = if world.review.e2e && world.pty_session.is_some() {
-        let session = world.pty_session.as_ref().expect("PTY session");
-        crate::steps::observe_request_cost_steps::plain_surface_text(&crate::steps::pty_snapshot(
-            session,
-        ))
-    } else {
-        crate::steps::observe_request_cost_steps::plain_surface_text(&world.review.transcript)
-    };
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("givn/changes/observe-request-cost/evidence/visual")
-        .join(slug);
-    std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
-    std::fs::write(dir.join("transcript.txt"), rendered).expect("commit the scenario transcript");
+    let path = dir.join("transcript.txt");
+    let existing = std::fs::read_to_string(&path).unwrap_or_default();
+    if existing != stable {
+        std::fs::write(&path, stable).expect("commit the scenario transcript");
+    }
 }
 
 fn assert_terminal_shows_billed_amount(world: &WatnWorld, cents: &str) -> String {
@@ -107,8 +103,9 @@ fn e2e_bash_line_has_no_amount(world: &mut WatnWorld) {
         "no billed amount may reach the shell buffer, got {:?}",
         world.review.bash_command_line
     );
-    commit_transcript(
+    commit_e2e_transcript(
         world,
         "developer-accepts-an-explained-candidate-from-ctrl-w",
+        &world.review.transcript,
     );
 }
