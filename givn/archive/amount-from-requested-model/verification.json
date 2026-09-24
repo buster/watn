@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "amount-from-requested-model",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "c6d464e58ee85e1e487b1f9410743f830aeb8aee",
+  "tested_revision": "c6d464e58ee85e1e487b1f9410743f830aeb8aee",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 55.495616355
+    },
+    "regular": {
+      "status": "passed",
+      "total": 273,
+      "passed": 273,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 43.113034317
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 21036,
+    "line_valid": 22654,
+    "line_percent": 92
+  },
   "started_at_unix": 1790257753,
-  "finished_at_unix": null
+  "finished_at_unix": 1790258021
 }
