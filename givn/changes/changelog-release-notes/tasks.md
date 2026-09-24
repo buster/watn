@@ -105,14 +105,17 @@ at least one `### ` group before the version commit, tag, or `cargo publish`.
 - [x] **REFACTOR** — `cargo fmt --all`; `cargo clippy --locked
       --all-targets -- -D warnings` → `Finished`; same command → exit=0,
       `1 scenario (1 passed)`.
-- [ ] COMMIT: one atomic revision for RED+GREEN+REFACTOR; subject is the
-      release note, body `Scenario: Repeated revisions of one change yield
-      one changelog entry`. Record the revision hash in `tasks.md`.
+- [x] COMMIT: `3657bc4` — release note subject, body
+      `Scenario: Repeated revisions of one change yield one changelog entry`.
 
 ## Evidence of the generated section
 
-- [ ] Re-run both scopes (`./run-tests.sh`, `./run-tests.sh --e2e`) and
+- [x] Re-run both scopes (`./run-tests.sh`, `./run-tests.sh --e2e`) and
       regenerate a preview of a real range (for example `v0.5.1..HEAD` with
       the new configuration) as the change's visual evidence; commit the
       preview under `evidence/` if it adds information beyond the scenarios.
-  - Evidence: commands and outputs; revision hash.
+  - Evidence: `./run-tests.sh` → `274 scenarios (274 passed)`, exit 0;
+    `./run-tests.sh --e2e` → `92 scenarios (92 passed)`, exit 0;
+    `givn/changes/changelog-release-notes/evidence/preview-v0.5.1-to-head.md`
+    shows only the Features group and one line for this change despite its
+    three revisions.
