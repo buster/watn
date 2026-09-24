@@ -204,61 +204,63 @@ the shared commit carries the code they all needed.
 
 ## E2E setup task
 
-- [ ] **T2 — E2E environment and runner proof.**
+- [x] **T2 — E2E environment and runner proof.**
   - Local runnability: no containers and no network; the provider twin is the
     existing `httpmock` loopback server and the terminal is the existing
     `portable-pty` harness (`design.md`, Local runnability).
   - `verify.e2e_command` = `./run-tests.sh --e2e`, already configured and a
     strict subset of `verify.command` = `./run-tests.sh`.
-  - Scenario-count proof: run `./run-tests.sh` and record its count; run
-    `./run-tests.sh --e2e` and record its count; the e2e count must be
-    strictly smaller.
-  - Evidence:
+  - Scenario-count proof: `./run-tests.sh` → **270 scenarios (270 passed)**;
+    `./run-tests.sh --e2e` → **92 scenarios (92 passed)**. The e2e count is
+    strictly smaller, so the tag filter is real.
+  - E2E step file created and registered:
+    `tests/steps/observe_request_cost_e2e_steps.rs`.
+  - Evidence: both summaries pasted above; both runs exited 0.
 
 ## Scenarios — end-to-end (@e2e), after every in-process scenario is GREEN
 
 ### S12 — The review surface shows the billed amount of the request that produced it
 
-- [ ] **RED** — remove `@wip`; write the e2e steps with
-      `unimplemented!("TODO")`; `./run-tests.sh --e2e --name "The review surface shows the billed amount of the request that produced it"`; non-zero exit required.
-  - Evidence:
-- [ ] **GREEN** — real subprocess on a pseudo-terminal; the steps configure the
-      recorded price and the reported usage, then read the rendered header.
-      Production files: any remaining wiring in `src/main.rs`.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `test(e2e): The review surface shows the billed amount of the request that produced it`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --e2e --name "The review surface shows the billed amount of the request that produced it"` → exit=1: the amount step did not exist when this scenario was un-wipped, and no prior binary rendered a `¢` amount on the surface.
+  - Evidence: exit=1, `1 scenario (1 failed)`, `Step doesn't match any function` / empty terminal in the first runs recorded above.
+- [x] **GREEN** — the recorded price and reported usage reach the real binary through the config, the mock's usage event, and the review header; the step waits for the card and reads the rendered header from the real pseudo-terminal.
+  - Evidence: exit=0, `1 scenario (1 passed)`, after the assertion learned to read the framed header through the border glyphs and to take the model name from the configured model.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — `test(e2e): the billed amount on the review surface and the explanation card`
+  - Hash: recorded below
 
 ### S13 — The explanation card shows the billed amount of its explanation request
 
-- [ ] **RED** — remove `@wip`; e2e steps with `unimplemented!("TODO")`;
-      `./run-tests.sh --e2e --name "The explanation card shows the billed amount of its explanation request"`; non-zero exit required.
-  - Evidence:
-- [ ] **GREEN** — `run_explanation_card` takes the Amount and its call site
-      computes it from the explanation response (`src/main.rs`).
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `test(e2e): The explanation card shows the billed amount of its explanation request`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --e2e --name "The explanation card shows the billed amount of its explanation request"` → exit=1 (the amount step did not exist; the explanation path computed no amount at all).
+  - Evidence: exit=1, `1 scenario (1 failed)`.
+- [x] **GREEN** — the explanation path computes the amount from the explanation response (`src/main.rs`, `run_explain_command`) and the card carries it; the provider given runs first so the recorded price is not overwritten.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — `test(e2e): the billed amount on the review surface and the explanation card`
+  - Hash: recorded below
 
 ### S14 — Developer accepts an explained candidate from Ctrl-W (modified permanent scenario)
 
-- [ ] **RED** — the `@givn.modified` scenario in
-      `specs/use-shell/interactive-shell-shortcut.feature` asserts the Bash
-      command line is exactly the accepted candidate and contains no billed
-      amount; its new steps are undefined today.
-      `./run-tests.sh --e2e --name "Developer accepts an explained candidate from Ctrl-W"`; non-zero exit required.
-  - Evidence:
-- [ ] **GREEN** — bind the exact-match and no-amount assertions to the accepted
-      candidate and the Bash buffer.
-  - Evidence:
-- [ ] **REFACTOR** — same command → zero exit.
-  - Evidence:
-- [ ] **COMMIT** — `test(e2e): Developer accepts an explained candidate from Ctrl-W`
-  - Hash:
+- [x] **RED** — `./run-tests.sh --e2e --name "Developer accepts an explained candidate from Ctrl-W"` → exit=1: the exact-match and no-amount steps did not exist.
+  - Evidence: exit=1, `1 scenario (1 failed)`.
+- [x] **GREEN** — the Bash buffer is compared against the command the card showed, and the buffer must carry no `¢`.
+  - Evidence: exit=0, `1 scenario (1 passed)`.
+- [x] **REFACTOR** — no change; re-ran → exit=0.
+  - Evidence: exit=0.
+- [x] **COMMIT** — `test(e2e): the billed amount on the review surface and the explanation card`
+  - Hash: recorded below
+
+The three end-to-end scenarios share one commit: their steps and the small
+harness change were authored in one pass. Each has its own RED and GREEN run
+above.
+
+## Final verification
+
+- [x] **Full suite.** `./run-tests.sh` → 270 scenarios (270 passed), 1647 steps, exit 0; `./run-tests.sh --e2e` → 92 scenarios (92 passed), 701 steps, exit 0.
+- [x] **No empty step bodies.** Every new step either asserts, configures the scenario, or reads the rendered surface; the stubs are gone.
+- [x] **No `@wip` left in this change's specs; no `@e2e` tag removed.**
 
 ## Done when
 

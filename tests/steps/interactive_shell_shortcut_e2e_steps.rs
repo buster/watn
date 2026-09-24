@@ -11,6 +11,11 @@ use crate::WatnWorld;
 
 const E2E_REVIEW_COMMAND: &str = "printf 'accepted' > /tmp/watn-shortcut-should-not-run";
 
+/// The command the end-to-end review card shows and accepts.
+pub(crate) fn expected_e2e_candidate() -> &'static str {
+    E2E_REVIEW_COMMAND
+}
+
 fn captured_bash_line(world: &WatnWorld) -> &str {
     world
         .shortcut_output
@@ -378,10 +383,14 @@ fn e2e_history_no_comment(world: &mut WatnWorld, request: String) {
 pub(crate) fn prepare_e2e_direct(world: &mut WatnWorld, output: String) {
     world.review.e2e = true;
     world.pending_mock_output = Some(output);
-    world.pending_mock_model = Some("test-model".to_string());
-    world.pending_mock_usage = Some(false);
+    if world.pending_mock_model.is_none() {
+        world.pending_mock_model = Some("test-model".to_string());
+    }
+    if world.pending_mock_usage.is_none() {
+        world.pending_mock_usage = Some(false);
+    }
     world.temp_dir = None;
-    world.raw_config = None;
+    // A scenario that configured its own provider keeps that configuration.
     ensure_test_env(world);
     let binary = find_binary();
     world

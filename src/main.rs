@@ -928,7 +928,7 @@ fn run_explain_command(
         }
     };
 
-    let context = watn::review::ReviewContext {
+    let mut context = watn::review::ReviewContext {
         intent: "explain command".to_string(),
         tier: tier.to_string(),
         provider: provider_name.clone(),
@@ -1009,6 +1009,10 @@ fn run_explain_command(
     if interrupt.load(Ordering::SeqCst) {
         std::process::exit(130);
     }
+
+    context.amount = raw_response
+        .as_ref()
+        .and_then(|response| surface_amount(response, &config));
 
     if let Err(error) = run_explanation_card(candidate, context) {
         eprintln!("explain unavailable: {error}");

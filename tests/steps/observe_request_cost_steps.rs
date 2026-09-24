@@ -65,26 +65,38 @@ fn regeneration_reports_usage(
     world.review.regeneration_usage = Some((prompt_tokens, completion_tokens));
 }
 
-#[then(
-    expr = "the review surface should show a billed amount of {string} cents with the model name"
-)]
-fn review_surface_shows_billed_amount(world: &mut WatnWorld, cents: String) {
-    let expected: f64 = cents.parse().expect("a numeric expected amount");
-    let plain = review_rendered_plain(world);
-    let header = plain
-        .lines()
-        .find(|line| line.contains('◆'))
-        .unwrap_or_else(|| panic!("the surface should show a model label, got:\n{plain}"));
+/// The rendered surface as plain text, without ANSI escapes or frame glyphs.
+pub(crate) fn plain_surface_text(raw: &str) -> String {
+    strip_ansi(raw)
+        .replace("\r\n", "\n")
+        .replace(['│', '┌', '┐', '└', '┘', '─'], " ")
+}
+
+/// The header line of a plain rendered surface.
+pub(crate) fn header_line(plain: &str) -> Option<&str> {
+    plain.lines().rev().find(|line| line.contains('◆'))
+}
+
+/// The billed amount shown at the model label: its value, how many decimals
+/// the surface displayed, and the text as shown.
+pub(crate) fn shown_amount(header: &str) -> Option<(f64, usize, String)> {
     let amount_text = header
         .split('·')
         .map(str::trim)
-        .find(|part| part.ends_with('¢'))
-        .unwrap_or_else(|| panic!("the model label should carry a billed amount, got {header:?}"));
-    let shown_text = amount_text.trim_end_matches('¢').trim();
-    let shown: f64 = shown_text
-        .parse()
-        .unwrap_or_else(|_| panic!("a numeric shown amount, got {shown_text:?}"));
+        .find(|part| part.ends_with('¢'))?;
+    let shown_text = amount_text.trim_end_matches('¢').trim().to_string();
+    let shown: f64 = shown_text.parse().ok()?;
     let decimals = shown_text.split('.').nth(1).map_or(0, str::len);
+    Some((shown, decimals, shown_text))
+}
+
+/// Assert that a rendered surface shows the expected amount at the model label.
+pub(crate) fn assert_shows_billed_amount(plain: &str, cents: &str, model: Option<&str>) {
+    let expected: f64 = cents.parse().expect("a numeric expected amount");
+    let header = header_line(plain)
+        .unwrap_or_else(|| panic!("the surface should show a model label, got:\n{plain}"));
+    let (shown, decimals, shown_text) = shown_amount(header)
+        .unwrap_or_else(|| panic!("the model label should carry a billed amount, got {header:?}"));
     let scale = 10f64.powi(decimals as i32);
     let rounded = (expected * scale).round() / scale;
     assert!(
@@ -97,19 +109,61 @@ fn review_surface_shows_billed_amount(world: &mut WatnWorld, cents: String) {
             "a request the provider accounted for must not read as zero: {header:?}"
         );
     }
-    if !header.contains('…') {
-        let model = world
-            .review
-            .panel
-            .as_ref()
-            .map(|panel| panel.context.model.clone())
-            .unwrap_or_else(|| effective_review_model(&world.review));
-        let model = model_short_name(&model);
-        assert!(
-            header.contains(&model),
-            "the billed amount should appear with the model name {model:?}, got {header:?}"
-        );
+    if let Some(model) = model {
+        if !header.contains('…') {
+            assert!(
+                header.contains(model),
+                "the billed amount should appear with the model name {model:?}, got {header:?}"
+            );
+        }
     }
+}
+
+fn surface_text(world: &WatnWorld) -> String {
+    if world.review.e2e {
+        if let Some(session) = world.pty_session.as_ref() {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            while !crate::steps::pty_snapshot(session).contains('¢')
+                && std::time::Instant::now() < deadline
+            {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            return plain_surface_text(&crate::steps::pty_snapshot(session));
+        }
+    }
+    review_rendered_plain(world)
+}
+
+fn strip_ansi(value: &str) -> String {
+    let mut out = String::new();
+    let mut chars = value.chars();
+    while let Some(character) = chars.next() {
+        if character == '\u{1b}' {
+            for escaped in chars.by_ref() {
+                if escaped.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            out.push(character);
+        }
+    }
+    out
+}
+
+#[then(
+    expr = "the review surface should show a billed amount of {string} cents with the model name"
+)]
+fn review_surface_shows_billed_amount(world: &mut WatnWorld, cents: String) {
+    let plain = surface_text(world);
+    let model = world
+        .review
+        .panel
+        .as_ref()
+        .map(|panel| panel.context.model.clone())
+        .unwrap_or_else(|| effective_review_model(&world.review));
+    let model = model_short_name(&model);
+    assert_shows_billed_amount(&plain, &cents, Some(&model));
 }
 
 #[then("the review surface should not open")]

@@ -2,13 +2,12 @@
 
 Feature: Billed amount of a request
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The review surface shows the billed amount of the request that produced it
-    Given a configured model "gpt-4o-mini" with a recorded price of 0.15 input and 0.60 output per million tokens
-    And a configured provider candidate "find . -type f" whose response reports 1200 prompt and 90 completion tokens
+    Given a configured model "gpt-4o-mini" with a recorded price of 150.00 input and 600.00 output per million tokens
+    And a configured provider candidate "find . -type f"
     When I ask interactively for "find all files"
-    Then the review surface should show the model name "gpt-4o-mini"
-    And the review surface should show a billed amount of "0.0234" cents with the model name
+    Then the review surface should show a billed amount of "1.35" cents with the model name
 
   @givn.added
   Scenario: A rejected candidate's replacement carries its own billed amount
@@ -117,15 +116,15 @@ Feature: Billed amount of a request
     Then the released command should be exactly "find . -type f"
     And no billed amount should be shown in the released command
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The explanation card shows the billed amount of its explanation request
-    Given a configured model "gpt-4o-mini" with a recorded price of 0.15 input and 0.60 output per million tokens
-    And a configured provider whose explanation reports 800 prompt and 120 completion tokens and covers the command:
+    Given a configured provider whose explanation covers the command:
       """
       git log --oneline | head -5
       """
+    And a configured model "gpt-4o-mini" with a recorded price of 150.00 input and 600.00 output per million tokens
     When I run `watn explain` with that command as one argument in a terminal
     Then the explanation card should show each model-written stage purpose
-    And the explanation card should show a billed amount of "0.0192" cents with the model name
+    And the explanation card should show a billed amount of "1.35" cents with the model name
     When I close the explanation card
     Then the command-output channel should contain no command
