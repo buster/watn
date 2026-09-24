@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:52c9877f0b6882edc507e592d8ca43f4fcf564cb909c93c95eb4dcd0cc794d55 -->
+<!-- givn:base-sha256:494dcf9a1ce12374a1e8eba8b2ac96990c6e8cc91cbe77f71db3f837844f2de0 -->
 # Use case: use-shell
 
 ## Level
@@ -63,7 +63,7 @@ command request, or runs `watn explain` with a command they already have.
 - The review surface is small, transient, and inline; it does not switch to a full-screen alternate-screen interface.
 - The existing progress line appears before the review surface.
 - The review surface is enabled by default, configurable persistently, overridable per invocation, and may select an enhanced presentation adapter automatically.
-- The review surface opens in a simple view that names only the model, stacks the command-flow stages with their separators, and shows the selected stage's purpose; a direct shortcut switches to the detailed view and back.
+- The review surface opens in a simple view that names the model with the Amount the request was billed, stacks the command-flow stages with their separators, and shows the selected stage's purpose; a direct shortcut switches to the detailed view and back.
 - Permanently disabling the review releases the current candidate to the command-output channel, tells the developer how to re-enable it, and ends the invocation; the review-panel switches without a request only persist the setting.
 - Eligible review output is buffered until final acceptance.
 - Review decisions are direct shortcuts; the command flow is active when the card opens and Enter accepts the current candidate.
@@ -72,6 +72,7 @@ command request, or runs `watn explain` with a command they already have.
 - Every candidate requires explicit final acceptance.
 - Review never evaluates generated or edited text.
 - An explained command is the developer's own text: it is never evaluated, re-split, joined, or executed, and its card offers only closing.
+- Explanation-only cards and review cards both carry the Amount of the request that produced them; `observe-request-cost` owns what that Amount is and that it appears with the model.
 - The explanation entry point is independent of the persisted review-surface preference.
 - Purpose loading is shown only for a structured response that supports delayed purpose completion; otherwise purpose-unavailable is shown.
 
