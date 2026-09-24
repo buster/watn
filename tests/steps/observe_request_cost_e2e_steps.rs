@@ -44,19 +44,26 @@ pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, rendered: &st
     };
     // The progress line carries the run's elapsed time, so it is not part of
     // the surface evidence; dropping it keeps the committed transcript stable
-    // across runs.
+    // across runs. Evidence is captured once and then frozen, and it follows
+    // the change into the archive.
     let stable: String = text
         .lines()
         .filter(|line| !line.contains('◈'))
         .collect::<Vec<_>>()
         .join("\n");
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("givn/changes/observe-request-cost/evidence/visual")
-        .join(slug);
-    std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let change_dir = [
+        "givn/changes/observe-request-cost",
+        "givn/archive/observe-request-cost",
+    ]
+    .into_iter()
+    .map(|path| root.join(path))
+    .find(|path| path.exists())
+    .expect("the observe-request-cost change directory");
+    let dir = change_dir.join("evidence/visual").join(slug);
     let path = dir.join("transcript.txt");
-    let existing = std::fs::read_to_string(&path).unwrap_or_default();
-    if existing != stable {
+    if !path.exists() {
+        std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
         std::fs::write(&path, stable).expect("commit the scenario transcript");
     }
 }
