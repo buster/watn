@@ -81,28 +81,30 @@ at least one `### ` group before the version commit, tag, or `cargo publish`.
 - [x] **REFACTOR** — `cargo fmt --all`; `cargo clippy --locked
       --all-targets -- -D warnings` → `Finished`; same command → exit=0,
       `1 scenario (1 passed)`.
-- [ ] COMMIT: one atomic revision for RED+GREEN+REFACTOR; subject is the
-      release note, body `Scenario: A changelog section keeps only
-      user-visible groups`. Record the revision hash in `tasks.md`.
+- [x] COMMIT: `9bcec21` — release note subject, body
+      `Scenario: A changelog section keeps only user-visible groups`.
 
 ## S2 — Repeated revisions of one change yield one changelog entry
 
 (`@givn.added` `@e2e`, `release-truth`)
 
-- [ ] **RED** — remove `@wip` from this scenario only. Add the e2e fixture
+- [x] **RED** — remove `@wip` from this scenario only. Add the e2e fixture
       and assertion steps to `tests/steps/release_truth_e2e_steps.rs` with
       `unimplemented!()` bodies (the generation step is shared from
       `release_truth_steps.rs`). Run
       `./run-tests.sh --e2e --name "Repeated revisions of one change yield one changelog entry"`.
-  - Evidence: exit non-zero; capture the unimplemented-step failure.
-- [ ] **GREEN** — implement the fixture commits, the shared generation step,
+  - Evidence: exit=1; `1 scenario (1 failed)`; `Step panicked. Captured
+    output: not implemented`.
+- [x] **GREEN** — implement the fixture commits, the shared generation step,
       the once-only count, and the documentation-absence assertion; add
       `unique(attribute="message")` to the `cliff.toml` body template.
   - Production files: `cliff.toml`,
     `tests/steps/release_truth_e2e_steps.rs`.
-  - Evidence: same command → exit 0, `1 scenario (1 passed)`.
-- [ ] **REFACTOR** — clean up the e2e steps; same command → exit 0.
-  - Evidence: exit 0.
+  - Evidence: same command → exit=0, `1 scenario (1 passed)`, `5 steps
+    (5 passed)`.
+- [x] **REFACTOR** — `cargo fmt --all`; `cargo clippy --locked
+      --all-targets -- -D warnings` → `Finished`; same command → exit=0,
+      `1 scenario (1 passed)`.
 - [ ] COMMIT: one atomic revision for RED+GREEN+REFACTOR; subject is the
       release note, body `Scenario: Repeated revisions of one change yield
       one changelog entry`. Record the revision hash in `tasks.md`.

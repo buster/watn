@@ -2,7 +2,7 @@
 
 Feature: Release truth and repository cleanup
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Repeated revisions of one change yield one changelog entry
     Given  a release range with three revisions of one change that share the release note "Explain an existing shell command without executing it"
     And  a documentation revision in the same range
