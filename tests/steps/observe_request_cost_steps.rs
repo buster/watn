@@ -167,6 +167,7 @@ fn review_surface_shows_billed_amount(world: &mut WatnWorld, cents: String) {
     if world.review.e2e {
         crate::steps::observe_request_cost_e2e_steps::commit_e2e_transcript(
             world,
+            "amount-from-requested-model",
             "the-review-surface-shows-the-billed-amount-of-the-request-that-produced-it",
             &plain,
         );

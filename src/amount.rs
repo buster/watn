@@ -2,6 +2,7 @@
 
 use crate::config::types::ModelPricing;
 use crate::provider::TokenUsage;
+use std::collections::HashMap;
 
 /// The money one completed request was billed, in USD.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -22,33 +23,52 @@ impl BilledAmount {
         self.usage_reported
     }
 
-    /// The surface form: cents with four decimals and trailing zeros trimmed,
-    /// so a request the provider accounted for never reads as zero. A genuine
-    /// zero renders as `0`; a billed amount too small for four decimals keeps
-    /// one more decimal at a time until it is visible.
+    /// The surface form: cents with one significant digit, never more than
+    /// four decimal places, so a sub-cent amount reads `0.02`, a very small one
+    /// reads `0.0009`, and an amount of a cent or more reads whole cents. A
+    /// genuine zero renders as `0`.
     pub fn cents_text(&self) -> String {
-        if self.usd == 0.0 {
+        let cents = self.usd * 100.0;
+        if cents == 0.0 {
             return "0".to_string();
         }
-        let mut decimals = 4;
-        loop {
-            let mut text = format!("{:.decimals$}", self.usd * 100.0);
+        // One digit after the leading zeroes, capped at four decimals: the
+        // decimals exist to carry the value past its leading zeroes.
+        let decimals = if cents.abs() < 1.0 {
+            (1 + (-cents.abs().log10()).floor() as i32).clamp(0, 4) as usize
+        } else {
+            0
+        };
+        let mut text = format!("{:.decimals$}", cents);
+        if text.contains('.') {
             while text.ends_with('0') {
                 text.pop();
             }
             if text.ends_with('.') {
                 text.pop();
             }
-            if text != "0" || decimals >= 12 {
-                return text;
-            }
-            decimals += 1;
         }
+        text
     }
 }
 
-/// `None` when no recorded price matches the reported model; otherwise the
-/// amount, with `usage_reported` recording whether a report existed.
+/// The recorded price that applies to a completed request: the price of the
+/// model the provider reported, or — when that model has no recorded price —
+/// the price of the model the request was sent with. A provider routinely
+/// answers with its canonical identifier while the recorded price carries the
+/// configured alias, so the two rarely match verbatim.
+pub fn recorded_price<'a>(
+    pricing: &'a HashMap<String, ModelPricing>,
+    reported_model: &str,
+    requested_model: &str,
+) -> Option<&'a ModelPricing> {
+    pricing
+        .get(reported_model)
+        .or_else(|| pricing.get(requested_model))
+}
+
+/// `None` when no recorded price applies to the request; otherwise the amount,
+/// with `usage_reported` recording whether a report existed.
 ///
 /// A priced model without a usage report yields `0.0`, which is what the
 /// post-request metadata line has always printed for it.
@@ -78,11 +98,34 @@ mod tests {
         ModelPricing { input, output }
     }
 
+    fn cents_text_of(usd: f64) -> String {
+        super::BilledAmount {
+            usd,
+            usage_reported: true,
+        }
+        .cents_text()
+    }
+
     fn usage(prompt_tokens: u32, completion_tokens: u32) -> TokenUsage {
         TokenUsage {
             prompt_tokens,
             completion_tokens,
         }
+    }
+
+    #[test]
+    fn the_reported_model_price_wins_over_the_requested_model_price() {
+        let mut pricing = std::collections::HashMap::new();
+        pricing.insert("~alias/model".to_string(), price(0.04, 1.00));
+        pricing.insert("canonical/model".to_string(), price(0.10, 2.00));
+        let recorded = super::recorded_price(&pricing, "canonical/model", "~alias/model")
+            .expect("the reported model is priced");
+        assert_eq!(recorded.input, 0.10);
+        assert_eq!(recorded.output, 2.00);
+        let recorded = super::recorded_price(&pricing, "unknown/model", "~alias/model")
+            .expect("the requested model is priced");
+        assert_eq!(recorded.input, 0.04);
+        assert!(super::recorded_price(&pricing, "unknown/model", "also-unknown").is_none());
     }
 
     #[test]
@@ -95,7 +138,7 @@ mod tests {
         let amount = billed_amount(Some(&usage(1200, 90)), Some(&price(0.15, 0.60)))
             .expect("a recorded price yields an amount");
         assert!(amount.usage_reported());
-        assert_eq!(amount.cents_text(), "0.0234");
+        assert_eq!(amount.cents_text(), "0.02");
     }
 
     #[test]
@@ -108,13 +151,25 @@ mod tests {
     }
 
     #[test]
-    fn trailing_zeros_are_trimmed() {
-        let amount = billed_amount(Some(&usage(1500, 200)), Some(&price(2.50, 10.00)))
-            .expect("a recorded price yields an amount");
-        assert_eq!(amount.cents_text(), "0.575");
-        let amount = billed_amount(Some(&usage(1000, 100)), Some(&price(2.50, 10.00)))
-            .expect("a recorded price yields an amount");
-        assert_eq!(amount.cents_text(), "0.35");
+    fn one_significant_digit_carries_the_value_past_its_leading_zeroes() {
+        assert_eq!(cents_text_of(0.000009), "0.0009");
+        assert_eq!(cents_text_of(0.00001), "0.001");
+        assert_eq!(cents_text_of(0.0001), "0.01");
+        assert_eq!(cents_text_of(0.001), "0.1");
+        assert_eq!(cents_text_of(0.001001), "0.1");
+        assert_eq!(cents_text_of(0.0011), "0.1");
+    }
+
+    #[test]
+    fn four_decimal_places_is_the_smallest_step_shown() {
+        assert_eq!(cents_text_of(0.000001), "0.0001");
+        assert_eq!(cents_text_of(0.00000001), "0");
+    }
+
+    #[test]
+    fn an_amount_of_a_cent_or_more_reads_as_whole_cents() {
+        assert_eq!(cents_text_of(0.0135), "1");
+        assert_eq!(cents_text_of(0.023), "2");
     }
 
     #[test]
@@ -123,15 +178,5 @@ mod tests {
             .expect("a recorded price yields an amount");
         assert!(amount.usage_reported());
         assert_eq!(amount.cents_text(), "0");
-    }
-
-    #[test]
-    fn a_billed_request_never_reads_as_zero() {
-        // One token at $0.02 per million is 0.000002 cents: four decimals
-        // would round it to `0`, so the form keeps more decimals until the
-        // billed amount is visible.
-        let amount = billed_amount(Some(&usage(1, 0)), Some(&price(0.02, 0.02)))
-            .expect("a recorded price yields an amount");
-        assert_eq!(amount.cents_text(), "0.000002");
     }
 }

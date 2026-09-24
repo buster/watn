@@ -30,7 +30,11 @@ fn e2e_configured_model_with_price(world: &mut WatnWorld, model: String, input: 
 }
 
 /// Commit one scenario's terminal transcript as its visual evidence.
-pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, rendered: &str) {
+///
+/// The transcript belongs to the change that owns the scenario, not to the
+/// capability: a refined rendering commits its own evidence instead of
+/// overwriting the transcript an earlier change archived.
+pub(crate) fn commit_e2e_transcript(world: &WatnWorld, change: &str, slug: &str, rendered: &str) {
     let text = if rendered.trim().is_empty() {
         if let Some(session) = world.pty_session.as_ref() {
             crate::steps::observe_request_cost_steps::plain_surface_text(
@@ -44,22 +48,28 @@ pub(crate) fn commit_e2e_transcript(world: &WatnWorld, slug: &str, rendered: &st
     };
     // The progress line carries the run's elapsed time, so it is not part of
     // the surface evidence; dropping it keeps the committed transcript stable
-    // across runs. Evidence is captured once and then frozen, and it follows
-    // the change into the archive.
+    // across runs. It can share its row with the surface header, in which case
+    // the header's own text — the model label and the amount — is kept.
+    // Evidence is captured once and then frozen, and it follows the change into
+    // the archive.
     let stable: String = text
         .lines()
-        .filter(|line| !line.contains('◈'))
+        .filter_map(|line| match (line.contains('◈'), line.find('◆')) {
+            (true, Some(at)) => Some(&line[at..]),
+            (true, None) => None,
+            (false, _) => Some(line),
+        })
         .collect::<Vec<_>>()
         .join("\n");
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let change_dir = [
-        "givn/changes/observe-request-cost",
-        "givn/archive/observe-request-cost",
+        format!("givn/changes/{change}"),
+        format!("givn/archive/{change}"),
     ]
     .into_iter()
     .map(|path| root.join(path))
     .find(|path| path.exists())
-    .expect("the observe-request-cost change directory");
+    .unwrap_or_else(|| panic!("the {change} change directory"));
     let dir = change_dir.join("evidence/visual").join(slug);
     let path = dir.join("transcript.txt");
     if !path.exists() {
@@ -89,6 +99,7 @@ fn e2e_explanation_card_shows_billed_amount(world: &mut WatnWorld, cents: String
     let rendered = assert_terminal_shows_billed_amount(world, &cents);
     commit_e2e_transcript(
         world,
+        "amount-from-requested-model",
         "the-explanation-card-shows-the-billed-amount-of-its-explanation-request",
         &rendered,
     );
@@ -112,6 +123,7 @@ fn e2e_bash_line_has_no_amount(world: &mut WatnWorld) {
     );
     commit_e2e_transcript(
         world,
+        "observe-request-cost",
         "developer-accepts-an-explained-candidate-from-ctrl-w",
         &world.review.transcript,
     );

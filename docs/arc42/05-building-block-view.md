@@ -137,14 +137,15 @@ plain-line question flow without the ratatui coordinator.
 ### Amount
 
 **Responsibility:** Turn one completed request's reported usage and the
-recorded per-million price of the model the provider reported into the money
-that request was billed, and render it for the surface in cents.
+recorded per-million price that applies to the request into the money that
+request was billed, and render it for the surface in cents.
 
 | Element | Responsibility |
 |---|---|
 | `BilledAmount` | The money one completed request was billed, in USD, together with whether the response carried a usage report at all |
-| `billed_amount(usage, price)` | `None` when no recorded price matches the reported model; otherwise the amount, computed exactly as the stderr metadata line always has — a price entry without a usage report still yields `0.0` for that line |
-| `cents_text()` | The surface form: four decimals of a cent, trailing zeros trimmed, a genuine zero as `0`, so a request the provider accounted for is never displayed as zero |
+| `recorded_price(pricing, reported_model, requested_model)` | The recorded price entry that applies to a request: the reported model's entry, else the requested model's entry, else `None` |
+| `billed_amount(usage, price)` | `None` when no recorded price applies; otherwise the amount, computed exactly as the stderr metadata line always has — a price entry without a usage report still yields `0.0` for that line |
+| `cents_text()` | The surface form: one significant digit of a cent, never more than four decimal places, trailing zeros trimmed, whole cents from one cent on, a genuine zero as `0` |
 
 The Amount is presentation input only: it travels to the review surface and the
 explanation card through the review context and never reaches the

@@ -353,15 +353,19 @@ The response model from the final valid provider aggregate selects the pricing
 entry, including when it was supplied by a choices-empty usage event. Displayed
 only after `[DONE]`. When pricing is not configured, cost is omitted from output.
 
-One computation serves every display: `amount::billed_amount` returns `None`
-when no recorded price matches the reported model, and otherwise the amount plus
-whether the response carried a usage report at all. The stderr metadata line
+One computation serves every display: `amount::recorded_price` applies the
+recorded price of the model the provider reported, or — when that model has no
+entry — the recorded price of the model the request was sent with, because a
+provider routinely answers with its canonical identifier while the recorded
+price carries the configured alias. `amount::billed_amount` returns `None` when
+no price applies, and otherwise the amount plus whether the response carried a
+usage report at all. The stderr metadata line
 keeps its historical behaviour — a price entry with no usage report still prints
 `$0.0000` — while the review surface and the explanation card show the Amount
-only when a usage report existed, in cents with four decimals of a cent and
-trailing zeros trimmed. The Amount is keyed on the model the provider reported
-and is shown at the Model label, which names the model the request was sent
-with. It is transient, appears only on the controlling-terminal channel, and
+only when a usage report existed, in cents with one significant digit and never
+more than four decimal places of a cent, trailing zeros trimmed, whole cents
+from one cent on. The Amount is priced by that rule and is shown at the Model
+label, which names the model the request was sent with. It is transient, appears only on the controlling-terminal channel, and
 gates no review decision.
 
 The explanation path computes an Amount too; it is the first amount that path

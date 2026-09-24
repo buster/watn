@@ -151,12 +151,16 @@ persist the choice they set; without a question they only persist and exit.
 Direct edits commit with `Enter`, discard with `Escape`, and still require final
 acceptance.
 
-The amount is in cents, computed from the tokens the provider reported for that
-request and the model's recorded price; it is replaced when a rejected candidate
-is regenerated with another model. When no recorded price matches the model the
-provider reports, the model name stands alone and nothing replaces the amount;
-the post-request stderr line keeps its existing `$0.0000` behaviour. When the
-header cannot hold both, the model name is shortened first.
+The amount is in cents with one significant digit, never more than four decimal
+places (`0.1`, `0.02`, `0.0009`), and whole cents from one cent on; it is
+computed from the tokens the provider reported for that request and the recorded
+price that applies to it — the price of the model the provider reports, or, when
+that model has no recorded price, the price of the model the request was sent
+with. It is replaced when a rejected candidate is regenerated with another
+model. When neither model has a recorded price, the model name stands alone and
+nothing replaces the amount; the post-request stderr line keeps its existing
+`$0.0000` behaviour. When the header cannot hold both, the model name is
+shortened first.
 
 A provider response that is not valid JSON, is cut off, or has mismatched
 stages is never shown as the command: watn recovers the provider-written

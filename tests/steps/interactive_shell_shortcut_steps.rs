@@ -1008,21 +1008,31 @@ pub(crate) fn effective_review_model(state: &ReviewState) -> String {
 /// when either is missing.
 fn surface_amount_for(
     state: &ReviewState,
-    model: &str,
+    billed_model: &str,
+    requested_model: &str,
     usage: Option<(u32, u32)>,
 ) -> Option<String> {
-    let (_, input, output) = state.prices.iter().find(|(id, _, _)| id == model)?;
-    let pricing = watn::config::types::ModelPricing {
-        input: *input,
-        output: *output,
-    };
+    let pricing: std::collections::HashMap<String, watn::config::types::ModelPricing> = state
+        .prices
+        .iter()
+        .map(|(id, input, output)| {
+            (
+                id.clone(),
+                watn::config::types::ModelPricing {
+                    input: *input,
+                    output: *output,
+                },
+            )
+        })
+        .collect();
+    let pricing = watn::amount::recorded_price(&pricing, billed_model, requested_model)?;
     let usage = usage.map(
         |(prompt_tokens, completion_tokens)| watn::provider::TokenUsage {
             prompt_tokens,
             completion_tokens,
         },
     );
-    let billed = watn::amount::billed_amount(usage.as_ref(), Some(&pricing))?;
+    let billed = watn::amount::billed_amount(usage.as_ref(), Some(pricing))?;
     billed.usage_reported().then(|| billed.cents_text())
 }
 
@@ -1270,7 +1280,13 @@ fn build_review_panel(world: &mut WatnWorld) {
         .clone()
         .unwrap_or_else(|| model.clone());
     let mut context = review_context(&intent, &tier, &model);
-    context.amount = surface_amount_for(&world.review, &billed_model, world.review.reported_usage);
+    let requested = effective_review_model(&world.review);
+    context.amount = surface_amount_for(
+        &world.review,
+        &billed_model,
+        &requested,
+        world.review.reported_usage,
+    );
     world.review.context = Some(context.clone());
     world.review.panel = Some(watn::review::ReviewPanelState::new(context, candidate));
     render_surface(world);
@@ -3169,7 +3185,7 @@ fn regenerate_through_session(
     })
     .join()
     .expect("regeneration thread panicked");
-    let amount = surface_amount_for(&world.review, model, world.review.regeneration_usage);
+    let amount = surface_amount_for(&world.review, model, model, world.review.regeneration_usage);
     panel_mut(world).apply_regeneration(
         tier.to_string(),
         model.to_string(),

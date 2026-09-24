@@ -628,7 +628,7 @@ fn main() {
 
             let cost = watn::amount::billed_amount(
                 response.final_usage.as_ref(),
-                config.pricing.get(&response.model),
+                watn::amount::recorded_price(&config.pricing, &response.model, &model),
             )
             .map(|amount| amount.usd());
 
@@ -664,7 +664,7 @@ fn main() {
                                 tier: tier.unwrap_or("1").to_string(),
                                 provider: provider_name.to_string(),
                                 model: model.clone(),
-                                amount: surface_amount(&response, &config),
+                                amount: surface_amount(&response, &model, &config),
                             };
                             if let Err(error) = run_explanation_card(candidate, context) {
                                 eprintln!("explanation unavailable: {error}");
@@ -1012,7 +1012,7 @@ fn run_explain_command(
 
     context.amount = raw_response
         .as_ref()
-        .and_then(|response| surface_amount(response, &config));
+        .and_then(|response| surface_amount(response, &model, &config));
 
     if let Err(error) = run_explanation_card(candidate, context) {
         eprintln!("explain unavailable: {error}");
@@ -1047,14 +1047,15 @@ fn print_capture_diagnostics(path: &Option<std::path::PathBuf>, error: &Option<S
 }
 
 /// The billed amount to show at the Model label of a surface: only when the
-/// provider reported usage and a recorded price matches the reported model.
+/// provider reported usage and a recorded price applies to the request.
 fn surface_amount(
     response: &StreamingResponse,
+    requested_model: &str,
     config: &watn::config::types::Config,
 ) -> Option<String> {
     let billed = watn::amount::billed_amount(
         response.final_usage.as_ref(),
-        config.pricing.get(&response.model),
+        watn::amount::recorded_price(&config.pricing, &response.model, requested_model),
     )?;
     billed.usage_reported().then(|| billed.cents_text())
 }
@@ -1106,12 +1107,13 @@ fn run_review_path(
         }
     };
 
+    let mut accepted_model = model.to_string();
     let context = watn::review::ReviewContext {
         intent: intent.to_string(),
         tier: tier.to_string(),
         provider: provider.to_string(),
         model: model.to_string(),
-        amount: surface_amount(response, config),
+        amount: surface_amount(response, model, config),
     };
     let size = crossterm::terminal::size().unwrap_or((80, 24));
     let layout = watn::review::InlineLayout::for_dimensions(size.0, size.1);
@@ -1281,8 +1283,9 @@ fn run_review_path(
                                     tier.clone(),
                                     model.clone(),
                                     candidate,
-                                    surface_amount(&generation.response, config),
+                                    surface_amount(&generation.response, &model, config),
                                 );
+                                accepted_model = model.clone();
                                 accepted_response = generation.response;
                             }
                             None => panel
@@ -1324,7 +1327,11 @@ fn run_review_path(
 
         let cost = watn::amount::billed_amount(
             accepted_response.final_usage.as_ref(),
-            config.pricing.get(&accepted_response.model),
+            watn::amount::recorded_price(
+                &config.pricing,
+                &accepted_response.model,
+                &accepted_model,
+            ),
         )
         .map(|amount| amount.usd());
         let elapsed = accepted_response.elapsed_secs;
