@@ -113,3 +113,9 @@ Feature: Asking questions
     And  the final metadata names exactly "response-model"
     And  stderr should contain a non-zero cost for "response-model"
     And  the exit status should be 0
+  Scenario: Ask succeeds against a provider that rejects generation parameters
+    Given  a configured default provider "openai"
+    And  a provider that rejects a request carrying a sampling temperature or an output-token limit
+    When  I run `watn "list go files"`
+    Then  the exit status should be 0
+    And  the output should contain "find"
