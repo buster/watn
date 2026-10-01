@@ -95,13 +95,7 @@ wiring), `design-review.md` (Q1 regular scenario, Q2 breaking removal),
     ./run-tests.sh         → 24 features, 275 scenarios (275 passed), 1678 steps (1678 passed)
     ./run-tests.sh --e2e   → 26 features, 92 scenarios (92 passed), 699 steps (699 passed)
     ```
-- [x] **COMMIT** — one atomic revision for RED+GREEN+REFACTOR:
-      `givn commit` with the release note as the subject and a breaking
-      marker plus the scenario title in the body, e.g.
-      subject: `feat(ask)!: Watn no longer sends a sampling temperature or an output-token limit, so every request relies on the provider's own defaults and models that reject those parameters work.`
-      body: the scenario title and `BREAKING CHANGE: RequestOptions no longer
-      exposes temperature and max_tokens.`
-  - Revision: `eb97fcc51ab86dbaff8466759350c89ef4ad5ab0`
+- [x] COMMIT: `eb97fcc51ab86dbaff8466759350c89ef4ad5ab0` - `feat(ask)!: Watn no longer sends a sampling temperature or an output-token limit, so every request relies on the provider's own defaults and models that reject those parameters work.` Body: `Ask succeeds against a provider that rejects generation parameters`; `BREAKING CHANGE: RequestOptions no longer exposes temperature and max_tokens.`
 
 ## Post-implementation checks
 

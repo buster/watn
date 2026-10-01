@@ -48,9 +48,9 @@ Observably:
 > `givn spec route --change omit-request-defaults` reported no signal: the top
 > candidates tied at 13.00. The decision below is recorded with its rationale.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| ask | EXTEND ask | `ask` is the base chat-completion capability shared by every provider-backed command; `transport` owns endpoint routing and `configure-model` owns model selection and reasoning policy, but neither owns the set of generation parameters Watn sends. Route reported no signal (top candidates tied at 13.00) |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| ask | — (route reported no signal) | `NEW in fragments` | The `ask` capability is declared in the corpus-infra fragment (`givn/specs/fragments/fragment.md`), which is the base chat-completion path shared by every provider-backed command; `transport` owns endpoint routing and `configure-model` owns model selection and reasoning policy, but neither owns the set of generation parameters Watn sends. The delta keeps the fragment path (`specs/fragments/ask.feature`) and adds one scenario. Route reported no signal (top candidates tied at 13.00). |
 
 ## Out of Scope
 
