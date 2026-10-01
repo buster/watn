@@ -3172,8 +3172,6 @@ fn regenerate_through_session(
         ];
         let options = watn::provider::RequestOptions {
             model: model_owned,
-            temperature: None,
-            max_tokens: None,
             reasoning_effort: None,
         };
         let generation = watn::review::session::generate_candidate(
@@ -3373,8 +3371,6 @@ fn regenerate_failing(world: &mut WatnWorld, model: &str) {
         ];
         let options = watn::provider::RequestOptions {
             model: model_owned,
-            temperature: None,
-            max_tokens: None,
             reasoning_effort: None,
         };
         watn::review::session::generate_candidate(&provider, &messages, &options, &interrupt, None)

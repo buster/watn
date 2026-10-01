@@ -52,6 +52,7 @@ pub struct WatnWorld {
     pub pending_mock_delay_ms: Option<u64>,
     pub pending_mock_reasoning: Option<String>,
     pub pending_mock_no_reasoning_assert: bool,
+    pub pending_mock_no_generation_defaults_assert: bool,
     pub pending_mock_expected_reasoning_body: Option<String>,
     pub blocking_mock_id: Option<usize>,
     pub pending_mock_no_config_file: bool,

@@ -27,6 +27,7 @@
 | Setup coordinator | The ratatui keyboard-driven draft flow for provider, completion endpoint, credential, provider-local catalog, separate model/reasoning questions, shell desired state, and final review |
 | Quick setup | The plain-line first-run flow (automatic when no config file exists, or via `watn quicksetup`) asking endpoint, credential, three model strengths, and one shell multiple-choice question; optional `--url`/`--key`/`--model`/tier parameters prefill the questions, an empty answer accepts the suggestion, no reasoning is asked, and no network request is made |
 | Reasoning effort | A non-empty per-level string controlling `reasoning_effort`; `off` sends no field and every other value is persisted and sent verbatim |
+| Provider default | A generation value that the provider applies when the request omits it; Provider default, not Watn fallback — a Watn fallback is a value Watn invents when the caller supplies none, while the provider default applies only because Watn sends nothing. In practice: Watn sends no sampling temperature, so the provider applies its own |
 | Guided sequence | The fixed provider → catalog → small model/reasoning → normal model/reasoning → thinking model/reasoning → shell desired-state → review walk, with back-navigation before confirmation |
 | Page navigation | Moving the selection through the model list by a full page at a time with PageUp/PageDown keys |
 | Per-word filter | Order-independent matching where every whitespace-separated word of the query must appear somewhere in the model id |

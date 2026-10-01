@@ -75,7 +75,7 @@ graph TB
 | Element | Responsibility |
 |---|---|
 | `Provider` trait | Defines `chat_completions_streaming()` with a synchronous content-event sink |
-| `OpenAICompatibleProvider` | Concrete implementation: builds HTTP request (conditionally adds `reasoning` body field), parses buffered SSE lines, extracts content/reasoning/model/usage, invokes the content sink, rejects EOF without `[DONE]`, and returns `Interrupted` at the next SSE line when the shared interrupt flag is set |
+| `OpenAICompatibleProvider` | Concrete implementation: builds the HTTP request with only the model, messages, stream flag, and — when configured — the reasoning field; it never sends a sampling temperature or an output-token limit, so the provider's own defaults apply. Parses buffered SSE lines, extracts content/reasoning/model/usage, invokes the content sink, rejects EOF without `[DONE]`, and returns `Interrupted` at the next SSE line when the shared interrupt flag is set |
 | `ProviderRegistry` | Public provider lookup boundary that maps provider names (from config) to `Box<dyn Provider>` instances; it remains useful even when the binary currently registers one active provider |
 
 The transport boundary is the only production endpoint-resolution seam. URL

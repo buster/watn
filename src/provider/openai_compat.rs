@@ -55,8 +55,6 @@ impl Provider for OpenAICompatibleProvider {
                 "content": m.content,
             })).collect::<Vec<_>>(),
             "stream": true,
-            "temperature": options.temperature.unwrap_or(0.7),
-            "max_tokens": options.max_tokens.unwrap_or(1024),
         });
 
         if let Some(effort) = &options.reasoning_effort {

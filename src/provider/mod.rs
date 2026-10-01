@@ -14,8 +14,6 @@ pub struct Message {
 #[derive(Debug, Clone)]
 pub struct RequestOptions {
     pub model: String,
-    pub temperature: Option<f32>,
-    pub max_tokens: Option<u32>,
     pub reasoning_effort: Option<String>,
 }
 

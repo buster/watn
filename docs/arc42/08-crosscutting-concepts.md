@@ -395,6 +395,17 @@ second confirmation is shown. In both modes, accepted execution uses the
 existing `sh -c <cmd>` boundary with inherited stdout/stderr. A stream,
 Candidate, panel, or output failure never reaches execution.
 
+## Provider request defaults
+
+A chat request carries only the parameters Watn must send: the model, the
+messages, the stream flag, and — when the tier has a non-`off` reasoning value
+— `reasoning_effort`. Watn never invents a sampling temperature or an
+output-token limit; when no explicit value is configured, neither parameter
+appears in the request and the provider applies its own default. This keeps
+models that accept only their defaults usable without per-model special cases.
+Usage reporting and the displayed Amount are unaffected: they read the
+provider's response, not the request parameters.
+
 ## Reasoning and verbose mode
 
 When a tier has a non-`off` reasoning value, the request body includes a top-level `reasoning_effort` parameter:

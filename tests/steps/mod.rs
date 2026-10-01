@@ -155,6 +155,22 @@ fn setup_chat_completion_mock(
     mock.id
 }
 
+fn setup_generation_default_blockers(server_ref: &httpmock::MockServer) {
+    for field in [
+        "\"temperature\"",
+        "\"max_tokens\"",
+        "\"max_completion_tokens\"",
+    ] {
+        server_ref.mock(move |when, then| {
+            when.method(Method::POST)
+                .path("/chat/completions")
+                .body_includes(field);
+            then.status(400)
+                .body(r#"{"error":"generation defaults must not be sent"}"#);
+        });
+    }
+}
+
 fn setup_models_mock(
     server_ref: &httpmock::MockServer,
     models: &[String],
@@ -292,6 +308,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                         })
                         .id,
                 );
+            }
+            if world.pending_mock_no_generation_defaults_assert {
+                setup_generation_default_blockers(server);
             }
             let auth_header = world
                 .pending_config
@@ -440,6 +459,10 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
                     );
                 }
 
+                if world.pending_mock_no_generation_defaults_assert {
+                    setup_generation_default_blockers(server);
+                }
+
                 let mock_id = setup_chat_completion_mock(
                     server,
                     output,
@@ -461,6 +484,9 @@ pub(crate) fn ensure_test_env(world: &mut crate::WatnWorld) {
         let base_url = format!("http://127.0.0.1:{}", server.port());
         world.mock_server = MockServerWrap(Some(server), None);
         let server_ref = world.mock_server.0.as_ref().unwrap();
+        if world.pending_mock_no_generation_defaults_assert {
+            setup_generation_default_blockers(server_ref);
+        }
         let mock = server_ref.mock(move |when, then| {
             when.method(Method::POST).path("/chat/completions");
             then.status(200)

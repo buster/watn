@@ -495,8 +495,6 @@ fn main() {
 
     let options = RequestOptions {
         model: model.clone(),
-        temperature: None,
-        max_tokens: review_enabled.then_some(4096),
         reasoning_effort,
     };
 
@@ -961,8 +959,6 @@ fn run_explain_command(
     ];
     let options = RequestOptions {
         model: model.clone(),
-        temperature: None,
-        max_tokens: Some(4096),
         reasoning_effort: config.tiers.reasoning.effort(Some(tier)),
     };
     let spinner = Some(watn::output::spinner::Spinner::start(&model));
@@ -1246,8 +1242,6 @@ fn run_review_path(
                 };
                 let options = RequestOptions {
                     model: model.clone(),
-                    temperature: None,
-                    max_tokens: Some(4096),
                     reasoning_effort: config.tiers.reasoning.effort(Some(&tier)),
                 };
                 panel

@@ -22,6 +22,13 @@ fn configured_default_provider(w: &mut WatnWorld) {
     w.pending_mock_usage = Some(false);
 }
 
+#[given(
+    "a provider that rejects a request carrying a sampling temperature or an output-token limit"
+)]
+fn provider_rejects_generation_defaults(w: &mut WatnWorld) {
+    w.pending_mock_no_generation_defaults_assert = true;
+}
+
 #[given(regex = r#"^a model "([^"]+)" assigned to the small/fast tier$"#)]
 fn model_assigned_small(w: &mut WatnWorld, model: String) {
     let config = build_config(
