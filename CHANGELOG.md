@@ -6,6 +6,23 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-01
+
+### Breaking Changes
+
+- **ask:** Watn no longer sends a sampling temperature or an output-token limit, so every request relies on the provider's own defaults and models that reject those parameters work.
+
+
+### Features
+
+- **visible-request-amount:** A rejected candidate's replacement carries its own billed amount
+
+- **visible-request-amount:** The amount in both views, silence, and the guards
+
+- **visible-request-amount:** The requested-model price fallback and the one-significant-digit cents form
+
+- **release-truth:** The changelog lists one entry per change, taken from the change's release note, and no longer carries documentation, refactoring, or cleanup noise.
+
 ## [0.5.0] - 2026-09-13
 
 ### Bug Fixes
@@ -1196,3 +1213,5 @@ Bright fireant
 [0.4.1]: https://github.com/buster/watn/compare/v0.4.0...v0.4.1
 
 [0.5.0]: https://github.com/buster/watn/compare/v0.4.1...v0.5.0
+
+[0.5.2]: https://github.com/buster/watn/compare/v0.5.1...v0.5.2
