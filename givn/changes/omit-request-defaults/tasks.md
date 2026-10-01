@@ -95,18 +95,22 @@ wiring), `design-review.md` (Q1 regular scenario, Q2 breaking removal),
     ./run-tests.sh         → 24 features, 275 scenarios (275 passed), 1678 steps (1678 passed)
     ./run-tests.sh --e2e   → 26 features, 92 scenarios (92 passed), 699 steps (699 passed)
     ```
-- [ ] **COMMIT** — one atomic revision for RED+GREEN+REFACTOR:
+- [x] **COMMIT** — one atomic revision for RED+GREEN+REFACTOR:
       `givn commit` with the release note as the subject and a breaking
       marker plus the scenario title in the body, e.g.
       subject: `feat(ask)!: Watn no longer sends a sampling temperature or an output-token limit, so every request relies on the provider's own defaults and models that reject those parameters work.`
       body: the scenario title and `BREAKING CHANGE: RequestOptions no longer
       exposes temperature and max_tokens.`
-  - Revision: (record the hash)
+  - Revision: `eb97fcc51ab86dbaff8466759350c89ef4ad5ab0`
 
 ## Post-implementation checks
 
-- [ ] `givn lint --change omit-request-defaults` exits 0 or 2 with no `@wip`
+- [x] `givn lint --change omit-request-defaults` exits 0 or 2 with no `@wip`
       finding remaining.
-  - Evidence: (paste output)
-- [ ] Confirm no `@wip` and no `@e2e` tag change on the delta scenario.
-  - Evidence: (paste the scenario tags)
+  - Evidence: `givn lint: 1 file(s) checked — clean`
+- [x] Confirm no `@wip` and no `@e2e` tag change on the delta scenario.
+  - Evidence:
+    ```
+      @givn.added
+      Scenario: Ask succeeds against a provider that rejects generation parameters
+    ```
