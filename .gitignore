@@ -14,10 +14,14 @@
 .opencode/skills/givn-*/
 .agents/skills/givn-*/
 .claude/skills/givn-*/
+.omp/skills/givn-*/
 .opencode/commands/givn-*.md
 .opencode/commands/grill-*.md
+.omp/commands/givn-*.md
+.omp/commands/grill-*.md
 .opencode/plugins/givn-attribution.js
 .claude/hooks/givn-attribution.sh
 .claude/settings.local.json
+.omp/hooks/pre/givn-attribution.js
 .githooks/commit-msg
 # givn:end:rules
