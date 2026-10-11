@@ -165,15 +165,16 @@ givn_config_version: "0.8.3"
 
 # --- Addon: grill_me ----------------------------------------------------------
 # Command — Socratically grill the current plan/design, one question at a time.
-# Generates the /grill-me opencode command on `givn skills sync`.
+# Generates the /grill-me command for every command-owning target on `givn skills sync`.
 # Toggle with: givn addons enable|disable grill_me.
 #
 # grill_me: false   # set to true to enable
 
 # --- Addon: grill_with_docs ---------------------------------------------------
 # Command — grill the plan/design, citing a source in the project's own docs
-# for every challenge. Generates the /grill-with-docs opencode command on
-# `givn skills sync`. Toggle with: givn addons enable|disable grill_with_docs.
+# for every challenge. Generates the /grill-with-docs command for every
+# command-owning target on `givn skills sync`. Toggle with: givn addons
+# enable|disable grill_with_docs.
 #
 # grill_with_docs: false   # set to true to enable
 
@@ -198,10 +199,10 @@ givn_config_version: "0.8.3"
 # missing or unknown-only selection is refused.
 # `givn skills sync` installs to exactly the persisted targets, falling back
 # to opencode when no skills block exists. Toggle by editing the list below
-# (allowed values: opencode, agents, claude).
+# (allowed values: opencode, agents, claude, omp).
 #
 # skills:
-#   targets: [opencode]      # set to e.g. [opencode, agents, claude] for all
+#   targets: [opencode]      # set to e.g. [opencode, agents, claude, omp] for all
 
 # --- User overrides preserved from previous version ---
 addons:
