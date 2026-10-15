@@ -1,5 +1,5 @@
 # ============================================================================
-#  givn configuration  —  https://github.com/TBD/givn
+#  givn configuration  —  https://github.com/buster/givn
 #  See arc42 chapter 8 (cross-cutting concepts) for detailed explanations.
 #
 #  How this file works:
@@ -13,7 +13,7 @@
 # ============================================================================
 
 # Managed by givn. Do not delete the next line.
-givn_config_version: "0.8.3"
+givn_config_version: "0.9.0"
 
 # --- Test runner -------------------------------------------------------------
 # The command givn invokes to run your test suite. Configured in
@@ -98,14 +98,18 @@ givn_config_version: "0.8.3"
 # Or: any shell command string.
 # Object form adds options: { run: verify, allow_failure: false, name: "..." }
 #
-# Defaults already in the embedded manifest:
-#   tasks.post:  [verify]
-#   review.post: [verify, verify-e2e]
+# A `post:` list is purely additive — it adds user hooks and never replaces
+# the mandatory checks the binary owns:
+#   `givn check tasks`  -> WIP protection and the test runner (verify)
+#   `givn check review` -> integrity, the run-declaration check, and (for a
+#                          named change) the overlap dispositions
+#   `givn archive`      -> both verification scopes (regular and e2e) and the
+#                          coverage gate when enabled
 #
-# Override examples:
+# Additive examples:
 # artifacts:
 #   - id: tasks
-#     post: [lint, verify]
+#     post: [lint]
 #   - id: review
 #     post:
 #       - { run: verify, name: "full suite green" }
@@ -123,52 +127,40 @@ givn_config_version: "0.8.3"
 #                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
 #   readme: true            # set to false to disable the readme scaffolding addon
 #   coverage: true          # set to false to disable the coverage lifecycle artifact
+#   domain_modeling: true   # project-level skill; see below
+#   dev_principles: true    # project-level skill; see below
+#   grill_me: true          # project-level command; see below
+#   grill_with_docs: true   # project-level command; see below
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 
-# --- arc42 configuration (requires addons.arc42: true) -----------------------
-# arc42:
-#   output_dir: "docs/arc42"     # where durable arc42 docs live (not per-change)
-#   chapters:                    # subset/superset of the 12 standard chapters
-#     - introduction-and-goals
-#     - architecture-constraints
-#     - context-and-scope
-#     - solution-strategy
-#     - building-block-view
-#     - runtime-view
-#     - deployment-view
-#     - crosscutting-concepts
-#     - architecture-decisions
-#     - quality-requirements
-#     - risks-and-technical-debt
-#     - glossary
+# --- arc42 documentation (requires addons.arc42: true) -----------------------
+# Durable arc42 chapters live at the fixed path `docs/arc42/`, using the
+# embedded twelve-chapter set. There is no output-dir or chapter-list setting.
 #
 # When addons.arc42 is true, the arc42 document is produced during the
 # design phase and checked in design-review: design-review requires
-# arc42-docs, and arc42-docs itself gates archive (added to
-# apply.requires) -- an enabled-but-unfinished arc42 doc blocks
-# `givn archive`, not just the "ready-to-archive" status label.
+# arc42-docs, and arc42-docs itself gates archive (added to apply.requires) --
+# an enabled-but-unfinished arc42 doc blocks `givn archive`, not just the
+# "ready-to-archive" status label.
 
 # --- Addon: domain_modeling ---------------------------------------------------
 # Skill — model a change's domain (ubiquitous language, aggregates, invariants)
 # before design. Generates the givn-domain-modeling skill file on
 # `givn skills sync`. Toggle with: givn addons enable|disable domain_modeling.
 #
-# domain_modeling: false   # set to true to enable
 
 # --- Addon: dev_principles ----------------------------------------------------
 # Skill — apply the team's engineering principles during implementation.
 # Generates the givn-dev-principles skill file on `givn skills sync`.
 # Toggle with: givn addons enable|disable dev_principles.
 #
-# dev_principles: false   # set to true to enable
 
 # --- Addon: grill_me ----------------------------------------------------------
 # Command — Socratically grill the current plan/design, one question at a time.
 # Generates the /grill-me command for every command-owning target on `givn skills sync`.
 # Toggle with: givn addons enable|disable grill_me.
 #
-# grill_me: false   # set to true to enable
 
 # --- Addon: grill_with_docs ---------------------------------------------------
 # Command — grill the plan/design, citing a source in the project's own docs
@@ -176,7 +168,6 @@ givn_config_version: "0.8.3"
 # command-owning target on `givn skills sync`. Toggle with: givn addons
 # enable|disable grill_with_docs.
 #
-# grill_with_docs: false   # set to true to enable
 
 # --- Generated-rules policy ---------------------------------------------------
 # Whether Givn's generated rules (skills, commands, plugins, hooks, and the
@@ -203,6 +194,25 @@ givn_config_version: "0.8.3"
 #
 # skills:
 #   targets: [opencode]      # set to e.g. [opencode, agents, claude, omp] for all
+
+# --- Instruction extensions ---------------------------------------------------
+# Project-owned rules that extend any served instruction
+# (`givn instructions <id>`). The extension lives in this project-owned
+# configuration: it is effective at the next request, and synchronization and
+# upgrades never touch it. Ids name an artifact, policy, or step instruction;
+# a rule is a non-empty string. An unknown id or a malformed entry warns and
+# is skipped, and the built-in rules are served alone.
+#
+# Example — two instructions, two project rules each. A rule listed under
+# several ids extends each of those instructions:
+#
+# extensions:
+#   ideation:
+#     - Keep raw ideas free of implementation detail.
+#     - Link every open question to the Persona it affects.
+#   specs:
+#     - Keep scenarios free of implementation detail.
+#     - Use the project's domain vocabulary in every scenario title.
 
 # --- User overrides preserved from previous version ---
 addons:
