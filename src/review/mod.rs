@@ -1,5 +1,6 @@
 mod buffer;
 mod card;
+mod card_text;
 pub mod diagnostics;
 mod flow;
 mod panel;

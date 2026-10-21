@@ -1,3 +1,7 @@
+use super::card_text::{
+    colorize_command, ellipsize, ellipsize_visible, model_short_name, pad_to, visible_len,
+    wrap_stage, Ink,
+};
 use super::panel::{sanitize_terminal_text, InlineLayout, ReviewPanelState};
 use super::PurposeStatus;
 
@@ -16,202 +20,6 @@ pub fn color_terminal_supports_card() -> bool {
     let term = std::env::var("TERM").unwrap_or_default();
     let colorterm = std::env::var_os("COLORTERM").is_some();
     terminal_supports_color(no_color, &term, colorterm)
-}
-
-struct Ink {
-    color: bool,
-}
-
-impl Ink {
-    fn new(color: bool) -> Self {
-        Self { color }
-    }
-
-    fn paint(&self, code: &str, text: &str) -> String {
-        if self.color {
-            format!("\u{1b}[{code}m{text}\u{1b}[0m")
-        } else {
-            text.to_string()
-        }
-    }
-
-    fn border(&self, text: &str) -> String {
-        self.paint("38;5;240", text)
-    }
-
-    fn label(&self, text: &str) -> String {
-        self.paint("38;5;81", text)
-    }
-
-    fn white(&self, text: &str) -> String {
-        self.paint("97", text)
-    }
-
-    fn dim(&self, text: &str) -> String {
-        self.paint("2", text)
-    }
-
-    fn key(&self, text: &str) -> String {
-        self.paint("1;38;5;81", text)
-    }
-
-    fn yellow(&self, text: &str) -> String {
-        self.paint("38;5;221", text)
-    }
-
-    fn green(&self, text: &str) -> String {
-        self.paint("38;5;114", text)
-    }
-
-    fn amber(&self, text: &str) -> String {
-        self.paint("38;5;214", text)
-    }
-
-    fn purpose_marker(&self, text: &str) -> String {
-        self.paint("38;5;81", text)
-    }
-
-    fn purpose(&self, text: &str) -> String {
-        self.paint("38;5;252", text)
-    }
-}
-
-fn visible_len(value: &str) -> usize {
-    let mut width = 0;
-    let mut chars = value.chars();
-    while let Some(character) = chars.next() {
-        if character == '\u{1b}' {
-            for escaped in chars.by_ref() {
-                if escaped.is_ascii_alphabetic() {
-                    break;
-                }
-            }
-        } else {
-            width += unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
-        }
-    }
-    width
-}
-
-fn pad_to(value: &str, width: usize) -> String {
-    let mut padded = value.to_string();
-    let visible = visible_len(value);
-    if visible < width {
-        padded.push_str(&" ".repeat(width - visible));
-    }
-    padded
-}
-
-fn ellipsize(value: &str, width: usize) -> String {
-    if width == 0 {
-        return String::new();
-    }
-    if value.chars().count() <= width {
-        return value.to_string();
-    }
-    let mut truncated: String = value.chars().take(width.saturating_sub(1)).collect();
-    truncated.push('…');
-    truncated
-}
-
-/// Ellipsize a styled value by visible width, preserving escape sequences.
-fn ellipsize_visible(value: &str, width: usize) -> String {
-    if visible_len(value) <= width {
-        return value.to_string();
-    }
-    let mut result = String::new();
-    let mut visible = 0;
-    let mut chars = value.chars();
-    while let Some(character) = chars.next() {
-        if character == '\u{1b}' {
-            result.push(character);
-            for escaped in chars.by_ref() {
-                result.push(escaped);
-                if escaped.is_ascii_alphabetic() {
-                    break;
-                }
-            }
-        } else if visible + 1 < width {
-            result.push(character);
-            visible += 1;
-        } else {
-            result.push('…');
-            break;
-        }
-    }
-    result
-}
-
-fn char_offset(value: &str, count: usize) -> usize {
-    value
-        .char_indices()
-        .nth(count)
-        .map(|(index, _)| index)
-        .unwrap_or(value.len())
-}
-
-/// Word-aware wrapping for one stage. A single word wider than the row is
-/// hard-split at a character boundary so the row width stays exact.
-fn wrap_stage(text: &str, width: usize) -> Vec<String> {
-    let width = width.max(1);
-    let mut rows: Vec<String> = Vec::new();
-    let mut current = String::new();
-    let mut current_len = 0usize;
-    for word in text.split_whitespace() {
-        let word_len = word.chars().count();
-        let projected = if current.is_empty() {
-            word_len
-        } else {
-            current_len + 1 + word_len
-        };
-        if projected <= width {
-            if !current.is_empty() {
-                current.push(' ');
-                current_len += 1;
-            }
-            current.push_str(word);
-            current_len += word_len;
-            continue;
-        }
-        if !current.is_empty() {
-            rows.push(std::mem::take(&mut current));
-        }
-        if word_len <= width {
-            current.push_str(word);
-            current_len = word_len;
-        } else {
-            let mut rest = word;
-            while rest.chars().count() > width {
-                let split = char_offset(rest, width);
-                rows.push(rest[..split].to_string());
-                rest = &rest[split..];
-            }
-            current.push_str(rest);
-            current_len = rest.chars().count();
-        }
-    }
-    if !current.is_empty() || rows.is_empty() {
-        rows.push(current);
-    }
-    rows
-}
-
-fn colorize_command(command: &str, ink: &Ink) -> String {
-    command
-        .split_whitespace()
-        .map(|token| {
-            if matches!(token, "|" | "||" | "&&" | ";" | "&") {
-                ink.border(token)
-            } else if token.starts_with('-') {
-                ink.yellow(token)
-            } else if token.starts_with('\'') || token.starts_with('"') {
-                ink.green(token)
-            } else {
-                ink.white(token)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
 }
 
 fn purpose_text(state: &ReviewPanelState) -> String {
@@ -250,17 +58,6 @@ pub fn disable_hint(use_color: bool) -> String {
 
 /// The model label used by the simple view: the last `/`-separated identifier
 /// segment, without a leading routing marker or a `:` variant suffix.
-pub fn model_short_name(model: &str) -> String {
-    let last = model.rsplit('/').next().unwrap_or(model);
-    let last = last.strip_prefix('~').unwrap_or(last);
-    let short = last.split(':').next().unwrap_or(last);
-    if short.is_empty() {
-        model.to_string()
-    } else {
-        short.to_string()
-    }
-}
-
 fn header_right(state: &ReviewPanelState, detailed: bool, budget: usize) -> String {
     let label = if detailed {
         format!(
@@ -448,6 +245,24 @@ pub fn render_card_lines(
     let label_width = 7;
     let available = max_rows.saturating_sub(2).max(3);
 
+    let mut content = base_content(state, detailed, label_width, inner, available, &ink);
+    if detailed {
+        content.extend(detail_content(state, label_width, inner, &ink));
+    }
+    content.push((10, String::new()));
+    content.push((30, hints(state, detailed, &ink)));
+
+    frame_card(content, state, detailed, inner, available, &ink)
+}
+
+fn base_content(
+    state: &ReviewPanelState,
+    detailed: bool,
+    label_width: usize,
+    inner: usize,
+    available: usize,
+    ink: &Ink,
+) -> Vec<(u8, String)> {
     let mut content: Vec<(u8, String)> = Vec::new();
 
     if detailed {
@@ -476,9 +291,8 @@ pub fn render_card_lines(
 
     let essential_rows = purpose_rows.len() + if detailed { 5 } else { 4 };
     let stack_budget = available.saturating_sub(essential_rows).max(1);
-
     let stack_text_width = inner.saturating_sub(4);
-    let stack = stack_window_rows(state, stack_text_width, stack_budget, &ink);
+    let stack = stack_window_rows(state, stack_text_width, stack_budget, ink);
     for (index, row) in stack.iter().enumerate() {
         content.push((if index == 0 { 100 } else { 95 }, row.clone()));
     }
@@ -493,110 +307,142 @@ pub fn render_card_lines(
         content.push((70, format!("{purpose_indent}{marker}{}", ink.purpose(row))));
     }
 
-    if detailed {
-        if state.input_mode == super::panel::PanelInputMode::CommandEditor {
-            let buffer = sanitize_terminal_text(state.editor_buffer().unwrap_or(""));
-            let cursor = super::panel::char_index_to_byte(&buffer, state.editor_cursor());
-            let (before, after) = buffer.split_at(cursor);
-            content.push((
-                95,
-                format!(
-                    "{}   {}",
-                    ink.label(&pad_to("Edit", label_width)),
-                    ink.white(&format!("{before}▏{after}"))
-                ),
-            ));
-        }
+    content
+}
 
-        if let Some(chooser) = state.chooser() {
-            if !chooser.tiers.is_empty() {
-                let tiers = chooser
-                    .tiers
-                    .iter()
-                    .enumerate()
-                    .map(|(index, choice)| {
-                        let marker = if choice.model == state.context.model {
-                            format!(" {}", ink.green("●"))
-                        } else {
-                            String::new()
-                        };
-                        format!(
-                            "{} {} · {}{marker}",
-                            ink.key(&(index + 1).to_string()),
-                            choice.label,
-                            choice.model
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .join("  ");
-                content.push((
-                    75,
-                    format!("{}   {tiers}", ink.label(&pad_to("Models", label_width))),
-                ));
-            }
-            let suggestions: Vec<String> = chooser
-                .filtered()
-                .into_iter()
-                .take(4)
-                .enumerate()
-                .map(|(index, model)| {
-                    if Some(index) == chooser.highlight {
-                        ink.paint("7", &ink.white(model))
-                    } else {
-                        ink.white(model)
-                    }
-                })
-                .collect();
-            if chooser.catalog_loading {
-                content.push((
-                    70,
-                    format!(
-                        "{}   {}",
-                        ink.label(&pad_to("Picks", label_width)),
-                        ink.dim("loading suggestions…")
-                    ),
-                ));
-            } else if !suggestions.is_empty() {
-                content.push((
-                    70,
-                    format!(
-                        "{}   {}",
-                        ink.label(&pad_to("Picks", label_width)),
-                        suggestions.join("  ")
-                    ),
-                ));
-            }
-            let search = if chooser.query.is_empty() {
-                format!("{}▏", ink.dim("type a model name…"))
-            } else {
-                let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
-                let (before, after) = chooser.query.split_at(cursor);
+fn detail_content(
+    state: &ReviewPanelState,
+    label_width: usize,
+    inner: usize,
+    ink: &Ink,
+) -> Vec<(u8, String)> {
+    let mut content = Vec::new();
+
+    if state.input_mode == super::panel::PanelInputMode::CommandEditor {
+        let buffer = sanitize_terminal_text(state.editor_buffer().unwrap_or(""));
+        let cursor = super::panel::char_index_to_byte(&buffer, state.editor_cursor());
+        let (before, after) = buffer.split_at(cursor);
+        content.push((
+            95,
+            format!(
+                "{}   {}",
+                ink.label(&pad_to("Edit", label_width)),
                 ink.white(&format!("{before}▏{after}"))
-            };
-            content.push((
-                85,
-                format!("{}   {search}", ink.label(&pad_to("Search", label_width))),
-            ));
-        }
-
-        if let Some(error) = state.regeneration_error() {
-            content.push((
-                95,
-                format!(
-                    "{}   {}",
-                    ink.label(&pad_to("Error", label_width)),
-                    ink.amber(&ellipsize(
-                        &sanitize_terminal_text(error),
-                        inner.saturating_sub(label_width + 3)
-                    ))
-                ),
-            ));
-        }
+            ),
+        ));
     }
 
-    content.push((10, String::new()));
-    content.push((30, hints(state, detailed, &ink)));
+    if let Some(chooser) = state.chooser() {
+        content.extend(chooser_content(state, chooser, label_width, ink));
+    }
 
+    if let Some(error) = state.regeneration_error() {
+        content.push((
+            95,
+            format!(
+                "{}   {}",
+                ink.label(&pad_to("Error", label_width)),
+                ink.amber(&ellipsize(
+                    &sanitize_terminal_text(error),
+                    inner.saturating_sub(label_width + 3)
+                ))
+            ),
+        ));
+    }
+
+    content
+}
+
+fn chooser_content(
+    state: &ReviewPanelState,
+    chooser: &super::panel::ModelChooser,
+    label_width: usize,
+    ink: &Ink,
+) -> Vec<(u8, String)> {
+    let mut content = Vec::new();
+
+    if !chooser.tiers.is_empty() {
+        let tiers = chooser
+            .tiers
+            .iter()
+            .enumerate()
+            .map(|(index, choice)| {
+                let marker = if choice.model == state.context.model {
+                    format!(" {}", ink.green("●"))
+                } else {
+                    String::new()
+                };
+                format!(
+                    "{} {} · {}{marker}",
+                    ink.key(&(index + 1).to_string()),
+                    choice.label,
+                    choice.model
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("  ");
+        content.push((
+            75,
+            format!("{}   {tiers}", ink.label(&pad_to("Models", label_width))),
+        ));
+    }
+
+    let suggestions: Vec<String> = chooser
+        .filtered()
+        .into_iter()
+        .take(4)
+        .enumerate()
+        .map(|(index, model)| {
+            if Some(index) == chooser.highlight {
+                ink.paint("7", &ink.white(model))
+            } else {
+                ink.white(model)
+            }
+        })
+        .collect();
+    if chooser.catalog_loading {
+        content.push((
+            70,
+            format!(
+                "{}   {}",
+                ink.label(&pad_to("Picks", label_width)),
+                ink.dim("loading suggestions…")
+            ),
+        ));
+    } else if !suggestions.is_empty() {
+        content.push((
+            70,
+            format!(
+                "{}   {}",
+                ink.label(&pad_to("Picks", label_width)),
+                suggestions.join("  ")
+            ),
+        ));
+    }
+
+    let search = if chooser.query.is_empty() {
+        format!("{}▏", ink.dim("type a model name…"))
+    } else {
+        let cursor = super::panel::char_index_to_byte(&chooser.query, chooser.query_cursor);
+        let (before, after) = chooser.query.split_at(cursor);
+        ink.white(&format!("{before}▏{after}"))
+    };
+    content.push((
+        85,
+        format!("{}   {search}", ink.label(&pad_to("Search", label_width))),
+    ));
+
+    content
+}
+
+fn frame_card(
+    mut content: Vec<(u8, String)>,
+    state: &ReviewPanelState,
+    detailed: bool,
+    inner: usize,
+    available: usize,
+    ink: &Ink,
+) -> Vec<String> {
     while content.len() > available {
         let lowest = content
             .iter()
