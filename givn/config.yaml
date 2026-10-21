@@ -216,6 +216,8 @@ givn_config_version: "0.9.0"
 
 # --- User overrides preserved from previous version ---
 addons:
+  outline: true
+  architecture_principles: true
   arc42: true
   absolute_mode: true
   readme: true
