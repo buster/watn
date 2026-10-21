@@ -229,3 +229,7 @@ addons:
 skills:
   targets: [opencode, agents, claude, omp]
 # ---
+
+# --- Development record -------------------------------------------------------
+record:
+  mode: full
