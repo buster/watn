@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "change": "migrate-0-8-3-to-0-9-0",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [],
+  "merge_in_progress": null,
+  "merge_plan": [],
+  "merge_targets": {},
+  "started_at_unix": 1793380652,
+  "finished_at_unix": null
+}
