@@ -13,7 +13,7 @@
 # ============================================================================
 
 # Managed by givn. Do not delete the next line.
-givn_config_version: "0.9.0"
+givn_config_version: "0.9.11"
 
 # --- Test runner -------------------------------------------------------------
 # The command givn invokes to run your test suite. Configured in
@@ -35,6 +35,28 @@ givn_config_version: "0.9.0"
 # Configured in givn/commands.yaml — see verify.e2e_command there.
 #
 
+# --- Development record --------------------------------------------------------
+# Givn records every lifecycle command and its inner steps, plus the activity
+# its agent reporters (omp, opencode, Claude Code, Maki) report, under
+# givn/history/ — an ignored local store, never repository content. See arc42
+# ch.8.25. The mode is a project-owned value (this key survives `givn upgrade`):
+#   off  — writes nothing new: no entry, no pending state, no ignore write.
+#          `off` is absolute; `givn history ingest --with-full-content` is
+#          ignored with one warning and exit 0.
+#   on   — the default when the key is absent or unreadable (one warning):
+#          all available metadata, with the label capped at 120 characters,
+#          text metadata at 240, error text at 1 000, and full question text
+#          at 4 000. No LLM-facing content.
+#   full — `on` plus complete LLM-facing tool input/output, prompts, and
+#          thinking text, capped at 64 KiB per field and 256 KiB per entry.
+# Lowering the mode keeps entries already captured; it never purges them.
+# `givn history settings [--json]` reports the resolved mode and its source
+# (`config` or `default`). The intake enforces the mode and every bound.
+#
+# record:
+#   mode: on                # on | off | full
+#
+
 # --- Artifact graph overlay --------------------------------------------------
 # Patch the embedded default artifact graph without replacing it. Declare only
 # the additions, modifications, or removals you want. Everything else keeps its
@@ -42,12 +64,10 @@ givn_config_version: "0.9.0"
 #
 # Examples:
 #
-#   # a) Remove the review gate entirely:
+#   # a) Remove a project-owned artifact you added earlier:
 #   # artifacts:
-#   #   - id: review
+#   #   - id: refactor
 #   #     remove: true
-#   # apply:
-#   #   requires: [tasks]
 #
 #   # b) Make review optional (skip without blocking):
 #   # artifacts:
@@ -56,20 +76,15 @@ givn_config_version: "0.9.0"
 #   # apply:
 #   #   requires: [tasks]
 #
-#   # NEVER do this to design-review (optional: true or remove: true). It is
-#   # a planning-layer gate that catches a flawed plan before tasks and code
-#   # are written from it — removing it does not save time, it defers the
-#   # same problems to implementation where they cost far more to fix.
+#   # The embedded review gate cannot be removed: `remove: true` on it is
+#   # refused. Optional still requires the artifact to be completed when used.
 #
 #   # c) Add a custom refactor step after implementation:
 #   # artifacts:
 #   #   - id: refactor
-#   #     generates: refactor.md
+#   #     generates: ["refactor.md"]
 #   #     requires: [tasks]
 #   #     template: refactor.md
-#   #     instruction: |
-#   #       Record refactorings: what was cleaned up, why, and confirmation
-#   #       that all scenarios still pass. No behaviour change.
 #   # apply:
 #   #   requires: [tasks, refactor, review]
 
@@ -117,20 +132,24 @@ givn_config_version: "0.9.0"
 
 # --- Addons ------------------------------------------------------------------
 # Pre-packaged artifact sets. See arc42 ch.8.11.
-# `givn init` enables ALL addons by default (opt-out via `givn init --no-addons`).
-# This project's actual settings are below, written by `givn init`/`givn addons`:
+# Every known addon is enabled by default. Opt out of all of them with
+# `givn init --no-addons`, or disable one with `givn addons disable <name>`.
+# A missing key in a partial `addons:` block means enabled; only an explicit
+# `false` disables a flag. This project's actual settings are below, written by
+# `givn init`/`givn addons`:
 #
 # addons:
 #   arc42: true             # set to false to disable the arc42 documentation artifact
-#   absolute_mode: true     # set to false to disable the Absolute Mode communication
-#                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
-#                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
+#   communication_policy: true # set to false to disable the managed communication
+#                          # policy block in AGENTS.md. The dialog obligation is
+#                          # mandatory and independent of this addon.
 #   readme: true            # set to false to disable the readme scaffolding addon
 #   coverage: true          # set to false to disable the coverage lifecycle artifact
 #   domain_modeling: true   # project-level skill; see below
 #   dev_principles: true    # project-level skill; see below
-#   grill_me: true          # project-level command; see below
-#   grill_with_docs: true   # project-level command; see below
+#   architecture_principles: true # enabled by default; set false to disable; see below
+#   challenge: true         # project-level skill; see below
+#   outline: true           # enabled by default; set false to disable the outline report
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 
@@ -156,22 +175,31 @@ givn_config_version: "0.9.0"
 # Toggle with: givn addons enable|disable dev_principles.
 #
 
-# --- Addon: grill_me ----------------------------------------------------------
-# Command — Socratically grill the current plan/design, one question at a time.
-# Generates the /grill-me command for every command-owning target on `givn skills sync`.
-# Toggle with: givn addons enable|disable grill_me.
+# --- Addon: architecture_principles -------------------------------------------
+# Architecture-principles guidance (enabled by default): answer questions at
+# their last responsible moment; design the consumer's contract now, defer the
+# component split. Gates the `architecture-principles` instruction and its
+# proposal, design, design-review, dialog, review, and tasks references.
+# Toggle with: givn addons enable|disable architecture_principles.
 #
 
-# --- Addon: grill_with_docs ---------------------------------------------------
-# Command — grill the plan/design, citing a source in the project's own docs
-# for every challenge. Generates the /grill-with-docs command for every
-# command-owning target on `givn skills sync`. Toggle with: givn addons
-# enable|disable grill_with_docs.
+# --- Addon: communication_policy ---------------------------------------------
+# Presentation policy — manage a fenced communication block in AGENTS.md.
+# The dialog obligation from `givn instructions dialog` is mandatory with or
+# without this addon. Toggle with: givn addons enable|disable communication_policy.
+#
+
+# --- Addon: challenge ---------------------------------------------------------
+# Skill — research the subject first, cite available evidence, label hypotheses,
+# and reserve questions for unresolved human decisions. Applies to proposals,
+# tests, specs, design, code, and whole changes without adding a lifecycle gate.
+# Generates the givn-challenge skill on `givn skills sync`.
+# Toggle with: givn addons enable|disable challenge.
 #
 
 # --- Generated-rules policy ---------------------------------------------------
-# Whether Givn's generated rules (skills, commands, plugins, hooks, and the
-# attribution plumbing) are repository content or stay on this machine.
+# Whether Givn's generated rules (skills, plugins, hooks, and the attribution
+# plumbing) are repository content or stay on this machine.
 #   local-only  (default) - the rules are written locally and kept out of the
 #                           repository; a tracked rule is removed from the
 #                           current revision without deleting its file.
@@ -184,16 +212,16 @@ givn_config_version: "0.9.0"
 # rules: local-only
 
 # --- Skill agent targets ------------------------------------------------------
-# Which agent targets receive the generated skills and commands.
+# Which agent targets receive the generated skills.
 # `givn init` requires a selection: the interactive prompt opens with opencode
 # marked and re-asks until something is marked; scripts pass --agents, and a
 # missing or unknown-only selection is refused.
 # `givn skills sync` installs to exactly the persisted targets, falling back
 # to opencode when no skills block exists. Toggle by editing the list below
-# (allowed values: opencode, agents, claude, omp).
+# (allowed values: opencode, agents, claude, omp, maki).
 #
 # skills:
-#   targets: [opencode]      # set to e.g. [opencode, agents, claude, omp] for all
+#   targets: [opencode]      # set to e.g. [opencode, agents, claude, omp, maki] for all
 
 # --- Instruction extensions ---------------------------------------------------
 # Project-owned rules that extend any served instruction
@@ -227,8 +255,6 @@ addons:
   dev_principles: true
 skills:
   targets: [opencode, agents, claude, omp]
-# ---
-
-# --- Development record -------------------------------------------------------
 record:
   mode: full
+# ---
