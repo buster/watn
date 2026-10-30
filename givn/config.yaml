@@ -13,7 +13,7 @@
 # ============================================================================
 
 # Managed by givn. Do not delete the next line.
-givn_config_version: "0.9.11"
+givn_config_version: "0.9.16"
 
 # --- Test runner -------------------------------------------------------------
 # The command givn invokes to run your test suite. Configured in
@@ -164,8 +164,9 @@ givn_config_version: "0.9.11"
 # "ready-to-archive" status label.
 
 # --- Addon: domain_modeling ---------------------------------------------------
-# Skill — model a change's domain (ubiquitous language, aggregates, invariants)
-# before design. Generates the givn-domain-modeling skill file on
+# Skill — model a change's domain before design. Maintains the standalone
+# `docs/glossary.md` and `docs/domain-model.md`; it does not require arc42.
+# Generates the givn-domain-modeling skill file on
 # `givn skills sync`. Toggle with: givn addons enable|disable domain_modeling.
 #
 
