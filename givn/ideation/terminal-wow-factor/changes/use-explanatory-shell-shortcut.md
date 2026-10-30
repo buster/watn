@@ -1,5 +1,7 @@
 # Change Seed: use-explanatory-shell-shortcut
 
+Status: implemented in use-explanatory-shell-shortcut
+
 ## Stable use-case ID
 
 `use-explanatory-shell-shortcut`
@@ -14,7 +16,7 @@
 
 ## Handoff status
 
-Ready for the normal proposal flow. Handoff does not start the change.
+Implemented in `use-explanatory-shell-shortcut`.
 
 ## Goal
 

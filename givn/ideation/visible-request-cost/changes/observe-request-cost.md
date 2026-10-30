@@ -1,6 +1,6 @@
 # Change seed: observe-request-cost
 
-Status: proposed by observe-request-cost
+Status: implemented in observe-request-cost
 
 - Use-case IDs: observe-request-cost
 - Topic: visible-request-cost
