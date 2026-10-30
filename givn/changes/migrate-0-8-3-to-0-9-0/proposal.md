@@ -2,6 +2,8 @@
 
 ## Aggregate migration
 
+Behavior change: none
+
 This maintenance change migrates a project from Givn 0.8.3 to the installed Givn 0.9.0 contract. Managed preparation was recorded in Commit A `e12e90dbc79b30d5024a878037f0deb8fb05e2c6`. The migration phases below are one ordered plan; work each phase in order and follow the completion rules in its bundle.
 
 ## Scope

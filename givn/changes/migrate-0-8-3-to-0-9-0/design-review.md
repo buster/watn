@@ -2,7 +2,7 @@
 
 Review kind: self-review
 Author: maki
-Reviewer context: maki (current session)
+Reviewer context: maki
 
 ## Grilling
 
