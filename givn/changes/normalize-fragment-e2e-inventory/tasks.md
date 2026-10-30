@@ -16,6 +16,6 @@ This change carries no new product behaviour. It retags 15 existing fragment sce
 
 ## Batch: scoped verification and review
 
-- [ ] **Evidence:** `./run-tests.sh` runs 28 features, 290 scenarios, and 1756 steps, all passing in two consecutive confirmation runs. The first run of this batch reported one transient failure that did not reproduce; `review.md` records it. `./run-tests.sh --e2e` runs 26 features, 92 scenarios, and 699 steps, all passing; the e2e scope stays at 92 before the archive merge. `givn check review --change normalize-fragment-e2e-inventory` passes every configured gate.
-- [ ] **Verification:** `review.md` records the counts, the transient failure, and the expected post-merge result (26 features, 77 e2e scenarios; 290 regular scenarios); the archive receipt proves the post-merge counts and `givn lint` cleanliness.
-- [ ] COMMIT: pending -- Batch: scoped verification and review
+- [x] **Evidence:** `./run-tests.sh` runs 28 features, 290 scenarios, and 1756 steps, all passing in two consecutive confirmation runs. The first run of this batch reported one transient failure that did not reproduce; `review.md` records it. `./run-tests.sh --e2e` runs 26 features, 92 scenarios, and 699 steps, all passing; the e2e scope stays at 92 before the archive merge. `givn check review --change normalize-fragment-e2e-inventory` passes every configured gate.
+- [x] **Verification:** `review.md` records the counts, the transient failure, and the expected post-merge result (26 features, 77 e2e scenarios; 290 regular scenarios); the archive receipt proves the post-merge counts and `givn lint` cleanliness.
+- [x] COMMIT: 69e3d342418485702898ec80a87a000b5294ca3d -- Batch: scoped verification and review
