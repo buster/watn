@@ -180,3 +180,26 @@ corpus repairs.
 ## Completion boundary
 
 This generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood, including any follow-up changes a bundle names.
+
+## Phase 1 inventory (executed 2026-10-30)
+
+Pre-upgrade revision: `e12e90dbc79b30d5024a878037f0deb8fb05e2c6^`.
+
+Rules policy at that revision: `# rules: local-only` (the default), with `skills.targets: [opencode, agents, claude, omp]`.
+
+Checked for tracked generated rule paths:
+
+```sh
+git ls-tree -r --name-only e12e90dbc79b30d5024a878037f0deb8fb05e2c6^ \
+  | grep -E '(skills/givn-[^/]+/SKILL\.md|commands/(givn|grill)-[^/]+\.md)$'
+```
+
+Result: no matches. `.gitignore` excludes `.opencode/`, `.agents/`, `.claude/`, `.omp/`, and `/AGENTS.md`, so the pre-upgrade files were never tracked and their content is not recoverable from history. `AGENTS.md` is absent from the pre-upgrade revision entirely.
+
+Project-owner disposition: no project-specific rules were kept in the generated skill or command files, and the managed `givn-project` block was not hand-edited. The generated-rules policy stays `local-only`.
+
+| Old file | Displaced statement | Classification | Target instruction id |
+|---|---|---|---|
+| none | none | none found | none |
+
+Finding: no displaced project rules. Phase 2 records no `extensions:` entries; `givn/config.yaml` stays unchanged.
