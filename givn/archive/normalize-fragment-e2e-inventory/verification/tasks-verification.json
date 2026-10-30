@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "normalize-fragment-e2e-inventory",
+  "status": "passed",
+  "head": "3bd20da9825a36730b7df89cd73b500323b252f8",
+  "features_path": "givn/changes/normalize-fragment-e2e-inventory/specs",
+  "features_digest": "68a48d75b25a167de77ffbcb8ae21dbd23478f60c49e614145e3d20925220e65",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "c310eee94982b79f2b0d379126ebf9752ccd8ca3dbb1f602bb4e3ae10473fb1b",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793383843
+}

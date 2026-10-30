@@ -27,7 +27,7 @@ Feature: Isolated test transport
     And  the persisted configured endpoint should remain exactly the configured twin base URL plus "/v1"
     And  the persisted TOML should not contain the isolated twin URL
 
-  @e2e
+  @transport
   Scenario: Missing or whitespace test overrides fall back to the configured provider
     Given  a reachable local configured provider twin returns "configured-response" for POST "/v1/chat/completions"
     And  the configured provider has api key "sk-configured" and default model "test-model"

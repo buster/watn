@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "change": "normalize-fragment-e2e-inventory",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "fragments/ask.feature",
+    "fragments/cancel-running-completion.feature",
+    "fragments/config.feature",
+    "fragments/incremental-sse-rendering.feature",
+    "fragments/transport.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "fragments/ask.feature",
+    "fragments/cancel-running-completion.feature",
+    "fragments/config.feature",
+    "fragments/incremental-sse-rendering.feature",
+    "fragments/transport.feature"
+  ],
+  "merge_targets": {
+    "fragments/ask.feature": "givn/specs/fragments/ask.feature",
+    "fragments/cancel-running-completion.feature": "givn/specs/fragments/cancel-running-completion.feature",
+    "fragments/config.feature": "givn/specs/fragments/config.feature",
+    "fragments/incremental-sse-rendering.feature": "givn/specs/fragments/incremental-sse-rendering.feature",
+    "fragments/transport.feature": "givn/specs/fragments/transport.feature"
+  },
+  "started_at_unix": 1793383956,
+  "finished_at_unix": null
+}

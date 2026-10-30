@@ -11,7 +11,7 @@ Feature: Incremental provider output
     Then  the terminal generated command line "printf first && printf second" appears exactly once
     And  the exit status should be 0
 
-  @e2e
+  @incremental-sse-rendering
   Scenario: Verbose streaming keeps reasoning on stderr and command text on stdout
     Given  a streaming provider emits reasoning "inspect the files" and content "find . -type" before holding a later completion event
     When  I start the verbose streaming command `watn -v "list the files"` with captured stdout and stderr
@@ -59,7 +59,7 @@ Feature: Incremental provider output
     Then  the generated command line "printf valid" appears exactly once
     And  the exit status should be 0
 
-  @e2e
+  @incremental-sse-rendering
   Scenario: A mid-stream failure preserves visible content and exits unsuccessfully
     Given  a streaming provider flushes content "printf partial" and then resets the connection before `[DONE]`
     When  I start the failing streaming command `watn "survive a provider failure"` in a terminal
@@ -99,7 +99,7 @@ Feature: Incremental provider output
     And  the execution output line "raw-confirmed" appears exactly once
     And  the exit status should be 0
 
-  @e2e
+  @incremental-sse-rendering
   Scenario: Piped confirmation remains available after streamed output
     Given  a streaming provider emits content "printf piped-confirmed"
     When  I run `watn -x "run the command"` with piped confirmation "y"

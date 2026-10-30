@@ -11,7 +11,7 @@ Feature: Asking questions
     And  the output should contain a tokens/second value
     And  the output should not contain ANSI escape sequences
 
-  @e2e
+  @ask
   Scenario: Explicit tier -1 uses the small/fast model
     Given  a configured default provider "openai"
     And  a model "gpt-4o-mini" assigned to the small/fast tier
@@ -19,7 +19,7 @@ Feature: Asking questions
     Then  the exit status should be 0
     And  the output should match regex "gpt-4o-mini"
 
-  @e2e
+  @ask
   Scenario: Tier -2 uses the normal model
     Given  a configured default provider "openai"
     And  a model "gpt-4o" assigned to the normal tier
@@ -27,7 +27,7 @@ Feature: Asking questions
     Then  the exit status should be 0
     And  the output should match regex "gpt-4o"
 
-  @e2e
+  @ask
   Scenario: Tier -3 uses the thinking/reasoning model
     Given  a configured default provider "openai"
     And  a model "o3-mini" assigned to the thinking tier
@@ -42,32 +42,32 @@ Feature: Asking questions
     Then  the exit status should be 0
     And  "hello" should have been printed to stdout
 
-  @e2e
+  @ask
   Scenario: Execute flag with explicit "y" confirmation
     Given  the mock returns command "echo hello"
     When  I run `watn -x "echo hello"` and answer with "y"
     Then  the exit status should be 0
     And  "hello" should have been printed to stdout
 
-  @e2e
+  @ask
   Scenario: Execute flag with "n" answer skips execution
     Given  the mock returns command "echo hello"
     When  I run `watn -x "echo hello"` and answer with "n"
     Then  the command should not have been executed
     And  the exit status should be 0
 
-  @e2e
+  @ask
   Scenario: Cost is displayed when pricing is configured
     Given  pricing configured at "$2.50/1M input tokens" per model
     When  I run `watn "show disk usage"`
     Then  the output should contain a cost value
 
-  @e2e
+  @ask
   Scenario: Tokens/second is displayed after response completes
     When  I run `watn "echo hello"`
     Then  the output should match regex "\d+\s*tok/s"
 
-  @e2e
+  @ask
   Scenario: Ask via stdin pipe
     Given  the mock returns command "find . -name '*.pdf'"
     When  I run `echo "list all pdfs" | watn`
@@ -104,6 +104,7 @@ Feature: Asking questions
     When  I run `watn "find all modified files"`
     Then  the exit status should be 0
     And  the output should match regex "gpt-4o-mini"
+
   Scenario: The metadata line prices a request from the requested model when the reported model has none
     Given  the request asks for model "requested-model"
     And  a streaming provider emits content "printf priced" and a choices-empty usage event with response model "response-model", 10 prompt tokens, and 20 completion tokens
@@ -113,6 +114,7 @@ Feature: Asking questions
     And  the final metadata names exactly "response-model"
     And  stderr should contain a non-zero cost for "response-model"
     And  the exit status should be 0
+
   Scenario: Ask succeeds against a provider that rejects generation parameters
     Given  a configured default provider "openai"
     And  a provider that rejects a request carrying a sampling temperature or an output-token limit

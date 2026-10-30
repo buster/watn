@@ -11,7 +11,7 @@ Feature: Cancelling a running completion
     And  stderr should not contain a reported error
     And  stderr should not contain final metadata
 
-  @e2e
+  @cancel-running-completion
   Scenario: One Ctrl+C cancels a completion waiting for a connection
     Given  a provider accepts a connection and never sends a response
     When  I start watn with the invocation `watn "unresponsive provider"` in a terminal
