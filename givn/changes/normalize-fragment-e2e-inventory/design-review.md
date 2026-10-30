@@ -178,6 +178,20 @@ Resolution: no finding.
 
 No hardening edits were required. The delta files, inventory, and design already match. No scenario was added or removed, and `tasks.md` is not written by this review.
 
+## Re-review: change verification adapter
+
+The design changed after implementation exposed a verification-adapter gap: `givn check tasks` supplies `GIVN_FEATURES` and the `change` scope, but the runner ignored the path and `run-tests.sh` overwrote the scope with `regular`.
+
+Re-walked branches:
+
+- **Tech choices:** no new dependency; the existing runner gains one environment check, and the shell adapter gains one scope branch. The archive path is unchanged because archive supplies `GIVN_FEATURES=givn/specs`.
+- **Testability:** the change scope executes exactly the 15 delta scenarios with the tag filter `not @wip`, including any delta `@e2e` scenario; the default regular and e2e filters are untouched.
+- **Risk:** a default-path regression would change the 290/92 counts; both suites are re-run after the adapter change and the results are recorded in the review.
+- **E2E fidelity and interaction coverage:** unchanged; the adapter does not alter scenario selection for the regular or e2e scopes.
+- **Contracts, visual contract, decisions:** unchanged; D1 remains answered.
+
+No finding. The design now names the adapter behavior, its environment inputs, and its verification.
+
 ## Verdict
 
 DESIGN-REVIEW: PASS

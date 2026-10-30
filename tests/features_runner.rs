@@ -169,16 +169,22 @@ async fn main() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("givn");
     let mut feature_files: Vec<PathBuf> = Vec::new();
 
-    feature_files.extend(collect_features(&root.join("specs")));
+    // Givn passes the scope path for a change verification. Honor it so the
+    // runner executes exactly the delta instead of the whole corpus.
+    if let Ok(features_path) = std::env::var("GIVN_FEATURES") {
+        feature_files.extend(collect_features(Path::new(&features_path)));
+    } else {
+        feature_files.extend(collect_features(&root.join("specs")));
 
-    // Skip change-spec files during givn archive verify to avoid duplicate
-    // scenarios when delta specs have been merged into the permanent specs.
-    if std::env::var("GIVN_ARCHIVE_ONLY").is_err() {
-        let changes_dir = root.join("changes");
-        if changes_dir.exists() {
-            for entry in std::fs::read_dir(&changes_dir).unwrap() {
-                let change_dir = entry.unwrap().path();
-                feature_files.extend(collect_features(&change_dir.join("specs")));
+        // Skip change-spec files during givn archive verify to avoid duplicate
+        // scenarios when delta specs have been merged into the permanent specs.
+        if std::env::var("GIVN_ARCHIVE_ONLY").is_err() {
+            let changes_dir = root.join("changes");
+            if changes_dir.exists() {
+                for entry in std::fs::read_dir(&changes_dir).unwrap() {
+                    let change_dir = entry.unwrap().path();
+                    feature_files.extend(collect_features(&change_dir.join("specs")));
+                }
             }
         }
     }

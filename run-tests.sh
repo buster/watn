@@ -21,7 +21,11 @@ cp target/debug/watn "$root/default-debug"
 cargo build --locked --features test-support --bin watn
 cp target/debug/watn "$root/test-support-debug"
 
-if [ "$e2e" -eq 1 ]; then
+if [ "${GIVN_RESULT_SCOPE:-}" = "change" ]; then
+    # A change verification runs every delta scenario, including @e2e ones.
+    tags='not @wip'
+    export GIVN_RESULT_SCOPE=change
+elif [ "$e2e" -eq 1 ]; then
     tags='@e2e and not @wip'
     export GIVN_RESULT_SCOPE=e2e
 else

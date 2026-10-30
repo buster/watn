@@ -57,6 +57,16 @@ Decides D1: piped ask and piped confirmation are input-channel variants of their
 - Runner: `cucumber-rs` through `tests/features_runner.rs`.
 - Strict mode: `.fail_on_skipped()` at `tests/features_runner.rs:211`; an undefined or pending step fails the build. The change introduces no step phrase, so the existing proof stands unchanged.
 
+### Change verification adapter
+
+`givn check tasks` sets `GIVN_FEATURES` to the change's `specs` directory, `GIVN_RESULT_SCOPE=change`, and `GIVN_RESULT_FILE`. The adapter must honor all three:
+
+- `tests/features_runner.rs` collects from `GIVN_FEATURES` when it is set, instead of the permanent corpus plus every active change. The change-scope execution therefore runs exactly the 15 delta scenarios.
+- `run-tests.sh` preserves an incoming `GIVN_RESULT_SCOPE=change` and selects the tag filter `not @wip`, so delta `@e2e` scenarios are included and the written result names the `change` scope. The regular and e2e branches keep their existing filters.
+- The archive path is unchanged: archive sets `GIVN_FEATURES=givn/specs` and a regular or e2e scope, and `GIVN_ARCHIVE_ONLY` still prevents change-spec collection when the path is not supplied.
+
+Verification: `givn check tasks --change normalize-fragment-e2e-inventory` must write `verification/tasks-verification.json` with 15 change-scope scenarios and exit 0. The regular and e2e suites must still report 290 and 92 scenarios before the archive merge.
+
 ## Step Definitions
 
 None. Every modified scenario reuses an existing binding; no delta step file is created.
