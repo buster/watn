@@ -219,13 +219,12 @@ addons:
   outline: true
   architecture_principles: true
   arc42: true
-  absolute_mode: true
+  communication_policy: true
+  challenge: true
   readme: true
   coverage: true
   domain_modeling: true
   dev_principles: true
-  grill_me: true
-  grill_with_docs: true
 skills:
   targets: [opencode, agents, claude, omp]
 # ---
