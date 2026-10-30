@@ -39,14 +39,14 @@ Every retagged scenario keeps its Given/When/Then text and still runs in the reg
 
 `givn spec route --change normalize-fragment-e2e-inventory` reported no signal. The decision is to extend the existing fragment capabilities; no capability is added or moved.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| ask | `EXTEND ask` | Existing capability; only scenario tags and the inventory change. |
-| cancel-running-completion | `EXTEND cancel-running-completion` | Existing capability; only scenario tags and the inventory change. |
-| config | `EXTEND config` | Existing capability; only scenario tags and the inventory change. |
-| incremental-sse-rendering | `EXTEND incremental-sse-rendering` | Existing capability; only scenario tags and the inventory change. |
-| release-truth | `EXTEND release-truth` | Existing capability; no scenario or inventory change. |
-| transport | `EXTEND transport` | Existing capability; only scenario tags and the inventory change. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| ask | no signal | EXTEND ask | Existing capability; only scenario tags and the inventory change. |
+| cancel-running-completion | no signal | EXTEND cancel-running-completion | Existing capability; only scenario tags and the inventory change. |
+| config | no signal | EXTEND config | Existing capability; only scenario tags and the inventory change. |
+| incremental-sse-rendering | no signal | EXTEND incremental-sse-rendering | Existing capability; only scenario tags and the inventory change. |
+| release-truth | no signal | EXTEND release-truth | Existing capability; no scenario or inventory change. |
+| transport | no signal | EXTEND transport | Existing capability; only scenario tags and the inventory change. |
 
 ## Out of Scope
 

@@ -4,9 +4,9 @@ This change carries no new product behaviour and no production code. It retags 1
 
 ## Batch: delta reclassification and inventory
 
-- [ ] **Evidence:** Five delta files under `givn/changes/normalize-fragment-e2e-inventory/specs/fragments/` carry 15 `@givn.modified` scenarios without the `@e2e` tag. A parse comparison against the permanent features found 0 title or step-text errors. `givn/specs/fragments/fragment.md` lists 11 actions; the retained-tag set matched exactly (11 retained, 11 declared, 0 missing, 0 extra). The reclassification table records each moved scenario as a variant, error case, output-affecting flag, input-channel variant (D1), timing, precedence, or fallback. No production file or step definition changed.
-- [ ] **Verification:** `givn lint --change normalize-fragment-e2e-inventory` exits 0 with advisories only; the 15 delta titles exist in the permanent features with identical Given/When/Then lines.
-- [ ] COMMIT: pending -- Batch: delta reclassification and inventory
+- [x] **Evidence:** Five delta files under `givn/changes/normalize-fragment-e2e-inventory/specs/fragments/` carry 15 `@givn.modified` scenarios without the `@e2e` tag. A parse comparison against the permanent features found 0 title or step-text errors. `givn/specs/fragments/fragment.md` lists 11 actions; the retained-tag set matched exactly (11 retained, 11 declared, 0 missing, 0 extra). The reclassification table records each moved scenario as a variant, error case, output-affecting flag, input-channel variant (D1), timing, precedence, or fallback. No production file or step definition changed.
+- [x] **Verification:** `givn lint --change normalize-fragment-e2e-inventory` exits 0 with advisories only; the 15 delta titles exist in the permanent features with identical Given/When/Then lines.
+- [x] COMMIT: 9c6f633842fe48bc10bb866553c3843f78a8b3f0 -- Batch: delta reclassification and inventory
 
 ## Batch: scoped verification and review
 
