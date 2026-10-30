@@ -10,9 +10,9 @@ This change carries no new product behaviour. It retags 15 existing fragment sce
 
 ## Batch: change verification adapter
 
-- [ ] **Evidence:** `tests/features_runner.rs` collects from `GIVN_FEATURES` when set; `run-tests.sh` preserves `GIVN_RESULT_SCOPE=change` and selects `not @wip`, while the regular and e2e branches keep `not @wip and not @e2e` and `@e2e and not @wip`. The archive path still supplies `GIVN_FEATURES=givn/specs`. `givn check tasks --change normalize-fragment-e2e-inventory` writes `verification/tasks-verification.json` with 15 change-scope scenarios.
-- [ ] **Verification:** `givn check tasks` exits 0; the regular suite still runs 290 scenarios and the e2e suite 92, both passing.
-- [ ] COMMIT: pending -- Batch: change verification adapter
+- [x] **Evidence:** `tests/features_runner.rs` collects from `GIVN_FEATURES` when set; `run-tests.sh` preserves `GIVN_RESULT_SCOPE=change` and selects `not @wip`, while the regular and e2e branches keep `not @wip and not @e2e` and `@e2e and not @wip`. The archive path still supplies `GIVN_FEATURES=givn/specs`. `givn check tasks --change normalize-fragment-e2e-inventory` writes `verification/tasks-verification.json` with 15 change-scope scenarios.
+- [x] **Verification:** `givn check tasks` exits 0; the regular suite still runs 290 scenarios and the e2e suite 92, both passing.
+- [x] COMMIT: 3bd20da9825a36730b7df89cd73b500323b252f8 -- Batch: change verification adapter
 
 ## Batch: scoped verification and review
 
