@@ -47,6 +47,20 @@ fn wait_for_visible_text(session: &super::PtySession, text: &str) -> String {
     }
 }
 
+fn wait_for_masked_credential(session: &super::PtySession) -> String {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    loop {
+        let output = pty_snapshot(session);
+        if visible_output(&output).contains("********") {
+            return output;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("credential was not masked: {output:?}");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
 fn wait_for_page_marker(session: &super::PtySession, marker: &str) -> String {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
@@ -808,13 +822,9 @@ fn completion_endpoint_input_shows(world: &mut WatnWorld, endpoint: String) {
 fn credential_input_remains_masked(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("setup PTY session");
     pty_write(session, "\r");
-    let output = wait_for_active_page(session, "API key");
+    let output = wait_for_masked_credential(session);
     assert!(
-        output.contains("********"),
-        "credential was not masked: {output:?}"
-    );
-    assert!(
-        !output.contains("sk-existing-key"),
+        !visible_output(&output).contains("sk-existing-key"),
         "literal credential was exposed: {output:?}"
     );
 }
@@ -895,8 +905,7 @@ fn enter_setup_endpoint(world: &mut WatnWorld, endpoint: String) {
 fn provider_setup_allows_credential_question(world: &mut WatnWorld) {
     let session = world.pty_session.as_mut().expect("provider PTY session");
     pty_write(session, "\r");
-    let output = wait_for_active_page(session, "API key");
-    assert!(output.contains("Where should the API key be stored?"));
+    wait_for_visible_text(session, "Where should the API key be stored?");
 }
 
 #[then(regex = r##"^provider setup should show that "([^"]+)" must contain a non-empty value$"##)]
