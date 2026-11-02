@@ -108,7 +108,7 @@ changes.
 | 9 | [Architecture Decisions](09-architecture-decisions.md) | ADRs — context, decision, rationale |
 | 10 | [Quality Requirements](10-quality-requirements.md) | Measurable quality scenarios |
 | 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and debt |
-| 12 | [Glossary](12-glossary.md) | Domain and technical terms |
+| 12 | [Glossary](12-glossary.md) | Link to the project vocabulary authority |
 
 Completion generation is further recorded in [ADR-0017](../adr/0017-completion-generation-from-authoritative-command-definition.md).
 Shell shortcut installation and widget safety are recorded in
