@@ -255,7 +255,7 @@ addons:
   domain_modeling: true
   dev_principles: true
 skills:
-  targets: [opencode, agents, claude, omp]
+  targets: [opencode, agents, claude, omp, maki]
 record:
   mode: full
 # ---
