@@ -9,12 +9,6 @@ This model covers the watn command-generation domain: a developer's natural-lang
 This is notation only, not part of the domain model. Containment shows bounded-context membership. Read a labeled arrow from source to target; it is a domain relationship, not a runtime call.
 
 ```mermaid
----
-config:
-  layout: elk
-  elk:
-    mergeEdges: false
----
 flowchart TB
     subgraph legendContext["Bounded context (BC)"]
         legendAggregate{{"Aggregate<br/>Collapsed consistency boundary"}}
@@ -36,15 +30,6 @@ A host must include the ELK renderer and honour the configuration. Unsupported h
 One bounded context depends on a Provider for generated command content and hands an accepted Candidate to a Shell. No aggregate boundary is drawn because none is established.
 
 ```mermaid
----
-config:
-  layout: elk
-  elk:
-    mergeEdges: false
-  flowchart:
-    nodeSpacing: 45
-    rankSpacing: 80
----
 flowchart TB
     subgraph commandGeneration["Command generation (BC)"]
         generation["Request and Candidate generation<br/>No aggregate boundary established"]
