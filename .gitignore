@@ -10,6 +10,10 @@
 *.profraw
 *.cast
 
+# Maki integration files stay project-local; generated Maki rules are ignored below.
+.maki/init.lua
+.maki/plugin.toml
+
 # givn:begin:rules
 .opencode/skills/givn-*/
 .agents/skills/givn-*/
