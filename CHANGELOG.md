@@ -6,6 +6,16 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.5.3] - 2026-11-04
+
+### Bug Fixes
+
+- **deps:** Bump rustls to 0.23.46 and quinn-proto to 0.11.18 for RUSTSEC-2026-0338..0350
+
+- **tests:** Wait for the masked credential instead of the page title
+
+- **deps:** Update rustls-webpki, webpki-root-certs, and tokio for RUSTSEC advisories
+
 ## [0.5.2] - 2026-10-01
 
 ### Breaking Changes
@@ -1215,3 +1225,5 @@ Bright fireant
 [0.5.0]: https://github.com/buster/watn/compare/v0.4.1...v0.5.0
 
 [0.5.2]: https://github.com/buster/watn/compare/v0.5.1...v0.5.2
+
+[0.5.3]: https://github.com/buster/watn/compare/v0.5.2...v0.5.3
