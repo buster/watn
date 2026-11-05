@@ -14,6 +14,9 @@
 .maki/init.lua
 .maki/plugin.toml
 
+# Local givn development record (sensitive; never committed)
+/givn/history/
+
 # givn:begin:rules
 .opencode/skills/givn-*/
 .agents/skills/givn-*/
