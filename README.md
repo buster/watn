@@ -76,6 +76,8 @@ watn setup
 | stdout | The answer or command |
 | stderr | Model, tokens/second, elapsed time, cost when known, warnings |
 
+Every flag, keybinding, exit code, and configuration key: [docs/reference.md](docs/reference.md).
+
 ## Review surface
 
 The surface opens on the controlling terminal with the model and billed amount
@@ -131,7 +133,7 @@ command without evaluating it. `watn completions <SHELL>` prints a script for
 
 ## Docs
 
-[Architecture](docs/arc42/) · [Decisions](docs/adr/) · [Glossary](docs/glossary.md) · [Domain model](docs/domain-model.md)
+[Reference](docs/reference.md) · [Architecture](docs/arc42/) · [Decisions](docs/adr/) · [Glossary](docs/glossary.md) · [Domain model](docs/domain-model.md)
 
 ## Development
 
